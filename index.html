@@ -223,6 +223,10 @@
   .cf-warn { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1px solid #b34000; border-left-width: 6px; color: var(--ink); }
   .cf-warn p { margin: 0; }
   #btn-create { white-space: nowrap; }
+  #r-flt-a-wrap { flex: 0 1 240px; min-width: 13rem; }
+  #r-flt-b-wrap { flex: 0 1 260px; min-width: 14rem; }
+  #r-btn-create { white-space: nowrap; }
+  .fr-nav__link { cursor: pointer; }
   /* Onglet Documents. */
   .doc-table td.name { white-space: normal; overflow-wrap: anywhere; }
   .doc-table td.name a { color: var(--ink); font-weight: 700; }
@@ -431,6 +435,12 @@
     <div class="fr-container">
       <button class="fr-btn--close fr-btn" aria-controls="modal-header-menu" title="Fermer">Fermer</button>
       <div class="fr-header__menu-links"></div>
+      <nav class="fr-nav" id="header-navigation" role="navigation" aria-label="Menu principal">
+        <ul class="fr-nav__list">
+          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" aria-current="page" data-page="pmg">PMG et Acculturation</a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="res">Réservistes RO1/RS/RC</a></li>
+        </ul>
+      </nav>
     </div>
   </div>
 </header>
@@ -480,6 +490,7 @@
   </div>
 </dialog>
 
+<div id="page-pmg">
 <div class="wrap fr-container">
   <div class="tabs" id="tabs" role="tablist" aria-label="Sections du widget" hidden>
     <button class="tab" role="tab" id="tab-list" aria-selected="true" aria-controls="view-list" type="button">Candidats</button>
@@ -645,6 +656,167 @@
   <div id="demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
 </div>
 
+</div><!-- /page-pmg -->
+
+<!-- ===== Page 2 : Réservistes RO1/RS/RC ===== -->
+<div id="page-res" hidden>
+<div class="wrap fr-container">
+  <div class="tabs" id="r-tabs" role="tablist" aria-label="Sections du widget" hidden>
+    <button class="tab" role="tab" id="r-tab-list" aria-selected="true" aria-controls="r-view-list" type="button">Réservistes</button>
+    <button class="tab" role="tab" id="r-tab-admin" aria-selected="false" aria-controls="r-view-admin" type="button">Back office</button>
+  </div>
+
+  <!-- ===== Vue liste ===== -->
+  <div id="r-view-list" role="tabpanel" aria-labelledby="r-tab-list">
+    <h1 class="fr-sr-only">Réservistes RO1/RS/RC</h1>
+
+    <div class="toolbar">
+      <div class="tb-field tb-search">
+        <label for="r-q">Rechercher un réserviste</label>
+        <input id="r-q" class="input" type="search" placeholder="Nom, mail, téléphone, NID, ville…" autocomplete="off">
+      </div>
+      <div class="tb-field" id="r-flt-a-wrap">
+        <label id="r-flt-a-label" for="r-flt-a-btn">Type R</label>
+        <div class="ms" id="r-flt-a">
+          <button type="button" class="select ms-btn" id="r-flt-a-btn" aria-haspopup="true" aria-expanded="false" aria-controls="r-flt-a-panel">Tous les types</button>
+          <div class="ms-panel" id="r-flt-a-panel" role="group" aria-labelledby="r-flt-a-label" hidden></div>
+        </div>
+      </div>
+      <div class="tb-field" id="r-flt-b-wrap">
+        <label id="r-flt-b-label" for="r-flt-b-btn">Affectation</label>
+        <div class="ms" id="r-flt-b">
+          <button type="button" class="select ms-btn" id="r-flt-b-btn" aria-haspopup="true" aria-expanded="false" aria-controls="r-flt-b-panel">Toutes les affectations</button>
+          <div class="ms-panel" id="r-flt-b-panel" role="group" aria-labelledby="r-flt-b-label" hidden></div>
+        </div>
+      </div>
+      <button type="button" class="btn secondary" id="r-flt-reset" disabled>Réinitialiser les filtres</button>
+      <div class="count" id="r-count" aria-live="polite"></div>
+      <button type="button" class="btn" id="r-btn-create">Créer un réserviste</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"><button type="button" id="r-sort-name" aria-label="Trier les réservistes par nom">Réservistes <span class="arrow" id="r-arrow"></span></button></th>
+            <th scope="col" class="end"><span class="fr-sr-only">Repères (validité expirée)</span></th>
+          </tr>
+        </thead>
+        <tbody id="r-rows"></tbody>
+      </table>
+      <div id="r-state" class="state" hidden></div>
+    </div>
+  </div>
+
+  <!-- ===== Back office ===== -->
+  <div id="r-view-admin" role="tabpanel" aria-labelledby="r-tab-admin" hidden>
+    <div id="r-saved" class="alert success" role="status" hidden>
+      <p class="t">Configuration enregistrée</p>
+      <p>Les sources ci-dessous sont utilisées par la liste des réservistes.</p>
+    </div>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Source de données</h2></div>
+      <p class="lead">La table Grist qui recense les réservistes RO1/RS/RC. Par défaut, la table liée à ce widget.</p>
+      <div class="fields">
+        <div>
+          <label for="r-f-table">Table des réservistes<span class="req" aria-hidden="true">*</span></label>
+          <span class="hint" id="r-h-table">Une ligne par réserviste.</span>
+          <select id="r-f-table" class="select" aria-describedby="r-h-table"></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">2</div><h2>Colonnes lues</h2></div>
+      <p class="lead">Colonnes de la table utilisées pour l’affichage de la liste.</p>
+      <div class="fields">
+        <div>
+          <label for="r-f-identity">Identité complète</label>
+          <span class="hint">Nom et prénom du réserviste. Si aucune colonne n’est choisie, l’identité est composée à partir des colonnes NOM et Prénom.</span>
+          <select id="r-f-identity" class="select"></select>
+        </div>
+        <div>
+          <label for="r-f-tag">Colonne affichée en tags<span class="req" aria-hidden="true">*</span></label>
+          <span class="hint">Affichée après le nom dans la liste et utilisée pour le premier filtre. Par défaut, « Type R » (RO1, RS, RC).</span>
+          <select id="r-f-tag" class="select"></select>
+          <div class="field-error" id="r-e-tag" hidden>Sélectionnez une colonne.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Colonnes de la fiche</h2></div>
+      <p class="lead">Colonnes affichées dans chaque onglet de la fiche du réserviste. Une colonne n’appartient qu’à un seul onglet.</p>
+      <div class="pick-grid" id="r-picks"></div>
+      <div class="actions" style="margin-top:24px">
+        <button class="btn" id="r-btn-save" type="button">Enregistrer la configuration</button>
+        <button class="btn secondary" id="r-btn-reset" type="button">Réinitialiser</button>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">4</div><h2>Rappel des sources</h2></div>
+      <p class="lead">Ce que le widget lit actuellement dans le document Grist.</p>
+      <div id="r-recap-callout" class="callout" hidden></div>
+      <div class="meta" id="r-recap-meta"></div>
+      <div class="indent"><div class="table-wrap">
+        <table>
+          <thead><tr><th>Élément</th><th>Source</th><th>Type</th><th>Statut</th></tr></thead>
+          <tbody id="r-recap-rows"></tbody>
+        </table>
+      </div></div>
+      <h3>Valeurs rencontrées dans la colonne affichée en tags</h3>
+      <div class="tagrow indent" id="r-recap-states"></div>
+    </section>
+  </div>
+
+  <div id="r-demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
+</div>
+</div><!-- /page-res -->
+
+<!-- ===== Modale fiche du réserviste ===== -->
+<div class="modal-overlay" id="r-modal" hidden>
+  <div class="modal-column" id="r-modal-column">
+    <div class="modal-stack" id="r-modal-stack">
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="r-modal-title">
+        <div class="modal-header">
+          <div style="min-width:0">
+            <h2 class="modal-title" id="r-modal-title"></h2>
+            <p class="modal-sub" id="r-modal-sub" hidden></p>
+            <div class="modal-tags" id="r-modal-tags"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="round-btn" id="r-modal-prev" type="button" aria-label="Réserviste précédent" title="Précédent">‹</button>
+            <button class="round-btn" id="r-modal-next" type="button" aria-label="Réserviste suivant" title="Suivant">›</button>
+            <button class="round-btn" id="r-modal-close" type="button" aria-label="Fermer la fiche" title="Fermer">✕</button>
+          </div>
+        </div>
+        <div class="stg-tabs" id="r-modal-tabs" role="tablist" aria-label="Sections de la fiche"></div>
+        <div id="r-modal-panels"></div>
+        <p class="modal-foot" id="r-modal-foot" hidden></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Création d'un réserviste ===== -->
+<div class="modal-overlay" id="r-cmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="r-cmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="r-cmodal-title">Créer un réserviste</h2>
+          <p class="modal-sub">Les champs marqués d’une étoile sont obligatoires. Les autres informations pourront être complétées ensuite depuis la fiche.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="r-cmodal-close" type="button" aria-label="Fermer sans créer" title="Fermer">✕</button></div>
+      </div>
+      <form id="r-cmodal-form" novalidate></form>
+    </div>
+  </div>
+</div>
+
+
 <!-- ===== Modale fiche candidat (deux fiches côte à côte en cas de doublon) ===== -->
 <div class="modal-overlay" id="modal" hidden>
   <div class="modal-column" id="modal-column">
@@ -725,7 +897,7 @@
       defaults: ['Lettre intégration', 'Convention', 'Convocations', 'ESR'] }
   ];
 
-  // Blocs par onglet (les colonnes cochées dans le back office mais absentes de ces blocs vont dans « Autres informations »).
+  // Blocs par onglet : seules les colonnes de ces blocs (et cochées dans le back office) sont affichées dans la fiche.
   var TAB_GROUPS = {
     info: [
       { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN', 'Âge'], ['Lieu de naissance', 'Dpt']] },
@@ -757,7 +929,7 @@
 
   // Courriels de réservation et convocations (Tests psychométriques, VEMI) : modèles modifiables dans le back office.
   var MAIL_BLOCKS = [
-    { key: 'tests', title: 'Tests psychométriques', short: 'aux tests psychométriques', dateLabel: 'Date tests psy', dateName: 'des tests', required: ['Date tests psy'], serviceName: 'au service des tests', kinds: ['reservation', 'convocation', 'service'] },
+    { key: 'tests', title: 'Tests psychométriques', short: 'aux tests psychométriques', dateLabel: 'Date tests psy', dateName: 'des tests', required: ['Date tests psy'], kinds: ['reservation', 'convocation'] },
     { key: 'vemi', title: 'Visite d’expertise médicale initiale (VEMI)', short: 'à la visite d’expertise médicale initiale (VEMI)', dateLabel: 'Date VEMI', dateName: 'de la VEMI', required: ['Date VEMI', 'Antenne VEMI'], serviceName: 'à l’antenne médicale', kinds: ['reservation', 'convocation', 'service'] }
   ];
   // Onglet Renseignements militaires : lettre d'incorporation (à côté de « Stage ») et ESR (à côté de « Contrat »).
@@ -798,18 +970,6 @@
           '  <p>Vous êtes convoqué(e) aux tests psychométriques le <strong>{{DATE_TESTS}}</strong>.</p>\n' +
           '  <p>Documents à présenter :</p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>la présente convocation.</li>\n  </ul>\n' +
           '  <p>Merci d’arriver un peu en avance.</p>\n' + SIGN_HTML)
-      },
-      service: {
-        to: '',
-        subject: 'Tests psychométriques du {{DATE_TESTS}} : convocation de {{IDENTITE}}',
-        body: 'Bonjour,\n\n' +
-          'Veuillez trouver ci-joint la fiche de convocation de {{IDENTITE}} (n° {{N_CANDIDATURE}}, {{AFFECTATION}}) aux tests psychométriques du {{DATE_TESTS}}.\n\n' +
-          'Merci de bien vouloir accuser réception de ce message.\n\n' + MAIL_SIGN,
-        template: pageHtml('Fiche de convocation – Tests psychométriques',
-          '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
-          rowHtml('Candidat', '<strong>{{IDENTITE}}</strong>') + rowHtml('N° de candidature', '{{N_CANDIDATURE}}') + rowHtml('NID', '{{NID}}') +
-          rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('Téléphone', '{{TELEPHONE}}') + rowHtml('Mail', '{{EMAIL}}') + rowHtml('Date des tests', '<strong>{{DATE_TESTS}}</strong>') +
-          '  </table>\n  <p>Le candidat est convoqué à la date indiquée ci-dessus. Merci de le recevoir pour le passage des tests psychométriques.</p>\n' + SIGN_HTML)
       }
     },
     vemi: {
@@ -1917,8 +2077,7 @@
     }
 
     if (tabDef.key === 'docs') {
-      var others = ids.filter(function (id) { var m = colMeta(c.table, id); return m && typeBase(m.type) !== 'Attachments'; });
-      return docsHtml(item, c, ids, others.length ? '<section class="detail-group"><h3 class="detail-title">Autres informations</h3>' + tableHtml(packRows(others), 'Autres informations') + '</section>' : '', opts);
+      return docsHtml(item, c, ids, '', opts);
     }
 
     var groups = TAB_GROUPS[tabDef.key];
@@ -1935,8 +2094,6 @@
       var rows = g.rows ? g.rows.map(resolve).filter(function (r) { return r.length; }) : packRows(resolve(g.labels));
       if (rows.length) html += '<section class="detail-group">' + (g.title ? '<h3 class="detail-title">' + esc(g.title) + (g.mail && !opts.ro ? mailActionsHtml(g.mail, item, c) : '') + '</h3>' : '') + tableHtml(rows, g.title || 'Commentaires') + '</section>';
     });
-    var rest = ids.filter(function (id) { return !placed[id]; });
-    if (rest.length) html += '<section class="detail-group"><h3 class="detail-title">Autres informations</h3>' + tableHtml(packRows(rest), 'Autres informations') + '</section>';
     return (!opts.ro && tabDef.key === 'mil' ? askHtml() : '') + (!opts.ro && (tabDef.key === 'medico' || tabDef.key === 'mil') ? mailMsgHtml() : '') + html;
   }
 
@@ -2472,7 +2629,7 @@
   $('tab-admin').addEventListener('click', function () { showView('admin'); });
   var hdrClicks = 0, hdrTimer;
   document.querySelector('.fr-header').addEventListener('click', function (e) {
-    if (e.target.closest('.fr-header__tools')) return; // le bouton « Paramètres d'affichage » ne compte pas
+    if ((window.__page || 'pmg') !== 'pmg' || e.target.closest('.fr-header__tools')) return; // le bouton « Paramètres d'affichage » ne compte pas
     clearTimeout(hdrTimer);
     hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
     if (++hdrClicks >= 5) { hdrClicks = 0; $('tabs').hidden = false; showView('admin'); }
@@ -2542,6 +2699,7 @@
     if (!dr.table || !dr.status) return;
     var o = { table: dr.table, identity: dr.identity || '', status: dr.status, tabs: normalizeTabs(dr.table, dr.tabs), mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
     if (state.opts.sent) o.sent = state.opts.sent; // conserve l'historique des actions effectuées
+    if (state.opts.r) o.r = state.opts.r;          // conserve la configuration de la page « Réservistes »
     api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { $('saved').hidden = false; window.scrollTo(0, 0); });
   });
   $('btn-reset').addEventListener('click', function () {
@@ -2596,114 +2754,6 @@
     var req = requiredIds(c);
     $('cmodal-form').innerHTML =
       (cr.error ? '<div class="doc-alert error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
-      (cr.warn ? '<div class="cf-warn" role="alert"><p>' + esc(cr.warn) + '</p></div>' : '') +
-      createColumns(c).map(function (s) {
-        return '<section class="cf-section"><h3>' + esc(s.title) + '</h3><div class="cf-grid">' + s.cols.map(function (col) {
-          var id = 'cf-' + col.id, isReq = req.indexOf(col.id) !== -1;
-          return '<div class="cf-field"><label for="' + id + '">' + esc(displayLabel(col)) + (isReq ? '<span class="req" aria-hidden="true">*</span>' : '') + '</label>' + controlHtml(col, id, cr.values[col.id]) + '</div>';
-        }).join('') + '</div></section>';
-      }).join('') +
-      '<div class="cf-actions"><button type="submit" class="btn"' + (cr.busy ? ' disabled' : '') + '>' + (cr.busy ? 'Création…' : (cr.confirmDup ? 'Créer quand même' : 'Créer la candidature')) + '</button>' +
-      '<button type="button" class="btn secondary" id="cf-cancel"' + (cr.busy ? ' disabled' : '') + '>Annuler</button></div>';
-  }
-
-  function openCreate() {
-    var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
-    var values = {};
-    createColumns(c).forEach(function (s) { s.cols.forEach(function (col) { values[col.id] = editInitial(col, null); }); });
-    state.create = { values: values, error: '', warn: '', confirmDup: false, busy: false };
-    renderCreateForm();
-    var ov = $('cmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
-    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('cmodal-form').querySelector('input, select'); if (f) f.focus(); }); });
-  }
-  function closeCreate() {
-    var ov = $('cmodal'); if (ov.hidden) return;
-    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.create = null;
-    setTimeout(function () { ov.hidden = true; }, 200); $('btn-create').focus();
-    load(); // actualise les données à la fermeture de la fenêtre
-  }
-
-  function submitCreate() {
-    var c = cfg(), cr = state.create; if (!cr || cr.busy) return;
-    var fields = {}, byId = {};
-    createColumns(c).forEach(function (s) { s.cols.forEach(function (col) { byId[col.id] = col; }); });
-    for (var id in byId) {
-      var col = byId[id], v = cr.values[id], p = parseEdit(col, v);
-      if (p.error) { cr.error = displayLabel(col) + ' : ' + p.error; cr.warn = ''; renderCreateForm(); return; }
-      if (!emptyVal(v) && !(Array.isArray(p.value) && p.value.length <= 1) && p.value !== null && p.value !== '') fields[id] = p.value;
-    }
-    var missing = requiredIds(c).filter(function (rid) { return emptyVal(cr.values[rid]) || !String(cr.values[rid]).trim(); }).map(function (rid) { return displayLabel(byId[rid] || colMeta(c.table, rid)); });
-    if (missing.length) { cr.error = 'Renseignez les champs obligatoires : ' + missing.join(', ') + '.'; cr.warn = ''; renderCreateForm(); return; }
-    var em = findCol(c.table, 'Email');
-    if (em && fields[em.id] && !validEmail(String(fields[em.id]).trim())) { cr.error = displayLabel(em) + ' : adresse e-mail invalide.'; cr.warn = ''; renderCreateForm(); return; }
-    cr.error = '';
-
-    // Doublon probable : même NID, ou même identité et même date de naissance.
-    var nom = findCol(c.table, 'NOM'), pre = findCol(c.table, 'Prénom'),
-        idn = [nom && fields[nom.id] ? String(fields[nom.id]).toLocaleUpperCase('fr-FR') : '', pre && fields[pre.id] ? fields[pre.id] : ''].filter(Boolean).join(' ');
-    var probe = { raw: fields, identity: idn }, k = dupKey(probe, c);
-    var dups = k ? state.records.filter(function (o) { return dupKey(o, c) === k; }) : [];
-    if (dups.length && !cr.confirmDup) {
-      cr.warn = 'Une fiche existe déjà pour ce candidat (' + dups.map(function (d) { return formatName(d.identity || '') + ' · ligne n° ' + d.raw.id; }).join(', ') + '). Si vous créez tout de même cette candidature, elle sera marquée « Doublon » pour être comparée avec la fiche existante.';
-      cr.confirmDup = true; renderCreateForm(); return;
-    }
-    if (dups.length) { var dcol = findCol(c.table, 'Doublon'); if (dcol && isEditableCol(dcol)) fields[dcol.id] = typeBase(dcol.type) === 'Bool' ? true : 'Oui'; }
-
-    cr.busy = true; renderCreateForm();
-    api.createRow(c.table, fields).then(function (newId) {
-      closeCreate();
-      return load().then(function () { openCreated(newId); });
-    }).catch(function (e) { cr.busy = false; cr.error = 'Création impossible : ' + ((e && e.message) || e) + '.'; renderCreateForm(); });
-  }
-  // Ouvre la fiche de la candidature créée (en levant les filtres si elle est masquée par la liste).
-  function openCreated(id) {
-    if (id == null) return;
-    var find = function () { var idx = -1; state.view.forEach(function (v, i) { if (v.raw.id === id) idx = i; }); return idx; };
-    var idx = find();
-    if (idx < 0) { $('flt-reset').click(); idx = find(); }
-    if (idx >= 0) openModal(idx, $('btn-create'));
-  }
-
-  $('btn-create').addEventListener('click', openCreate);
-  $('cmodal-close').addEventListener('click', closeCreate);
-  $('cmodal').addEventListener('mousedown', function (e) { if (e.target === $('cmodal') && !(state.create && state.create.busy)) closeCreate(); });
-  $('cmodal-form').addEventListener('click', function (e) { if (e.target.id === 'cf-cancel') closeCreate(); });
-  $('cmodal-form').addEventListener('submit', function (e) { e.preventDefault(); submitCreate(); });
-  function readCreateField(el) {
-    var cr = state.create, id = el.getAttribute && el.getAttribute('data-cf'), multi = el.closest && el.closest('.ed-multi');
-    if (!cr) return;
-    if (multi) { cr.values[multi.getAttribute('data-cf')] = Array.prototype.map.call(multi.querySelectorAll('input:checked'), function (i) { return i.value; }); cr.error = ''; return; }
-    if (id) { cr.values[id] = el.value; cr.error = ''; }
-  }
-  $('cmodal-form').addEventListener('input', function (e) { readCreateField(e.target); });
-  $('cmodal-form').addEventListener('change', function (e) { readCreateField(e.target); });
-  $('cmodal').addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.create && state.create.busy)) closeCreate(); return; }
-    if (e.key === 'Tab') { // piège à focus
-      var f = Array.prototype.filter.call($('cmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select, textarea'), function (n) { return n.offsetParent !== null; });
-      if (!f.length) return;
-      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
-      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
-    }
-  });
-
-  /* ---------- Démarrage ---------- */
-  if (IN_GRIST) {
-    grist.ready({ requiredAccess: 'full' });
-    var timer;
-    grist.onOptions(function (o) { state.opts = o || {}; load(); });
-    grist.onRecords(function () { clearTimeout(timer); timer = setTimeout(load, 150); });
-    grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; load(); }).catch(function () {});
-  } else {
-    $('demo').hidden = false;
-    state.boundTable = 'Candidats_PMG';
-    load();
-  }
-})();
-</script>
-</body>
-</html>
-t error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
       (cr.warn ? '<div class="cf-warn" role="alert"><p>' + esc(cr.warn) + '</p></div>' : '') +
       createColumns(c).map(function (s) {
         return '<section class="cf-section"><h3>' + esc(s.title) + '</h3><div class="cf-grid">' + s.cols.map(function (col) {
@@ -3164,6 +3214,35 @@ t error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
   }
   function matchesSearch(hay, terms) { return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-]/g, '')) !== -1; }); }
 
+  // États affichés en tags après le nom : Tir (Exp. tir PA / HK), Médical (Exp. VMP) et Contrat (Exp. contrat).
+  var STATUS_DEFS = [
+    { name: 'Tir', cols: ['Exp. tir PA', 'Exp. tir HK'] },
+    { name: 'Médical', cols: ['Exp. VMP'] },
+    { name: 'Contrat', cols: ['Exp. contrat'] }
+  ];
+  var STATE_TXT = { expired: ['expiré', 'red'], soon: ['expire bientôt', 'orange'], ok: ['à jour', 'green'], none: ['non renseigné', 'grey'] };
+  // État d'un groupe de dates : le pire des états (expiré > bientôt > à jour) ; « non renseigné » si aucune date.
+  function statusOfDef(raw, c, def) {
+    var worst = 'none', rank = { none: 0, ok: 1, soon: 2, expired: 3 }, dates = [];
+    def.cols.forEach(function (l) {
+      var col = findCol(c.table, l), v = col ? raw[col.id] : null;
+      if (typeof v !== 'number') return;
+      var st = expiryState(v) || 'ok';
+      dates.push(displayLabel(col) + ' : ' + fmtDate(v, false));
+      if (rank[st] > rank[worst]) worst = st;
+    });
+    return { state: worst, detail: dates.join(' · ') };
+  }
+  function statusTagsHtml(raw, c) {
+    return STATUS_DEFS.map(function (def) {
+      var s = statusOfDef(raw, c, def), t = STATE_TXT[s.state];
+      return '<span class="fr-tag fr-tag--sm tag-c-' + t[1] + '" title="' + esc(def.name + ' ' + t[0] + (s.detail ? ' — ' + s.detail : '')) + '">' + esc(def.name + ' ' + t[0]) + '</span>';
+    }).join('');
+  }
+  function rowTags(r, c) {
+    var t = (toList(r.tag).length ? tagsHtml(r.tag) : '') + statusTagsHtml(r.raw, c);
+    return t ? '<span class="tagrow">' + t + '</span>' : '';
+  }
   // Repère en bout de ligne : validité expirée (icône d'alerte du système de design).
   function flagsHtml(raw, c) {
     var exp = expiredLabels(raw, c);
@@ -3186,7 +3265,7 @@ t error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
     $('count').textContent = list.length + (list.length > 1 ? ' réservistes' : ' réserviste') + (list.length !== all.length ? ' sur ' + all.length : '');
     $('rows').innerHTML = list.map(function (r, i) {
       return '<tr class="row-open" tabindex="0" data-i="' + i + '" aria-label="Ouvrir la fiche de ' + esc(r.id ? formatName(r.id) : 'ce réserviste') + '"><td class="name"><div class="name-line"><span>' + (r.id ? esc(formatName(r.id)) : '—') + '</span>' +
-        (toList(r.tag).length ? '<span class="tagrow">' + tagsHtml(r.tag) + '</span>' : '') + '</div></td><td class="end">' + flagsHtml(r.raw, c) + '</td></tr>';
+        rowTags(r, c) + '</div></td><td class="end">' + flagsHtml(r.raw, c) + '</td></tr>';
     }).join('');
 
     var $s = $('state');
@@ -3330,7 +3409,7 @@ t error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
     var gr = findCol(c.table, 'Grade'), af = findCol(c.table, 'Affectation'), sub = $('modal-sub');
     var subTxt = [gr && item.raw[gr.id], af && item.raw[af.id]].filter(Boolean).join(' · ');
     sub.hidden = !subTxt; sub.textContent = subTxt;
-    $('modal-tags').innerHTML = toList(item.tag).length ? tagsHtml(item.tag) : '';
+    $('modal-tags').innerHTML = (toList(item.tag).length ? tagsHtml(item.tag) : '') + statusTagsHtml(item.raw, c);
     var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
     if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
     if (!tabs.some(function (t) { return t.key === m.tab; })) m.tab = tabs[0].key;
@@ -3574,7 +3653,7 @@ t error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
     var admin = v === 'admin';
     $('view-list').hidden = admin; $('view-admin').hidden = !admin;
     $('tab-list').setAttribute('aria-selected', String(!admin)); $('tab-admin').setAttribute('aria-selected', String(admin));
-    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); }
+    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); var tcol = tagCol(cfg()); if (tcol) state.draft.tag = tcol.id; $('saved').hidden = true; renderAdminForm(); }
   }
   // Back office masqué : 5 clics rapides sur l'en-tête l'ouvrent, l'onglet « Réservistes » le referme.
   $('tab-list').addEventListener('click', function () { showView('list'); $('tabs').hidden = true; });
@@ -3629,43 +3708,6 @@ t error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
   // Les options du widget et le chargement Grist sont pilotés par la première page (grist.ready) : elle nous transmet les options.
   window.RES = {
     setOptions: function (o) { state.opts = o || {}; if (window.__page === 'res' || state.records.length === 0) load(); },
-    refresh: function () { return load(); }
-  };
-  if (!IN_GRIST) { $('demo').hidden = false; load(); }
-})();
-</script>
-<script>
-// Menu : deux pages dans le même widget (mémorisée dans le navigateur).
-(function () {
-  var pages = { pmg: 'page-pmg', res: 'page-res' }, titles = { pmg: 'PMG et Acculturation', res: 'Réservistes RO1/RS/RC' };
-  function show(p) {
-    window.__page = p;
-    Object.keys(pages).forEach(function (k) { document.getElementById(pages[k]).hidden = k !== p; });
-    Array.prototype.forEach.call(document.querySelectorAll('#header-navigation [data-page]'), function (a) {
-      if (a.getAttribute('data-page') === p) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-    });
-    document.title = titles[p];
-    try { localStorage.setItem('widgetPage', p); } catch (e) {}
-    if (p === 'res' && window.RES) window.RES.refresh();
-    window.scrollTo(0, 0);
-  }
-  document.addEventListener('click', function (e) {
-    var a = e.target.closest('#header-navigation [data-page]'); if (!a) return;
-    e.preventDefault(); show(a.getAttribute('data-page'));
-    try { var m = document.getElementById('modal-header-menu'); if (m && window.dsfr) window.dsfr(m).modal.conceal(); } catch (err) {} // referme le menu mobile
-  });
-  var saved = 'pmg'; try { saved = localStorage.getItem('widgetPage') || 'pmg'; } catch (e) {}
-  show(pages[saved] ? saved : 'pmg');
-})();
-</script>
-</body>
-</html>
-pages[saved] ? saved : 'pmg');
-})();
-</script>
-</body>
-</html>
-: function (o) { state.opts = o || {}; if (window.__page === 'res' || state.records.length === 0) load(); },
     refresh: function () { return load(); }
   };
   if (!IN_GRIST) { $('demo').hidden = false; load(); }
