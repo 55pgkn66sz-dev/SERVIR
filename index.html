@@ -1,39 +1,49 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-fr-scheme="system">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Candidats PMG</title>
+<title>PMG et Acculturation</title>
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/core/core.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/component/logo/logo.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/component/header/header.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/utility/icons/icons.min.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.module.min.js"></script>
+<script type="text/javascript" nomodule src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.nomodule.min.js"></script>
 <style>
   :root {
-    --blue: #000091;
-    --ink: #161616;
-    --text: #3a3a3a;
-    --muted: #666;
-    --field: #eee;
-    --line: #ddd;
-    --row-hover: #f6f6f6;
+    --blue: var(--text-action-high-blue-france);
+    --accent-bg: var(--background-action-high-blue-france);
+    --accent-bg-hover: var(--background-action-high-blue-france-hover);
+    --on-accent: var(--text-inverted-blue-france);
+    --blue-tint: var(--background-contrast-blue-france);
+    --bg: var(--background-default-grey);
+    --bg-alt: var(--background-alt-grey);
+    --border-strong: var(--border-plain-grey);
+    --ink: var(--text-title-grey);
+    --text: var(--text-default-grey);
+    --muted: var(--text-mention-grey);
+    --field: var(--background-contrast-grey);
+    --line: var(--border-default-grey);
+    --row-hover: var(--background-default-grey-hover);
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: #fff; color: var(--text); font-family: Marianne, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: Marianne, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
   .wrap { padding-top: 24px; padding-bottom: 40px; }
   [hidden] { display: none !important; }
 
   /* Onglets */
   .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
   .tab { all: unset; cursor: pointer; padding: 12px 24px; color: var(--ink); font-weight: 500; border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; position: relative; }
-  .tab:hover { background: var(--row-hover); }
-  .tab[aria-selected="true"] { color: var(--blue); border-color: var(--line); background: #fff; }
+  .tab:hover:not(:disabled) { background: var(--row-hover); }
+  .tab[aria-selected="true"] { color: var(--blue); border-color: var(--line); background: var(--bg); }
   .tab[aria-selected="true"]::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 2px; background: var(--blue); }
   .tab:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
 
   /* Titres de section */
   .head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
-  .badge-num { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 700; display: grid; place-items: center; }
+  .badge-num { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-bg); color: var(--on-accent); font-weight: 700; display: grid; place-items: center; }
   h1, h2 { margin: 0; font-size: 1.375rem; line-height: 1.3; font-weight: 700; color: var(--ink); }
   .lead { margin: 0 0 24px 56px; color: var(--muted); font-size: .9375rem; }
   section.step { margin-bottom: 40px; }
@@ -41,11 +51,11 @@
   /* Formulaires */
   .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px 32px; margin-left: 56px; align-items: end; }
   label, .label { display: block; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
-  .req { color: #ce0500; margin-left: 2px; }
+  .req { color: var(--text-default-error); margin-left: 2px; }
   .hint { display: block; color: var(--muted); font-size: .875rem; margin-bottom: 8px; }
   .input, .select {
     width: 100%; height: 40px; padding: 0 16px; font: inherit; color: var(--text);
-    background: var(--field); border: 0; border-bottom: 2px solid #3a3a3a; border-radius: 4px 4px 0 0; outline: none;
+    background: var(--field); border: 0; border-bottom: 2px solid var(--border-strong); border-radius: 4px 4px 0 0; outline: none;
   }
   .select {
     appearance: none; -webkit-appearance: none; padding-right: 40px; text-overflow: ellipsis;
@@ -53,18 +63,18 @@
     background-repeat: no-repeat; background-position: right 16px center;
   }
   .input:focus, .select:focus { outline: 2px solid #0a76f6; outline-offset: 2px; }
-  .field-error { color: #ce0500; font-size: .875rem; margin-top: 4px; }
+  .field-error { color: var(--text-default-error); font-size: .875rem; margin-top: 4px; }
 
   /* Boutons */
   .actions { display: flex; flex-wrap: wrap; gap: 16px; margin-left: 56px; align-items: center; }
   .btn {
     font: inherit; font-weight: 500; cursor: pointer; padding: 8px 24px; min-height: 40px; border-radius: 4px;
-    border: 1px solid var(--blue); background: var(--blue); color: #fff;
+    border: 1px solid var(--accent-bg); background: var(--accent-bg); color: var(--on-accent);
   }
-  .btn:hover { background: #1212ff; border-color: #1212ff; }
-  .btn.secondary { background: #fff; color: var(--blue); }
-  .btn.secondary:hover { background: #f5f5fe; }
-  .btn:disabled { background: #e5e5e5; border-color: #e5e5e5; color: #929292; cursor: not-allowed; }
+  .btn:hover:not(:disabled) { background: var(--accent-bg-hover); border-color: var(--accent-bg-hover); }
+  .btn.secondary { background: var(--bg); color: var(--blue); }
+  .btn.secondary:hover { background: var(--blue-tint); }
+  .btn:disabled { background: var(--background-disabled-grey); border-color: var(--background-disabled-grey); color: var(--text-disabled-grey); cursor: not-allowed; }
   .btn:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
 
   /* Alerte */
@@ -75,7 +85,7 @@
   .alert .t { font-weight: 700; color: var(--ink); }
 
   /* Rappel des sources */
-  .callout { margin-left: 56px; padding: 16px 24px; background: #f6f6f6; border-left: 4px solid var(--blue); margin-bottom: 24px; }
+  .callout { margin-left: 56px; padding: 16px 24px; background: var(--bg-alt); border-left: 4px solid var(--blue); margin-bottom: 24px; }
   .callout p { margin: 0; font-size: .9375rem; }
   .callout .t { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
   .meta { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 0 16px 56px; font-size: .875rem; color: var(--muted); }
@@ -83,46 +93,302 @@
   h3 { margin: 24px 0 12px 56px; font-size: 1rem; font-weight: 700; color: var(--ink); }
 
   /* Tables */
-  .table-wrap { overflow-x: auto; border-bottom: 1px solid var(--line); }
+  /* Tableau : même design que le widget Documents (.bulk-table). */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border-default-grey); border-radius: 0.5rem; background: var(--bg); }
   .indent { margin-left: 56px; }
   table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.5rem 0.8rem; text-align: left; vertical-align: middle; border-top: 1px solid var(--border-default-grey); }
   thead th {
-    text-align: left; font-weight: 700; color: var(--ink); background: #f0f0f0; padding: 12px 16px;
-    border-bottom: 2px solid #3a3a3a; white-space: nowrap; user-select: none;
+    position: sticky; top: 0; z-index: 1; background: var(--bg-alt); border-top: none; white-space: nowrap; user-select: none;
+    font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-mention-grey);
   }
   thead th button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-  thead th button:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  thead th button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .arrow { color: var(--blue); font-size: .75rem; }
-  tbody td { padding: 12px 16px; vertical-align: middle; }
-  tbody tr { border-top: 1px solid var(--line); }
-  tbody tr:first-child { border-top: 0; }
-  tbody tr:hover { background: var(--row-hover); }
-  td.name { color: var(--ink); font-weight: 500; }
-  code { font-family: ui-monospace, Menlo, monospace; font-size: .875rem; background: #eee; padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+  tbody tr:hover td { background: var(--row-hover); }
+  td.name { font-weight: 700; white-space: nowrap; color: var(--ink); }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .875rem; background: var(--field); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
   .tagrow { display: flex; flex-wrap: wrap; gap: 8px; }
 
+  .tb-field { min-width: 0; }
+  .tb-search { flex: 1 1 260px; max-width: 360px; }
+  #flt-status-wrap { flex: 0 1 260px; }
+  #flt-pmg-wrap { flex: 0 1 200px; }
+  .toolbar .count { margin-left: auto; }
+  .ms { position: relative; }
+  .ms-btn { text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .ms-panel {
+    position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 22rem; max-height: 18rem; overflow-y: auto;
+    padding: 0.4rem; background: var(--bg); border: 1px solid var(--border-default-grey); border-radius: 0.5rem; box-shadow: 0 6px 18px rgba(20, 10, 30, 0.18);
+  }
+  .ms-panel[hidden] { display: none; }
+  .ms-opt { display: flex; align-items: center; gap: 0.6rem; margin: 0; padding: 0.35rem 0.5rem; border-radius: 4px; cursor: pointer; color: var(--ink); }
+  .ms-opt:hover { background: var(--row-hover); }
+  .ms-opt input { width: 1.1rem; height: 1.1rem; flex: none; accent-color: var(--accent-bg); }
+  .ms-empty { margin: 0; padding: 0.5rem; color: var(--muted); font-size: 0.875rem; }
   .toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .count { color: var(--muted); font-size: .875rem; }
 
   /* Tags DSFR */
   .tag {
-    display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 4px;
-    font-size: .875rem; line-height: 1.5rem; font-weight: 500; white-space: nowrap;
-    background: #eee; color: #3a3a3a;
+    display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 0.5rem; border-radius: 0.5rem;
+    font-size: .75rem; line-height: 1.25rem; font-weight: 500; white-space: nowrap;
+    background: #eceaf0; color: #3a3a45;
   }
+  /* Palette des tags de statut du widget Documents (doc-tag--ok / rejected / missing / pending). */
   .tag.blue    { background: #e3e3fd; color: #000091; }
   .tag.green   { background: #b8fec9; color: #18753c; }
   .tag.red     { background: #ffe9e9; color: #ce0500; }
-  .tag.orange  { background: #ffe9e6; color: #b34000; }
+  .tag.orange  { background: #ffe6d1; color: #a84300; }
   .tag.yellow  { background: #feecc2; color: #716043; }
   .tag.purple  { background: #e5e5ff; color: #4a3fb5; }
-  .tag.grey    { background: #eee; color: #3a3a3a; }
+  .tag.grey    { background: #eceaf0; color: #3a3a45; }
   .tag.none    { background: transparent; color: var(--muted); font-weight: 400; padding: 0; }
   .tag small { font-weight: 400; margin-left: 6px; opacity: .8; }
 
   .state { text-align: center; color: var(--muted); padding: 48px 16px; }
   .state strong { display: block; color: var(--ink); margin-bottom: 8px; }
   .demo { margin-top: 16px; font-size: .875rem; color: var(--muted); }
+
+  .flags { display: inline-flex; align-items: center; gap: 0.5rem; vertical-align: middle; }
+  .flag { display: inline-flex; }
+  /* Même case de 24 px pour les deux icônes ; le tracé de l'alarme est un peu plus petit que celui du groupe (18,4 × 20 contre 21 × 21) : on le compense. */
+  .flag > span { display: inline-block; width: 24px; height: 24px; line-height: 0; }
+  .flag > span::before { width: 24px; height: 24px; }
+  .flag-esr > span { transform: scale(1.1); transform-origin: center; }
+  .flag-esr { color: var(--blue); }
+  .flag-dup { color: var(--text-default-warning); }
+  .modal-title .flags { margin-left: 0.6rem; }
+  td.end .flags { justify-content: flex-end; }
+  th.end, td.end { width: 1%; text-align: right; white-space: nowrap; }
+
+  /* Icônes d'envoi (réservation / convocation) à côté des titres de bloc. */
+  .detail-title { display: flex; align-items: center; gap: 0.5rem; }
+  .detail-actions { display: inline-flex; gap: 0.15rem; margin-left: 0.25rem; }
+  .detail-actions .icon-btn { width: 2rem; height: 2rem; }
+  .detail-actions .icon-btn svg { width: 20px; height: 20px; }
+
+  /* Back office : formulaires des courriels. */
+  .mail-tpl-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+  .mail-tpl-head label { margin: 0; }
+  .textarea.mono { font-family: ui-monospace, Menlo, monospace; font-size: 0.8125rem; }
+  .tpl-preview { width: 100%; height: 34rem; border: 1px solid var(--border-default-grey); border-radius: 0.5rem; background: #e9e9ee; margin-bottom: 12px; }
+  .mail-vars { margin-top: 24px; }
+  .mail-vars p + p { margin-top: 6px; }
+  .mail-vars code { display: inline-block; margin: 2px 2px 2px 0; }
+  .mail-block { margin: 24px 0 0 56px; padding: 16px 24px 24px; border: 1px solid var(--border-default-grey); border-radius: 0.5rem; background: var(--bg); }
+  .mail-group { margin: 32px 0 0 56px; font-size: 1.0625rem; color: var(--ink); }
+  .mail-group + .mail-block { margin-top: 12px; }
+  .mail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .mail-block h4 { margin: 0; font-size: 1rem; color: var(--ink); }
+  .mail-block .input, .mail-block .textarea { margin-bottom: 12px; }
+  @media (max-width: 640px) { .mail-group { margin-left: 0; } }
+  .textarea {
+    width: 100%; min-height: 7rem; padding: 10px 16px; font: inherit; color: var(--text); resize: vertical;
+    background: var(--field); border: 0; border-bottom: 2px solid var(--border-strong); border-radius: 4px 4px 0 0; outline: none;
+  }
+  .textarea.tall { min-height: 14rem; }
+  .textarea:focus { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  @media (max-width: 640px) { .mail-block { margin-left: 0; padding: 12px; } }
+
+  /* Édition au clic des champs de la fiche. */
+  .detail-table td.is-editable { cursor: text; position: relative; padding-right: 2rem; }
+  .detail-table td.is-editable:hover, .detail-table td.is-editable:focus-visible { background: var(--blue-tint); }
+  .detail-table td.is-editable:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .detail-table td.is-editable::after {
+    content: ""; position: absolute; right: 0.6rem; top: 0.75rem; width: 1rem; height: 1rem; background: currentColor; opacity: 0;
+    -webkit-mask: url("https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/icons/design/pencil-line.svg") center / contain no-repeat;
+    mask: url("https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/icons/design/pencil-line.svg") center / contain no-repeat;
+  }
+  .detail-table td.is-editable:hover::after, .detail-table td.is-editable:focus-visible::after { opacity: 0.55; }
+  .detail-table td.is-editing { background: var(--bg-alt); }
+  .ed .ed-input { width: 100%; }
+  .ed .textarea { min-height: 5rem; margin: 0; }
+  .ed-multi { display: flex; flex-direction: column; gap: 0.3rem; max-height: 12rem; overflow-y: auto; padding: 0.25rem 0; }
+  .ed-check { display: flex; align-items: center; gap: 0.5rem; margin: 0; cursor: pointer; }
+  .ed-check input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent-bg); }
+  .ed-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+  .ed-error { margin: 0.4rem 0 0; font-size: 0.875rem; color: var(--text-default-error); }
+
+  .ask { margin-bottom: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--border-default-grey); border-left: 4px solid var(--accent-bg); border-radius: 4px; background: var(--bg-alt); }
+  .ask .input { max-width: 26rem; margin-top: 2px; }
+  .ask label { margin-bottom: 2px; }
+  /* Création d'une candidature. */
+  .cf-section { margin: 0 0 1.25rem; }
+  .cf-section h3 { margin: 0 0 0.6rem; font-size: 0.78em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue); }
+  .cf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.9rem 1.25rem; }
+  .cf-field label { display: block; margin: 0 0 0.25rem; font-size: 0.875rem; color: var(--ink); }
+  .cf-field .input, .cf-field .select { width: 100%; }
+  .cf-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-default-grey); }
+  .cf-warn { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1px solid #b34000; border-left-width: 6px; color: var(--ink); }
+  .cf-warn p { margin: 0; }
+  #btn-create { white-space: nowrap; }
+  /* Onglet Documents. */
+  .doc-table td.name { white-space: normal; overflow-wrap: anywhere; }
+  .doc-table td.name a { color: var(--ink); font-weight: 700; }
+  .doc-table td.is-empty { color: var(--text-disabled-grey); text-align: center; padding: 1.25rem; }
+  .doc-size { color: var(--text-mention-grey); font-size: 0.8em; margin-left: 0.4rem; white-space: nowrap; }
+  .doc-actions { width: 1%; white-space: nowrap; text-align: right; }
+  .doc-confirm { font-size: 0.85em; color: var(--ink); margin-right: 0.5rem; }
+  .icon-btn { all: unset; box-sizing: border-box; cursor: pointer; width: 2.25rem; height: 2.25rem; display: inline-grid; place-items: center; border-radius: 4px; color: var(--blue); }
+  .icon-btn:hover:not(:disabled) { background: var(--blue-tint); }
+  .icon-btn.danger { color: var(--text-default-error); }
+  .icon-btn.is-done { color: var(--text-default-success); }
+  .icon-btn.is-done:hover:not(:disabled) { background: var(--background-contrast-success); }
+  .icon-btn.danger:hover:not(:disabled) { background: var(--background-contrast-error); }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .icon-btn:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .btn.sm { min-height: 32px; padding: 4px 12px; font-size: 0.875rem; }
+  .btn.danger { background: #ce0500; border-color: #ce0500; }
+  .btn.danger:hover { background: #a80400; border-color: #a80400; }
+  .doc-type { margin-top: 1rem; max-width: 22rem; }
+  .doc-drop {
+    margin-top: 1rem; padding: 1.5rem 1rem; text-align: center; cursor: pointer; color: var(--text-mention-grey);
+    border: 2px dashed var(--border-default-grey); border-radius: 0.5rem; background: var(--bg-alt); transition: background 0.15s, border-color 0.15s;
+  }
+  .doc-drop svg { color: var(--blue); }
+  .doc-drop p { margin: 0.25rem 0 0; font-size: 0.9375rem; }
+  .doc-drop strong { color: var(--ink); }
+  .doc-drop:hover, .doc-drop.is-over { border-color: var(--blue); background: var(--blue-tint); }
+  .doc-drop:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .doc-drop.is-busy { opacity: 0.6; cursor: progress; }
+  .doc-alert { margin: 0 0 1rem; padding: 12px 16px 12px 20px; border: 1px solid; border-left-width: 8px; }
+  .doc-alert p { margin: 0; }
+  .doc-alert.success { border-color: #18753c; }
+  .doc-alert.error { border-color: #ce0500; }
+  .detail-group { margin-top: 1.5rem; }
+  .detail-group:first-child { margin-top: 0; }
+
+  /* États de la candidature : tags DSFR (fr-tag), recolorés selon l'état, juste après le nom. */
+  .fr-tag.tag-c-blue   { background: #e3e3fd; color: #000091; }
+  .fr-tag.tag-c-green  { background: #b8fec9; color: #18753c; }
+  .fr-tag.tag-c-red    { background: #ffe9e9; color: #ce0500; }
+  .fr-tag.tag-c-orange { background: #ffe6d1; color: #a84300; }
+  .fr-tag.tag-c-yellow { background: #feecc2; color: #716043; }
+  .fr-tag.tag-c-purple { background: #e5e5ff; color: #4a3fb5; }
+  .fr-tag.tag-c-grey   { background: #eceaf0; color: #3a3a45; }
+  .name-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem; }
+  td.name { white-space: normal; }
+  /* Lignes cliquables (ouvrent la fiche). */
+  tbody tr.row-open { cursor: pointer; }
+  tbody tr.row-open:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+
+  /* Modale fiche candidat : mêmes codes que la modale des widgets candidats (fond dégradé, cartes blanches, onglets). */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-start; justify-content: center;
+    padding: 3rem 1rem; overflow-y: auto; background: rgba(22, 22, 40, 0.55); backdrop-filter: blur(3px);
+    opacity: 0; transition: opacity 0.18s ease;
+  }
+  .modal-overlay.is-open { opacity: 1; }
+  /* Une fiche : 64 rem ; doublon : deux fiches côte à côte (elles passent l'une sous l'autre sur petit écran) + barre d'actions. */
+  .modal-column { width: min(64rem, 100%); }
+  .modal-column.is-compare { width: min(112rem, 100%); }
+  .modal-stack { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+  .modal-stack .modal-dialog[hidden] { display: none; }
+  .modal-stack .modal-dialog { flex: 1 1 0; min-width: min(30rem, 100%); }
+  .modal-column.is-compare .modal-dialog { padding: 1.4rem 1.25rem 1.5rem; }
+  .modal-column.is-compare .modal-title { font-size: 1.25em; }
+  .cmp-bar { margin-top: 1rem; padding: 1.1rem 1.5rem 1.25rem; border-radius: 1rem; background: var(--bg); box-shadow: 0 1rem 2.5rem rgba(20, 10, 30, 0.25), 0 2px 8px rgba(20, 10, 30, 0.12); }
+  .cmp-bar[hidden] { display: none; }
+  .cmp-title { margin: 0 0 0.25rem; color: var(--ink); }
+  .cmp-hint { margin: 0 0 0.75rem; color: var(--text-mention-grey); font-size: 0.875rem; }
+  .cmp-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem 2rem; margin-bottom: 0.75rem; }
+  .cmp-keep { border: 0; margin: 0; padding: 0; }
+  .cmp-keep legend { font-size: 0.875rem; color: var(--text-mention-grey); padding: 0; margin-bottom: 0.25rem; }
+  .cmp-keep label { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 1.25rem 0 0; cursor: pointer; }
+  .cmp-keep input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent-bg); }
+  .cmp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+  .cmp-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border: 1px solid var(--text-default-error); border-left-width: 6px; margin-top: 0.5rem; }
+  .cmp-confirm p { margin: 0; color: var(--ink); }
+  .cmp-pick select { min-width: 16rem; }
+  .doc-alert.warning { border-color: #b34000; }
+  .detail-table td.is-diff { background: var(--background-contrast-warning); }
+  .detail-table tr:hover td.is-diff { background: var(--background-contrast-warning-hover); }
+  .take-btn { display: block; margin-top: 0.35rem; padding: 2px 8px; font: inherit; font-size: 0.75rem; cursor: pointer; border: 1px solid var(--border-action-high-blue-france); border-radius: 4px; background: var(--bg); color: var(--blue); }
+  .take-btn:not(.is-on):hover:not(:disabled) { background: var(--blue-tint); }
+  .take-btn.is-on { background: var(--accent-bg); color: var(--on-accent); border-color: var(--accent-bg); }
+  .take-note { display: block; margin-top: 0.3rem; font-size: 0.75rem; font-weight: 400; color: var(--text-default-warning); }
+  .cmp-flag { display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 0.5rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; background: var(--blue-tint); color: var(--blue); }
+  .modal-dialog {
+    padding: 1.85rem 2rem 2rem; border-radius: 1rem; box-sizing: border-box;
+    background: var(--bg);
+    box-shadow: 0 1.5rem 3.5rem rgba(20, 10, 30, 0.28), 0 2px 8px rgba(20, 10, 30, 0.12);
+    transform: translateY(0.6rem) scale(0.98); opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .modal-overlay.is-open .modal-dialog { transform: none; opacity: 1; }
+  .modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-default-grey); }
+  .modal-title { margin: 0; font-size: 1.45em; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  .modal-sub { margin: 0.15rem 0 0; font-size: 0.95rem; font-weight: 500; color: var(--text-mention-grey); }
+  .modal-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .modal-actions { display: flex; align-items: center; gap: 0.6rem; flex: none; }
+  .round-btn {
+    width: 2.25rem; height: 2.25rem; border-radius: 999px; border: 0; cursor: pointer; font: inherit; font-size: 1.1rem; line-height: 1;
+    background: var(--bg-alt); color: var(--blue); display: grid; place-items: center;
+  }
+  .round-btn:hover:not(:disabled) { background: var(--blue-tint); }
+  .round-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .round-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  /* Onglets : mêmes codes que ceux de la page. */
+  .stg-tabs { display: flex; margin: 0 0 1.25rem; border-bottom: 1px solid var(--border-default-grey); flex-wrap: wrap; }
+  .stg-tab {
+    all: unset; cursor: pointer; position: relative; padding: 12px 24px; color: var(--ink); font-weight: 500;
+    border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px;
+  }
+  .stg-tab:hover:not(:disabled) { background: var(--row-hover); }
+  .stg-tab[aria-selected="true"] { color: var(--blue); border-color: var(--border-default-grey); background: var(--bg); }
+  .stg-tab[aria-selected="true"]::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 2px; background: var(--blue); }
+  .stg-tab:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .stg-tabpanel[hidden] { display: none; }
+
+  /* Fiche : tableau libellé / valeur, même design que la liste des candidats. */
+  .detail-table { table-layout: fixed; }
+  .detail-table th, .detail-table td { border-top: 1px solid var(--border-default-grey); }
+  .detail-table tr:first-child > * { border-top: none; }
+  .detail-table th {
+    width: 17%; background: var(--bg-alt); font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--text-mention-grey); text-align: left; vertical-align: top; padding-top: 0.75rem;
+  }
+  .detail-table td { width: 33%; overflow-wrap: anywhere; color: var(--ink); vertical-align: top; }
+  .detail-table td.is-empty { color: var(--text-disabled-grey); }
+  .detail-table td.is-pre { white-space: pre-wrap; }
+  .detail-table td a { color: inherit; }
+  .detail-table tr:hover td { background: var(--row-hover); }
+  .stg-empty { color: var(--text-mention-grey); margin: 0; }
+  .detail-group + .detail-group { margin-top: 1.5rem; }
+  .detail-title { margin: 0 0 0.5rem; font-size: 0.78em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue); }
+  .modal-foot { margin: 1.5rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--border-default-grey); font-size: 0.8em; color: var(--text-mention-grey); }
+  @media (max-width: 40rem) {
+    .modal-dialog { padding: 1.25rem 1rem; }
+    .detail-table, .detail-table tbody, .detail-table tr, .detail-table th, .detail-table td { display: block; width: 100% !important; }
+    .detail-table th { border-top: 1px solid var(--border-default-grey); padding-bottom: 0; }
+    .detail-table td { border-top: none; padding-top: 0.15rem; }
+  }
+
+  /* Back office : choix des colonnes de la fiche (lignes grises + case à cocher). */
+  .pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-left: 56px; }
+  .pick-col h3 { margin: 0 0 4px; }
+  .pick-col .hint { margin-bottom: 8px; }
+  .pick-list { max-height: 22rem; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px; }
+  .pick-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; background: var(--field); border-radius: 4px; cursor: pointer; color: var(--ink); margin: 0; }
+  .pick-row:hover { background: var(--background-contrast-grey-hover); }
+  .pick-row input { width: 1.25rem; height: 1.25rem; flex: none; cursor: pointer; accent-color: var(--blue); }
+  .pick-row.other { opacity: .55; }
+  @media (max-width: 640px) { .pick-grid { margin-left: 0; } }
+
+  /* Pied de page du widget : identique aux widgets FSJ. */
+  .widget-footer {
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-default-grey);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .widget-footer__credit { margin: 0; font-size: 0.8em; color: var(--text-mention-grey); }
+  .widget-footer a.fr-link { font-size: 0.8em; }
 
   @media (max-width: 640px) {
     .fields, .actions, .callout, .meta, .lead, .alert, h3, .indent { margin-left: 0; }
@@ -139,37 +405,113 @@
             <div class="fr-header__logo">
               <p class="fr-logo">Ministère<br>de l’intérieur</p>
             </div>
+            <div class="fr-header__navbar">
+              <button class="fr-btn--menu fr-btn" data-fr-opened="false" aria-controls="modal-header-menu" aria-haspopup="menu" id="btn-header-menu" title="Menu">Menu</button>
+            </div>
           </div>
           <div class="fr-header__service">
             <p class="fr-header__service-title">Division réserves jeunesse</p>
-            <p class="fr-header__service-tagline">Suivi de l’Emploi, du Recrutement, des VMP et de l’Instruction dans la Réserve (SERVIR)</p>
+            <p class="fr-header__service-tagline">Suivi de l’Emploi, du Recrutement, des VMP et de l’Instruction dans la Réserve · SERVIR</p>
+          </div>
+        </div>
+        <div class="fr-header__tools">
+          <div class="fr-header__tools-links">
+            <ul class="fr-btns-group">
+              <li>
+                <button class="fr-btn fr-icon-theme-fill" aria-controls="fr-theme-modal" data-fr-opened="false" title="Paramètres d’affichage">Paramètres d’affichage</button>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <!-- Menu mobile : reçoit automatiquement les outils de l'en-tête sur petit écran. -->
+  <div class="fr-header__menu fr-modal" id="modal-header-menu" aria-labelledby="btn-header-menu">
+    <div class="fr-container">
+      <button class="fr-btn--close fr-btn" aria-controls="modal-header-menu" title="Fermer">Fermer</button>
+      <div class="fr-header__menu-links"></div>
+    </div>
+  </div>
 </header>
 
+<!-- Paramètres d'affichage (composant DSFR) : thème clair, sombre ou celui du système. -->
+<dialog id="fr-theme-modal" class="fr-modal" aria-labelledby="fr-theme-modal-title">
+  <div class="fr-container fr-container--fluid fr-container-md">
+    <div class="fr-grid-row fr-grid-row--center">
+      <div class="fr-col-12 fr-col-md-8 fr-col-lg-6">
+        <div class="fr-modal__body">
+          <div class="fr-modal__header">
+            <button class="fr-btn--close fr-btn" aria-controls="fr-theme-modal" title="Fermer">Fermer</button>
+          </div>
+          <div class="fr-modal__content">
+            <h1 id="fr-theme-modal-title" class="fr-modal__title">Paramètres d’affichage</h1>
+            <div id="fr-display" class="fr-display">
+              <div class="fr-form-group">
+                <fieldset class="fr-fieldset">
+                  <legend class="fr-fieldset__legend fr-text--regular" id="fr-radios-theme-legend">Choisissez un thème pour personnaliser l’apparence du site.</legend>
+                  <div class="fr-fieldset__element">
+                    <div class="fr-radio-group">
+                      <input value="light" type="radio" id="fr-radios-theme-light" name="fr-radios-theme">
+                      <label class="fr-label" for="fr-radios-theme-light">Thème clair</label>
+                    </div>
+                  </div>
+                  <div class="fr-fieldset__element">
+                    <div class="fr-radio-group">
+                      <input value="dark" type="radio" id="fr-radios-theme-dark" name="fr-radios-theme">
+                      <label class="fr-label" for="fr-radios-theme-dark">Thème sombre</label>
+                    </div>
+                  </div>
+                  <div class="fr-fieldset__element">
+                    <div class="fr-radio-group">
+                      <input value="system" type="radio" id="fr-radios-theme-system" name="fr-radios-theme">
+                      <label class="fr-label" for="fr-radios-theme-system">Système
+                        <span class="fr-hint-text">Utilise les paramètres système.</span>
+                      </label>
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
 <div class="wrap fr-container">
-  <div class="tabs" role="tablist" aria-label="Sections du widget">
+  <div class="tabs" id="tabs" role="tablist" aria-label="Sections du widget" hidden>
     <button class="tab" role="tab" id="tab-list" aria-selected="true" aria-controls="view-list" type="button">Candidats</button>
     <button class="tab" role="tab" id="tab-admin" aria-selected="false" aria-controls="view-admin" type="button">Back office</button>
   </div>
 
   <!-- ===== Vue liste ===== -->
   <div id="view-list" role="tabpanel" aria-labelledby="tab-list">
-    <div class="head">
-      <div class="badge-num" aria-hidden="true">1</div>
-      <h1>Candidats PMG</h1>
-    </div>
-    <p class="lead" id="list-lead"></p>
+    <h1 class="fr-sr-only">PMG et Acculturation</h1>
 
     <div class="toolbar">
-      <div style="flex:1 1 320px; max-width:420px">
+      <div class="tb-field tb-search">
         <label for="q">Rechercher un candidat</label>
         <input id="q" class="input" type="search" placeholder="Nom, prénom, état…" autocomplete="off">
       </div>
+      <div class="tb-field" id="flt-status-wrap">
+        <label id="flt-status-label" for="flt-status-btn">État de la candidature</label>
+        <div class="ms" id="flt-status">
+          <button type="button" class="select ms-btn" id="flt-status-btn" aria-haspopup="true" aria-expanded="false" aria-controls="flt-status-panel">Tous les états</button>
+          <div class="ms-panel" id="flt-status-panel" role="group" aria-labelledby="flt-status-label" hidden></div>
+        </div>
+      </div>
+      <div class="tb-field" id="flt-pmg-wrap">
+        <label id="flt-pmg-label" for="flt-pmg-btn">PMG souhaitée</label>
+        <div class="ms" id="flt-pmg">
+          <button type="button" class="select ms-btn" id="flt-pmg-btn" aria-haspopup="true" aria-expanded="false" aria-controls="flt-pmg-panel">Tous les PMG</button>
+          <div class="ms-panel" id="flt-pmg-panel" role="group" aria-labelledby="flt-pmg-label" hidden></div>
+        </div>
+      </div>
+      <button type="button" class="btn secondary" id="flt-reset" disabled>Réinitialiser les filtres</button>
       <div class="count" id="count" aria-live="polite"></div>
+      <button type="button" class="btn" id="btn-create">Créer une candidature</button>
     </div>
 
     <div class="table-wrap">
@@ -177,7 +519,8 @@
         <thead>
           <tr>
             <th scope="col"><button type="button" id="sort-name">Identité complète <span class="arrow" id="arrow"></span></button></th>
-            <th scope="col">État de la candidature</th>
+            
+            <th scope="col" class="end"><span class="fr-sr-only">Repères (déjà ESR, doublon)</span></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -210,10 +553,9 @@
       <p class="lead">Colonnes de la table utilisées pour l’affichage de la liste.</p>
       <div class="fields">
         <div>
-          <label for="f-identity">Identité complète<span class="req" aria-hidden="true">*</span></label>
-          <span class="hint">Nom et prénom du candidat (texte ou formule).</span>
+          <label for="f-identity">Identité complète</label>
+          <span class="hint">Nom et prénom du candidat. Si aucune colonne n’est choisie, l’identité est composée à partir des colonnes NOM et Prénom.</span>
           <select id="f-identity" class="select"></select>
-          <div class="field-error" id="e-identity" hidden>Sélectionnez une colonne.</div>
         </div>
         <div>
           <label for="f-status">État de la candidature<span class="req" aria-hidden="true">*</span></label>
@@ -222,6 +564,62 @@
           <div class="field-error" id="e-status" hidden>Sélectionnez une colonne.</div>
         </div>
       </div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Colonnes de la fiche</h2></div>
+      <p class="lead">Colonnes affichées dans chaque onglet de la fiche candidat. Une colonne n’appartient qu’à un seul onglet.</p>
+      <div class="pick-grid" id="picks"></div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">4</div><h2>Courriels et convocations</h2></div>
+      <p class="lead">Quatre modèles indépendants, envoyés depuis l’onglet Médico-statutaire via les icônes « Réservation » et « Convocation » placées à côté des Tests psychométriques et de la VEMI. Chaque modèle a son propre texte : modifiez-les séparément.</p>
+      <div class="fields">
+        <div>
+          <label for="f-emailcol">Colonne e-mail du candidat</label>
+          <span class="hint">Adresse à laquelle les messages sont envoyés. Par défaut, la colonne « Email ».</span>
+          <select id="f-emailcol" class="select"></select>
+        </div>
+        <div>
+          <label for="f-cc">Adresse en copie (Cc)</label>
+          <span class="hint">Facultatif, par exemple la boîte fonctionnelle du service.</span>
+          <input id="f-cc" class="input" type="email" autocomplete="off" placeholder="service@exemple.fr">
+        </div>
+        <div>
+          <label for="f-replyto">Répondre à</label>
+          <span class="hint">Adresse de réponse commune à tous les courriels (en-tête « Reply-To »). Facultatif. Avec ce champ, le mail de réservation est proposé sous forme de brouillon .eml.</span>
+          <input id="f-replyto" class="input" type="email" autocomplete="off" placeholder="reponse@exemple.fr">
+        </div>
+      </div>
+      <div class="fields" style="margin-top:24px">
+        <div>
+          <label for="f-convcol">Copie des convocations dans Documents</label>
+          <span class="hint">Colonne « Pièces jointes » où le PDF est rangé. Détectée automatiquement (libellé « Convocation ») si vide.</span>
+          <select id="f-convcol" class="select"></select>
+        </div>
+        <div>
+          <label for="f-lettercol">Copie des lettres d’incorporation</label>
+          <span class="hint">Colonne « Pièces jointes » des lettres. Détectée automatiquement (libellé « Lettre… ») si vide.</span>
+          <select id="f-lettercol" class="select"></select>
+        </div>
+        <div>
+          <label for="f-rejetcol">Copie des lettres de rejet</label>
+          <span class="hint">Colonne « Pièces jointes » des lettres de rejet. Détectée automatiquement (libellé « Rejet… »), à défaut la colonne des lettres d’incorporation.</span>
+          <select id="f-rejetcol" class="select"></select>
+        </div>
+        <div>
+          <label for="f-esrcol">Copie des ESR</label>
+          <span class="hint">Colonne « Pièces jointes » des ESR. Détectée automatiquement (libellé « ESR ») si vide.</span>
+          <select id="f-esrcol" class="select"></select>
+        </div>
+      </div>
+      <div class="callout mail-vars">
+        <p class="t">Variables utilisables dans les objets, messages et modèles</p>
+        <p><code>{{IDENTITE}}</code> <code>{{CIVILITE}}</code> <code>{{NOM}}</code> <code>{{PRENOM}}</code> <code>{{NID}}</code> <code>{{N_CANDIDATURE}}</code> <code>{{N_CAND}}</code><code>{{DATE_TESTS}}</code> <code>{{DATE_VEMI}}</code> <code>{{ANTENNE}}</code> <code>{{DATE_DU_JOUR}}</code> <code>{{N_CHRONO}}</code> (lettre de rejet : demandé à la génération)</p>
+        <p>Toute colonne de la table est aussi utilisable par son libellé, par exemple <code>{{Validité VEMI}}</code>. Une variable inconnue est laissée telle quelle.</p>
+      </div>
+      <div id="mail-forms"></div>
       <div class="actions" style="margin-top:24px">
         <button class="btn" id="btn-save" type="button">Enregistrer la configuration</button>
         <button class="btn secondary" id="btn-reset" type="button">Réinitialiser</button>
@@ -229,7 +627,7 @@
     </section>
 
     <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Rappel des sources</h2></div>
+      <div class="head"><div class="badge-num" aria-hidden="true">5</div><h2>Rappel des sources</h2></div>
       <p class="lead">Ce que le widget lit actuellement dans le document Grist.</p>
       <div id="recap-callout" class="callout" hidden></div>
       <div class="meta" id="recap-meta"></div>
@@ -247,53 +645,348 @@
   <div id="demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
 </div>
 
+<!-- ===== Modale fiche candidat (deux fiches côte à côte en cas de doublon) ===== -->
+<div class="modal-overlay" id="modal" hidden>
+  <div class="modal-column" id="modal-column">
+    <div class="modal-stack" id="modal-stack">
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-header">
+          <div style="min-width:0">
+            <h2 class="modal-title" id="modal-title"></h2>
+            <p class="modal-sub" id="modal-sub" hidden></p>
+            <div class="modal-tags" id="modal-tags"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="round-btn" id="modal-prev" type="button" aria-label="Candidat précédent" title="Précédent">‹</button>
+            <button class="round-btn" id="modal-next" type="button" aria-label="Candidat suivant" title="Suivant">›</button>
+            <button class="round-btn" id="modal-close" type="button" aria-label="Fermer la fiche" title="Fermer">✕</button>
+          </div>
+        </div>
+        <div class="stg-tabs" id="modal-tabs" role="tablist" aria-label="Sections de la fiche"></div>
+        <div id="modal-panels"></div>
+        <p class="modal-foot" id="modal-foot" hidden></p>
+      </div>
+      <div class="modal-dialog" id="modal2" role="dialog" aria-modal="true" aria-labelledby="modal2-title" hidden>
+        <div class="modal-header">
+          <div style="min-width:0">
+            <h2 class="modal-title" id="modal2-title"></h2>
+            <p class="modal-sub" id="modal2-sub" hidden></p>
+            <div class="modal-tags" id="modal2-tags"></div>
+          </div>
+        </div>
+        <div class="stg-tabs" id="modal2-tabs" role="tablist" aria-label="Sections de la seconde fiche"></div>
+        <div id="modal2-panels"></div>
+        <p class="modal-foot" id="modal2-foot" hidden></p>
+      </div>
+    </div>
+    <div class="cmp-bar" id="cmp-bar" hidden></div>
+  </div>
+</div>
+
+<!-- ===== Création d'une candidature ===== -->
+<div class="modal-overlay" id="cmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="cmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="cmodal-title">Créer une candidature</h2>
+          <p class="modal-sub">Les champs marqués d’une étoile sont obligatoires. Les autres informations pourront être complétées ensuite depuis la fiche.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="cmodal-close" type="button" aria-label="Fermer sans créer" title="Fermer">✕</button></div>
+      </div>
+      <form id="cmodal-form" novalidate></form>
+    </div>
+  </div>
+</div>
+
+<!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
+<footer class="widget-footer" role="contentinfo">
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.0</span></p>
+  <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
+</footer>
+
 <script>
 (function () {
   var DEFAULTS = { identity: 'Identite_complete', status: 'Etat_candidature' };
   var IN_GRIST = !!(window.grist && window.parent !== window);
 
+  // Onglets de la fiche et colonnes proposées par défaut (repérées par leur libellé Grist).
+  var TAB_DEFS = [
+    { key: 'info', title: 'Candidat', cardTitle: 'Informations sur le candidat',
+      defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt', 'Âge',
+                 'Numéro de téléphone', 'Email', 'Adresse', 'CP', 'Ville', 'Profession',
+                 'Commentaires'] },
+    { key: 'mil', title: 'Renseignements militaires', cardTitle: 'Renseignements militaires',
+      defaults: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO', 'PMG', 'Etat candidature',
+                 'Grade', 'Corps', 'Affectation', 'CRT', 'Nigend', 'N° ESR', 'Date contrat', 'Date de début contrat'] },
+    { key: 'medico', title: 'Médico-statutaire', cardTitle: 'Situation médicale et statutaire',
+      defaults: ['Date tests psy', 'Tests psy', 'Date VEMI', 'Antenne VEMI', 'VEMI', 'Validité VEMI'] },
+    { key: 'docs', title: 'Documents', cardTitle: 'Documents du dossier',
+      defaults: ['Lettre intégration', 'Convention', 'Convocations', 'ESR'] }
+  ];
+
+  // Blocs par onglet (les colonnes cochées dans le back office mais absentes de ces blocs vont dans « Autres informations »).
+  var TAB_GROUPS = {
+    info: [
+      { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN', 'Âge'], ['Lieu de naissance', 'Dpt']] },
+      { title: 'Coordonnées', rows: [['Numéro de téléphone', 'Email'], ['Adresse'], ['CP', 'Ville']] },
+      { title: 'Profession', labels: ['Profession'] },
+      { title: '', labels: ['Commentaires'] }
+    ],
+    mil: [
+      // « N_Cand » : numéro CAND (GendForm).
+      { title: 'Identifiants', labels: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO'] },
+      { title: 'Stage', mail: 'stage', rows: [['PMG', 'Etat candidature']] },
+      { title: 'Contrat', mail: 'contrat', rows: [['Grade', 'Corps'], ['Affectation', 'CRT'], ['Nigend', 'N° ESR'], ['Date contrat', 'Date de début contrat']] }
+    ],
+    medico: [
+      { title: 'Tests psychométriques', mail: 'tests', labels: ['Date tests psy', 'Tests psy'] },
+      { title: 'Visite d’expertise médicale initiale', mail: 'vemi', labels: ['Date VEMI', 'Antenne VEMI', 'VEMI', 'Validité VEMI'] }
+    ]
+  };
+  // Libellés affichés dans la fiche (le bloc donne le contexte), quand ils diffèrent de ceux de la table.
+  var DISPLAY_LABELS = {
+    'nom': 'Nom', 'ddn': 'Date de naissance', 'dpt': 'Département de naissance', 'numero de telephone': 'Tél', 'email': 'Mail', 'cp': 'Code postal',
+    'n° candidature': 'Numéro de candidature', 'n_cand': 'Numéro CAND (GendForm)', 'n° cand': 'Numéro CAND (GendForm)', 'numero cand': 'Numéro CAND (GendForm)', 'dde bpro': 'Demande BPRO',
+    'etat candidature': 'État de la candidature', 'affectation': 'Groupement', 'pmg': 'PMG souhaitée', 'date contrat': 'Date du contrat', 'date de debut contrat': 'Entrée en vigueur du contrat', 'date tests psy': 'Date des tests', 'tests psy': 'Résultats', 'date vemi': 'Date de la VEMI',
+    'antenne vemi': 'Antenne médicale', 'vemi': 'Résultats', 'validite vemi': 'Date de validité'
+  };
+  function displayLabel(col) { return DISPLAY_LABELS[norm(col.label)] || DISPLAY_LABELS[norm(col.id)] || col.label; }
+  // Pied de la modale : colonnes repérées par leur libellé.
+  var FOOT_LABELS = { created: 'Création candidature', updated: 'Dernière mise à jour', by: 'Dernière mise à jour par' };
+
+  // Courriels de réservation et convocations (Tests psychométriques, VEMI) : modèles modifiables dans le back office.
+  var MAIL_BLOCKS = [
+    { key: 'tests', title: 'Tests psychométriques', short: 'aux tests psychométriques', dateLabel: 'Date tests psy', dateName: 'des tests', required: ['Date tests psy'], serviceName: 'au service des tests', kinds: ['reservation', 'convocation', 'service'] },
+    { key: 'vemi', title: 'Visite d’expertise médicale initiale (VEMI)', short: 'à la visite d’expertise médicale initiale (VEMI)', dateLabel: 'Date VEMI', dateName: 'de la VEMI', required: ['Date VEMI', 'Antenne VEMI'], serviceName: 'à l’antenne médicale', kinds: ['reservation', 'convocation', 'service'] }
+  ];
+  // Onglet Renseignements militaires : lettre d'incorporation (à côté de « Stage ») et ESR (à côté de « Contrat »).
+  MAIL_BLOCKS.push({ key: 'stage', title: 'Stage · lettres d’incorporation et de rejet', dateLabel: '', kinds: ['lettre', 'rejet'] });
+  MAIL_BLOCKS.push({ key: 'contrat', title: 'Contrat · ESR', dateLabel: '', kinds: ['esr'] });
+  var MAIL_SIGN = 'Cordialement,\nDivision réserves jeunesse';
+  // Modèles de documents : HTML (converti en PDF A4). En-tête du service inclus, donc entièrement modifiable.
+  function pageHtml(title, inner) {
+    return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
+      '  <div style="border-bottom: 3px solid #000091; padding-bottom: 12px; margin-bottom: 32px;">\n' +
+      '    <div style="font-weight: bold; color: #000091;">MINISTÈRE DE L’INTÉRIEUR</div>\n' +
+      '    <div>Division réserves jeunesse</div>\n' +
+      '  </div>\n' +
+      '  <h1 style="font-size: 22px; margin: 0 0 24px;">' + title + '</h1>\n' + inner + '\n</div>';
+  }
+  function rowHtml(label, value) {
+    return '    <tr><th style="text-align: left; width: 35%; padding: 6px 10px; background: #f3f3fd; border: 1px solid #ddd;">' + label + '</th><td style="padding: 6px 10px; border: 1px solid #ddd;">' + value + '</td></tr>\n';
+  }
+  var SIGN_HTML = '  <p style="margin-top: 32px;">Fait le {{DATE_DU_JOUR}}<br>Division réserves jeunesse</p>';
+
+  // Six modèles distincts : réservation, convocation du candidat et convocation transmise au service, pour les tests et pour la VEMI.
+  var DEFAULT_MAIL = {
+    tests: {
+      reservation: {
+        subject: 'Tests psychométriques : merci de réserver votre créneau',
+        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+          'Votre candidature à la réserve (n° {{N_CANDIDATURE}}) passe à l’étape suivante : le passage des tests psychométriques.\n\n' +
+          'Merci de nous indiquer, en répondant à ce message, au moins deux créneaux qui vous conviendraient. Nous vous confirmerons ensuite la date retenue et vous adresserons votre convocation.\n\n' +
+          MAIL_SIGN
+      },
+      convocation: {
+        subject: 'Convocation aux tests psychométriques du {{DATE_TESTS}}',
+        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+          'Veuillez trouver ci-joint votre convocation aux tests psychométriques, qui auront lieu le {{DATE_TESTS}}.\n\n' +
+          'Merci de confirmer votre présence en répondant à ce message. En cas d’empêchement, prévenez-nous dès que possible afin que nous puissions vous proposer une autre date.\n\n' + MAIL_SIGN,
+        template: pageHtml('Convocation aux tests psychométriques',
+          '  <p><strong>{{IDENTITE}}</strong><br>N° de candidature : {{N_CANDIDATURE}}</p>\n' +
+          '  <p>Vous êtes convoqué(e) aux tests psychométriques le <strong>{{DATE_TESTS}}</strong>.</p>\n' +
+          '  <p>Documents à présenter :</p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>la présente convocation.</li>\n  </ul>\n' +
+          '  <p>Merci d’arriver un peu en avance.</p>\n' + SIGN_HTML)
+      },
+      service: {
+        to: '',
+        subject: 'Tests psychométriques du {{DATE_TESTS}} : convocation de {{IDENTITE}}',
+        body: 'Bonjour,\n\n' +
+          'Veuillez trouver ci-joint la fiche de convocation de {{IDENTITE}} (n° {{N_CANDIDATURE}}, {{AFFECTATION}}) aux tests psychométriques du {{DATE_TESTS}}.\n\n' +
+          'Merci de bien vouloir accuser réception de ce message.\n\n' + MAIL_SIGN,
+        template: pageHtml('Fiche de convocation – Tests psychométriques',
+          '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
+          rowHtml('Candidat', '<strong>{{IDENTITE}}</strong>') + rowHtml('N° de candidature', '{{N_CANDIDATURE}}') + rowHtml('NID', '{{NID}}') +
+          rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('Téléphone', '{{TELEPHONE}}') + rowHtml('Mail', '{{EMAIL}}') + rowHtml('Date des tests', '<strong>{{DATE_TESTS}}</strong>') +
+          '  </table>\n  <p>Le candidat est convoqué à la date indiquée ci-dessus. Merci de le recevoir pour le passage des tests psychométriques.</p>\n' + SIGN_HTML)
+      }
+    },
+    vemi: {
+      reservation: {
+        subject: 'Visite médicale (VEMI) : merci de prendre rendez-vous',
+        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+          'Pour poursuivre l’instruction de votre candidature (n° {{N_CANDIDATURE}}), vous devez passer une visite d’expertise médicale initiale (VEMI) auprès d’une antenne médicale.\n\n' +
+          'Merci de réserver votre rendez-vous dans les meilleurs délais et de nous en communiquer la date en répondant à ce message.\n\n' +
+          'Le jour de la visite, pensez à apporter votre carnet de vaccination, vos éventuelles ordonnances en cours ainsi que vos lunettes ou lentilles si vous en portez.\n\n' + MAIL_SIGN
+      },
+      convocation: {
+        subject: 'Convocation à la visite médicale (VEMI) du {{DATE_VEMI}}',
+        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+          'Veuillez trouver ci-joint votre convocation à la visite d’expertise médicale initiale (VEMI) du {{DATE_VEMI}}, à l’antenne médicale : {{ANTENNE}}.\n\n' +
+          'Cette visite est indispensable à la poursuite de votre candidature. Merci de confirmer votre présence en répondant à ce message.\n\n' + MAIL_SIGN,
+        template: pageHtml('Convocation à la visite d’expertise médicale initiale (VEMI)',
+          '  <p><strong>{{IDENTITE}}</strong><br>N° de candidature : {{N_CANDIDATURE}}</p>\n' +
+          '  <p>Vous êtes convoqué(e) à la visite d’expertise médicale initiale le <strong>{{DATE_VEMI}}</strong>.<br>Lieu : <strong>{{ANTENNE}}</strong></p>\n' +
+          '  <p>Documents à apporter :</p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>la présente convocation ;</li>\n    <li>votre carnet de vaccination et vos éventuelles ordonnances en cours ;</li>\n    <li>vos lunettes ou lentilles de contact, le cas échéant.</li>\n  </ul>\n' +
+          '  <p>Merci d’arriver un peu en avance.</p>\n' + SIGN_HTML)
+      },
+      service: {
+        to: '',
+        subject: 'VEMI du {{DATE_VEMI}} : convocation de {{IDENTITE}}',
+        body: 'Bonjour,\n\n' +
+          'Veuillez trouver ci-joint la fiche de convocation de {{IDENTITE}} (n° {{N_CANDIDATURE}}) à la visite d’expertise médicale initiale (VEMI) du {{DATE_VEMI}} dans votre antenne ({{ANTENNE}}).\n\n' +
+          'Merci de nous transmettre le résultat de la visite dès qu’il est disponible.\n\n' + MAIL_SIGN,
+        template: pageHtml('Fiche de convocation – VEMI',
+          '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
+          rowHtml('Candidat', '<strong>{{IDENTITE}}</strong>') + rowHtml('Date de naissance', '{{DDN}}') + rowHtml('N° de candidature', '{{N_CANDIDATURE}}') + rowHtml('NID', '{{NID}}') +
+          rowHtml('Grade', '{{GRADE}}') + rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('Téléphone', '{{TELEPHONE}}') +
+          rowHtml('Date de la visite', '<strong>{{DATE_VEMI}}</strong>') + rowHtml('Antenne médicale', '{{ANTENNE}}') +
+          '  </table>\n  <p>Merci de recevoir ce candidat pour sa visite d’expertise médicale initiale et de nous en transmettre le résultat.</p>\n' + SIGN_HTML)
+      }
+    }
+  };
+  // Lettre d'incorporation (envoyée au candidat) et ESR (engagement à servir dans la réserve, rangé dans Documents) : modèles propres.
+  DEFAULT_MAIL.stage = {
+    lettre: {
+      subject: 'Lettre d’incorporation – {{IDENTITE}}',
+      body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+        'Votre candidature (n° {{N_CANDIDATURE}}) a été retenue. Veuillez trouver ci-joint votre lettre d’incorporation.\n\n' +
+        'Merci de la lire attentivement et de nous en accuser réception en répondant à ce message. Nous restons à votre disposition pour toute question.\n\n' + MAIL_SIGN,
+      template: pageHtml('Lettre d’incorporation',
+        '  <p style="text-align: right;">Le {{DATE_DU_JOUR}}</p>\n' +
+        '  <p><strong>{{IDENTITE}}</strong><br>{{ADRESSE}}<br>{{CP}} {{VILLE}}</p>\n' +
+        '  <p><strong>Objet :</strong> incorporation dans la réserve</p>\n' +
+        '  <p>{{CIVILITE}} {{NOM}},</p>\n' +
+        '  <p>Votre candidature (n° {{N_CANDIDATURE}}) a été retenue. Vous êtes incorporé(e) au sein de {{AFFECTATION}}, avec effet à compter du <strong>{{DEBUT_CONTRAT}}</strong>.</p>\n' +
+        '  <p>Nous vous prions d’agréer, {{CIVILITE}} {{NOM}}, l’expression de nos salutations distinguées.</p>\n' +
+        '  <p style="margin-top: 40px;">Division réserves jeunesse</p>')
+    }
+  };
+  DEFAULT_MAIL.stage.rejet = {
+    subject: 'Réponse à votre candidature – {{IDENTITE}}',
+    body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+      'Après examen de votre dossier (n° {{N_CANDIDATURE}}), nous avons le regret de vous informer que votre candidature n’a pas été retenue. Vous trouverez ci-joint le courrier officiel.\n\n' +
+      'Nous vous remercions de l’intérêt porté à la réserve et vous souhaitons pleine réussite dans vos projets.\n\n' + MAIL_SIGN,
+    template: pageHtml('Lettre de rejet',
+      '  <p style="text-align: right;">Le {{DATE_DU_JOUR}}</p>\n' +
+      '  <p>N° Chrono : {{N_CHRONO}}</p>\n' +
+      '  <p><strong>{{IDENTITE}}</strong><br>{{ADRESSE}}<br>{{CP}} {{VILLE}}</p>\n' +
+      '  <p><strong>Objet :</strong> décision relative à votre candidature (n° {{N_CANDIDATURE}})</p>\n' +
+      '  <p>{{CIVILITE}} {{NOM}},</p>\n' +
+      '  <p>Après examen de votre dossier, nous avons le regret de vous informer que votre candidature n’a pas été retenue.</p>\n' +
+      '  <p>Nous vous remercions de l’intérêt que vous avez porté à la réserve.</p>\n' +
+      '  <p>Nous vous prions d’agréer, {{CIVILITE}} {{NOM}}, l’expression de nos salutations distinguées.</p>\n' +
+      '  <p style="margin-top: 40px;">Division réserves jeunesse</p>')
+  };
+  DEFAULT_MAIL.contrat = {
+    esr: {
+      template: pageHtml('Engagement à servir dans la réserve (ESR)',
+        '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
+        rowHtml('Réserviste', '<strong>{{IDENTITE}}</strong>') + rowHtml('Date de naissance', '{{DDN}}') + rowHtml('NID', '{{NID}}') + rowHtml('Nigend', '{{NIGEND}}') +
+        rowHtml('Grade', '{{GRADE}}') + rowHtml('Corps', '{{CORPS}}') + rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('CRT', '{{CRT}}') +
+        rowHtml('N° ESR', '{{N_ESR}}') + rowHtml('Date du contrat', '{{DATE_CONTRAT}}') + rowHtml('Entrée en vigueur du contrat', '<strong>{{DEBUT_CONTRAT}}</strong>') +
+        '  </table>\n' +
+        '  <p>{{CIVILITE}} {{NOM}} s’engage à servir dans la réserve à compter du {{DEBUT_CONTRAT}}.</p>\n' +
+        '  <table style="width: 100%; margin-top: 48px;">\n    <tr><td style="width: 50%;">Le réserviste<br><br><br></td><td>Pour le commandement<br><br><br></td></tr>\n  </table>\n' + SIGN_HTML)
+    }
+  };
+  // Variables {{…}} : alias → libellé de colonne (toute autre colonne reste utilisable par son libellé ou son identifiant).
+  var MAIL_ALIASES = {
+    'CIVILITE': 'Civilité', 'NOM': 'NOM', 'PRENOM': 'Prénom', 'NID': 'NID', 'N_CANDIDATURE': 'N° candidature', 'N_CAND': 'N_Cand',
+    'DATE_TESTS': 'Date tests psy', 'RESULTAT_TESTS': 'Tests psy', 'DATE_VEMI': 'Date VEMI', 'ANTENNE': 'Antenne VEMI', 'RESULTAT_VEMI': 'VEMI', 'VALIDITE_VEMI': 'Validité VEMI',
+    'DDN': 'DDN', 'CRT': 'CRT', 'NIGEND': 'Nigend', 'PMG': 'PMG', 'N_ESR': 'N° ESR', 'DATE_CONTRAT': 'Date contrat', 'DEBUT_CONTRAT': 'Date de début contrat', 'PROFESSION': 'Profession',
+    'AFFECTATION': 'Affectation', 'GROUPEMENT': 'Affectation', 'ADRESSE': 'Adresse', 'CP': 'CP', 'VILLE': 'Ville', 'EMAIL': 'Email', 'TELEPHONE': 'Numéro de téléphone', 'GRADE': 'Grade', 'CORPS': 'Corps'
+  };
+  function mergeMail(saved) {
+    var out = {};
+    MAIL_BLOCKS.forEach(function (b) {
+      out[b.key] = {};
+      Object.keys(DEFAULT_MAIL[b.key]).forEach(function (kind) {
+        out[b.key][kind] = {};
+        Object.keys(DEFAULT_MAIL[b.key][kind]).forEach(function (f) {
+          var v = saved && saved[b.key] && saved[b.key][kind] && saved[b.key][kind][f];
+          out[b.key][kind][f] = (typeof v === 'string' && v.trim() !== '') ? v : DEFAULT_MAIL[b.key][kind][f];
+        });
+      });
+    });
+    return out;
+  }
+
   var state = {
-    opts: {},            // configuration enregistrée
+    opts: {},          // configuration enregistrée
     draft: {},           // configuration en cours d'édition
-    tables: [],          // tables du document
+    tables: [],
     colsByTable: {},     // { tableId: [{id,label,type}] }
     boundTable: null,
-    records: [],         // [{ identity, status }]
-    read: null,          // { table, at, total, error }
-    sortDir: 1
+    rows: [],            // lignes brutes de la table
+    records: [],         // [{ raw, identity, status }]
+    view: [],            // lignes affichées dans la liste (ordre courant)
+    read: null,
+    sortDir: 1,
+    modal: { index: -1, tab: 'info', opener: null },
+    mail: { msg: null, pdfUrl: null, pdfName: null }, // résultat de la dernière réservation / convocation
+    cmp: { active: false },  // doublon : deux fiches côte à côte { baseId, otherId, others, keep, take, busy, msg, confirm }
+    notice: null,            // message affiché en tête de la fiche (ex. après suppression d'un doublon)
+    edit: null,              // champ de la fiche en cours de modification { colId, value, busy, error }
+    ask: null,               // saisie demandée avant une génération (N° Chrono de la lettre de rejet) { block, kind, value, error }
+    att: {},             // métadonnées des pièces jointes : { id: { name, size } }
+    docs: { busy: false, msg: null, confirm: null, uploadCol: null }
   };
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function makeId(label) { return String(label).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
 
   var TYPES_FR = { Text: 'Texte', Choice: 'Choix', ChoiceList: 'Liste de choix', Numeric: 'Numérique', Int: 'Entier', Bool: 'Booléen', Date: 'Date', DateTime: 'Date/heure', Any: 'Tout', Attachments: 'Pièces jointes', Ref: 'Référence', RefList: 'Liste de références', Id: 'Identifiant' };
-  function typeFr(t) { if (!t) return '—'; var base = String(t).split(':')[0]; return TYPES_FR[base] || t; }
+  function typeBase(t) { return String(t || '').split(':')[0]; }
+  function typeFr(t) { if (!t) return '—'; return TYPES_FR[typeBase(t)] || t; }
 
-  /* ---------- Couche d'accès aux données ---------- */
-  var DEMO = {
-    tables: {
-      Candidats_PMG: {
-        cols: [
-          { id: 'Identite_complete', label: 'Identité complète', type: 'Text' },
-          { id: 'Etat_candidature', label: 'État candidature', type: 'Choice' },
-          { id: 'Nom', label: 'Nom', type: 'Text' },
-          { id: 'Prenom', label: 'Prénom', type: 'Text' }
-        ],
-        rows: [
-          { Identite_complete: 'Martin Camille', Etat_candidature: 'Accepté' },
-          { Identite_complete: 'Bernard Julien', Etat_candidature: ['L', 'En attente', 'Pièces manquantes'] },
-          { Identite_complete: 'Dubois Léa', Etat_candidature: 'Refusé' },
-          { Identite_complete: 'Lambert Hugo', Etat_candidature: 'Entretien programmé' },
-          { Identite_complete: 'Moreau Sarah', Etat_candidature: 'Dossier reçu' },
-          { Identite_complete: 'Petit Nathan', Etat_candidature: '' }
-        ]
-      },
-      Stagiaires: { cols: [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }], rows: [] }
-    }
+  /* ---------- Données de démonstration (structure de la table Candidats_PMG) ---------- */
+  var DEMO_COLS = [
+    ['NID', 'Text'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Affectation', 'Text'], ['CRT', 'Text'], ['Civilité', 'Choice'], ['DDN', 'Date'], ['Lieu de naissance', 'Text'], ['Dpt', 'Text'],
+    ['Numéro de téléphone', 'Text'], ['N_Cand', 'Text'], ['Email', 'Text'], ['Âge', 'Int'], ['Adresse', 'Text'], ['CP', 'Text'], ['Ville', 'Text'], ['Profession', 'Text'], ['N° candidature', 'Text'],
+    ['Date tests psy', 'DateTime:Europe/Paris'], ['Tests psy', 'Choice'], ['Dde BPRO', 'Bool'], ['Date VEMI', 'DateTime:Europe/Paris'], ['Antenne VEMI', 'Text'], ['VEMI', 'Choice'], ['Validité VEMI', 'Date'],
+    ['Etat candidature', 'Choice'], ['PMG', 'Text'], ['Lettre intégration', 'Attachments'], ['Droits EAD', 'Bool'], ['Nigend', 'Text'], ['N° ESR', 'Text'], ['Grade', 'Choice'], ['Corps', 'Choice'],
+    ['Date de début contrat', 'Date'], ['Date contrat', 'Date'], ['Convention', 'Attachments'], ['Commentaires', 'Text'], ['Acculturation', 'Bool'], ['Doublon', 'Bool'], ['Déjà ESR', 'Bool'],
+    ['Création candidature', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text'], ['Convocations', 'Attachments'], ['ESR', 'Attachments']  ];
+  function d(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
+  var DEMO_ROWS_BY_LABEL = [
+    { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'CP': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean' },
+    { 'NID': '1043310', 'PMG': 'PMG 38', 'NOM': 'Bernard', 'Prénom': 'Julien', 'Affectation': 'GD 38', 'Civilité': 'M.', 'DDN': d(2005, 11, 3), 'Âge': 20, 'Etat candidature': ['L', 'En attente', 'Pièces manquantes'], 'Dde BPRO': true, 'Doublon': false },
+    { 'NID': '1043544', 'PMG': 'PMG 73', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Affectation': 'GD 73', 'Civilité': 'Mme', 'Etat candidature': 'Rejet DRJ', 'Email': 'lea.dubois@example.fr', 'Adresse': '4 place du Marché', 'CP': '73000', 'Ville': 'Chambéry', 'VEMI': 'Inapte' },
+    { 'NID': '1044002', 'PMG': 'PMG 74', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Affectation': 'GD 74', 'Civilité': 'M.', 'Etat candidature': 'Entretien programmé' },
+    { 'NID': '1044120', 'PMG': 'PMG 01', 'NOM': 'Moreau', 'Prénom': 'Sarah', 'Affectation': 'GD 01', 'Civilité': 'Mme', 'Etat candidature': 'Dossier reçu', 'Lettre intégration': ['L', 15, 16] },
+    { 'NID': '1044377', 'PMG': 'PMG 38', 'NOM': 'Petit', 'Prénom': 'Nathan', 'Affectation': 'GD 38', 'Civilité': 'M.', 'Etat candidature': '' },
+    { 'NID': '1042871', 'PMG': 'PMG 74', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Numéro de téléphone': '07 99 88 77 66', 'Ville': 'Chambéry', 'Etat candidature': 'Dossier reçu', 'Doublon': true, 'Convention': ['L', 21], 'Création candidature': d(2026, 4, 10) + 30000, 'Dernière mise à jour': d(2026, 4, 12) + 30000, 'Dernière mise à jour par': 'MARTIN Paul' }
+  ];
+  var DEMO_CHOICES = {
+    'Civilité': ['M.', 'Mme'], 'Etat candidature': ['Dossier reçu', 'En attente', 'Pièces manquantes', 'Entretien programmé', 'Admis PMG', 'Rejet DRJ', 'Refusé'],
+    'Tests psy': ['Favorable', 'Défavorable'], 'VEMI': ['Apte', 'Inapte'], 'Grade': ['GAV', 'MDL', 'BRI'], 'Corps': ['Gendarmerie', 'Armée de terre', 'Marine']
   };
-  var demoOpts = null;
+  var DEMO = { cols: DEMO_COLS.map(function (c) { return { id: makeId(c[0]), label: c[0], type: c[1], formula: c[0] === 'Âge', choices: DEMO_CHOICES[c[0]] || null }; }) };
+  DEMO.rows = DEMO_ROWS_BY_LABEL.map(function (r, i) {
+    var o = { id: i + 1 };
+    Object.keys(r).forEach(function (k) { o[makeId(k)] = r[k]; });
+    return o;
+  });
+  var DEMO_TABLES = { Candidats_PMG: true, Stagiaires: true };
+  var DEMO_ATT_EXTRA = 0; var DEMO_ATT = { 12: { name: 'lettre_integration_martin.pdf', size: 182000 }, 13: { name: 'lettre_integration_signee_martin.pdf', size: 214500 }, 15: { name: 'lettre.pdf', size: 90000 }, 16: { name: 'cni_moreau.jpg', size: 1250000 }, 20: { name: 'convention_martin.pdf', size: 340000 }, 21: { name: 'convention_signee.pdf', size: 250000 } };
+  var demoAttSeq = 100;
 
+  /* ---------- Accès aux données ---------- */
+  var tokenCache = null;
+  // Identifiant de la ligne créée, quelle que soit la forme de la réponse de Grist (nombre, { id }, liste).
+  function newRowId(r) {
+    if (Array.isArray(r)) return newRowId(r[0]);
+    if (r && typeof r === 'object') return newRowId(r.id);
+    return typeof r === 'number' ? r : null;
+  }
+  // Choix proposés par une colonne « Choix » / « Liste de choix » (options du widget Grist, en JSON).
+  function choicesOf(widgetOptions) {
+    try { var wo = JSON.parse(widgetOptions || '{}'); return Array.isArray(wo.choices) ? wo.choices : null; } catch (e) { return null; }
+  }
   var api = IN_GRIST ? {
     listTables: function () {
       return grist.docApi.listTables().then(function (l) { return l.filter(function (t) { return t.indexOf('_grist') !== 0; }); });
@@ -302,24 +995,74 @@
       return Promise.all([grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]).then(function (r) {
         var T = r[0], C = r[1], tid = T.id[T.tableId.indexOf(table)], out = [];
         for (var i = 0; i < C.id.length; i++) {
-          if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) out.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i] });
+          if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) out.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], pos: C.parentPos[i], formula: !!C.isFormula[i], choices: choicesOf(C.widgetOptions && C.widgetOptions[i]) });
         }
+        out.sort(function (a, b) { return a.pos - b.pos; });
         return out;
       });
     },
     fetchRows: function (table) {
-      return grist.docApi.fetchTable(table).then(function (d) {
-        var keys = Object.keys(d), n = (d.id || []).length, rows = [];
-        for (var i = 0; i < n; i++) { var o = {}; keys.forEach(function (k) { o[k] = d[k][i]; }); rows.push(o); }
+      return grist.docApi.fetchTable(table).then(function (t) {
+        var keys = Object.keys(t), n = (t.id || []).length, rows = [];
+        for (var i = 0; i < n; i++) { var o = {}; keys.forEach(function (k) { o[k] = t[k][i]; }); rows.push(o); }
         return rows;
       });
     },
-    saveOptions: function (o) { return grist.setOptions(o); }
+    saveOptions: function (o) { return grist.setOptions(o); },
+    // Pièces jointes : jeton d'accès à l'API du document (mis en cache jusqu'à expiration).
+    getToken: function () {
+      if (tokenCache && tokenCache.exp > Date.now() + 30000) return Promise.resolve(tokenCache);
+      return grist.docApi.getAccessToken({ readOnly: false }).then(function (t) {
+        tokenCache = { baseUrl: t.baseUrl, token: t.token, exp: Date.now() + (t.ttlMsecs || 300000) };
+        return tokenCache;
+      });
+    },
+    attachmentsMeta: function () {
+      return grist.docApi.fetchTable('_grist_Attachments').then(function (t) {
+        var out = {};
+        for (var i = 0; i < t.id.length; i++) out[t.id[i]] = { name: t.fileName[i], size: t.fileSize[i] };
+        return out;
+      });
+    },
+    attachmentUrl: function (id) { return api.getToken().then(function (t) { return t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token); }); },
+    uploadAttachment: function (file) {
+      return api.getToken().then(function (t) {
+        var fd = new FormData(); fd.append('upload', file, file.name);
+        return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
+          if (!r.ok) throw new Error('envoi refusé (' + r.status + ')');
+          return r.json();
+        }).then(function (ids) { return ids[0]; });
+      });
+    },
+    updateCell: function (table, rowId, colId, value) { var f = {}; f[colId] = value; return grist.getTable(table).update({ id: rowId, fields: f }); },
+    updateFields: function (table, rowId, fields) { return grist.getTable(table).update({ id: rowId, fields: fields }); },
+    deleteRow: function (table, rowId) { return grist.getTable(table).destroy(rowId); },
+    createRow: function (table, fields) { return grist.getTable(table).create({ fields: fields }).then(function (r) { return newRowId(r); }); }
   } : {
-    listTables: function () { return Promise.resolve(Object.keys(DEMO.tables)); },
-    listColumns: function (t) { return Promise.resolve(DEMO.tables[t] ? DEMO.tables[t].cols : []); },
-    fetchRows: function (t) { return Promise.resolve(DEMO.tables[t] ? DEMO.tables[t].rows : []); },
-    saveOptions: function (o) { demoOpts = o; return Promise.resolve(); }
+    listTables: function () { return Promise.resolve(Object.keys(DEMO_TABLES)); },
+    listColumns: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.cols : [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }]); },
+    fetchRows: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.rows : []); },
+    saveOptions: function () { return Promise.resolve(); },
+    attachmentsMeta: function () { return Promise.resolve(JSON.parse(JSON.stringify(DEMO_ATT))); },
+    attachmentUrl: function () { return Promise.resolve('#'); },
+    uploadAttachment: function (file) { var id = ++demoAttSeq; DEMO_ATT[id] = { name: file.name, size: file.size }; return Promise.resolve(id); },
+    updateCell: function (table, rowId, colId, value) {
+      DEMO.rows.forEach(function (r) { if (r.id === rowId) r[colId] = value; });
+      return Promise.resolve();
+    },
+    updateFields: function (table, rowId, fields) {
+      DEMO.rows.forEach(function (r) { if (r.id === rowId) Object.keys(fields).forEach(function (k) { r[k] = fields[k]; }); });
+      return Promise.resolve();
+    },
+    deleteRow: function (table, rowId) {
+      DEMO.rows = DEMO.rows.filter(function (r) { return r.id !== rowId; });
+      return Promise.resolve();
+    },
+    createRow: function (table, fields) {
+      var id = DEMO.rows.reduce(function (m, r) { return Math.max(m, r.id); }, 0) + 1, row = { id: id };
+      Object.keys(fields).forEach(function (k) { row[k] = fields[k]; });
+      DEMO.rows.push(row); return Promise.resolve(id);
+    }
   };
 
   /* ---------- Tags ---------- */
@@ -330,8 +1073,8 @@
   }
   function color(label) {
     var s = norm(label);
-    if (/(refus|rejet|abandon|desist|non retenu|annul|exclu|ajourn)/.test(s)) return 'red';
-    if (/(accept|retenu|admis|valide|confirme|complet|inscrit)/.test(s)) return 'green';
+    if (/(refus|rejet|abandon|desist|non retenu|annul|exclu|ajourn|inapte)/.test(s)) return 'red';
+    if (/(accept|retenu|admis|valide|confirme|complet|inscrit|favorable|^apte)/.test(s)) return 'green';
     if (/(attente|cours|instruction|etude|examen|relance|a traiter|nouveau)/.test(s)) return 'yellow';
     if (/(incomplet|manquant|pieces|dossier a)/.test(s)) return 'orange';
     if (/(entretien|convoc|epreuve|test|visite)/.test(s)) return 'purple';
@@ -341,57 +1084,172 @@
   function tagsHtml(v) {
     var list = toList(v);
     if (!list.length) return '<span class="tag none">—</span>';
-    return list.map(function (t) { return '<span class="tag ' + color(t) + '">' + esc(t) + '</span>'; }).join('');
+    return list.map(function (t) { return '<span class="fr-tag fr-tag--sm tag-c-' + color(t) + '">' + esc(t) + '</span>'; }).join('');
   }
 
   /* ---------- Configuration effective ---------- */
-  function cfg() {
-    return {
-      table: state.opts.table || state.boundTable || '',
-      identity: state.opts.identity || DEFAULTS.identity,
-      status: state.opts.status || DEFAULTS.status
-    };
-  }
   function colMeta(table, id) {
     var l = state.colsByTable[table] || [];
     for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
     return null;
   }
+  function findCol(table, key) {
+    var k = norm(key), l = state.colsByTable[table] || [];
+    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
+    return null;
+  }
+  function defaultTabs(table) {
+    var out = {};
+    TAB_DEFS.forEach(function (t) {
+      out[t.key] = t.defaults.map(function (lbl) { var c = findCol(table, lbl); return c ? c.id : null; }).filter(Boolean);
+    });
+    return out;
+  }
+  function normalizeTabs(table, tabs) {
+    var seen = {}, out = {};
+    TAB_DEFS.forEach(function (t) {
+      out[t.key] = (tabs && tabs[t.key] || []).filter(function (id) { if (seen[id] || !colMeta(table, id)) return false; seen[id] = true; return true; });
+    });
+    return out;
+  }
+  function cfg() {
+    var table = state.opts.table || state.boundTable || '';
+    return {
+      table: table,
+      identity: ('identity' in state.opts) ? state.opts.identity : DEFAULTS.identity,
+      status: state.opts.status || DEFAULTS.status,
+      tabs: state.opts.tabs ? normalizeTabs(table, state.opts.tabs) : defaultTabs(table),
+      mail: mergeMail(state.opts.mail),
+      emailCol: state.opts.emailCol || '',
+      convCol: state.opts.convCol || '',
+      letterCol: state.opts.letterCol || '',
+      rejetCol: state.opts.rejetCol || '',
+      esrCol: state.opts.esrCol || '',
+      cc: (state.opts.cc || '').trim(),
+      replyTo: (state.opts.replyTo || '').trim()
+    };
+  }
   function colLabel(c) { return c.label + ' (' + c.id + ') · ' + typeFr(c.type); }
+
+  // Identité : colonne choisie, sinon NOM + Prénom (nom de famille en majuscules).
+  function identityOf(row, c) {
+    if (c.identity && colMeta(c.table, c.identity)) return row[c.identity] == null ? '' : String(row[c.identity]);
+    var n = findCol(c.table, 'NOM'), p = findCol(c.table, 'Prénom');
+    if (!n && !p) return '';
+    return [n && row[n.id] ? String(row[n.id]).toLocaleUpperCase('fr-FR') : '', p && row[p.id] ? row[p.id] : ''].filter(Boolean).join(' ');
+  }
+  function statusOf(row, c) {
+    var m = colMeta(c.table, c.status) || findCol(c.table, 'Etat candidature');
+    return m ? row[m.id] : undefined;
+  }
+  // Identité au format « NOM Prénom » : le nom de famille (1er mot) passe en majuscules.
+  function formatName(s) {
+    var parts = String(s).trim().split(/\s+/);
+    parts[0] = parts[0].toLocaleUpperCase('fr-FR');
+    return parts.join(' ');
+  }
 
   /* ---------- Chargement ---------- */
   var loadSeq = 0;
   function load() {
     var seq = ++loadSeq, c = cfg();
-    if (!c.table) { state.read = { table: '', at: new Date(), total: 0, error: 'Aucune table sélectionnée.' }; state.records = []; renderAll(); return Promise.resolve(); }
+    if (!c.table) { state.read = { table: '', at: new Date(), total: 0, error: 'Aucune table sélectionnée.' }; state.rows = []; state.records = []; renderAll(); return Promise.resolve(); }
     return Promise.all([api.listTables(), api.listColumns(c.table), api.fetchRows(c.table)]).then(function (r) {
       if (seq !== loadSeq) return;
       state.tables = r[0];
       state.colsByTable[c.table] = r[1];
-      state.records = r[2].map(function (row) { return { identity: row[c.identity], status: row[c.status] }; });
+      state.rows = r[2];
+      c = cfg(); // les colonnes sont maintenant connues
+      state.records = r[2].map(function (row) { return { raw: row, identity: identityOf(row, c), status: statusOf(row, c) }; });
       state.read = { table: c.table, at: new Date(), total: r[2].length, error: null };
       renderAll();
     }).catch(function (e) {
       if (seq !== loadSeq) return;
-      state.records = [];
+      state.rows = []; state.records = [];
       state.read = { table: c.table, at: new Date(), total: 0, error: (e && e.message) || String(e) };
       renderAll();
     });
   }
 
   /* ---------- Vue liste ---------- */
+  /* ----- Filtres de la liste : états de la candidature (choix multiples) et PMG ----- */
+  var filters = { status: [], pmg: [] };
+  var filterSig = '';
+  function pmgOf(raw, c) { var col = findCol(c.table, 'PMG'); return col ? toList(raw[col.id]) : []; }
+  function filtersActive() { return filters.status.length > 0 || filters.pmg.length > 0 || $('q').value.trim() !== ''; }
+
+  // Reconstruit les listes d'options (seulement si elles ont changé, pour ne pas perdre le focus pendant la saisie).
+  function renderFilters(c) {
+    var stCol = colMeta(c.table, c.status) || findCol(c.table, 'Etat candidature'), pmgCol = findCol(c.table, 'PMG');
+    var seen = {}, statuses = (stCol && stCol.choices ? stCol.choices.slice() : []);
+    statuses.forEach(function (s) { seen[s] = true; });
+    var pmgs = {};
+    state.records.forEach(function (r) {
+      toList(r.status).forEach(function (s) { if (!seen[s]) { seen[s] = true; statuses.push(s); } });
+      if (pmgCol) pmgOf(r.raw, c).forEach(function (p) { pmgs[p] = true; });
+    });
+    var pmgList = Object.keys(pmgs).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' }); });
+    var sig = JSON.stringify([statuses, pmgList, !!pmgCol]);
+    if (sig !== filterSig) {
+      filterSig = sig;
+      $('flt-status-panel').innerHTML = statuses.length ? statuses.map(function (s, i) {
+        return '<label class="ms-opt"><input type="checkbox" value="' + esc(s) + '"' + (filters.status.indexOf(s) !== -1 ? ' checked' : '') + '> <span class="fr-tag fr-tag--sm tag-c-' + color(s) + '">' + esc(s) + '</span></label>';
+      }).join('') : '<p class="ms-empty">Aucun état.</p>';
+      $('flt-pmg-panel').innerHTML = pmgList.length ? pmgList.map(function (p) {
+        return '<label class="ms-opt"><input type="checkbox" value="' + esc(p) + '"' + (filters.pmg.indexOf(p) !== -1 ? ' checked' : '') + '> <span>' + esc(p) + '</span></label>';
+      }).join('') : '<p class="ms-empty">Aucun PMG.</p>';
+    }
+    $('flt-pmg-wrap').hidden = !pmgCol;
+    $('flt-status-wrap').hidden = !stCol;
+    var n = filters.status.length;
+    $('flt-status-btn').textContent = n === 0 ? 'Tous les états' : (n === 1 ? filters.status[0] : n + ' états sélectionnés');
+    var np = filters.pmg.length;
+    $('flt-pmg-btn').textContent = np === 0 ? 'Tous les PMG' : (np === 1 ? filters.pmg[0] : np + ' PMG sélectionnés');
+    $('flt-reset').disabled = !filtersActive();
+  }
+  var MS = { status: { btn: 'flt-status-btn', panel: 'flt-status-panel', root: 'flt-status' }, pmg: { btn: 'flt-pmg-btn', panel: 'flt-pmg-panel', root: 'flt-pmg' } };
+  function closeMs(key, returnFocus) {
+    var m = MS[key], p = $(m.panel); if (p.hidden) return;
+    p.hidden = true; $(m.btn).setAttribute('aria-expanded', 'false'); if (returnFocus) $(m.btn).focus();
+  }
+  Object.keys(MS).forEach(function (key) {
+    var m = MS[key];
+    $(m.btn).addEventListener('click', function () {
+      var p = $(m.panel), open = p.hidden;
+      Object.keys(MS).forEach(function (k) { if (k !== key) closeMs(k, false); });
+      p.hidden = !open; this.setAttribute('aria-expanded', String(open));
+    });
+    $(m.panel).addEventListener('change', function (e) {
+      var cb = e.target; if (cb.type !== 'checkbox') return;
+      var arr = filters[key], i = arr.indexOf(cb.value);
+      if (cb.checked && i === -1) arr.push(cb.value); else if (!cb.checked && i !== -1) arr.splice(i, 1);
+      renderList();
+    });
+    $(m.root).addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); closeMs(key, true); } });
+  });
+  $('flt-reset').addEventListener('click', function () {
+    filters.status = []; filters.pmg = []; $('q').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('#flt-status-panel input, #flt-pmg-panel input'), function (i) { i.checked = false; });
+    Object.keys(MS).forEach(function (k) { closeMs(k, false); }); renderList();
+  });
+  document.addEventListener('mousedown', function (e) { Object.keys(MS).forEach(function (k) { if (!e.target.closest('#' + MS[k].root)) closeMs(k, false); }); });
+
   function renderList() {
     var c = cfg(), q = norm($('q').value.trim());
-    $('list-lead').textContent = 'Liste des candidats de la table ' + (c.table ? c.table.replace(/_/g, ' ') : 'Candidats PMG') + ', avec l\'état de leur candidature.';
-    var list = state.records.map(function (r) { return { id: r.identity == null ? '' : String(r.identity), st: r.status }; })
-      .filter(function (r) { return r.id || toList(r.st).length; })
-      .filter(function (r) { return !q || norm(r.id + ' ' + toList(r.st).join(' ')).indexOf(q) !== -1; });
+    renderFilters(c);
+    var all = state.records.map(function (r) { return { raw: r.raw, id: r.identity == null ? '' : String(r.identity), st: r.status }; })
+      .filter(function (r) { return r.id || toList(r.st).length; });
+    var list = all
+      .filter(function (r) { return !q || norm(r.id + ' ' + toList(r.st).join(' ')).indexOf(q) !== -1; })
+      .filter(function (r) { return !filters.status.length || toList(r.st).some(function (s) { return filters.status.indexOf(s) !== -1; }); })
+      .filter(function (r) { return !filters.pmg.length || pmgOf(r.raw, c).some(function (p) { return filters.pmg.indexOf(p) !== -1; }); });
     list.sort(function (a, b) { return state.sortDir * a.id.localeCompare(b.id, 'fr', { sensitivity: 'base' }); });
+    state.view = list;
 
     $('arrow').textContent = state.sortDir === 1 ? '▲' : '▼';
-    $('count').textContent = list.length + (list.length > 1 ? ' candidats' : ' candidat');
-    $('rows').innerHTML = list.map(function (r) {
-      return '<tr><td class="name">' + (r.id ? esc(r.id) : '<span class="tag none">—</span>') + '</td><td><div class="tagrow">' + tagsHtml(r.st) + '</div></td></tr>';
+    $('count').textContent = list.length + (list.length > 1 ? ' candidats' : ' candidat') + (list.length !== all.length ? ' sur ' + all.length : '');
+    $('rows').innerHTML = list.map(function (r, i) {
+      return '<tr class="row-open" tabindex="0" data-i="' + i + '" aria-label="Ouvrir la fiche de ' + esc(r.id ? formatName(r.id) : 'ce candidat') + '"><td class="name"><div class="name-line"><span>' + (r.id ? esc(formatName(r.id)) : '—') + '</span>' + (toList(r.st).length ? '<span class="tagrow">' + tagsHtml(r.st) + '</span>' : '') + '</div></td><td class="end">' + flagsHtml(r.raw, c) + '</td></tr>';
     }).join('');
 
     var $s = $('state');
@@ -402,20 +1260,1112 @@
     } else { $s.hidden = true; }
   }
 
+  /* ---------- Fiche candidat (modale) ---------- */
+  function fmtDate(v, withTime) {
+    if (v == null || v === '' || typeof v !== 'number') return '';
+    var dt = new Date(v * 1000);
+    var s = ('0' + dt.getUTCDate()).slice(-2) + '/' + ('0' + (dt.getUTCMonth() + 1)).slice(-2) + '/' + dt.getUTCFullYear();
+    return withTime ? s + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : s;
+  }
+  // Renvoie { html, empty, pre } pour une valeur de cellule.
+  function fmtValue(col, v) {
+    var t = typeBase(col.type), lbl = norm(col.label);
+    if (v == null || v === '' || (Array.isArray(v) && toList(v).length === 0) || ((t === 'Ref' || t === 'RefList') && !v)) return { html: '—', empty: true };
+    if (t === 'Date') { var s = fmtDate(v, false); return s ? { html: esc(s) } : { html: '—', empty: true }; }
+    if (t === 'DateTime') { var s2 = fmtDate(v, true); return s2 ? { html: esc(s2) } : { html: '—', empty: true }; }
+    if (t === 'Bool') return { html: v ? '<span class="tag green">Oui</span>' : '<span class="tag grey">Non</span>' };
+    if (t === 'Choice' || t === 'ChoiceList') return { html: '<div class="tagrow">' + tagsHtml(v) + '</div>' };
+    if (t === 'Attachments') { var n = toList(v).length; return { html: n + (n > 1 ? ' fichiers joints' : ' fichier joint') }; }
+    if (/e-?mail|courriel/.test(lbl)) return { html: '<a href="mailto:' + esc(v) + '">' + esc(v) + '</a>' };
+    if (/telephone|tel\b|portable/.test(lbl)) return { html: '<a href="tel:' + esc(String(v).replace(/\s+/g, '')) + '">' + esc(v) + '</a>' };
+    var text = Array.isArray(v) ? toList(v).join(', ') : String(v);
+    return { html: esc(text), pre: /\n/.test(text) || /commentaire/.test(lbl), wide: /commentaire/.test(lbl) };
+  }
+
+  /* ----- Réservation / convocation (Tests psychométriques, VEMI) ----- */
+  var ICON_RESERVATION = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M16.53 11.06L15.47 10l-4.88 4.88-2.12-2.12-1.06 1.06L10.59 17l5.94-5.94zM19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V8h14v11z"/></svg>';
+  var ICON_CONVOCATION = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h9v-2H4V8l8 5 8-5v5h2V6c0-1.1-.9-2-2-2zm-8 7L4 6h16l-8 5zm7 4l4 4-4 4v-3h-4v-2h4v-3z"/></svg>';
+
+  function isYes(v) { return v != null && /^(oui|yes|true|vrai|1|x)$/i.test(String(v).trim()); }
+  function flagValue(raw, c, label) { var col = findCol(c.table, label); return !!col && isYes(raw[col.id]); }
+  // Repères d'un candidat, avec les icônes du système de design (liste : bout de ligne ; fiche : à côté du nom).
+  function flagsHtml(raw, c) {
+    var out = '';
+    if (flagValue(raw, c, 'Déjà ESR')) out += '<span class="flag flag-esr" role="img" aria-label="Déjà ESR" title="Déjà ESR"><span class="fr-icon-alarm-warning-line" aria-hidden="true"></span></span>';
+    if (flagValue(raw, c, 'Doublon')) out += '<span class="flag flag-dup" role="img" aria-label="Doublon" title="Doublon : fiche à vérifier"><span class="fr-icon-group-line" aria-hidden="true"></span></span>';
+    return out ? '<span class="flags">' + out + '</span>' : '';
+  }
+  // Lettre d'incorporation (à côté de « Stage ») et ESR (à côté de « Contrat »).
+  // Lettre de rejet : même document que la lettre d'incorporation, avec une croix à la place des lignes.
+  var ICON_LETTRE_REJET = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor" fill-rule="evenodd"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13zM8.3 13.7l1.4-1.4 2.3 2.3 2.3-2.3 1.4 1.4-2.3 2.3 2.3 2.3-1.4 1.4-2.3-2.3-2.3 2.3-1.4-1.4 2.3-2.3-2.3-2.3z"/></svg>';
+  var ICON_LETTRE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
+  // Convocation transmise au service (tests : service des tests ; VEMI : antenne médicale).
+  var ICON_SERVICE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>';
+
+  function todayFr() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+  }
+  function textOfValue(col, v) {
+    if (v == null || v === '') return '';
+    var t = typeBase(col.type);
+    if (t === 'Date') return fmtDate(v, false);
+    if (t === 'DateTime') return fmtDate(v, true);
+    if (t === 'Bool') return v ? 'Oui' : 'Non';
+    if (Array.isArray(v)) return toList(v).join(', ');
+    return String(v);
+  }
+  // Remplace {{VARIABLE}} (alias, libellé ou identifiant de colonne) ; une variable inconnue est laissée telle quelle.
+  // asHtml : modèle HTML (les valeurs insérées sont échappées, pour qu'une donnée ne puisse pas casser la mise en page).
+  function fillTemplate(text, item, c, asHtml, extra) {
+    var out = function (v) { return asHtml ? esc(v) : v; };
+    return String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
+      var key = name.toUpperCase().replace(/\s+/g, '_');
+      if (key === 'IDENTITE') return out(formatName(identityOf(item.raw, c)));
+      if (key === 'DATE_DU_JOUR') return out(todayFr());
+      if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return out(extra[key]); // ex. {{N_CHRONO}}
+      var alias = MAIL_ALIASES[key];
+      var col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
+      if (alias) return col ? out(textOfValue(col, item.raw[col.id])) : '';
+      return col ? out(textOfValue(col, item.raw[col.id])) : whole;
+    });
+  }
+  // Nettoie le HTML d'un modèle : ni script, ni gestionnaire d'événement, ni ressource externe (seules les images data: sont admises).
+  function sanitizeHtml(html) {
+    var doc = new DOMParser().parseFromString('<div id="root">' + html + '</div>', 'text/html'), root = doc.getElementById('root');
+    Array.prototype.forEach.call(root.querySelectorAll('script,style,iframe,object,embed,link,meta,base,form,input,button,textarea,select,audio,video'), function (n) { n.parentNode.removeChild(n); });
+    Array.prototype.forEach.call(root.querySelectorAll('*'), function (el) {
+      Array.prototype.slice.call(el.attributes).forEach(function (a) {
+        var n = a.name.toLowerCase(), v = String(a.value).trim().toLowerCase();
+        if (n.indexOf('on') === 0 || ((n === 'href' || n === 'xlink:href') && v.indexOf('javascript:') === 0) || (n === 'src' && v.indexOf('data:image/') !== 0)) el.removeAttribute(a.name);
+      });
+    });
+    return root.innerHTML;
+  }
+  function emailOf(raw, c) {
+    var col = (c.emailCol && colMeta(c.table, c.emailCol)) || findCol(c.table, 'Email');
+    return String(col && raw[col.id] || '').trim();
+  }
+  function validEmail(s) { return /^[^\s@]+@[^\s@]+$/.test(s); }
+  function safeFileName(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'document'; }
+
+  // Ouvre la messagerie sur un message pré-rempli (retours à la ligne en CRLF, comme l'attend mailto:).
+  function openMailto(email, subject, body, cc) {
+    var url = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(String(body).replace(/\r?\n/g, '\r\n')) + (cc ? '&cc=' + encodeURIComponent(cc) : '');
+    var a = document.createElement('a'); a.href = url; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+  function abToB64(ab) {
+    var bytes = new Uint8Array(ab), bin = '', CH = 0x8000;
+    for (var i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+    return btoa(bin);
+  }
+  function b64Lines(b64) { return (b64.match(/.{1,76}/g) || []).join('\r\n'); }
+  function emlBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function emlWord(str) { return /^[\x20-\x7e]*$/.test(str) ? str : '=?UTF-8?B?' + emlBase64(str) + '?='; }
+  // Brouillon .eml (X-Unsent) avec pièce jointe : s'ouvre dans la messagerie, prêt à envoyer.
+  function buildEml(m) {
+    var b = '----=_Convocation_' + Date.now().toString(36);
+    var lines = ['X-Unsent: 1', 'To: ' + m.to];
+    if (m.cc) lines.push('Cc: ' + m.cc);
+    if (m.replyTo) lines.push('Reply-To: ' + m.replyTo);
+    lines.push('Subject: ' + emlWord(m.subject), 'MIME-Version: 1.0');
+    if (!m.attB64) { // message simple, sans pièce jointe
+      lines.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(String(m.body).replace(/\r?\n/g, '\r\n'))), '');
+      return lines.join('\r\n');
+    }
+    lines.push('Content-Type: multipart/mixed; boundary="' + b + '"', '',
+      '--' + b, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
+      b64Lines(emlBase64(String(m.body).replace(/\r?\n/g, '\r\n'))),
+      '--' + b, 'Content-Type: application/pdf; name="' + m.attName + '"', 'Content-Transfer-Encoding: base64', 'Content-Disposition: attachment; filename="' + m.attName + '"', '',
+      b64Lines(m.attB64), '--' + b + '--', '');
+    return lines.join('\r\n');
+  }
+
+  // Conversion HTML → PDF A4 : le modèle est rendu hors écran puis paginé par jsPDF (via html2canvas).
+  function buildPdfFromHtml(html) {
+    return new Promise(function (resolve, reject) {
+      if (!(window.jspdf && window.jspdf.jsPDF)) return reject(new Error('la bibliothèque de génération de PDF n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
+      if (!window.html2canvas) return reject(new Error('la bibliothèque de conversion HTML n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
+      // Rendu dans un conteneur de 1 px découpé (invisible) : un rendu hors écran (left négatif) donnerait un PDF blanc.
+      var wrap = document.createElement('div'), holder = document.createElement('div');
+      wrap.setAttribute('aria-hidden', 'true');
+      wrap.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;z-index:-1;pointer-events:none;';
+      holder.style.cssText = 'position:absolute;left:0;top:0;width:698px;background:#fff;color:#161616;';
+      holder.innerHTML = sanitizeHtml(html);
+      wrap.appendChild(holder); document.body.appendChild(wrap);
+      var finished = false, timer = setTimeout(function () { end(new Error('délai dépassé')); }, 40000);
+      function end(err, ab) {
+        if (finished) return; finished = true; clearTimeout(timer);
+        if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        return err ? reject(err) : resolve(ab);
+      }
+      try {
+        var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+        // Page A4 = 595,28 pt ; marges de 36 pt ; largeur utile 523,28 pt = 698 px de mise en page.
+        doc.html(holder, {
+          margin: [36, 36, 36, 36], autoPaging: 'text', width: 523.28, windowWidth: 698,
+          html2canvas: { backgroundColor: '#ffffff', logging: false, useCORS: false },
+          callback: function (d) { try { end(null, d.output('arraybuffer')); } catch (e) { end(e); } }
+        });
+      } catch (e) { end(e); }
+    });
+  }
+
+  // Saisie demandée avant la génération de la lettre de rejet.
+  function askHtml() {
+    var a = state.ask; if (!a) return '';
+    return '<div class="ask" role="group" aria-labelledby="ask-label"><label id="ask-label" for="ask-chrono">N° Chrono de la lettre de rejet<span class="req" aria-hidden="true">*</span></label>' +
+      '<span class="hint">Exemple : 1234/GEND/RGIF/EM/DRJ/SGR</span>' +
+      '<input id="ask-chrono" class="input" type="text" autocomplete="off" placeholder="1234/GEND/RGIF/EM/DRJ/SGR" value="' + esc(a.value) + '"' + (a.error ? ' aria-invalid="true"' : '') + '>' +
+      (a.error ? '<p class="ed-error" role="alert">' + esc(a.error) + '</p>' : '') +
+      '<div class="ed-actions"><button type="button" class="btn sm" data-ask-act="ok">Générer la lettre</button><button type="button" class="btn secondary sm" data-ask-act="cancel">Annuler</button></div></div>';
+  }
+  function mailMsgHtml() {
+    var m = state.mail; if (!m.msg) return '';
+    return '<div class="doc-alert ' + m.msg.type + '" role="' + (m.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(m.msg.text) + '</p>' +
+      (m.pdfUrl ? '<p><a href="' + m.pdfUrl + '" download="' + esc(m.pdfName) + '">Télécharger le PDF</a></p>' : '') + '</div>';
+  }
+  // Adresses du service : une ou plusieurs adresses séparées par une virgule, un point-virgule ou un espace.
+  function serviceAddresses(tpl) { return String(tpl.to || '').split(/[,;\s]+/).filter(Boolean); }
+
+  // Colonne « Pièces jointes » où sont rangées les copies (onglet Documents) : choisie dans le back office, sinon détectée par son libellé.
+  function storageColOf(c, kind) {
+    var chosen = colMeta(c.table, kind === 'lettre' ? c.letterCol : kind === 'rejet' ? (c.rejetCol || c.letterCol) : kind === 'esr' ? c.esrCol : c.convCol);
+    if (chosen && typeBase(chosen.type) === 'Attachments') return chosen;
+    var re = kind === 'rejet' ? /rejet/ : kind === 'lettre' ? /lettre|incorporation|integration/ : kind === 'esr' ? /(^|[^a-z])esr([^a-z]|$)/ : /convocation/, l = state.colsByTable[c.table] || [];
+    for (var i = 0; i < l.length; i++) if (typeBase(l[i].type) === 'Attachments' && re.test(norm(l[i].label + ' ' + l[i].id))) return l[i];
+    if (kind === 'rejet') { // à défaut de colonne « rejet », la colonne des lettres
+      for (var j = 0; j < l.length; j++) if (typeBase(l[j].type) === 'Attachments' && /lettre|incorporation|integration/.test(norm(l[j].label + ' ' + l[j].id))) return l[j];
+    }
+    return null;
+  }
+
+  // Vrai si l'état de la candidature du candidat (choix ou liste de choix) vaut la valeur demandée (casse et accents ignorés).
+  function hasStatus(item, wanted) {
+    return toList(item.st).some(function (s) { return norm(s) === norm(wanted); });
+  }
+
+  // Libellés des colonnes non renseignées d'un bloc de la fiche (uniquement les colonnes cochées pour l'onglet et présentes dans la table).
+  function missingInGroup(item, c, tabKey, groupTitle) {
+    var g = (TAB_GROUPS[tabKey] || []).filter(function (x) { return x.title === groupTitle; })[0], ids = c.tabs[tabKey] || [], out = [];
+    if (!g) return out;
+    var labels = g.rows ? [].concat.apply([], g.rows) : g.labels;
+    labels.forEach(function (l) {
+      var col = findCol(c.table, l);
+      if (col && ids.indexOf(col.id) !== -1 && fmtValue(col, item.raw[col.id]).empty) out.push(displayLabel(col));
+    });
+    return out;
+  }
+
+  // Actions déjà effectuées pour un candidat (icône affichée en vert) : options du widget, { numéro de ligne: { « bloc:action »: date ISO } }.
+  function sentInfo(rowId, key) {
+    var s = state.opts.sent && state.opts.sent[rowId] && state.opts.sent[rowId][key];
+    if (!s) return '';
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function markSent(rowId, blockKey, kind) {
+    var sent = JSON.parse(JSON.stringify(state.opts.sent || {})), k = blockKey + ':' + kind;
+    sent[rowId] = sent[rowId] || {}; sent[rowId][k] = new Date().toISOString();
+    var o = {}; Object.keys(state.opts).forEach(function (key) { o[key] = state.opts[key]; }); o.sent = sent;
+    state.opts = o;
+    Promise.resolve(api.saveOptions(o)).catch(function () {}); // sans droit d'écriture, l'état reste valable pour la session
+  }
+
+  // Libellés des champs à renseigner avant de générer une convocation (colonne vide ou absente).
+  function missingSchedule(item, c, block) {
+    return (block.required || []).filter(function (l) {
+      var col = findCol(c.table, l);
+      return !col || fmtValue(col, item.raw[col.id]).empty;
+    }).map(function (l) { var col = findCol(c.table, l); return col ? displayLabel(col) : l; });
+  }
+
+  var MAIL_ACTIONS = {
+    reservation: { icon: function () { return ICON_RESERVATION; }, label: function () { return 'Envoyer le mail de réservation au candidat'; }, toService: false },
+    convocation: { icon: function () { return ICON_CONVOCATION; }, label: function () { return 'Générer la convocation et l’envoyer au candidat'; }, toService: false, needsSchedule: true },
+    service: { icon: function () { return ICON_SERVICE; }, label: function (b) { return 'Générer la convocation et l’envoyer ' + b.serviceName; }, toService: true, needsSchedule: true },
+    lettre: { icon: function () { return ICON_LETTRE; }, label: function () { return 'Générer la lettre d’incorporation et l’envoyer au candidat'; }, toService: false, requireStatus: 'Admis PMG', hideWhenStatus: 'Rejet DRJ' },
+    // Lettre de rejet : remplace la lettre d'incorporation quand l'état est « Rejet DRJ ».
+    rejet: { icon: function () { return ICON_LETTRE_REJET; }, label: function () { return 'Générer la lettre de rejet et l’envoyer au candidat'; }, toService: false, requireStatus: 'Rejet DRJ', onlyStatus: 'Rejet DRJ', askChrono: true },
+    // ESR : simple génération du PDF, téléchargé et copié dans Documents (aucun courriel).
+    esr: { icon: function () { return ICON_LETTRE; }, label: function () { return 'Générer l’ESR et l’enregistrer dans Documents'; }, toService: false, noMail: true, requireGroup: ['mil', 'Contrat'] }
+  };
+
+  // Icônes d'envoi d'un bloc (réservation, convocation du candidat, convocation du service, lettre d'incorporation…).
+  function mailActionsHtml(blockKey, item, c) {
+    var block = MAIL_BLOCKS.filter(function (b) { return b.key === blockKey; })[0]; if (!block) return '';
+    var okCand = validEmail(emailOf(item.raw, c)), whyCand = okCand ? '' : ' (aucune adresse e-mail pour ce candidat)';
+    return '<span class="detail-actions">' + block.kinds.filter(function (kind) {
+      var fa = MAIL_ACTIONS[kind];
+      return !(fa.onlyStatus && !hasStatus(item, fa.onlyStatus)) && !(fa.hideWhenStatus && hasStatus(item, fa.hideWhenStatus));
+    }).map(function (kind) {
+      var a = MAIL_ACTIONS[kind], ok = okCand, why = whyCand;
+      var miss = a.requireGroup ? missingInGroup(item, c, a.requireGroup[0], a.requireGroup[1]) : [];
+      if (a.requireStatus && !hasStatus(item, a.requireStatus)) { ok = false; why = ' (disponible uniquement si l’état de la candidature est « ' + a.requireStatus + ' »)'; }
+      else if (miss.length) { ok = false; why = ' (à renseigner d’abord dans le bloc ' + a.requireGroup[1] + ' : ' + miss.join(', ') + ')'; }
+      else if (a.noMail) { ok = true; why = ''; }
+      else if (a.toService) {
+        var svc = serviceAddresses(c.mail[blockKey][kind]);
+        ok = svc.length > 0 && svc.every(validEmail); why = ok ? '' : ' (adresse e-mail du service à renseigner dans le back office)';
+      }
+      if (a.needsSchedule) { var ms = missingSchedule(item, c, block); if (ms.length) { ok = false; why = ' (à renseigner d’abord : ' + ms.join(', ') + ')'; } }
+      var label = a.label(block), when = sentInfo(item.raw.id, blockKey + ':' + kind), doneTxt = when ? ' — déjà fait le ' + when : '';
+      return '<button type="button" class="icon-btn' + (when ? ' is-done' : '') + '" data-mail="' + blockKey + ':' + kind + '" title="' + esc(label + why + doneTxt) + '" aria-label="' + esc(label + ' - ' + block.title + why + doneTxt) + '"' + (ok ? '' : ' disabled') + '>' + a.icon() + '</button>';
+    }).join('') + '</span>';
+  }
+
+  // Range une copie du PDF dans la colonne « Pièces jointes » prévue (onglet Documents).
+  function storeCopy(item, c, kind, name, ab) {
+    var col = storageColOf(c, kind);
+    if (!col) return Promise.resolve({ stored: false, why: 'aucune colonne « Pièces jointes » n’est réservée aux ' + (kind === 'lettre' ? 'lettres d’incorporation' : kind === 'rejet' ? 'lettres de rejet' : kind === 'esr' ? 'ESR' : 'convocations') + ' (à choisir dans le back office)' });
+    var file;
+    try { file = new File([ab], name, { type: 'application/pdf' }); } catch (e) { file = new Blob([ab], { type: 'application/pdf' }); file.name = name; }
+    return api.uploadAttachment(file).then(function (id) {
+      return api.updateCell(c.table, item.raw.id, col.id, ['L'].concat(attIds(item, col.id), [id]));
+    }).then(function () { return { stored: true, col: col }; })
+      .catch(function (e) { return { stored: false, why: (e && e.message) || String(e) }; });
+  }
+
+  function runMail(blockKey, kind, extra) {
+    var item = state.view[state.modal.index]; if (!item) return;
+    var c = cfg(), block = MAIL_BLOCKS.filter(function (b) { return b.key === blockKey; })[0], tpl = c.mail[blockKey][kind], act = MAIL_ACTIONS[kind];
+    if (state.mail.pdfUrl) URL.revokeObjectURL(state.mail.pdfUrl);
+    state.mail = { msg: null, pdfUrl: null, pdfName: null };
+    // Lettre de rejet : le N° Chrono est demandé avant la génération.
+    if (act.askChrono && !extra) { state.ask = { block: blockKey, kind: kind, value: '', error: '' }; renderModal(); return; }
+    function done(type, text) { state.mail.msg = { type: type, text: text }; renderModal(); }
+
+    // ESR : pas de courriel, le PDF est téléchargé puis copié dans Documents.
+    if (act.noMail) {
+      var nameEsr = 'ESR_' + safeFileName(formatName(item.id || 'candidat')) + '.pdf', ticketEsr = nameEsr + Date.now(); state.mail.ticket = ticketEsr;
+      done('success', 'Génération de l’ESR en cours…');
+      return buildPdfFromHtml(fillTemplate(tpl.template, item, c, true)).then(function (ab) {
+        downloadBlob(new Blob([ab], { type: 'application/pdf' }), nameEsr);
+        markSent(item.raw.id, blockKey, kind);
+        state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = nameEsr;
+        var okTxt = 'ESR généré et téléchargé.';
+        state.mail.msg = { type: 'success', text: okTxt + ' Enregistrement d’une copie dans Documents…' }; renderModal();
+        return storeCopy(item, c, 'esr', nameEsr, ab).then(function (r) {
+          if (state.mail.ticket !== ticketEsr) return;
+          state.mail.msg = r.stored ? { type: 'success', text: okTxt + ' Une copie a été enregistrée dans Documents (' + displayLabel(r.col) + ').' }
+                                    : { type: 'error', text: okTxt + ' La copie n’a pas été enregistrée dans Documents : ' + r.why + '.' };
+          return r.stored ? load() : renderModal();
+        });
+      }).catch(function (e) { if (state.mail.ticket === ticketEsr) done('error', 'Génération impossible : ' + ((e && e.message) || e) + '.'); });
+    }
+
+    if (act.requireStatus && !hasStatus(item, act.requireStatus)) return done('error', 'Cette action n’est disponible que si l’état de la candidature est « ' + act.requireStatus + ' ».');
+    var missing = act.requireGroup ? missingInGroup(item, c, act.requireGroup[0], act.requireGroup[1]) : [];
+    if (missing.length) return done('error', 'Le document ne peut pas être généré : renseignez d’abord dans le bloc ' + act.requireGroup[1] + ' : ' + missing.join(', ') + '.');
+
+    // Destinataire : le candidat, ou le service concerné (adresse réglée dans le back office).
+    var to;
+    if (act.toService) {
+      to = serviceAddresses(tpl).join(',');
+      if (!to || !serviceAddresses(tpl).every(validEmail)) return done('error', 'L’adresse e-mail du service n’est pas renseignée : à régler dans le back office (Courriels et convocations).');
+    } else {
+      to = emailOf(item.raw, c);
+      if (!validEmail(to)) return done('error', 'Aucune adresse e-mail valide pour ce candidat.');
+    }
+    var subject = fillTemplate(tpl.subject, item, c, false, extra), body = fillTemplate(tpl.body, item, c, false, extra), cc = act.toService ? '' : c.cc, who = safeFileName(formatName(item.id || 'candidat'));
+
+    if (kind === 'reservation') {
+      if (c.replyTo) { // mailto: ne permet pas de fixer « Répondre à » : on passe par un brouillon .eml
+        downloadBlob(new Blob([buildEml({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: body })], { type: 'message/rfc822' }), 'Reservation_' + blockKey + '_' + who + '.eml');
+        markSent(item.raw.id, blockKey, kind);
+        return done('success', 'Brouillon du message de réservation (' + block.title + ') téléchargé : ouvrez-le dans votre messagerie, vérifiez-le puis envoyez-le.');
+      }
+      openMailto(to, subject, body, cc);
+      markSent(item.raw.id, blockKey, kind);
+      return done('success', 'Message de réservation (' + block.title + ') préparé dans votre messagerie : vérifiez-le puis envoyez-le.');
+    }
+
+    // Documents PDF (convocation, convocation du service, lettre d'incorporation).
+    if (act.needsSchedule) {
+      var ms = missingSchedule(item, c, block);
+      if (ms.length) return done('error', 'La convocation ne peut pas être générée : renseignez d’abord ' + ms.join(' et ') + '.');
+    }
+    var base = kind === 'lettre' ? 'Lettre_incorporation_' + who : kind === 'rejet' ? 'Lettre_rejet_' + who : 'Convocation_' + (kind === 'service' ? 'service_' : '') + blockKey + '_' + who, name = base + '.pdf';
+    var sent = kind === 'rejet' ? 'Lettre de rejet générée. Le brouillon du message, avec la lettre en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
+      : kind === 'lettre' ? 'Lettre d’incorporation générée. Le brouillon du message, avec la lettre en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
+      : (act.toService ? 'Convocation générée. Le brouillon du message pour le service, avec la convocation en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
+        : 'Convocation générée. Le brouillon du message, avec la convocation en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.');
+    var ticket = name + Date.now(); state.mail.ticket = ticket;
+    done('success', 'Génération du PDF en cours…');
+    buildPdfFromHtml(fillTemplate(tpl.template, item, c, true, extra)).then(function (ab) {
+      var eml = buildEml({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: body, attName: name, attB64: abToB64(ab) });
+      downloadBlob(new Blob([eml], { type: 'message/rfc822' }), base + '.eml');
+      markSent(item.raw.id, blockKey, kind);
+      state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = name;
+      state.mail.msg = { type: 'success', text: sent + ' Enregistrement d’une copie dans Documents…' }; renderModal();
+      return storeCopy(item, c, kind, name, ab).then(function (r) {
+        if (state.mail.ticket !== ticket) return; // un autre message a pris la place
+        state.mail.msg = r.stored ? { type: 'success', text: sent + ' Une copie du PDF a été enregistrée dans Documents (' + displayLabel(r.col) + ').' }
+                                  : { type: 'error', text: sent + ' La copie du PDF n’a pas été enregistrée dans Documents : ' + r.why + '.' };
+        return r.stored ? load() : renderModal();
+      });
+    }).catch(function (e) { if (state.mail.ticket === ticket) done('error', 'Génération impossible : ' + ((e && e.message) || e) + '.'); });
+  }
+
+  /* ----- Onglet Documents : liste des fichiers + zone de dépôt ----- */
+  var ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+  var ICON_DELETE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+  var ICON_UPLOAD = '<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
+  function fmtSize(n) { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : n >= 1024 ? Math.round(n / 1024) + ' Ko' : n + ' o'; }
+
+  function attCols(c, ids) {
+    return ids.map(function (id) { return colMeta(c.table, id); }).filter(function (m) { return m && typeBase(m.type) === 'Attachments'; });
+  }
+  function attIds(item, colId) { return toList(item.raw[colId]).map(Number); }
+
+  function ensureAttachments(missing) {
+    if (state.attLoading) return;
+    state.attLoading = true;
+    api.attachmentsMeta().then(function (map) {
+      Object.keys(map).forEach(function (k) { state.att[k] = map[k]; });
+      missing.forEach(function (id) { if (!state.att[id]) state.att[id] = { name: 'Fichier n° ' + id, size: 0, missing: true }; });
+    }).catch(function () {
+      missing.forEach(function (id) { if (!state.att[id]) state.att[id] = { name: 'Fichier n° ' + id, size: 0, missing: true }; });
+    }).then(function () { state.attLoading = false; if (!$('modal').hidden) renderModal(); });
+  }
+
+  function docsHtml(item, c, ids, othersHtml, opts) {
+    var ro = !!(opts && opts.ro);
+    var d = state.docs, cols = attCols(c, ids), out = '';
+    if (d.msg && !ro) out += '<div class="doc-alert ' + d.msg.type + '" role="' + (d.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(d.msg.text) + '</p></div>';
+    if (!cols.length) return out + '<p class="stg-empty">Aucune colonne de type « Pièces jointes » n’est configurée pour cet onglet (voir Back office).</p>' + othersHtml;
+
+    var multi = cols.length > 1, files = [], missing = [];
+    cols.forEach(function (col) {
+      attIds(item, col.id).forEach(function (aid) { if (!state.att[aid]) missing.push(aid); files.push({ col: col, id: aid }); });
+    });
+    if (missing.length) ensureAttachments(missing);
+
+    var rows = files.map(function (f) {
+      var meta = state.att[f.id] || { name: 'Chargement…', size: 0 };
+      var confirming = d.confirm && d.confirm.col === f.col.id && d.confirm.id === f.id;
+      var actions = confirming
+        ? '<span class="doc-confirm">Supprimer ce document ?</span> <button type="button" class="btn danger sm" data-act="confirm">Supprimer</button> <button type="button" class="btn secondary sm" data-act="cancel">Annuler</button>'
+        : '<button type="button" class="icon-btn" data-act="edit" title="Remplacer le fichier" aria-label="Remplacer ' + esc(meta.name) + '"' + (d.busy ? ' disabled' : '') + '>' + ICON_EDIT + '</button>' +
+          '<button type="button" class="icon-btn danger" data-act="delete" title="Supprimer" aria-label="Supprimer ' + esc(meta.name) + '"' + (d.busy ? ' disabled' : '') + '>' + ICON_DELETE + '</button>';
+      return '<tr data-col="' + esc(f.col.id) + '" data-att="' + f.id + '"><td class="name"><a href="#" data-dl="' + f.id + '" target="_blank" rel="noopener">' + esc(meta.name) + '</a>' +
+        (meta.size ? ' <span class="doc-size">' + fmtSize(meta.size) + '</span>' : '') + '</td>' +
+        (multi ? '<td><span class="tag grey">' + esc(displayLabel(f.col)) + '</span></td>' : '') +
+        (ro ? '' : '<td class="doc-actions">' + actions + '</td>') + '</tr>';
+    }).join('');
+    if (!rows) rows = '<tr><td colspan="' + ((multi ? 3 : 2) - (ro ? 1 : 0)) + '" class="is-empty">Aucun document déposé.</td></tr>';
+
+    out += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Documents du candidat</caption><thead><tr><th scope="col">Document</th>' +
+      (multi ? '<th scope="col">Type</th>' : '') + (ro ? '' : '<th scope="col" class="doc-actions"><span class="fr-sr-only">Actions</span></th>') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+    if (multi && !ro) {
+      var sel = d.uploadCol && cols.some(function (m) { return m.id === d.uploadCol; }) ? d.uploadCol : cols[0].id;
+      out += '<div class="doc-type"><label for="doc-col">Type du document à déposer</label><select id="doc-col" class="select">' +
+        cols.map(function (m) { return '<option value="' + esc(m.id) + '"' + (m.id === sel ? ' selected' : '') + '>' + esc(displayLabel(m)) + '</option>'; }).join('') + '</select></div>';
+    }
+    if (!ro) out += '<div class="doc-drop' + (d.busy ? ' is-busy' : '') + '" id="doc-drop" role="button" tabindex="0" aria-label="Déposer un document : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (d.busy ? 'true' : 'false') + '">' +
+      ICON_UPLOAD + '<p><strong>' + (d.busy ? 'Envoi en cours…' : 'Glissez-déposez un fichier ici') + '</strong>' + (d.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
+    return out + othersHtml;
+  }
+
+  // Résout les liens de téléchargement (jeton Grist) une fois le panneau affiché.
+  function hydrateDownloads() {
+    var links = $('modal-panels').querySelectorAll('a[data-dl]');
+    if (!links.length) return;
+    Array.prototype.forEach.call(links, function (a) {
+      api.attachmentUrl(a.getAttribute('data-dl')).then(function (u) { if (u && u !== '#') a.href = u; }).catch(function () {});
+    });
+  }
+
+  function pickFiles(multiple, cb) {
+    var i = document.createElement('input');
+    i.type = 'file'; i.multiple = !!multiple;
+    i.onchange = function () { if (i.files && i.files.length) cb(Array.prototype.slice.call(i.files)); };
+    i.click();
+  }
+
+  // Exécute une opération sur les pièces jointes du candidat affiché, puis recharge les données.
+  function docOp(successText, fn) {
+    var d = state.docs, item = state.view[state.modal.index]; if (!item || d.busy) return;
+    d.busy = true; d.msg = null; d.confirm = null; renderModal();
+    var c = cfg();
+    return fn(item, c).then(function () { d.msg = { type: 'success', text: successText }; })
+      .catch(function (e) { d.msg = { type: 'error', text: 'Opération impossible : ' + ((e && e.message) || e) + '.' }; })
+      .then(function () { d.busy = false; return load(); })
+      .then(function () { if (!$('modal').hidden) renderModal(); });
+  }
+  function saveAttachments(item, c, colId, list) { return api.updateCell(c.table, item.raw.id, colId, ['L'].concat(list)); }
+
+  function uploadFiles(files, colId) {
+    docOp(files.length > 1 ? files.length + ' documents ajoutés.' : 'Document ajouté.', function (item, c) {
+      return files.reduce(function (p, f) { return p.then(function (acc) { return api.uploadAttachment(f).then(function (id) { return acc.concat(id); }); }); }, Promise.resolve([]))
+        .then(function (added) { return saveAttachments(item, c, colId, attIds(item, colId).concat(added)); });
+    });
+  }
+  function replaceFile(file, colId, oldId) {
+    docOp('Document remplacé.', function (item, c) {
+      return api.uploadAttachment(file).then(function (id) {
+        return saveAttachments(item, c, colId, attIds(item, colId).map(function (x) { return x === oldId ? id : x; }));
+      });
+    });
+  }
+  function deleteFile(colId, id) {
+    docOp('Document supprimé.', function (item, c) { return saveAttachments(item, c, colId, attIds(item, colId).filter(function (x) { return x !== id; })); });
+  }
+
+  /* ----- Édition au clic d'un champ de la fiche ----- */
+  // Champs modifiables : tous, sauf l'âge, les colonnes calculées (formules), les références et les pièces jointes (gérées dans l'onglet Documents).
+  function isEditableCol(col) {
+    if (!col || col.formula) return false;
+    if (['Ref', 'RefList', 'Attachments', 'Id', 'ManualSortPos', 'PositionNumber'].indexOf(typeBase(col.type)) !== -1) return false;
+    var lbl = norm(col.label), id = norm(col.id);
+    return !(lbl === 'age' || id === 'age');
+  }
+  // Dates des tests et de la VEMI : « JJ/MM/AAAA HH:mm » (contrôlé à la saisie quand la colonne est de type texte).
+  var SCHEDULE_RE = /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/;
+  function isScheduleCol(col) { var l = norm(col.label), i = norm(col.id); return l === 'date vemi' || l === 'date tests psy' || i === 'date_vemi' || i === 'date_tests_psy'; }
+  function tzOf(col) { var p = String(col.type || '').split(':'); return p[1] || 'UTC'; }
+  function wallParts(sec, tz) {
+    var dtf = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }), p = {};
+    dtf.formatToParts(new Date(sec * 1000)).forEach(function (x) { p[x.type] = x.value; });
+    return p;
+  }
+  function tzOffsetMs(ms, tz) { var p = wallParts(ms / 1000, tz); return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - ms; }
+  function wallToEpoch(y, mo, d, h, mi, tz) {
+    var guess = Date.UTC(y, mo - 1, d, h, mi, 0), e = guess - tzOffsetMs(guess, tz);
+    return (guess - tzOffsetMs(e, tz)) / 1000;
+  }
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  // Valeur Grist → valeur du champ de saisie.
+  function editInitial(col, v) {
+    var t = typeBase(col.type);
+    if (t === 'Date') { if (typeof v !== 'number') return ''; var d = new Date(v * 1000); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()); }
+    if (t === 'DateTime') { if (typeof v !== 'number') return ''; var p = wallParts(v, tzOf(col)); return p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute; }
+    if (t === 'Bool') return v === true ? 'true' : (v === false ? 'false' : '');
+    if (t === 'ChoiceList') return toList(v);
+    return v == null ? '' : String(v);
+  }
+  // Valeur saisie → valeur Grist (ou { error }).
+  function parseEdit(col, raw) {
+    var t = typeBase(col.type), s = Array.isArray(raw) ? raw : String(raw == null ? '' : raw);
+    if (t === 'ChoiceList') return { value: ['L'].concat(s) };
+    if (t === 'Bool') return { value: s === 'true' ? true : (s === 'false' ? false : null) };
+    if (t === 'Date') {
+      if (s === '') return { value: null };
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if (!m) return { error: 'Date invalide (format attendu : jj/mm/aaaa).' };
+      return { value: Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 };
+    }
+    if (t === 'DateTime') {
+      if (s === '') return { value: null };
+      var q = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s); if (!q) return { error: 'Date et heure invalides.' };
+      return { value: wallToEpoch(+q[1], +q[2], +q[3], +q[4], +q[5], tzOf(col)) };
+    }
+    if (t === 'Numeric' || t === 'Int') {
+      if (s.trim() === '') return { value: null };
+      var n = Number(s.replace(',', '.').replace(/\s/g, '')); if (!isFinite(n)) return { error: 'Valeur numérique attendue.' };
+      if (t === 'Int' && Math.round(n) !== n) return { error: 'Nombre entier attendu.' };
+      return { value: n };
+    }
+    if (isScheduleCol(col) && s.trim() !== '' && !SCHEDULE_RE.test(s.trim())) return { error: 'Format attendu : JJ/MM/AAAA HH:mm (ex. 18/06/2026 14:30).' };
+    return { value: s };
+  }
+
+  function editorHtml(col, item) {
+    var e = state.edit, t = typeBase(col.type), label = displayLabel(col), id = 'ed-' + col.id, v = e.value, ctl;
+    var common = ' class="input ed-input" id="' + id + '" aria-label="' + esc(label) + '"';
+    if (t === 'Choice' && col.choices) {
+      ctl = '<select class="select ed-input" id="' + id + '" aria-label="' + esc(label) + '"><option value=""></option>' + col.choices.map(function (o) { return '<option value="' + esc(o) + '"' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') +
+        (v && col.choices.indexOf(v) === -1 ? '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>' : '') + '</select>';
+    } else if (t === 'ChoiceList' && col.choices) {
+      ctl = '<div class="ed-multi ed-input" role="group" aria-label="' + esc(label) + '" tabindex="-1">' + col.choices.map(function (o, i) {
+        return '<label class="ed-check"><input type="checkbox" value="' + esc(o) + '"' + (v.indexOf(o) !== -1 ? ' checked' : '') + '> ' + esc(o) + '</label>';
+      }).join('') + '</div>';
+    } else if (t === 'Bool') {
+      ctl = '<select class="select ed-input" id="' + id + '" aria-label="' + esc(label) + '"><option value=""></option><option value="true"' + (v === 'true' ? ' selected' : '') + '>Oui</option><option value="false"' + (v === 'false' ? ' selected' : '') + '>Non</option></select>';
+    } else if (t === 'Date') ctl = '<input type="date"' + common + ' value="' + esc(v) + '">';
+    else if (t === 'DateTime') ctl = '<input type="datetime-local"' + common + ' value="' + esc(v) + '">';
+    else if (t === 'Numeric' || t === 'Int') ctl = '<input type="text" inputmode="decimal"' + common + ' value="' + esc(v) + '">';
+    else if (typeof v === 'string' && (v.indexOf('\n') !== -1 || /commentaire/.test(norm(col.label)) || v.length > 80)) ctl = '<textarea class="textarea ed-input" id="' + id + '" aria-label="' + esc(label) + '" rows="4">' + esc(v) + '</textarea>';
+    else ctl = '<input type="text"' + common + ' value="' + esc(v) + '" autocomplete="off"' + (isScheduleCol(col) ? ' placeholder="JJ/MM/AAAA HH:mm"' : '') + '>';
+    return '<div class="ed" data-ed="' + esc(col.id) + '">' + ctl +
+      '<div class="ed-actions"><button type="button" class="btn sm" data-ed-act="save"' + (e.busy ? ' disabled' : '') + '>' + (e.busy ? 'Enregistrement…' : 'Enregistrer') + '</button>' +
+      '<button type="button" class="btn secondary sm" data-ed-act="cancel"' + (e.busy ? ' disabled' : '') + '>Annuler</button></div>' +
+      (e.error ? '<p class="ed-error" role="alert">' + esc(e.error) + '</p>' : '') + '</div>';
+  }
+
+  function startEdit(colId) {
+    var item = state.view[state.modal.index], c = cfg(), col = colMeta(c.table, colId);
+    if (!item || !isEditableCol(col)) return;
+    state.edit = { colId: colId, value: editInitial(col, item.raw[colId]), busy: false, error: '' };
+    renderModal();
+  }
+  function cancelEdit() { if (!state.edit || state.edit.busy) return; state.edit = null; renderModal(); }
+  function saveEdit() {
+    var e = state.edit, item = state.view[state.modal.index], c = cfg(); if (!e || e.busy || !item) return;
+    var col = colMeta(c.table, e.colId), r = parseEdit(col, e.value);
+    if (r.error) { e.error = r.error; renderModal(); return; }
+    // Aucun changement : on referme simplement.
+    if (valuesEqual(r.value, item.raw[e.colId])) { state.edit = null; renderModal(); return; }
+    e.busy = true; e.error = ''; renderModal();
+    var fields = {}; fields[e.colId] = r.value;
+    api.updateFields(c.table, item.raw.id, fields).then(function () {
+      state.edit = null; return load();
+    }).catch(function (err) {
+      e.busy = false; e.error = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.';
+    }).then(function () { if (!$('modal').hidden) renderModal(); });
+  }
+  // Redonne le focus au champ en cours de saisie après un rendu.
+  function focusEditor() {
+    var box = $('modal-panels').querySelector('.ed'); if (!box) return;
+    var ctl = box.querySelector('input, select, textarea'); if (!ctl || box.contains(document.activeElement)) return;
+    ctl.focus();
+    try { if (ctl.select && (ctl.type === 'text' || ctl.tagName === 'TEXTAREA') && !state.edit.touched) ctl.select(); } catch (e) {}
+  }
+
+  // opts.ro : lecture seule (pas d'envoi, pas de dépôt) ; opts.cmp = { side, other, keep } : fiche affichée en comparaison de doublon.
+  function panelHtml(tabDef, item, c, opts) {
+    opts = opts || {};
+    var ids = c.tabs[tabDef.key] || [];
+    if (!ids.length) return '<p class="stg-empty">Aucune colonne configurée pour cet onglet.</p>';
+    // Deux paires libellé / valeur par ligne ; les textes longs (Commentaires…) prennent toute la largeur.
+    function cell(id, span) {
+      var col = colMeta(c.table, id); if (!col) return '';
+      var f = fmtValue(col, item.raw[id]), extra = '', diff = false;
+      if (opts.cmp) { // comparaison : différences surlignées, valeur de l'autre fiche reprenable
+        var cm = opts.cmp, isAtt = typeBase(col.type) === 'Attachments', kept = cm.keep === cm.side;
+        diff = !valuesEqual(item.raw[id], cm.other.raw[id]);
+        if (diff && isAtt) extra = '<span class="take-note">Les pièces jointes seront regroupées</span>';
+        else if (diff && !col.formula) {
+          var on = !!state.cmp.take[id];
+          if (!kept && !isEmptyVal(item.raw[id])) extra = '<button type="button" class="take-btn' + (on ? ' is-on' : '') + '" data-take="' + esc(id) + '" aria-pressed="' + on + '">' + (on ? 'Valeur reprise ✓' : 'Reprendre cette valeur') + '</button>';
+          else if (kept && on) extra = '<span class="take-note">Sera remplacée par la valeur de l’autre fiche</span>';
+          else if (kept && isEmptyVal(item.raw[id]) && !isEmptyVal(cm.other.raw[id])) extra = '<span class="take-note">Sera complétée avec la valeur de l’autre fiche</span>';
+        }
+      }
+      // Édition au clic (fiche simple uniquement) : le champ en cours de saisie affiche son éditeur.
+      var editable = !opts.ro && !opts.cmp && isEditableCol(col), editing = editable && state.edit && state.edit.colId === id;
+      var body = editing ? editorHtml(col, item) : f.html;
+      return '<th scope="row">' + esc(displayLabel(col)) + '</th><td' + (span ? ' colspan="' + span + '"' : '') +
+        (editable && !editing ? ' data-edit="' + esc(id) + '" tabindex="0" role="button" aria-label="Modifier ' + esc(displayLabel(col)) + '" title="Cliquer pour modifier"' : '') +
+        ' class="' + (f.empty && !editing ? 'is-empty' : '') + (f.pre ? ' is-pre' : '') + (diff ? ' is-diff' : '') + (editable && !editing ? ' is-editable' : '') + (editing ? ' is-editing' : '') + '">' + body + extra + '</td>';
+    }
+    // Regroupe une liste de colonnes deux par ligne (un texte long occupe seul une ligne).
+    function packRows(list) {
+      var rows = [], pending = null;
+      list.forEach(function (id) {
+        var col = colMeta(c.table, id); if (!col) return;
+        if (fmtValue(col, item.raw[id]).wide) {
+          if (pending) { rows.push([pending]); pending = null; }
+          rows.push([id]);
+        } else if (pending) { rows.push([pending, id]); pending = null; }
+        else pending = id;
+      });
+      if (pending) rows.push([pending]);
+      return rows;
+    }
+    // rows : tableau de lignes, chacune de 1 ou 2 identifiants de colonnes.
+    function tableHtml(rows, caption) {
+      if (opts.cmp) rows = [].concat.apply([], rows.map(function (r) { return r.map(function (x) { return [x]; }); })); // comparaison : un champ par ligne
+      return '<div class="table-wrap"><table class="detail-table"><caption class="fr-sr-only">' + esc(caption) + '</caption><tbody>' +
+        rows.map(function (r) { return '<tr>' + (r.length === 1 ? cell(r[0], 3) : cell(r[0]) + cell(r[1])) + '</tr>'; }).join('') + '</tbody></table></div>';
+    }
+
+    if (tabDef.key === 'docs') {
+      var others = ids.filter(function (id) { var m = colMeta(c.table, id); return m && typeBase(m.type) !== 'Attachments'; });
+      return docsHtml(item, c, ids, others.length ? '<section class="detail-group"><h3 class="detail-title">Autres informations</h3>' + tableHtml(packRows(others), 'Autres informations') + '</section>' : '', opts);
+    }
+
+    var groups = TAB_GROUPS[tabDef.key];
+    if (!groups) return tableHtml(packRows(ids), tabDef.cardTitle);
+
+    var placed = {}, html = '';
+    function resolve(labels) {
+      return labels.map(function (l) { return findCol(c.table, l); })
+        .filter(function (col) { return col && ids.indexOf(col.id) !== -1 && !placed[col.id]; })
+        .map(function (col) { placed[col.id] = true; return col.id; });
+    }
+    groups.forEach(function (g) {
+      // g.rows : lignes explicites (ex. Nom et Prénom côte à côte) ; g.labels : répartition automatique.
+      var rows = g.rows ? g.rows.map(resolve).filter(function (r) { return r.length; }) : packRows(resolve(g.labels));
+      if (rows.length) html += '<section class="detail-group">' + (g.title ? '<h3 class="detail-title">' + esc(g.title) + (g.mail && !opts.ro ? mailActionsHtml(g.mail, item, c) : '') + '</h3>' : '') + tableHtml(rows, g.title || 'Commentaires') + '</section>';
+    });
+    var rest = ids.filter(function (id) { return !placed[id]; });
+    if (rest.length) html += '<section class="detail-group"><h3 class="detail-title">Autres informations</h3>' + tableHtml(packRows(rest), 'Autres informations') + '</section>';
+    return (!opts.ro && tabDef.key === 'mil' ? askHtml() : '') + (!opts.ro && (tabDef.key === 'medico' || tabDef.key === 'mil') ? mailMsgHtml() : '') + html;
+  }
+
+  /* ----- Fiche : rendu d'une fiche (ou de deux en cas de doublon) ----- */
+  function isEmptyVal(v) { return v == null || v === '' || (Array.isArray(v) && toList(v).length === 0); }
+  function normVal(v) { return isEmptyVal(v) ? '' : (Array.isArray(v) ? toList(v).slice().sort().join('|') : String(v).trim()); }
+  function valuesEqual(a, b) { return normVal(a) === normVal(b); }
+  function recItem(rec) { return rec ? { raw: rec.raw, id: rec.identity == null ? '' : String(rec.identity), st: rec.status } : null; }
+  function recById(id) { for (var i = 0; i < state.records.length; i++) if (state.records[i].raw.id === id) return state.records[i]; return null; }
+
+  // Remplit une fiche (p = 'modal' ou 'modal2') : titre, sous-titre, état, onglets, contenu, pied.
+  function fillDialog(p, item, opts) {
+    opts = opts || {};
+    var c = cfg(), m = state.modal, tp = p === 'modal' ? ['mt-', 'mp-'] : ['mt2-', 'mp2-'];
+    $(p + '-title').innerHTML = esc(item.id ? formatName(item.id) : 'Candidat') + flagsHtml(item.raw, c);
+    var aff = findCol(c.table, 'Affectation'), sub = $(p + '-sub');
+    var subTxt = aff && item.raw[aff.id] ? String(item.raw[aff.id]) : '';
+    sub.hidden = !subTxt; sub.textContent = subTxt;
+    $(p + '-tags').innerHTML = (opts.flag ? '<span class="cmp-flag">' + esc(opts.flag) + '</span>' : '') + (toList(item.st).length ? tagsHtml(item.st) : '');
+
+    var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
+    if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
+    if (!tabs.some(function (t) { return t.key === m.tab; })) m.tab = tabs[0].key;
+    $(p + '-tabs').innerHTML = tabs.map(function (t) {
+      return '<button type="button" class="stg-tab" role="tab" id="' + tp[0] + t.key + '" data-tab="' + t.key + '" aria-selected="' + (t.key === m.tab) + '" aria-controls="' + tp[1] + t.key + '">' + esc(t.title) + '</button>';
+    }).join('');
+    var notice = (!opts.ro && state.notice) ? '<div class="doc-alert ' + state.notice.type + '" role="status"><p>' + esc(state.notice.text) + '</p></div>' : '';
+    $(p + '-panels').innerHTML = notice + tabs.map(function (t) {
+      return '<div class="stg-tabpanel" role="tabpanel" id="' + tp[1] + t.key + '" aria-labelledby="' + tp[0] + t.key + '"' + (t.key === m.tab ? '' : ' hidden') + '>' + panelHtml(t, item, c, opts) + '</div>';
+    }).join('');
+    // Pied : « Candidature créée le x · Mise à jour le y par z »
+    var cc = findCol(c.table, FOOT_LABELS.created), cu = findCol(c.table, FOOT_LABELS.updated), cb = findCol(c.table, FOOT_LABELS.by);
+    function when(col) { if (!col) return ''; var f = fmtValue(col, item.raw[col.id]); return f.empty ? '' : f.html; }
+    var parts = [], created = when(cc), updated = when(cu), by = cb && item.raw[cb.id] ? esc(item.raw[cb.id]) : '';
+    if (created) parts.push('Candidature créée le ' + created);
+    if (updated) parts.push('Mise à jour le ' + updated + (by ? ' par ' + by : ''));
+    $(p + '-foot').innerHTML = parts.join(' · ');
+    $(p + '-foot').hidden = !parts.length;
+  }
+
+  function renderModal() {
+    if (state.cmp.active) return renderCompare();
+    var m = state.modal, item = state.view[m.index]; if (!item) return;
+    fillDialog('modal', item, {});
+    $('modal2').hidden = true; $('cmp-bar').hidden = true; $('modal-column').classList.remove('is-compare');
+    $('modal-prev').hidden = false; $('modal-next').hidden = false;
+    $('modal-prev').disabled = m.index <= 0;
+    $('modal-next').disabled = m.index >= state.view.length - 1;
+    hydrateDownloads();
+    if (state.edit) focusEditor();
+    if (state.ask) { var ai = $('ask-chrono'); if (ai && document.activeElement !== ai) { ai.focus(); } }
+  }
+
+  /* ----- Doublons : deux fiches côte à côte, synchronisation, suppression de la fiche en trop ----- */
+  function dupKey(rec, c) {
+    var n = findCol(c.table, 'NID'), nid = n && rec.raw[n.id] ? norm(String(rec.raw[n.id])) : '';
+    if (nid) return 'nid:' + nid;
+    var d = findCol(c.table, 'DDN'), idn = norm(String(rec.identity || ''));
+    return idn ? 'id:' + idn + '|' + (d ? String(rec.raw[d.id] || '') : '') : '';
+  }
+  function findDuplicates(rec, c) {
+    var k = dupKey(rec, c); if (!k) return [];
+    return state.records.filter(function (o) { return o.raw.id !== rec.raw.id && dupKey(o, c) === k; });
+  }
+  // Ancienneté : date de création de la candidature, à défaut l'ordre de création de la ligne.
+  function ageKey(rec, c) {
+    var col = findCol(c.table, FOOT_LABELS.created), v = col && rec.raw[col.id];
+    return (typeof v === 'number' ? v : 1e12) * 1e6 + rec.raw.id;
+  }
+  function sidesOf(c) {
+    var cmp = state.cmp, base = recById(cmp.baseId), other = recById(cmp.otherId);
+    if (!base || !other) return null;
+    var pair = [base, other].sort(function (a, b) { return ageKey(a, c) - ageKey(b, c); });
+    return { left: pair[0], right: pair[1] };
+  }
+  function startCompare(rec, others, c) {
+    state.cmp = { active: true, baseId: rec.raw.id, otherId: others[0].raw.id, others: others.map(function (o) { return o.raw.id; }), keep: 'newer', take: {}, busy: false, msg: null, confirm: false };
+  }
+  function exitCompare() { state.cmp = { active: false }; }
+
+  // Colonnes synchronisables : celles affichées dans la fiche, hors formules.
+  function syncColumns(c) {
+    var seen = {}, out = [];
+    TAB_DEFS.forEach(function (t) { (c.tabs[t.key] || []).forEach(function (id) { var col = colMeta(c.table, id); if (col && !seen[id] && !col.formula && id !== 'id') { seen[id] = true; out.push(col); } }); });
+    return out;
+  }
+  function doublonReset(c, keepRec) {
+    var col = findCol(c.table, 'Doublon');
+    if (!col || col.formula || !isYes(keepRec.raw[col.id])) return null;
+    var o = {}; o[col.id] = typeBase(col.type) === 'Bool' ? false : 'Non'; return o;
+  }
+  // Modifications à appliquer à la fiche conservée : champs vides complétés, valeurs reprises, pièces jointes regroupées.
+  function syncPlan(c, keepRec, otherRec) {
+    var fields = {}, n = 0;
+    syncColumns(c).forEach(function (col) {
+      var kv = keepRec.raw[col.id], ov = otherRec.raw[col.id];
+      if (typeBase(col.type) === 'Attachments') {
+        var a = attIds(recItem(keepRec), col.id), u = a.slice();
+        attIds(recItem(otherRec), col.id).forEach(function (x) { if (u.indexOf(x) === -1) u.push(x); });
+        if (u.length !== a.length) { fields[col.id] = ['L'].concat(u); n++; }
+        return;
+      }
+      if (valuesEqual(kv, ov) || isEmptyVal(ov)) return;
+      if (isEmptyVal(kv) || state.cmp.take[col.id]) { fields[col.id] = ov; n++; }
+    });
+    var reset = doublonReset(c, keepRec);
+    return { fields: fields, n: n, reset: reset };
+  }
+  function countDiffs(c, a, b) {
+    var n = 0;
+    syncColumns(c).forEach(function (col) { if (!valuesEqual(a.raw[col.id], b.raw[col.id])) n++; });
+    return n;
+  }
+
+  function renderCompare() {
+    var c = cfg(), sides = sidesOf(c);
+    if (!sides) { // une des deux fiches a disparu (suppression) : retour à la fiche restante
+      var keepId = recById(state.cmp.baseId) ? state.cmp.baseId : state.cmp.otherId;
+      exitCompare();
+      var idx = -1; state.view.forEach(function (v, i) { if (v.raw.id === keepId) idx = i; });
+      if (idx < 0) { closeModal(); return; }
+      state.modal.index = idx; state.modal.rowId = state.view[idx].raw.id; return renderModal();
+    }
+    var L = sides.left, R = sides.right, keepSide = state.cmp.keep === 'older' ? 'left' : 'right';
+    fillDialog('modal', recItem(L), { ro: true, flag: 'La plus ancienne · ligne n° ' + L.raw.id, cmp: { side: 'left', other: recItem(R), keep: keepSide } });
+    fillDialog('modal2', recItem(R), { ro: true, flag: 'La plus récente · ligne n° ' + R.raw.id, cmp: { side: 'right', other: recItem(L), keep: keepSide } });
+    $('modal2').hidden = false; $('modal-column').classList.add('is-compare');
+    $('modal-prev').hidden = true; $('modal-next').hidden = true;
+    renderCmpBar(c, L, R, keepSide);
+    hydrateDownloads();
+  }
+
+  function renderCmpBar(c, L, R, keepSide) {
+    var cmp = state.cmp, keepRec = keepSide === 'left' ? L : R, othRec = keepSide === 'left' ? R : L, plan = syncPlan(c, keepRec, othRec), bar = $('cmp-bar');
+    var canSync = !cmp.busy && (plan.n > 0 || !!plan.reset);
+    var alts = cmp.others.length > 1
+      ? '<div class="cmp-pick"><label for="cmp-other">Comparer avec</label><select id="cmp-other" class="select">' + cmp.others.map(function (id) {
+          var r = recById(id); return '<option value="' + id + '"' + (id === cmp.otherId ? ' selected' : '') + '>' + esc(r ? formatName(r.identity || '') + ' · ligne n° ' + id : 'ligne n° ' + id) + '</option>';
+        }).join('') + '</select></div>' : '';
+    var delName = formatName(othRec.identity || 'cette fiche') + ' (ligne n° ' + othRec.raw.id + ', ' + (keepSide === 'left' ? 'la plus récente' : 'la plus ancienne') + ')';
+    bar.innerHTML =
+      '<p class="cmp-title"><strong>Doublon détecté</strong> · ' + countDiffs(c, L, R) + ' différence(s) entre les deux fiches (surlignées).</p>' +
+      '<p class="cmp-hint">La synchronisation complète les champs vides de la fiche conservée avec ceux de l’autre fiche, reprend les valeurs marquées « Reprendre cette valeur » et regroupe les pièces jointes. Ensuite, l’autre fiche peut être supprimée.</p>' +
+      '<div class="cmp-row">' + alts +
+        '<fieldset class="cmp-keep"><legend>Fiche à conserver</legend>' +
+          '<label><input type="radio" name="cmp-keep" value="newer"' + (cmp.keep === 'newer' ? ' checked' : '') + '> La plus récente</label>' +
+          '<label><input type="radio" name="cmp-keep" value="older"' + (cmp.keep === 'older' ? ' checked' : '') + '> La plus ancienne</label></fieldset></div>' +
+      (cmp.msg ? '<div class="doc-alert ' + cmp.msg.type + '" role="' + (cmp.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(cmp.msg.text) + '</p></div>' : '') +
+      (cmp.confirm
+        ? '<div class="cmp-confirm" role="alert"><p>Supprimer définitivement la fiche de <strong>' + esc(delName) + '</strong> ? Cette action est irréversible.</p>' +
+          '<button type="button" class="btn danger sm" data-cmp="delete-confirm"' + (cmp.busy ? ' disabled' : '') + '>Confirmer la suppression</button><button type="button" class="btn secondary sm" data-cmp="delete-cancel">Annuler</button></div>'
+        : '<div class="cmp-actions"><button type="button" class="btn" data-cmp="sync"' + (canSync ? '' : ' disabled') + '>Synchroniser les informations' + (plan.n ? ' (' + plan.n + ' champ' + (plan.n > 1 ? 's' : '') + ')' : '') + '</button>' +
+          '<button type="button" class="btn danger" data-cmp="delete"' + (cmp.busy ? ' disabled' : '') + '>Supprimer la fiche en trop</button>' +
+          '<button type="button" class="btn secondary" data-cmp="close">Fermer</button></div>');
+    bar.hidden = false;
+  }
+
+  function cmpSync() {
+    var c = cfg(), cmp = state.cmp, sides = sidesOf(c); if (!sides || cmp.busy) return;
+    var keepRec = cmp.keep === 'older' ? sides.left : sides.right, othRec = cmp.keep === 'older' ? sides.right : sides.left, plan = syncPlan(c, keepRec, othRec);
+    var fields = plan.fields; if (plan.reset) Object.keys(plan.reset).forEach(function (k) { fields[k] = plan.reset[k]; });
+    if (!Object.keys(fields).length) return;
+    cmp.busy = true; cmp.msg = null; cmp.confirm = false; renderModal();
+    api.updateFields(c.table, keepRec.raw.id, fields).then(function () {
+      cmp.take = {}; cmp.msg = { type: 'success', text: 'Informations synchronisées dans la fiche conservée' + (plan.n ? ' (' + plan.n + ' champ' + (plan.n > 1 ? 's' : '') + ').' : '.') + ' Vous pouvez maintenant supprimer la fiche en trop.' };
+    }).catch(function (e) { cmp.msg = { type: 'error', text: 'Synchronisation impossible : ' + ((e && e.message) || e) + '.' };
+    }).then(function () { cmp.busy = false; return load(); }).then(function () { if (!$('modal').hidden) renderModal(); });
+  }
+  function cmpDelete() {
+    var c = cfg(), cmp = state.cmp, sides = sidesOf(c); if (!sides || cmp.busy) return;
+    var keepRec = cmp.keep === 'older' ? sides.left : sides.right, othRec = cmp.keep === 'older' ? sides.right : sides.left, reset = doublonReset(c, keepRec);
+    cmp.busy = true; cmp.msg = null; renderModal();
+    api.deleteRow(c.table, othRec.raw.id).then(function () {
+      return reset ? api.updateFields(c.table, keepRec.raw.id, reset).catch(function () {}) : null;
+    }).then(function () {
+      state.notice = { type: 'success', text: 'La fiche en trop a été supprimée. Il ne reste que la fiche de ' + formatName(keepRec.identity || 'ce candidat') + '.' };
+      exitCompare();
+      // La fiche supprimée disparaît de la liste : on revient sur la fiche conservée.
+      return load().then(function () {
+        var idx = -1; state.view.forEach(function (v, i) { if (v.raw.id === keepRec.raw.id) idx = i; });
+        if (idx < 0) { closeModal(); return; }
+        state.modal.index = idx; state.modal.rowId = state.view[idx].raw.id; renderModal();
+      });
+    }).catch(function (e) { cmp.busy = false; cmp.confirm = false; cmp.msg = { type: 'error', text: 'Suppression impossible : ' + ((e && e.message) || e) + '.' }; renderModal(); });
+  }
+
+  function openModal(index, opener) {
+    if (!state.view[index]) return;
+    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
+    if (!state.modal.tab) state.modal.tab = 'info';
+    // Doublon = oui : les deux fiches s'ouvrent côte à côte.
+    exitCompare();
+    var rec = recById(state.view[index].raw.id), c = cfg();
+    if (rec && flagValue(rec.raw, c, 'Doublon')) {
+      var dups = findDuplicates(rec, c);
+      if (dups.length) startCompare(rec, dups, c);
+      else state.notice = { type: 'warning', text: 'Cette fiche est marquée comme doublon, mais aucune autre fiche ne correspond (même NID, ou même identité et même date de naissance).' };
+    }
+    renderModal();
+    var ov = $('modal');
+    ov.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('modal-close').focus(); }); });
+  }
+  function closeModal() {
+    var ov = $('modal');
+    if (ov.hidden) return;
+    ov.classList.remove('is-open');
+    document.body.style.overflow = '';
+    exitCompare(); state.notice = null; state.edit = null; state.ask = null;
+    setTimeout(function () { ov.hidden = true; }, 200);
+    load(); // actualise les données à la fermeture de la fiche
+    var op = state.modal.opener;
+    if (op && document.body.contains(op)) op.focus();
+    else { var row = document.querySelector('#rows tr[data-i="' + state.modal.index + '"]'); if (row) row.focus(); }
+  }
+  function stepModal(delta) {
+    var i = state.modal.index + delta;
+    if (i < 0 || i >= state.view.length) return;
+    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
+    // Le candidat suivant peut lui aussi être un doublon : on rouvre proprement (comparaison ou fiche simple).
+    var rec = recById(state.view[i].raw.id), c = cfg();
+    exitCompare();
+    if (rec && flagValue(rec.raw, c, 'Doublon')) {
+      var dups = findDuplicates(rec, c);
+      if (dups.length) startCompare(rec, dups, c);
+      else state.notice = { type: 'warning', text: 'Cette fiche est marquée comme doublon, mais aucune autre fiche ne correspond (même NID, ou même identité et même date de naissance).' };
+    }
+    renderModal();
+    var dlg = document.querySelector('.modal-dialog'); if (dlg) dlg.scrollIntoView({ block: 'nearest' });
+  }
+
+  $('rows').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-i]'); if (tr) openModal(+tr.getAttribute('data-i'), tr);
+  });
+  $('rows').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var tr = e.target.closest('tr[data-i]'); if (tr) { e.preventDefault(); openModal(+tr.getAttribute('data-i'), tr); }
+  });
+  $('modal').addEventListener('mousedown', function (e) { if (e.target === $('modal')) closeModal(); });
+  $('modal-close').addEventListener('click', closeModal);
+  // Édition au clic : un clic (ou Entrée) sur un champ ouvre son éditeur ; Entrée enregistre, Échap annule.
+  var panelsEdit = $('modal-panels');
+  panelsEdit.addEventListener('click', function (e) {
+    var act = e.target.closest('[data-ed-act]');
+    if (act) { if (act.getAttribute('data-ed-act') === 'save') saveEdit(); else cancelEdit(); return; }
+    var td = e.target.closest('td[data-edit]');
+    if (!td || e.target.closest('a, button, input, select, textarea, .ed')) return; // liens (mail, téléphone) et éditeur : comportement normal
+    if (state.edit && state.edit.busy) return;
+    startEdit(td.getAttribute('data-edit'));
+  });
+  panelsEdit.addEventListener('keydown', function (e) {
+    var ed = e.target.closest('.ed');
+    if (ed) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
+      else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') { e.preventDefault(); e.stopPropagation(); saveEdit(); }
+      else if (e.key === 'Enter' && e.target.tagName === 'TEXTAREA' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); saveEdit(); }
+      return;
+    }
+    var td = e.target.closest('td[data-edit]');
+    if (td && e.target === td && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startEdit(td.getAttribute('data-edit')); }
+  });
+  function readEditor(el) {
+    var ed = el.closest('.ed'); if (!ed || !state.edit) return;
+    var multi = ed.querySelector('.ed-multi');
+    state.edit.value = multi ? Array.prototype.map.call(multi.querySelectorAll('input:checked'), function (i) { return i.value; }) : el.value;
+    state.edit.touched = true; state.edit.error = '';
+  }
+  panelsEdit.addEventListener('input', function (e) { if (e.target.id === 'ask-chrono' && state.ask) { state.ask.value = e.target.value; state.ask.error = ''; return; } readEditor(e.target); });
+  function confirmAsk() {
+    var a = state.ask; if (!a) return;
+    var v = a.value.trim();
+    if (!v) { a.error = 'Renseignez le N° Chrono.'; renderModal(); return; }
+    state.ask = null; runMail(a.block, a.kind, { N_CHRONO: v, CHRONO: v });
+  }
+  panelsEdit.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ask-act]'); if (!b) return;
+    if (b.getAttribute('data-ask-act') === 'ok') confirmAsk(); else { state.ask = null; renderModal(); }
+  });
+  panelsEdit.addEventListener('keydown', function (e) {
+    if (!e.target.closest || !e.target.closest('.ask')) return;
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); e.stopPropagation(); confirmAsk(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.ask = null; renderModal(); }
+  });
+  panelsEdit.addEventListener('change', function (e) { readEditor(e.target); });
+
+  // Onglet Documents : actions par ligne, zone de dépôt (clic ou glisser-déposer).
+  var panels = $('modal-panels');
+  panels.addEventListener('click', function (e) {
+    var d = state.docs;
+    var mb = e.target.closest('[data-mail]');
+    if (mb) { if (!mb.disabled) { var pm = mb.getAttribute('data-mail').split(':'); runMail(pm[0], pm[1]); } return; }
+    var btn = e.target.closest('[data-act]');
+    if (btn) {
+      var tr = btn.closest('tr'), colId = tr.getAttribute('data-col'), id = Number(tr.getAttribute('data-att')), act = btn.getAttribute('data-act');
+      if (act === 'edit') pickFiles(false, function (files) { replaceFile(files[0], colId, id); });
+      else if (act === 'delete') { d.confirm = { col: colId, id: id }; renderModal(); }
+      else if (act === 'cancel') { d.confirm = null; renderModal(); }
+      else if (act === 'confirm') deleteFile(colId, id);
+      return;
+    }
+    if (e.target.closest('a[data-dl]')) { var a = e.target.closest('a[data-dl]'); if (!a.getAttribute('href') || a.getAttribute('href') === '#') e.preventDefault(); return; }
+    var zone = e.target.closest('#doc-drop');
+    if (zone && !d.busy) pickFiles(true, function (files) { uploadFiles(files, currentUploadCol()); });
+  });
+  panels.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'doc-drop' && !state.docs.busy) { e.preventDefault(); pickFiles(true, function (files) { uploadFiles(files, currentUploadCol()); }); }
+  });
+  panels.addEventListener('change', function (e) { if (e.target.id === 'doc-col') state.docs.uploadCol = e.target.value; });
+  ['dragenter', 'dragover'].forEach(function (t) {
+    panels.addEventListener(t, function (e) { var z = e.target.closest('#doc-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } });
+  });
+  panels.addEventListener('dragleave', function (e) { var z = e.target.closest('#doc-drop'); if (z) z.classList.remove('is-over'); });
+  panels.addEventListener('drop', function (e) {
+    var z = e.target.closest('#doc-drop'); if (!z) return;
+    e.preventDefault(); z.classList.remove('is-over');
+    if (state.docs.busy || !e.dataTransfer || !e.dataTransfer.files.length) return;
+    uploadFiles(Array.prototype.slice.call(e.dataTransfer.files), currentUploadCol());
+  });
+  // Empêche le navigateur d'ouvrir un fichier lâché à côté de la zone.
+  ['dragover', 'drop'].forEach(function (t) { $('modal').addEventListener(t, function (e) { if (!e.target.closest('#doc-drop')) e.preventDefault(); }); });
+  function currentUploadCol() {
+    var item = state.view[state.modal.index], cols = item ? attCols(cfg(), cfg().tabs.docs || []) : [];
+    var want = state.docs.uploadCol;
+    return (cols.filter(function (m) { return m.id === want; })[0] || cols[0] || {}).id;
+  }
+
+  $('modal-prev').addEventListener('click', function () { stepModal(-1); });
+  $('modal-next').addEventListener('click', function () { stepModal(1); });
+  // Onglets : les deux fiches (comparaison) changent d'onglet ensemble.
+  [['modal-tabs', 'mt-'], ['modal2-tabs', 'mt2-']].forEach(function (cfgTab) {
+    $(cfgTab[0]).addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tab]'); if (!b) return;
+      state.modal.tab = b.getAttribute('data-tab'); state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null; renderModal();
+      var nb = $(cfgTab[1] + state.modal.tab); if (nb) nb.focus();
+    });
+  });
+  // Comparaison de doublon : reprise d'une valeur, fiche à conserver, actions de la barre.
+  $('modal-stack').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-take]'); if (!t) return;
+    var id = t.getAttribute('data-take'); state.cmp.take[id] = !state.cmp.take[id]; if (!state.cmp.take[id]) delete state.cmp.take[id];
+    renderModal();
+  });
+  $('cmp-bar').addEventListener('change', function (e) {
+    if (e.target.name === 'cmp-keep') { state.cmp.keep = e.target.value; state.cmp.take = {}; state.cmp.confirm = false; state.cmp.msg = null; renderModal(); }
+    else if (e.target.id === 'cmp-other') { state.cmp.otherId = Number(e.target.value); state.cmp.take = {}; state.cmp.confirm = false; state.cmp.msg = null; renderModal(); }
+  });
+  $('cmp-bar').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cmp]'); if (!b) return;
+    var act = b.getAttribute('data-cmp'), cmp = state.cmp;
+    if (act === 'sync') cmpSync();
+    else if (act === 'delete') { cmp.confirm = true; cmp.msg = null; renderModal(); }
+    else if (act === 'delete-cancel') { cmp.confirm = false; renderModal(); }
+    else if (act === 'delete-confirm') cmpDelete();
+    else if (act === 'close') closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if ($('modal').hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeModal(); return; }
+    if (e.key === 'ArrowLeft' && e.target.closest('#modal-tabs')) {
+      var keys = Array.prototype.map.call($('modal-tabs').children, function (b) { return b.getAttribute('data-tab'); }), i = keys.indexOf(state.modal.tab);
+      if (i > 0) { state.modal.tab = keys[i - 1]; renderModal(); $('mt-' + state.modal.tab).focus(); }
+    }
+    if (e.key === 'ArrowRight' && e.target.closest('#modal-tabs')) {
+      var ks = Array.prototype.map.call($('modal-tabs').children, function (b) { return b.getAttribute('data-tab'); }), j = ks.indexOf(state.modal.tab);
+      if (j < ks.length - 1) { state.modal.tab = ks[j + 1]; renderModal(); $('mt-' + state.modal.tab).focus(); }
+    }
+    if (e.key === 'Tab') { // piège à focus dans la modale
+      var f = Array.prototype.filter.call($('modal').querySelectorAll('button:not(:disabled), a[href], select, [tabindex="0"]'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
   /* ---------- Back office ---------- */
   function fillSelect(sel, items, value, placeholder) {
-    var html = '<option value="">' + esc(placeholder) + '</option>' + items.map(function (it) {
+    sel.innerHTML = '<option value="">' + esc(placeholder) + '</option>' + items.map(function (it) {
       return '<option value="' + esc(it.value) + '"' + (it.value === value ? ' selected' : '') + '>' + esc(it.label) + '</option>';
     }).join('');
-    sel.innerHTML = html;
+  }
+
+  function renderPicks() {
+    var dr = state.draft, cols = state.colsByTable[dr.table] || [];
+    if (!dr.table || !cols.length) { $('picks').innerHTML = '<p class="stg-empty">Choisissez d’abord une table.</p>'; return; }
+    var owner = {};
+    TAB_DEFS.forEach(function (t) { (dr.tabs[t.key] || []).forEach(function (id) { owner[id] = t.key; }); });
+    $('picks').innerHTML = TAB_DEFS.map(function (t) {
+      var n = (dr.tabs[t.key] || []).length;
+      return '<div class="pick-col"><h3>' + esc(t.title) + '</h3><span class="hint">' + n + (n > 1 ? ' colonnes sélectionnées' : ' colonne sélectionnée') + '</span><div class="pick-list">' +
+        cols.map(function (c) {
+          var mine = owner[c.id] === t.key, other = owner[c.id] && !mine;
+          return '<label class="pick-row' + (other ? ' other' : '') + '"><span>' + esc(c.label) + '</span><input type="checkbox" data-tab="' + t.key + '" data-col="' + esc(c.id) + '"' + (mine ? ' checked' : '') + '></label>';
+        }).join('') + '</div></div>';
+    }).join('');
   }
 
   function renderAdminForm() {
-    var d = state.draft;
-    fillSelect($('f-table'), state.tables.map(function (t) { return { value: t, label: t }; }), d.table, '— Choisir une table —');
-    var cols = (state.colsByTable[d.table] || []).map(function (c) { return { value: c.id, label: colLabel(c) }; });
-    fillSelect($('f-identity'), cols, d.identity, '— Choisir une colonne —');
-    fillSelect($('f-status'), cols, d.status, '— Choisir une colonne —');
+    var dr = state.draft;
+    fillSelect($('f-table'), state.tables.map(function (t) { return { value: t, label: t }; }), dr.table, '— Choisir une table —');
+    var cols = (state.colsByTable[dr.table] || []).map(function (c) { return { value: c.id, label: colLabel(c) }; });
+    fillSelect($('f-identity'), cols, dr.identity, '— Composer à partir de NOM et Prénom —');
+    fillSelect($('f-status'), cols, dr.status, '— Choisir une colonne —');
+    fillSelect($('f-emailcol'), cols, dr.emailCol, '— Colonne « Email » (par défaut) —');
+    if ($('f-cc').value !== (dr.cc || '')) $('f-cc').value = dr.cc || '';
+    if ($('f-replyto').value !== (dr.replyTo || '')) $('f-replyto').value = dr.replyTo || '';
+    // Colonnes « Pièces jointes » pour ranger les copies de PDF dans Documents.
+    var attCols = (state.colsByTable[dr.table] || []).filter(function (c) { return typeBase(c.type) === 'Attachments'; }).map(function (c) { return { value: c.id, label: colLabel(c) }; });
+    fillSelect($('f-convcol'), attCols, dr.convCol, '— Détection automatique —');
+    fillSelect($('f-lettercol'), attCols, dr.letterCol, '— Détection automatique —');
+    fillSelect($('f-rejetcol'), attCols, dr.rejetCol, '— Détection automatique —');
+    fillSelect($('f-esrcol'), attCols, dr.esrCol, '— Détection automatique —');
+    renderPicks();
+    renderMailForms();
+  }
+
+  // Formulaires des modèles : un par envoi (réservation, convocation, convocation du service, lettre d'incorporation, ESR).
+  var TPL_HINT = 'Modèle HTML converti en PDF (A4). Styles en ligne uniquement ; images uniquement en base64 (data:). Les valeurs des variables sont insérées sans balises.';
+  var MAIL_KINDS = {
+    reservation: { title: 'Courriel de réservation', hint: 'Message envoyé au candidat pour l’inviter à réserver son créneau.',
+      fields: [['subject', 'Objet', 'input'], ['body', 'Message', 'textarea']] },
+    convocation: { title: 'Convocation du candidat', hint: 'Courriel adressé au candidat, avec sa convocation en PDF en pièce jointe. ' + TPL_HINT,
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la convocation (HTML)', 'textarea tall']] },
+    service: { title: 'Convocation transmise au service', hint: 'Courriel adressé au service concerné, avec la fiche de convocation en PDF. Modèles distincts de ceux du candidat. ' + TPL_HINT,
+      fields: [['to', 'Adresse e-mail du service', 'input'], ['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle du document (HTML)', 'textarea tall']] },
+    lettre: { title: 'Lettre d’incorporation', hint: 'Icône disponible uniquement si l’état de la candidature est « Admis PMG ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre (HTML)', 'textarea tall']] },
+    rejet: { title: 'Lettre de rejet', hint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre de rejet (HTML)', 'textarea tall']] },
+    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT,
+      fields: [['template', 'Modèle de l’ESR (HTML)', 'textarea tall']] }
+  };
+  function renderMailForms() {
+    var host = $('mail-forms'), dr = state.draft;
+    if (!dr.mail) return;
+    if (!host.firstChild) {
+      host.innerHTML = MAIL_BLOCKS.map(function (b) {
+        return '<h3 class="mail-group">' + esc(b.title) + '</h3>' + b.kinds.map(function (kind) {
+          var k = MAIL_KINDS[kind];
+          return '<div class="mail-block"><div class="mail-head"><h4>' + esc(k.title) + '</h4>' +
+            '<button type="button" class="btn secondary sm" data-reset-b="' + b.key + '" data-reset-k="' + kind + '">Rétablir le texte par défaut</button></div>' +
+            '<span class="hint">' + esc(k.hint) + '</span>' + k.fields.map(function (f) {
+              var id = 'mf-' + b.key + '-' + kind + '-' + f[0], attrs = ' id="' + id + '" data-b="' + b.key + '" data-k="' + kind + '" data-f="' + f[0] + '"';
+              if (f[0] === 'template') {
+                return '<div class="mail-tpl-head"><label for="' + id + '">' + esc(f[1]) + '</label><button type="button" class="btn secondary sm" data-preview-b="' + b.key + '" data-preview-k="' + kind + '">Aperçu</button></div>' +
+                  '<textarea class="textarea tall mono"' + attrs + ' spellcheck="false"></textarea>' +
+                  '<iframe class="tpl-preview" id="pv-' + b.key + '-' + kind + '" title="Aperçu du modèle" sandbox hidden></iframe>';
+              }
+              return '<label for="' + id + '">' + esc(f[1]) + '</label>' + (f[2].indexOf('textarea') === 0 ? '<textarea class="textarea"' + attrs + ' spellcheck="true"></textarea>' : '<input class="input" type="' + (f[0] === 'to' ? 'text' : 'text') + '"' + attrs + ' autocomplete="off"' + (f[0] === 'to' ? ' placeholder="service@exemple.fr (plusieurs adresses : séparées par une virgule)"' : '') + '>');
+            }).join('') + '</div>';
+        }).join('');
+      }).join('');
+    }
+    Array.prototype.forEach.call(host.querySelectorAll('[data-b]'), function (el) {
+      var v = dr.mail[el.getAttribute('data-b')][el.getAttribute('data-k')][el.getAttribute('data-f')];
+      if (el.value !== v) el.value = v; // ne réécrit pas un champ inchangé (préserve le curseur)
+    });
+  }
+
+  // Aperçu d'un modèle HTML avec les données du premier candidat de la table (rendu isolé, sans script).
+  function refreshPreview(blockKey, kind) {
+    var frame = $('pv-' + blockKey + '-' + kind), rec = state.records[0]; if (!frame || frame.hidden) return;
+    var c = cfg(), tpl = state.draft.mail[blockKey][kind].template || '';
+    var item = rec ? { raw: rec.raw, id: rec.identity, st: rec.status } : { raw: {}, id: '', st: null };
+    frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="width:698px;margin:12px auto;padding:36px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);box-sizing:content-box;min-height:800px;">' +
+      sanitizeHtml(fillTemplate(tpl, item, c, true)) + '</div></body></html>';
   }
 
   function renderRecap() {
@@ -426,7 +2376,7 @@
       call.innerHTML = '<p class="t">Source inaccessible</p><p>' + esc(rd.error) + '</p>';
     } else if (!state.opts.table) {
       call.hidden = false; call.style.borderLeftColor = '';
-      call.innerHTML = '<p class="t">Configuration par défaut</p><p>Aucune source enregistrée : le widget lit la table liée à cette page et les colonnes <code>' + esc(DEFAULTS.identity) + '</code> et <code>' + esc(DEFAULTS.status) + '</code>.</p>';
+      call.innerHTML = '<p class="t">Configuration par défaut</p><p>Aucune source enregistrée : le widget lit la table liée à cette page, l’état dans <code>' + esc(DEFAULTS.status) + '</code> et répartit les colonnes de la fiche selon la structure habituelle de la table Candidats PMG.</p>';
     } else { call.hidden = true; }
 
     $('recap-meta').innerHTML = rd
@@ -434,12 +2384,22 @@
       : '';
 
     function statusTag(good, okTxt, koTxt) { return good ? '<span class="tag green">' + okTxt + '</span>' : '<span class="tag red">' + koTxt + '</span>'; }
-    var mi = colMeta(c.table, c.identity), ms = colMeta(c.table, c.status);
+    var mi = c.identity ? colMeta(c.table, c.identity) : null, ms = colMeta(c.table, c.status);
+    var nom = findCol(c.table, 'NOM'), pre = findCol(c.table, 'Prénom');
+    var identityRow = mi
+      ? ['Identité complète', esc(mi.label) + ' <code>' + esc(mi.id) + '</code>', typeFr(mi.type), statusTag(true, 'Trouvée', '')]
+      : ['Identité complète', 'NOM + Prénom' + (nom && pre ? ' <code>' + esc(nom.id) + '</code> <code>' + esc(pre.id) + '</code>' : ''), 'Composée', statusTag(!!(nom && pre), 'Composée', 'Introuvable')];
     var rows = [
       ['Table des candidats', c.table ? '<code>' + esc(c.table) + '</code>' : '—', '—', statusTag(ok, 'Connectée', 'Inaccessible')],
-      ['Identité complète', mi ? esc(mi.label) + ' <code>' + esc(mi.id) + '</code>' : '<code>' + esc(c.identity) + '</code>', mi ? typeFr(mi.type) : '—', statusTag(!!mi, 'Trouvée', 'Introuvable')],
+      identityRow,
       ['État de la candidature', ms ? esc(ms.label) + ' <code>' + esc(ms.id) + '</code>' : '<code>' + esc(c.status) + '</code>', ms ? typeFr(ms.type) : '—', statusTag(!!ms, 'Trouvée', 'Introuvable')]
     ];
+    var em = (c.emailCol && colMeta(c.table, c.emailCol)) || findCol(c.table, 'Email');
+    rows.push(['Adresse e-mail du candidat', em ? esc(em.label) + ' <code>' + esc(em.id) + '</code>' : 'Aucune colonne « Email »', em ? typeFr(em.type) : '—', statusTag(!!em, 'Trouvée', 'Introuvable')]);
+    TAB_DEFS.forEach(function (t) {
+      var n = (c.tabs[t.key] || []).length;
+      rows.push(['Fiche · ' + t.title, n ? n + (n > 1 ? ' colonnes' : ' colonne') : 'Aucune colonne', '—', n ? '<span class="tag green">Configuré</span>' : '<span class="tag grey">Vide</span>']);
+    });
     $('recap-rows').innerHTML = rows.map(function (r) {
       return '<tr><td class="name">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>';
     }).join('');
@@ -452,9 +2412,16 @@
       : '<span class="tag none">Aucun état renseigné.</span>';
   }
 
-  function renderAll() { renderList(); renderAdminForm(); renderRecap(); }
+  function renderAll() {
+    renderList(); renderAdminForm(); renderRecap();
+    if (!$('modal').hidden) {
+      // Une modification peut changer l'ordre de la liste (ex. nom) : on retrouve la fiche ouverte par son numéro de ligne.
+      if (state.modal.rowId != null && !state.cmp.active) { state.view.forEach(function (v, i) { if (v.raw.id === state.modal.rowId) state.modal.index = i; }); }
+      if (state.view[state.modal.index]) renderModal(); else closeModal();
+    }
+  }
 
-  /* ---------- Onglets ---------- */
+  /* ---------- Onglets de la page ---------- */
   function showView(v) {
     var admin = v === 'admin';
     $('view-list').hidden = admin; $('view-admin').hidden = !admin;
@@ -462,44 +2429,224 @@
     $('tab-admin').setAttribute('aria-selected', String(admin));
     if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); }
   }
-  $('tab-list').addEventListener('click', function () { showView('list'); });
+  // Back office masqué : 5 clics rapides sur l'en-tête l'ouvrent, l'onglet « Candidats » le referme.
+  $('tab-list').addEventListener('click', function () { showView('list'); $('tabs').hidden = true; });
   $('tab-admin').addEventListener('click', function () { showView('admin'); });
+  var hdrClicks = 0, hdrTimer;
+  document.querySelector('.fr-header').addEventListener('click', function (e) {
+    if (e.target.closest('.fr-header__tools')) return; // le bouton « Paramètres d'affichage » ne compte pas
+    clearTimeout(hdrTimer);
+    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
+    if (++hdrClicks >= 5) { hdrClicks = 0; $('tabs').hidden = false; showView('admin'); }
+  });
 
-  /* ---------- Événements ---------- */
+  /* ---------- Événements du back office ---------- */
   $('q').addEventListener('input', renderList);
   $('sort-name').addEventListener('click', function () { state.sortDir = -state.sortDir; renderList(); });
 
   $('f-table').addEventListener('change', function (e) {
     var t = e.target.value;
-    state.draft.table = t;
-    state.draft.identity = ''; state.draft.status = '';
+    state.draft.table = t; state.draft.identity = ''; state.draft.status = ''; state.draft.tabs = { info: [], mil: [], medico: [], docs: [] };
     if (!t) { renderAdminForm(); return; }
     api.listColumns(t).then(function (cols) {
       state.colsByTable[t] = cols;
       var has = function (id) { return cols.some(function (c) { return c.id === id; }); };
       state.draft.identity = has(DEFAULTS.identity) ? DEFAULTS.identity : '';
       state.draft.status = has(DEFAULTS.status) ? DEFAULTS.status : '';
+      state.draft.tabs = defaultTabs(t);
       renderAdminForm();
     });
   });
-  $('f-identity').addEventListener('change', function (e) { state.draft.identity = e.target.value; $('e-identity').hidden = true; });
+  $('f-identity').addEventListener('change', function (e) { state.draft.identity = e.target.value; });
   $('f-status').addEventListener('change', function (e) { state.draft.status = e.target.value; $('e-status').hidden = true; });
+  $('picks').addEventListener('change', function (e) {
+    var cb = e.target; if (!cb.matches('input[data-col]')) return;
+    var tab = cb.getAttribute('data-tab'), id = cb.getAttribute('data-col'), tabs = state.draft.tabs;
+    TAB_DEFS.forEach(function (t) { tabs[t.key] = (tabs[t.key] || []).filter(function (x) { return x !== id; }); });
+    if (cb.checked) tabs[tab].push(id);
+    // conserve l'ordre de la table
+    var order = (state.colsByTable[state.draft.table] || []).map(function (c) { return c.id; });
+    TAB_DEFS.forEach(function (t) { tabs[t.key].sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); }); });
+    renderPicks();
+  });
+
+  $('mail-forms').addEventListener('input', function (e) {
+    var el = e.target, b = el.getAttribute && el.getAttribute('data-b'); if (!b) return;
+    state.draft.mail[b][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
+    if (el.getAttribute('data-f') === 'template') refreshPreview(b, el.getAttribute('data-k'));
+  });
+  $('mail-forms').addEventListener('click', function (e) {
+    var pv = e.target.closest('[data-preview-b]');
+    if (pv) { // aperçu du modèle HTML (affiché / masqué)
+      var pb = pv.getAttribute('data-preview-b'), pk = pv.getAttribute('data-preview-k'), frame = $('pv-' + pb + '-' + pk);
+      frame.hidden = !frame.hidden; pv.textContent = frame.hidden ? 'Aperçu' : 'Masquer l’aperçu';
+      if (!frame.hidden) refreshPreview(pb, pk);
+      return;
+    }
+    var b = e.target.closest('[data-reset-b]'); if (!b) return;
+    var blk = b.getAttribute('data-reset-b'), kind = b.getAttribute('data-reset-k'), keepTo = state.draft.mail[blk][kind].to;
+    state.draft.mail[blk][kind] = JSON.parse(JSON.stringify(DEFAULT_MAIL[blk][kind]));
+    if (keepTo !== undefined) state.draft.mail[blk][kind].to = keepTo; // l'adresse du service n'est pas un texte par défaut
+    renderMailForms();
+    refreshPreview(blk, kind);
+  });
+  $('f-emailcol').addEventListener('change', function (e) { state.draft.emailCol = e.target.value; });
+  $('f-cc').addEventListener('input', function (e) { state.draft.cc = e.target.value; });
+  $('f-replyto').addEventListener('input', function (e) { state.draft.replyTo = e.target.value; });
+  $('f-convcol').addEventListener('change', function (e) { state.draft.convCol = e.target.value; });
+  $('f-lettercol').addEventListener('change', function (e) { state.draft.letterCol = e.target.value; });
+  $('f-rejetcol').addEventListener('change', function (e) { state.draft.rejetCol = e.target.value; });
+  $('f-esrcol').addEventListener('change', function (e) { state.draft.esrCol = e.target.value; });
 
   $('btn-save').addEventListener('click', function () {
-    var d = state.draft;
-    $('e-identity').hidden = !!d.identity;
-    $('e-status').hidden = !!d.status;
-    if (!d.table || !d.identity || !d.status) return;
-    var o = { table: d.table, identity: d.identity, status: d.status };
-    api.saveOptions(o).then(function () {
-      state.opts = o;
-      return load();
-    }).then(function () { $('saved').hidden = false; window.scrollTo(0, 0); });
+    var dr = state.draft;
+    $('e-status').hidden = !!dr.status;
+    if (!dr.table || !dr.status) return;
+    var o = { table: dr.table, identity: dr.identity || '', status: dr.status, tabs: normalizeTabs(dr.table, dr.tabs), mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
+    if (state.opts.sent) o.sent = state.opts.sent; // conserve l'historique des actions effectuées
+    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { $('saved').hidden = false; window.scrollTo(0, 0); });
   });
   $('btn-reset').addEventListener('click', function () {
-    state.draft = { table: state.boundTable || '', identity: DEFAULTS.identity, status: DEFAULTS.status };
+    var t = state.boundTable || '';
+    state.draft = { table: t, identity: DEFAULTS.identity, status: DEFAULTS.status, tabs: { info: [], mil: [], medico: [], docs: [] }, mail: mergeMail(null), emailCol: '', cc: '', replyTo: '', convCol: '', letterCol: '', rejetCol: '', esrCol: '' };
     $('saved').hidden = true;
-    api.listColumns(state.draft.table).then(function (cols) { state.colsByTable[state.draft.table] = cols; renderAdminForm(); });
+    api.listColumns(t).then(function (cols) {
+      state.colsByTable[t] = cols;
+      if (!cols.some(function (c) { return c.id === DEFAULTS.identity; })) state.draft.identity = '';
+      state.draft.tabs = defaultTabs(t);
+      renderAdminForm();
+    });
+  });
+
+  /* ---------- Création d'une candidature ---------- */
+  var CREATE_SECTIONS = [
+    { title: 'État civil', labels: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt'] },
+    { title: 'Coordonnées', labels: ['Numéro de téléphone', 'Email', 'Adresse', 'CP', 'Ville'] },
+    { title: 'Candidature', labels: ['NID', 'N° candidature', 'PMG', 'Affectation', 'Profession'] }
+  ];
+  var CREATE_REQUIRED = ['NOM', 'Prénom', 'DDN', 'Email', 'N° candidature', 'Affectation'];
+  state.create = null; // { values, error, warn, confirmDup, busy }
+
+  function createColumns(c) {
+    return CREATE_SECTIONS.map(function (s) {
+      return { title: s.title, cols: s.labels.map(function (l) { return findCol(c.table, l); }).filter(function (col) { return col && isEditableCol(col); }) };
+    }).filter(function (s) { return s.cols.length; });
+  }
+  function requiredIds(c) { return CREATE_REQUIRED.map(function (l) { var col = findCol(c.table, l); return col && col.id; }).filter(Boolean); }
+  function emptyVal(v) { return v == null || v === '' || (Array.isArray(v) && v.length === 0); }
+
+  // Champ de saisie adapté au type de la colonne (mêmes règles que l'édition dans la fiche).
+  function controlHtml(col, id, v) {
+    var t = typeBase(col.type), label = displayLabel(col), attr = ' id="' + id + '" data-cf="' + esc(col.id) + '" aria-label="' + esc(label) + '"';
+    if (t === 'Choice' && col.choices) {
+      return '<select class="select"' + attr + '><option value=""></option>' + col.choices.map(function (o) { return '<option value="' + esc(o) + '"' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>';
+    }
+    if (t === 'ChoiceList' && col.choices) {
+      return '<div class="ed-multi" role="group" data-cf="' + esc(col.id) + '" aria-label="' + esc(label) + '">' + col.choices.map(function (o) {
+        return '<label class="ed-check"><input type="checkbox" value="' + esc(o) + '"' + (v.indexOf(o) !== -1 ? ' checked' : '') + '> ' + esc(o) + '</label>';
+      }).join('') + '</div>';
+    }
+    if (t === 'Bool') return '<select class="select"' + attr + '><option value=""></option><option value="true"' + (v === 'true' ? ' selected' : '') + '>Oui</option><option value="false"' + (v === 'false' ? ' selected' : '') + '>Non</option></select>';
+    if (t === 'Date') return '<input type="date" class="input"' + attr + ' value="' + esc(v) + '">';
+    if (t === 'DateTime') return '<input type="datetime-local" class="input"' + attr + ' value="' + esc(v) + '">';
+    if (t === 'Numeric' || t === 'Int') return '<input type="text" inputmode="decimal" class="input"' + attr + ' value="' + esc(v) + '">';
+    return '<input type="text" class="input"' + attr + ' value="' + esc(v) + '" autocomplete="off">';
+  }
+
+  function renderCreateForm() {
+    var c = cfg(), cr = state.create; if (!cr) return;
+    var req = requiredIds(c);
+    $('cmodal-form').innerHTML =
+      (cr.error ? '<div class="doc-alert error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
+      (cr.warn ? '<div class="cf-warn" role="alert"><p>' + esc(cr.warn) + '</p></div>' : '') +
+      createColumns(c).map(function (s) {
+        return '<section class="cf-section"><h3>' + esc(s.title) + '</h3><div class="cf-grid">' + s.cols.map(function (col) {
+          var id = 'cf-' + col.id, isReq = req.indexOf(col.id) !== -1;
+          return '<div class="cf-field"><label for="' + id + '">' + esc(displayLabel(col)) + (isReq ? '<span class="req" aria-hidden="true">*</span>' : '') + '</label>' + controlHtml(col, id, cr.values[col.id]) + '</div>';
+        }).join('') + '</div></section>';
+      }).join('') +
+      '<div class="cf-actions"><button type="submit" class="btn"' + (cr.busy ? ' disabled' : '') + '>' + (cr.busy ? 'Création…' : (cr.confirmDup ? 'Créer quand même' : 'Créer la candidature')) + '</button>' +
+      '<button type="button" class="btn secondary" id="cf-cancel"' + (cr.busy ? ' disabled' : '') + '>Annuler</button></div>';
+  }
+
+  function openCreate() {
+    var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
+    var values = {};
+    createColumns(c).forEach(function (s) { s.cols.forEach(function (col) { values[col.id] = editInitial(col, null); }); });
+    state.create = { values: values, error: '', warn: '', confirmDup: false, busy: false };
+    renderCreateForm();
+    var ov = $('cmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('cmodal-form').querySelector('input, select'); if (f) f.focus(); }); });
+  }
+  function closeCreate() {
+    var ov = $('cmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.create = null;
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-create').focus();
+    load(); // actualise les données à la fermeture de la fenêtre
+  }
+
+  function submitCreate() {
+    var c = cfg(), cr = state.create; if (!cr || cr.busy) return;
+    var fields = {}, byId = {};
+    createColumns(c).forEach(function (s) { s.cols.forEach(function (col) { byId[col.id] = col; }); });
+    for (var id in byId) {
+      var col = byId[id], v = cr.values[id], p = parseEdit(col, v);
+      if (p.error) { cr.error = displayLabel(col) + ' : ' + p.error; cr.warn = ''; renderCreateForm(); return; }
+      if (!emptyVal(v) && !(Array.isArray(p.value) && p.value.length <= 1) && p.value !== null && p.value !== '') fields[id] = p.value;
+    }
+    var missing = requiredIds(c).filter(function (rid) { return emptyVal(cr.values[rid]) || !String(cr.values[rid]).trim(); }).map(function (rid) { return displayLabel(byId[rid] || colMeta(c.table, rid)); });
+    if (missing.length) { cr.error = 'Renseignez les champs obligatoires : ' + missing.join(', ') + '.'; cr.warn = ''; renderCreateForm(); return; }
+    var em = findCol(c.table, 'Email');
+    if (em && fields[em.id] && !validEmail(String(fields[em.id]).trim())) { cr.error = displayLabel(em) + ' : adresse e-mail invalide.'; cr.warn = ''; renderCreateForm(); return; }
+    cr.error = '';
+
+    // Doublon probable : même NID, ou même identité et même date de naissance.
+    var nom = findCol(c.table, 'NOM'), pre = findCol(c.table, 'Prénom'),
+        idn = [nom && fields[nom.id] ? String(fields[nom.id]).toLocaleUpperCase('fr-FR') : '', pre && fields[pre.id] ? fields[pre.id] : ''].filter(Boolean).join(' ');
+    var probe = { raw: fields, identity: idn }, k = dupKey(probe, c);
+    var dups = k ? state.records.filter(function (o) { return dupKey(o, c) === k; }) : [];
+    if (dups.length && !cr.confirmDup) {
+      cr.warn = 'Une fiche existe déjà pour ce candidat (' + dups.map(function (d) { return formatName(d.identity || '') + ' · ligne n° ' + d.raw.id; }).join(', ') + '). Si vous créez tout de même cette candidature, elle sera marquée « Doublon » pour être comparée avec la fiche existante.';
+      cr.confirmDup = true; renderCreateForm(); return;
+    }
+    if (dups.length) { var dcol = findCol(c.table, 'Doublon'); if (dcol && isEditableCol(dcol)) fields[dcol.id] = typeBase(dcol.type) === 'Bool' ? true : 'Oui'; }
+
+    cr.busy = true; renderCreateForm();
+    api.createRow(c.table, fields).then(function (newId) {
+      closeCreate();
+      return load().then(function () { openCreated(newId); });
+    }).catch(function (e) { cr.busy = false; cr.error = 'Création impossible : ' + ((e && e.message) || e) + '.'; renderCreateForm(); });
+  }
+  // Ouvre la fiche de la candidature créée (en levant les filtres si elle est masquée par la liste).
+  function openCreated(id) {
+    if (id == null) return;
+    var find = function () { var idx = -1; state.view.forEach(function (v, i) { if (v.raw.id === id) idx = i; }); return idx; };
+    var idx = find();
+    if (idx < 0) { $('flt-reset').click(); idx = find(); }
+    if (idx >= 0) openModal(idx, $('btn-create'));
+  }
+
+  $('btn-create').addEventListener('click', openCreate);
+  $('cmodal-close').addEventListener('click', closeCreate);
+  $('cmodal').addEventListener('mousedown', function (e) { if (e.target === $('cmodal') && !(state.create && state.create.busy)) closeCreate(); });
+  $('cmodal-form').addEventListener('click', function (e) { if (e.target.id === 'cf-cancel') closeCreate(); });
+  $('cmodal-form').addEventListener('submit', function (e) { e.preventDefault(); submitCreate(); });
+  function readCreateField(el) {
+    var cr = state.create, id = el.getAttribute && el.getAttribute('data-cf'), multi = el.closest && el.closest('.ed-multi');
+    if (!cr) return;
+    if (multi) { cr.values[multi.getAttribute('data-cf')] = Array.prototype.map.call(multi.querySelectorAll('input:checked'), function (i) { return i.value; }); cr.error = ''; return; }
+    if (id) { cr.values[id] = el.value; cr.error = ''; }
+  }
+  $('cmodal-form').addEventListener('input', function (e) { readCreateField(e.target); });
+  $('cmodal-form').addEventListener('change', function (e) { readCreateField(e.target); });
+  $('cmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.create && state.create.busy)) closeCreate(); return; }
+    if (e.key === 'Tab') { // piège à focus
+      var f = Array.prototype.filter.call($('cmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select, textarea'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
   });
 
   /* ---------- Démarrage ---------- */
