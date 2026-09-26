@@ -20,23 +20,71 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #fff; color: var(--text); font-family: Marianne, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
-  .wrap { padding-top: 32px; padding-bottom: 32px; }
+  .wrap { padding-top: 24px; padding-bottom: 40px; }
+  [hidden] { display: none !important; }
 
+  /* Onglets */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+  .tab { all: unset; cursor: pointer; padding: 12px 24px; color: var(--ink); font-weight: 500; border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; position: relative; }
+  .tab:hover { background: var(--row-hover); }
+  .tab[aria-selected="true"] { color: var(--blue); border-color: var(--line); background: #fff; }
+  .tab[aria-selected="true"]::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 2px; background: var(--blue); }
+  .tab:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+
+  /* Titres de section */
   .head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
   .badge-num { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 700; display: grid; place-items: center; }
-  h1 { margin: 0; font-size: 1.375rem; line-height: 1.3; font-weight: 700; color: var(--ink); }
+  h1, h2 { margin: 0; font-size: 1.375rem; line-height: 1.3; font-weight: 700; color: var(--ink); }
   .lead { margin: 0 0 24px 56px; color: var(--muted); font-size: .9375rem; }
+  section.step { margin-bottom: 40px; }
 
-  .toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-  label { display: block; font-size: 1rem; color: var(--ink); margin-bottom: 8px; }
-  .input {
-    width: min(420px, 100%); height: 40px; padding: 0 16px; font: inherit; color: var(--text);
+  /* Formulaires */
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px 32px; margin-left: 56px; align-items: end; }
+  label, .label { display: block; font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .req { color: #ce0500; margin-left: 2px; }
+  .hint { display: block; color: var(--muted); font-size: .875rem; margin-bottom: 8px; }
+  .input, .select {
+    width: 100%; height: 40px; padding: 0 16px; font: inherit; color: var(--text);
     background: var(--field); border: 0; border-bottom: 2px solid #3a3a3a; border-radius: 4px 4px 0 0; outline: none;
   }
-  .input:focus { outline: 2px solid #0a76f6; outline-offset: 2px; }
-  .count { color: var(--muted); font-size: .875rem; }
+  .select {
+    appearance: none; -webkit-appearance: none; padding-right: 40px; text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23161616' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center;
+  }
+  .input:focus, .select:focus { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .field-error { color: #ce0500; font-size: .875rem; margin-top: 4px; }
 
+  /* Boutons */
+  .actions { display: flex; flex-wrap: wrap; gap: 16px; margin-left: 56px; align-items: center; }
+  .btn {
+    font: inherit; font-weight: 500; cursor: pointer; padding: 8px 24px; min-height: 40px; border-radius: 4px;
+    border: 1px solid var(--blue); background: var(--blue); color: #fff;
+  }
+  .btn:hover { background: #1212ff; border-color: #1212ff; }
+  .btn.secondary { background: #fff; color: var(--blue); }
+  .btn.secondary:hover { background: #f5f5fe; }
+  .btn:disabled { background: #e5e5e5; border-color: #e5e5e5; color: #929292; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+
+  /* Alerte */
+  .alert { margin: 0 0 24px 56px; padding: 16px 16px 16px 24px; border: 1px solid; border-left-width: 8px; }
+  .alert.success { border-color: #18753c; }
+  .alert.error { border-color: #ce0500; }
+  .alert p { margin: 0; }
+  .alert .t { font-weight: 700; color: var(--ink); }
+
+  /* Rappel des sources */
+  .callout { margin-left: 56px; padding: 16px 24px; background: #f6f6f6; border-left: 4px solid var(--blue); margin-bottom: 24px; }
+  .callout p { margin: 0; font-size: .9375rem; }
+  .callout .t { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 0 16px 56px; font-size: .875rem; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 500; }
+  h3 { margin: 24px 0 12px 56px; font-size: 1rem; font-weight: 700; color: var(--ink); }
+
+  /* Tables */
   .table-wrap { overflow-x: auto; border-bottom: 1px solid var(--line); }
+  .indent { margin-left: 56px; }
   table { width: 100%; border-collapse: collapse; }
   thead th {
     text-align: left; font-weight: 700; color: var(--ink); background: #f0f0f0; padding: 12px 16px;
@@ -45,14 +93,16 @@
   thead th button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
   thead th button:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
   .arrow { color: var(--blue); font-size: .75rem; }
-  tbody td { padding: 12px 16px; border-top: 1px solid var(--line); vertical-align: middle; }
-  tbody tr:hover { background: var(--row-hover); }
-  td.name { color: var(--ink); font-weight: 500; }
-  td.tags { display: flex; flex-wrap: wrap; gap: 8px; }
-  tbody td.tags { border-top: 0; }
+  tbody td { padding: 12px 16px; vertical-align: middle; }
   tbody tr { border-top: 1px solid var(--line); }
   tbody tr:first-child { border-top: 0; }
-  tbody td { border-top: 0; }
+  tbody tr:hover { background: var(--row-hover); }
+  td.name { color: var(--ink); font-weight: 500; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .875rem; background: #eee; padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .count { color: var(--muted); font-size: .875rem; }
 
   /* Tags DSFR */
   .tag {
@@ -65,13 +115,18 @@
   .tag.red     { background: #ffe9e9; color: #ce0500; }
   .tag.orange  { background: #ffe9e6; color: #b34000; }
   .tag.yellow  { background: #feecc2; color: #716043; }
-  .tag.purple  { background: #e5e5ff; color: #6a6af4; color: #4a3fb5; }
+  .tag.purple  { background: #e5e5ff; color: #4a3fb5; }
   .tag.grey    { background: #eee; color: #3a3a3a; }
   .tag.none    { background: transparent; color: var(--muted); font-weight: 400; padding: 0; }
+  .tag small { font-weight: 400; margin-left: 6px; opacity: .8; }
 
   .state { text-align: center; color: var(--muted); padding: 48px 16px; }
   .state strong { display: block; color: var(--ink); margin-bottom: 8px; }
   .demo { margin-top: 16px; font-size: .875rem; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .fields, .actions, .callout, .meta, .lead, .alert, h3, .indent { margin-left: 0; }
+  }
 </style>
 </head>
 <body>
@@ -96,56 +151,183 @@
 </header>
 
 <div class="wrap fr-container">
-  <div class="head">
-    <div class="badge-num" aria-hidden="true">1</div>
-    <h1>Candidats PMG</h1>
+  <div class="tabs" role="tablist" aria-label="Sections du widget">
+    <button class="tab" role="tab" id="tab-list" aria-selected="true" aria-controls="view-list" type="button">Candidats</button>
+    <button class="tab" role="tab" id="tab-admin" aria-selected="false" aria-controls="view-admin" type="button">Back office</button>
   </div>
-  <p class="lead">Liste des candidats de la table Candidats PMG, avec l'état de leur candidature.</p>
 
-  <div class="toolbar">
-    <div style="flex:1 1 320px">
-      <label for="q">Rechercher un candidat</label>
-      <input id="q" class="input" type="search" placeholder="Nom, prénom, état…" autocomplete="off">
+  <!-- ===== Vue liste ===== -->
+  <div id="view-list" role="tabpanel" aria-labelledby="tab-list">
+    <div class="head">
+      <div class="badge-num" aria-hidden="true">1</div>
+      <h1>Candidats PMG</h1>
     </div>
-    <div class="count" id="count" aria-live="polite"></div>
+    <p class="lead" id="list-lead"></p>
+
+    <div class="toolbar">
+      <div style="flex:1 1 320px; max-width:420px">
+        <label for="q">Rechercher un candidat</label>
+        <input id="q" class="input" type="search" placeholder="Nom, prénom, état…" autocomplete="off">
+      </div>
+      <div class="count" id="count" aria-live="polite"></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"><button type="button" id="sort-name">Identité complète <span class="arrow" id="arrow"></span></button></th>
+            <th scope="col">État de la candidature</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="state" class="state" hidden></div>
+    </div>
   </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th scope="col"><button type="button" id="sort-name">Identité complète <span class="arrow" id="arrow"></span></button></th>
-          <th scope="col">État de la candidature</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <div id="state" class="state" hidden></div>
+  <!-- ===== Back office ===== -->
+  <div id="view-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
+    <div id="saved" class="alert success" role="status" hidden>
+      <p class="t">Configuration enregistrée</p>
+      <p>Les sources ci-dessous sont utilisées par la liste des candidats.</p>
+    </div>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Source de données</h2></div>
+      <p class="lead">La table Grist qui recense les candidats PMG. Par défaut, la table liée à ce widget.</p>
+      <div class="fields">
+        <div>
+          <label for="f-table">Table des candidats<span class="req" aria-hidden="true">*</span></label>
+          <span class="hint" id="h-table">Une ligne par candidat.</span>
+          <select id="f-table" class="select" aria-describedby="h-table"></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">2</div><h2>Colonnes lues</h2></div>
+      <p class="lead">Colonnes de la table utilisées pour l’affichage de la liste.</p>
+      <div class="fields">
+        <div>
+          <label for="f-identity">Identité complète<span class="req" aria-hidden="true">*</span></label>
+          <span class="hint">Nom et prénom du candidat (texte ou formule).</span>
+          <select id="f-identity" class="select"></select>
+          <div class="field-error" id="e-identity" hidden>Sélectionnez une colonne.</div>
+        </div>
+        <div>
+          <label for="f-status">État de la candidature<span class="req" aria-hidden="true">*</span></label>
+          <span class="hint">Texte ou choix, affiché sous forme de tags (éviter une colonne Référence).</span>
+          <select id="f-status" class="select"></select>
+          <div class="field-error" id="e-status" hidden>Sélectionnez une colonne.</div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:24px">
+        <button class="btn" id="btn-save" type="button">Enregistrer la configuration</button>
+        <button class="btn secondary" id="btn-reset" type="button">Réinitialiser</button>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Rappel des sources</h2></div>
+      <p class="lead">Ce que le widget lit actuellement dans le document Grist.</p>
+      <div id="recap-callout" class="callout" hidden></div>
+      <div class="meta" id="recap-meta"></div>
+      <div class="indent"><div class="table-wrap">
+        <table>
+          <thead><tr><th>Élément</th><th>Source</th><th>Type</th><th>Statut</th></tr></thead>
+          <tbody id="recap-rows"></tbody>
+        </table>
+      </div></div>
+      <h3>États rencontrés dans la colonne « État de la candidature »</h3>
+      <div class="tagrow indent" id="recap-states"></div>
+    </section>
   </div>
+
   <div id="demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
 </div>
 
 <script>
 (function () {
-  var COLS = { identity: 'Identite_complete', status: 'Etat_candidature' };
-  var records = [];
-  var mapping = null;
-  var sortDir = 1;
-  var $rows = document.getElementById('rows');
-  var $state = document.getElementById('state');
-  var $count = document.getElementById('count');
-  var $q = document.getElementById('q');
+  var DEFAULTS = { identity: 'Identite_complete', status: 'Etat_candidature' };
+  var IN_GRIST = !!(window.grist && window.parent !== window);
 
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var state = {
+    opts: {},            // configuration enregistrée
+    draft: {},           // configuration en cours d'édition
+    tables: [],          // tables du document
+    colsByTable: {},     // { tableId: [{id,label,type}] }
+    boundTable: null,
+    records: [],         // [{ identity, status }]
+    read: null,          // { table, at, total, error }
+    sortDir: 1
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 
-  // Grist ChoiceList arrive as ['L', 'a', 'b']
+  var TYPES_FR = { Text: 'Texte', Choice: 'Choix', ChoiceList: 'Liste de choix', Numeric: 'Numérique', Int: 'Entier', Bool: 'Booléen', Date: 'Date', DateTime: 'Date/heure', Any: 'Tout', Attachments: 'Pièces jointes', Ref: 'Référence', RefList: 'Liste de références', Id: 'Identifiant' };
+  function typeFr(t) { if (!t) return '—'; var base = String(t).split(':')[0]; return TYPES_FR[base] || t; }
+
+  /* ---------- Couche d'accès aux données ---------- */
+  var DEMO = {
+    tables: {
+      Candidats_PMG: {
+        cols: [
+          { id: 'Identite_complete', label: 'Identité complète', type: 'Text' },
+          { id: 'Etat_candidature', label: 'État candidature', type: 'Choice' },
+          { id: 'Nom', label: 'Nom', type: 'Text' },
+          { id: 'Prenom', label: 'Prénom', type: 'Text' }
+        ],
+        rows: [
+          { Identite_complete: 'Martin Camille', Etat_candidature: 'Accepté' },
+          { Identite_complete: 'Bernard Julien', Etat_candidature: ['L', 'En attente', 'Pièces manquantes'] },
+          { Identite_complete: 'Dubois Léa', Etat_candidature: 'Refusé' },
+          { Identite_complete: 'Lambert Hugo', Etat_candidature: 'Entretien programmé' },
+          { Identite_complete: 'Moreau Sarah', Etat_candidature: 'Dossier reçu' },
+          { Identite_complete: 'Petit Nathan', Etat_candidature: '' }
+        ]
+      },
+      Stagiaires: { cols: [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }], rows: [] }
+    }
+  };
+  var demoOpts = null;
+
+  var api = IN_GRIST ? {
+    listTables: function () {
+      return grist.docApi.listTables().then(function (l) { return l.filter(function (t) { return t.indexOf('_grist') !== 0; }); });
+    },
+    listColumns: function (table) {
+      return Promise.all([grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]).then(function (r) {
+        var T = r[0], C = r[1], tid = T.id[T.tableId.indexOf(table)], out = [];
+        for (var i = 0; i < C.id.length; i++) {
+          if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) out.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i] });
+        }
+        return out;
+      });
+    },
+    fetchRows: function (table) {
+      return grist.docApi.fetchTable(table).then(function (d) {
+        var keys = Object.keys(d), n = (d.id || []).length, rows = [];
+        for (var i = 0; i < n; i++) { var o = {}; keys.forEach(function (k) { o[k] = d[k][i]; }); rows.push(o); }
+        return rows;
+      });
+    },
+    saveOptions: function (o) { return grist.setOptions(o); }
+  } : {
+    listTables: function () { return Promise.resolve(Object.keys(DEMO.tables)); },
+    listColumns: function (t) { return Promise.resolve(DEMO.tables[t] ? DEMO.tables[t].cols : []); },
+    fetchRows: function (t) { return Promise.resolve(DEMO.tables[t] ? DEMO.tables[t].rows : []); },
+    saveOptions: function (o) { demoOpts = o; return Promise.resolve(); }
+  };
+
+  /* ---------- Tags ---------- */
   function toList(v) {
     if (v == null || v === '') return [];
     if (Array.isArray(v)) return (v[0] === 'L' ? v.slice(1) : v).filter(function (x) { return x !== '' && x != null; }).map(String);
     return String(v).split(/\s*[,;\n]\s*/).filter(Boolean);
   }
-
   function color(label) {
     var s = norm(label);
     if (/(refus|rejet|abandon|desist|non retenu|annul|exclu|ajourn)/.test(s)) return 'red';
@@ -156,69 +338,181 @@
     if (/(recu|depose|transmis|envoye)/.test(s)) return 'blue';
     return 'grey';
   }
-
   function tagsHtml(v) {
     var list = toList(v);
     if (!list.length) return '<span class="tag none">—</span>';
     return list.map(function (t) { return '<span class="tag ' + color(t) + '">' + esc(t) + '</span>'; }).join('');
   }
 
-  function getId(rec) {
-    var m = mapping || {};
-    var v = m.identity != null ? rec[m.identity] : rec[COLS.identity];
-    return v == null ? '' : String(v);
+  /* ---------- Configuration effective ---------- */
+  function cfg() {
+    return {
+      table: state.opts.table || state.boundTable || '',
+      identity: state.opts.identity || DEFAULTS.identity,
+      status: state.opts.status || DEFAULTS.status
+    };
   }
-  function getStatus(rec) {
-    var m = mapping || {};
-    return m.status != null ? rec[m.status] : rec[COLS.status];
+  function colMeta(table, id) {
+    var l = state.colsByTable[table] || [];
+    for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+    return null;
+  }
+  function colLabel(c) { return c.label + ' (' + c.id + ') · ' + typeFr(c.type); }
+
+  /* ---------- Chargement ---------- */
+  var loadSeq = 0;
+  function load() {
+    var seq = ++loadSeq, c = cfg();
+    if (!c.table) { state.read = { table: '', at: new Date(), total: 0, error: 'Aucune table sélectionnée.' }; state.records = []; renderAll(); return Promise.resolve(); }
+    return Promise.all([api.listTables(), api.listColumns(c.table), api.fetchRows(c.table)]).then(function (r) {
+      if (seq !== loadSeq) return;
+      state.tables = r[0];
+      state.colsByTable[c.table] = r[1];
+      state.records = r[2].map(function (row) { return { identity: row[c.identity], status: row[c.status] }; });
+      state.read = { table: c.table, at: new Date(), total: r[2].length, error: null };
+      renderAll();
+    }).catch(function (e) {
+      if (seq !== loadSeq) return;
+      state.records = [];
+      state.read = { table: c.table, at: new Date(), total: 0, error: (e && e.message) || String(e) };
+      renderAll();
+    });
   }
 
-  function render() {
-    var q = norm($q.value.trim());
-    var list = records.map(function (r) { return { id: getId(r), st: getStatus(r) }; })
+  /* ---------- Vue liste ---------- */
+  function renderList() {
+    var c = cfg(), q = norm($('q').value.trim());
+    $('list-lead').textContent = 'Liste des candidats de la table ' + (c.table ? c.table.replace(/_/g, ' ') : 'Candidats PMG') + ', avec l\'état de leur candidature.';
+    var list = state.records.map(function (r) { return { id: r.identity == null ? '' : String(r.identity), st: r.status }; })
       .filter(function (r) { return r.id || toList(r.st).length; })
       .filter(function (r) { return !q || norm(r.id + ' ' + toList(r.st).join(' ')).indexOf(q) !== -1; });
-    list.sort(function (a, b) { return sortDir * a.id.localeCompare(b.id, 'fr', { sensitivity: 'base' }); });
+    list.sort(function (a, b) { return state.sortDir * a.id.localeCompare(b.id, 'fr', { sensitivity: 'base' }); });
 
-    document.getElementById('arrow').textContent = sortDir === 1 ? '▲' : '▼';
-    $count.textContent = list.length + (list.length > 1 ? ' candidats' : ' candidat');
-    $rows.innerHTML = list.map(function (r) {
-      return '<tr><td class="name">' + (r.id ? esc(r.id) : '<span class="tag none">—</span>') + '</td><td><span style="display:flex;flex-wrap:wrap;gap:8px">' + tagsHtml(r.st) + '</span></td></tr>';
+    $('arrow').textContent = state.sortDir === 1 ? '▲' : '▼';
+    $('count').textContent = list.length + (list.length > 1 ? ' candidats' : ' candidat');
+    $('rows').innerHTML = list.map(function (r) {
+      return '<tr><td class="name">' + (r.id ? esc(r.id) : '<span class="tag none">—</span>') + '</td><td><div class="tagrow">' + tagsHtml(r.st) + '</div></td></tr>';
     }).join('');
 
-    if (!list.length) {
-      $state.hidden = false;
-      $state.innerHTML = records.length ? '<strong>Aucun résultat</strong>Aucun candidat ne correspond à votre recherche.' : '<strong>Aucun candidat</strong>La table est vide.';
-    } else { $state.hidden = true; }
+    var $s = $('state');
+    if (state.read && state.read.error) {
+      $s.hidden = false; $s.innerHTML = '<strong>Source inaccessible</strong>' + esc(state.read.error) + ' Vérifiez la configuration dans l\'onglet Back office.';
+    } else if (!list.length) {
+      $s.hidden = false; $s.innerHTML = state.records.length ? '<strong>Aucun résultat</strong>Aucun candidat ne correspond à votre recherche.' : '<strong>Aucun candidat</strong>La table est vide.';
+    } else { $s.hidden = true; }
   }
 
-  $q.addEventListener('input', render);
-  document.getElementById('sort-name').addEventListener('click', function () { sortDir = -sortDir; render(); });
+  /* ---------- Back office ---------- */
+  function fillSelect(sel, items, value, placeholder) {
+    var html = '<option value="">' + esc(placeholder) + '</option>' + items.map(function (it) {
+      return '<option value="' + esc(it.value) + '"' + (it.value === value ? ' selected' : '') + '>' + esc(it.label) + '</option>';
+    }).join('');
+    sel.innerHTML = html;
+  }
 
-  if (window.grist && window.parent !== window) {
-    grist.ready({
-      requiredAccess: 'read table',
-      columns: [
-        { name: 'identity', title: 'Identité complète', type: 'Any', optional: true },
-        { name: 'status', title: 'État candidature', type: 'Any', optional: true }
-      ]
-    });
-    grist.onRecords(function (recs, map) {
-      mapping = map;
-      records = recs || [];
-      render();
-    }, { includeColumns: 'all' });
-  } else {
-    document.getElementById('demo').hidden = false;
-    records = [
-      { Identite_complete: 'Martin Camille', Etat_candidature: 'Accepté' },
-      { Identite_complete: 'Bernard Julien', Etat_candidature: ['L', 'En attente', 'Pièces manquantes'] },
-      { Identite_complete: 'Dubois Léa', Etat_candidature: 'Refusé' },
-      { Identite_complete: 'Lambert Hugo', Etat_candidature: 'Entretien programmé' },
-      { Identite_complete: 'Moreau Sarah', Etat_candidature: 'Dossier reçu' },
-      { Identite_complete: 'Petit Nathan', Etat_candidature: '' }
+  function renderAdminForm() {
+    var d = state.draft;
+    fillSelect($('f-table'), state.tables.map(function (t) { return { value: t, label: t }; }), d.table, '— Choisir une table —');
+    var cols = (state.colsByTable[d.table] || []).map(function (c) { return { value: c.id, label: colLabel(c) }; });
+    fillSelect($('f-identity'), cols, d.identity, '— Choisir une colonne —');
+    fillSelect($('f-status'), cols, d.status, '— Choisir une colonne —');
+  }
+
+  function renderRecap() {
+    var c = cfg(), rd = state.read, ok = rd && !rd.error;
+    var call = $('recap-callout');
+    if (rd && rd.error) {
+      call.hidden = false; call.style.borderLeftColor = '#ce0500';
+      call.innerHTML = '<p class="t">Source inaccessible</p><p>' + esc(rd.error) + '</p>';
+    } else if (!state.opts.table) {
+      call.hidden = false; call.style.borderLeftColor = '';
+      call.innerHTML = '<p class="t">Configuration par défaut</p><p>Aucune source enregistrée : le widget lit la table liée à cette page et les colonnes <code>' + esc(DEFAULTS.identity) + '</code> et <code>' + esc(DEFAULTS.status) + '</code>.</p>';
+    } else { call.hidden = true; }
+
+    $('recap-meta').innerHTML = rd
+      ? '<span>Lignes lues : <b>' + rd.total + '</b></span><span>Dernière lecture : <b>' + rd.at.toLocaleDateString('fr-FR') + ' à ' + rd.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</b></span>'
+      : '';
+
+    function statusTag(good, okTxt, koTxt) { return good ? '<span class="tag green">' + okTxt + '</span>' : '<span class="tag red">' + koTxt + '</span>'; }
+    var mi = colMeta(c.table, c.identity), ms = colMeta(c.table, c.status);
+    var rows = [
+      ['Table des candidats', c.table ? '<code>' + esc(c.table) + '</code>' : '—', '—', statusTag(ok, 'Connectée', 'Inaccessible')],
+      ['Identité complète', mi ? esc(mi.label) + ' <code>' + esc(mi.id) + '</code>' : '<code>' + esc(c.identity) + '</code>', mi ? typeFr(mi.type) : '—', statusTag(!!mi, 'Trouvée', 'Introuvable')],
+      ['État de la candidature', ms ? esc(ms.label) + ' <code>' + esc(ms.id) + '</code>' : '<code>' + esc(c.status) + '</code>', ms ? typeFr(ms.type) : '—', statusTag(!!ms, 'Trouvée', 'Introuvable')]
     ];
-    render();
+    $('recap-rows').innerHTML = rows.map(function (r) {
+      return '<tr><td class="name">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>';
+    }).join('');
+
+    var counts = {}, order = [];
+    state.records.forEach(function (r) { toList(r.status).forEach(function (t) { if (!(t in counts)) { counts[t] = 0; order.push(t); } counts[t]++; }); });
+    order.sort(function (a, b) { return counts[b] - counts[a]; });
+    $('recap-states').innerHTML = order.length
+      ? order.map(function (t) { return '<span class="tag ' + color(t) + '">' + esc(t) + '<small>' + counts[t] + '</small></span>'; }).join('')
+      : '<span class="tag none">Aucun état renseigné.</span>';
+  }
+
+  function renderAll() { renderList(); renderAdminForm(); renderRecap(); }
+
+  /* ---------- Onglets ---------- */
+  function showView(v) {
+    var admin = v === 'admin';
+    $('view-list').hidden = admin; $('view-admin').hidden = !admin;
+    $('tab-list').setAttribute('aria-selected', String(!admin));
+    $('tab-admin').setAttribute('aria-selected', String(admin));
+    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); }
+  }
+  $('tab-list').addEventListener('click', function () { showView('list'); });
+  $('tab-admin').addEventListener('click', function () { showView('admin'); });
+
+  /* ---------- Événements ---------- */
+  $('q').addEventListener('input', renderList);
+  $('sort-name').addEventListener('click', function () { state.sortDir = -state.sortDir; renderList(); });
+
+  $('f-table').addEventListener('change', function (e) {
+    var t = e.target.value;
+    state.draft.table = t;
+    state.draft.identity = ''; state.draft.status = '';
+    if (!t) { renderAdminForm(); return; }
+    api.listColumns(t).then(function (cols) {
+      state.colsByTable[t] = cols;
+      var has = function (id) { return cols.some(function (c) { return c.id === id; }); };
+      state.draft.identity = has(DEFAULTS.identity) ? DEFAULTS.identity : '';
+      state.draft.status = has(DEFAULTS.status) ? DEFAULTS.status : '';
+      renderAdminForm();
+    });
+  });
+  $('f-identity').addEventListener('change', function (e) { state.draft.identity = e.target.value; $('e-identity').hidden = true; });
+  $('f-status').addEventListener('change', function (e) { state.draft.status = e.target.value; $('e-status').hidden = true; });
+
+  $('btn-save').addEventListener('click', function () {
+    var d = state.draft;
+    $('e-identity').hidden = !!d.identity;
+    $('e-status').hidden = !!d.status;
+    if (!d.table || !d.identity || !d.status) return;
+    var o = { table: d.table, identity: d.identity, status: d.status };
+    api.saveOptions(o).then(function () {
+      state.opts = o;
+      return load();
+    }).then(function () { $('saved').hidden = false; window.scrollTo(0, 0); });
+  });
+  $('btn-reset').addEventListener('click', function () {
+    state.draft = { table: state.boundTable || '', identity: DEFAULTS.identity, status: DEFAULTS.status };
+    $('saved').hidden = true;
+    api.listColumns(state.draft.table).then(function (cols) { state.colsByTable[state.draft.table] = cols; renderAdminForm(); });
+  });
+
+  /* ---------- Démarrage ---------- */
+  if (IN_GRIST) {
+    grist.ready({ requiredAccess: 'full' });
+    var timer;
+    grist.onOptions(function (o) { state.opts = o || {}; load(); });
+    grist.onRecords(function () { clearTimeout(timer); timer = setTimeout(load, 150); });
+    grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; load(); }).catch(function () {});
+  } else {
+    $('demo').hidden = false;
+    state.boundTable = 'Candidats_PMG';
+    load();
   }
 })();
 </script>
