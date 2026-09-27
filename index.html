@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PMG et Acculturation</title>
+<title>Candidats</title>
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -223,10 +223,58 @@
   .cf-warn { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1px solid #b34000; border-left-width: 6px; color: var(--ink); }
   .cf-warn p { margin: 0; }
   #btn-create { white-space: nowrap; }
+  /* Page « Réservations » */
+  .x-table { overflow-x: auto; }
+  .x-table table { min-width: 100%; width: max-content; }
+  .x-table td, .x-table th { white-space: nowrap; }
+  .x-table .x-sticky { position: sticky; left: 0; z-index: 1; background: var(--bg); box-shadow: 1px 0 0 var(--border-default-grey); }
+  .x-table thead .x-sticky { z-index: 2; background: var(--bg-alt); }
+  .x-table td.x-actions { display: table-cell; padding: 4px 8px; }
+  .x-table td.x-actions .icon-btn { width: 2rem; height: 2rem; }
+  .x-table td.x-actions .icon-btn svg { width: 20px; height: 20px; }
+  .x-table td.x-actions .icon-btn [class^="fr-icon-"] { font-size: 1.25rem; }
+  .x-table tr.x-dup td { background: var(--blue-tint); }
+  .x-table tr.x-dup td.x-sticky { background: var(--blue-tint); }
+  .x-off { color: var(--muted); }
+  .x-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .x-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+  .x-card { border: 1px solid var(--border-default-grey); border-radius: 0.5rem; padding: 1rem; background: var(--bg); }
+  .x-card.is-target { border-color: var(--text-default-error); }
+  .x-card__grid { display: grid; gap: 8px; }
+  .x-kv { display: flex; justify-content: space-between; gap: 12px; }
+  .x-kv span { color: var(--muted); }
+  .x-card__btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   #r-flt-a-wrap { flex: 0 1 240px; min-width: 13rem; }
   #r-flt-b-wrap { flex: 0 1 260px; min-width: 14rem; }
   #r-btn-create { white-space: nowrap; }
   .fr-nav__link { cursor: pointer; }
+  /* Back office simplifié : récapitulatif des sources, options avancées repliées, barre d'enregistrement fixe. */
+  .bo-sources, .bo-advanced { border: 1px solid var(--border-default-grey); border-radius: 0.5rem; padding: 0.75rem 1.25rem; margin-bottom: 32px; background: var(--bg); }
+  .bo-sources summary, .bo-advanced summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 0.25rem 0; }
+  .bo-sources summary:focus-visible, .bo-advanced summary:focus-visible, .mail-block summary:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .bo-sources[open] summary, .bo-advanced[open] summary { margin-bottom: 0.75rem; }
+  .bo-sources #recap-sum, .bo-sources #r-recap-sum { margin-left: 0.5rem; font-weight: 400; }
+  .bo-sources h3, .bo-advanced h3 { margin: 24px 0 8px; font-size: 1rem; }
+  .bo-sources .callout { margin-left: 0; }
+  .bo-sources .meta { margin-left: 0; }
+  .bo-advanced .fields, .bo-advanced .pick-grid, .bo-advanced .actions { margin-left: 0; }
+  .bo-bar {
+    position: sticky; bottom: 0; z-index: 20; display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem 1.25rem; margin: 1.5rem -0.25rem 0; padding: 0.8rem 1rem;
+    background: var(--bg); border-top: 1px solid var(--border-default-grey); box-shadow: 0 -4px 14px rgba(20, 10, 30, 0.08);
+  }
+  .bo-bar__state { font-size: 0.875rem; color: var(--text-mention-grey); }
+  .bo-bar__state.is-dirty { color: var(--text-default-warning); font-weight: 700; }
+  .bo-bar__saved { font-size: 0.875rem; color: var(--text-default-success); font-weight: 700; }
+  .bo-bar__actions { display: flex; gap: 0.75rem; margin-left: auto; }
+  .bo-vars { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px 56px; }
+  .cfg-var-btn { font-family: ui-monospace, Menlo, monospace; font-size: 0.8125rem; padding: 2px 8px; border: 1px solid var(--border-default-grey); border-radius: 4px; background: var(--bg-alt); color: var(--ink); cursor: pointer; }
+  .cfg-var-btn:hover:not(:disabled) { background: var(--blue-tint); }
+  details.mail-block { padding: 0; }
+  details.mail-block > summary { cursor: pointer; padding: 12px 20px; font-weight: 700; color: var(--ink); }
+  details.mail-block[open] > summary { border-bottom: 1px solid var(--border-default-grey); }
+  details.mail-block > .mail-body { padding: 16px 24px 24px; }
+  .mail-body .mail-head { margin-bottom: 12px; }
+  @media (max-width: 640px) { .bo-vars { margin-left: 0; } .bo-bar__actions { margin-left: 0; width: 100%; } }
   /* Onglet Documents. */
   .doc-table td.name { white-space: normal; overflow-wrap: anywhere; }
   .doc-table td.name a { color: var(--ink); font-weight: 700; }
@@ -437,8 +485,9 @@
       <div class="fr-header__menu-links"></div>
       <nav class="fr-nav" id="header-navigation" role="navigation" aria-label="Menu principal">
         <ul class="fr-nav__list">
-          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" aria-current="page" data-page="pmg">PMG et Acculturation</a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" aria-current="page" data-page="pmg">Candidats</a></li>
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="res">Réservistes RO1/RS/RC</a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="rsv">Réservations</a></li>
         </ul>
       </nav>
     </div>
@@ -499,12 +548,12 @@
 
   <!-- ===== Vue liste ===== -->
   <div id="view-list" role="tabpanel" aria-labelledby="tab-list">
-    <h1 class="fr-sr-only">PMG et Acculturation</h1>
+    <h1 class="fr-sr-only">Candidats</h1>
 
     <div class="toolbar">
       <div class="tb-field tb-search">
         <label for="q">Rechercher un candidat</label>
-        <input id="q" class="input" type="search" placeholder="Nom, mail, téléphone, NID, ville…" autocomplete="off">
+        <input id="q" class="input" type="search" placeholder="Nom, prénom, NID, N° CAND, tél, mail…" autocomplete="off">
       </div>
       <div class="tb-field" id="flt-status-wrap">
         <label id="flt-status-label" for="flt-status-btn">État de la candidature</label>
@@ -542,56 +591,24 @@
 
   <!-- ===== Back office ===== -->
   <div id="view-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
-    <div id="saved" class="alert success" role="status" hidden>
-      <p class="t">Configuration enregistrée</p>
-      <p>Les sources ci-dessous sont utilisées par la liste des candidats.</p>
-    </div>
-
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Source de données</h2></div>
-      <p class="lead">La table Grist qui recense les candidats PMG. Par défaut, la table liée à ce widget.</p>
-      <div class="fields">
-        <div>
-          <label for="f-table">Table des candidats<span class="req" aria-hidden="true">*</span></label>
-          <span class="hint" id="h-table">Une ligne par candidat.</span>
-          <select id="f-table" class="select" aria-describedby="h-table"></select>
-        </div>
+    <details class="bo-sources" id="bo-sources">
+      <summary>Sources de données du widget (lecture seule) <span id="recap-sum"></span></summary>
+      <div id="recap-callout" class="callout" hidden></div>
+      <div class="meta" id="recap-meta"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Élément</th><th>Source</th><th>Type</th><th>Statut</th></tr></thead>
+          <tbody id="recap-rows"></tbody>
+        </table>
       </div>
-    </section>
+      <h3>États rencontrés dans la colonne « État de la candidature »</h3>
+      <div class="tagrow" id="recap-states"></div>
+    </details>
 
     <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">2</div><h2>Colonnes lues</h2></div>
-      <p class="lead">Colonnes de la table utilisées pour l’affichage de la liste.</p>
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Envoi des courriels</h2></div>
+      <p class="lead">Réglages communs à tous les courriels préparés depuis la fiche.</p>
       <div class="fields">
-        <div>
-          <label for="f-identity">Identité complète</label>
-          <span class="hint">Nom et prénom du candidat. Si aucune colonne n’est choisie, l’identité est composée à partir des colonnes NOM et Prénom.</span>
-          <select id="f-identity" class="select"></select>
-        </div>
-        <div>
-          <label for="f-status">État de la candidature<span class="req" aria-hidden="true">*</span></label>
-          <span class="hint">Texte ou choix, affiché sous forme de tags (éviter une colonne Référence).</span>
-          <select id="f-status" class="select"></select>
-          <div class="field-error" id="e-status" hidden>Sélectionnez une colonne.</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Colonnes de la fiche</h2></div>
-      <p class="lead">Colonnes affichées dans chaque onglet de la fiche candidat. Une colonne n’appartient qu’à un seul onglet.</p>
-      <div class="pick-grid" id="picks"></div>
-    </section>
-
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">4</div><h2>Courriels et convocations</h2></div>
-      <p class="lead">Quatre modèles indépendants, envoyés depuis l’onglet Médico-statutaire via les icônes « Réservation » et « Convocation » placées à côté des Tests psychométriques et de la VEMI. Chaque modèle a son propre texte : modifiez-les séparément.</p>
-      <div class="fields">
-        <div>
-          <label for="f-emailcol">Colonne e-mail du candidat</label>
-          <span class="hint">Adresse à laquelle les messages sont envoyés. Par défaut, la colonne « Email ».</span>
-          <select id="f-emailcol" class="select"></select>
-        </div>
         <div>
           <label for="f-cc">Adresse en copie (Cc)</label>
           <span class="hint">Facultatif, par exemple la boîte fonctionnelle du service.</span>
@@ -599,58 +616,65 @@
         </div>
         <div>
           <label for="f-replyto">Répondre à</label>
-          <span class="hint">Adresse de réponse commune à tous les courriels (en-tête « Reply-To »). Facultatif. Avec ce champ, le mail de réservation est proposé sous forme de brouillon .eml.</span>
+          <span class="hint">Adresse de réponse commune à tous les courriels. Facultatif.</span>
           <input id="f-replyto" class="input" type="email" autocomplete="off" placeholder="reponse@exemple.fr">
         </div>
-      </div>
-      <div class="fields" style="margin-top:24px">
-        <div>
-          <label for="f-convcol">Copie des convocations dans Documents</label>
-          <span class="hint">Colonne « Pièces jointes » où le PDF est rangé. Détectée automatiquement (libellé « Convocation ») si vide.</span>
-          <select id="f-convcol" class="select"></select>
-        </div>
-        <div>
-          <label for="f-lettercol">Copie des lettres d’incorporation</label>
-          <span class="hint">Colonne « Pièces jointes » des lettres. Détectée automatiquement (libellé « Lettre… ») si vide.</span>
-          <select id="f-lettercol" class="select"></select>
-        </div>
-        <div>
-          <label for="f-rejetcol">Copie des lettres de rejet</label>
-          <span class="hint">Colonne « Pièces jointes » des lettres de rejet. Détectée automatiquement (libellé « Rejet… »), à défaut la colonne des lettres d’incorporation.</span>
-          <select id="f-rejetcol" class="select"></select>
-        </div>
-        <div>
-          <label for="f-esrcol">Copie des ESR</label>
-          <span class="hint">Colonne « Pièces jointes » des ESR. Détectée automatiquement (libellé « ESR ») si vide.</span>
-          <select id="f-esrcol" class="select"></select>
-        </div>
-      </div>
-      <div class="callout mail-vars">
-        <p class="t">Variables utilisables dans les objets, messages et modèles</p>
-        <p><code>{{IDENTITE}}</code> <code>{{CIVILITE}}</code> <code>{{NOM}}</code> <code>{{PRENOM}}</code> <code>{{NID}}</code> <code>{{N_CANDIDATURE}}</code> <code>{{N_CAND}}</code><code>{{DATE_TESTS}}</code> <code>{{DATE_VEMI}}</code> <code>{{ANTENNE}}</code> <code>{{DATE_DU_JOUR}}</code> <code>{{N_CHRONO}}</code> (lettre de rejet : demandé à la génération)</p>
-        <p>Toute colonne de la table est aussi utilisable par son libellé, par exemple <code>{{Validité VEMI}}</code>. Une variable inconnue est laissée telle quelle.</p>
-      </div>
-      <div id="mail-forms"></div>
-      <div class="actions" style="margin-top:24px">
-        <button class="btn" id="btn-save" type="button">Enregistrer la configuration</button>
-        <button class="btn secondary" id="btn-reset" type="button">Réinitialiser</button>
       </div>
     </section>
 
     <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">5</div><h2>Rappel des sources</h2></div>
-      <p class="lead">Ce que le widget lit actuellement dans le document Grist.</p>
-      <div id="recap-callout" class="callout" hidden></div>
-      <div class="meta" id="recap-meta"></div>
-      <div class="indent"><div class="table-wrap">
-        <table>
-          <thead><tr><th>Élément</th><th>Source</th><th>Type</th><th>Statut</th></tr></thead>
-          <tbody id="recap-rows"></tbody>
-        </table>
-      </div></div>
-      <h3>États rencontrés dans la colonne « État de la candidature »</h3>
-      <div class="tagrow indent" id="recap-states"></div>
+      <div class="head"><div class="badge-num" aria-hidden="true">2</div><h2>Modèles de courriels et de documents</h2></div>
+      <p class="lead">Un modèle par envoi, indépendants les uns des autres. Cliquez sur une variable pour l’insérer dans le champ en cours de saisie.</p>
+      <div class="bo-vars" id="bo-vars" role="group" aria-label="Variables disponibles"></div>
+      <div id="mail-forms"></div>
     </section>
+
+    <details class="bo-advanced">
+      <summary>Options avancées : sources, colonnes de la fiche, copies dans Documents</summary>
+      <p class="hint">Par défaut, la table liée à cette page et les colonnes habituelles de la table Candidats PMG sont détectées automatiquement. À modifier uniquement si une colonne est « Introuvable » dans le récapitulatif ci-dessus.</p>
+      <div class="fields">
+        <div>
+          <label for="f-table">Table des candidats<span class="req" aria-hidden="true">*</span></label>
+          <select id="f-table" class="select"></select>
+        </div>
+        <div>
+          <label for="f-identity">Identité complète</label>
+          <span class="hint">Vide : composée à partir de NOM et Prénom.</span>
+          <select id="f-identity" class="select"></select>
+        </div>
+        <div>
+          <label for="f-status">État de la candidature<span class="req" aria-hidden="true">*</span></label>
+          <select id="f-status" class="select"></select>
+          <div class="field-error" id="e-status" hidden>Sélectionnez une colonne.</div>
+        </div>
+        <div>
+          <label for="f-emailcol">Colonne e-mail du candidat</label>
+          <span class="hint">Vide : colonne « Email ».</span>
+          <select id="f-emailcol" class="select"></select>
+        </div>
+      </div>
+      <h3>Copies dans Documents</h3>
+      <p class="hint">Colonnes « Pièces jointes » où les PDF générés sont rangés. Vide : détection automatique par le libellé.</p>
+      <div class="fields">
+        <div><label for="f-convcol">Convocations</label><select id="f-convcol" class="select"></select></div>
+        <div><label for="f-lettercol">Lettres d’incorporation</label><select id="f-lettercol" class="select"></select></div>
+        <div><label for="f-rejetcol">Lettres de rejet</label><select id="f-rejetcol" class="select"></select></div>
+        <div><label for="f-esrcol">ESR</label><select id="f-esrcol" class="select"></select></div>
+      </div>
+      <h3>Colonnes de la fiche</h3>
+      <p class="hint">Une colonne n’appartient qu’à un seul onglet.</p>
+      <div class="pick-grid" id="picks"></div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="btn-reset" type="button">Rétablir les valeurs par défaut</button></div>
+    </details>
+
+    <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
+      <span class="bo-bar__state" id="bo-state" aria-live="polite">Configuration à jour</span>
+      <span class="bo-bar__saved" id="saved" role="status" hidden>✔ Configuration enregistrée</span>
+      <div class="bo-bar__actions">
+        <button class="btn secondary" id="btn-cancel" type="button">Annuler</button>
+        <button class="btn" id="btn-save" type="button">Enregistrer</button>
+      </div>
+    </div>
   </div>
 
   <div id="demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
@@ -673,7 +697,7 @@
     <div class="toolbar">
       <div class="tb-field tb-search">
         <label for="r-q">Rechercher un réserviste</label>
-        <input id="r-q" class="input" type="search" placeholder="Nom, mail, téléphone, NID, ville…" autocomplete="off">
+        <input id="r-q" class="input" type="search" placeholder="Nom, prénom, NID, Nigend, tél, mail…" autocomplete="off">
       </div>
       <div class="tb-field" id="r-flt-a-wrap">
         <label id="r-flt-a-label" for="r-flt-a-btn">Type R</label>
@@ -710,65 +734,62 @@
 
   <!-- ===== Back office ===== -->
   <div id="r-view-admin" role="tabpanel" aria-labelledby="r-tab-admin" hidden>
-    <div id="r-saved" class="alert success" role="status" hidden>
-      <p class="t">Configuration enregistrée</p>
-      <p>Les sources ci-dessous sont utilisées par la liste des réservistes.</p>
-    </div>
-
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Source de données</h2></div>
-      <p class="lead">La table Grist qui recense les réservistes RO1/RS/RC. Par défaut, la table liée à ce widget.</p>
-      <div class="fields">
-        <div>
-          <label for="r-f-table">Table des réservistes<span class="req" aria-hidden="true">*</span></label>
-          <span class="hint" id="r-h-table">Une ligne par réserviste.</span>
-          <select id="r-f-table" class="select" aria-describedby="r-h-table"></select>
-        </div>
+    <details class="bo-sources" id="r-bo-sources" open>
+      <summary>Sources de données du widget (lecture seule) <span id="r-recap-sum"></span></summary>
+      <div id="r-recap-callout" class="callout" hidden></div>
+      <div class="meta" id="r-recap-meta"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Élément</th><th>Source</th><th>Type</th><th>Statut</th></tr></thead>
+          <tbody id="r-recap-rows"></tbody>
+        </table>
       </div>
-    </section>
+      <h3>Valeurs rencontrées dans la colonne affichée en tags</h3>
+      <div class="tagrow" id="r-recap-states"></div>
+    </details>
 
     <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">2</div><h2>Colonnes lues</h2></div>
-      <p class="lead">Colonnes de la table utilisées pour l’affichage de la liste.</p>
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Affichage</h2></div>
+      <p class="lead">La table « Réservistes RO1/RS/RC » est détectée par son nom et les colonnes par leur libellé. Choisissez ici la colonne affichée en tags après le nom dans la liste.</p>
       <div class="fields">
-        <div>
-          <label for="r-f-identity">Identité complète</label>
-          <span class="hint">Nom et prénom du réserviste. Si aucune colonne n’est choisie, l’identité est composée à partir des colonnes NOM et Prénom.</span>
-          <select id="r-f-identity" class="select"></select>
-        </div>
         <div>
           <label for="r-f-tag">Colonne affichée en tags<span class="req" aria-hidden="true">*</span></label>
-          <span class="hint">Affichée après le nom dans la liste et utilisée pour le premier filtre. Par défaut, « Type R » (RO1, RS, RC).</span>
+          <span class="hint">Par défaut « Type R » (RO1, RS, RC) ; sert aussi au premier filtre. Les tags Tir, Médical et Contrat sont calculés à partir des dates d’expiration.</span>
           <select id="r-f-tag" class="select"></select>
           <div class="field-error" id="r-e-tag" hidden>Sélectionnez une colonne.</div>
         </div>
       </div>
     </section>
 
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Colonnes de la fiche</h2></div>
-      <p class="lead">Colonnes affichées dans chaque onglet de la fiche du réserviste. Une colonne n’appartient qu’à un seul onglet.</p>
-      <div class="pick-grid" id="r-picks"></div>
-      <div class="actions" style="margin-top:24px">
-        <button class="btn" id="r-btn-save" type="button">Enregistrer la configuration</button>
-        <button class="btn secondary" id="r-btn-reset" type="button">Réinitialiser</button>
+    <details class="bo-advanced">
+      <summary>Options avancées : source, colonnes de la fiche</summary>
+      <p class="hint">À modifier uniquement si une colonne est « Introuvable » dans le récapitulatif ci-dessus.</p>
+      <div class="fields">
+        <div>
+          <label for="r-f-table">Table des réservistes<span class="req" aria-hidden="true">*</span></label>
+          <select id="r-f-table" class="select" aria-describedby="r-h-table"></select>
+          <span class="hint" id="r-h-table">Une ligne par réserviste.</span>
+        </div>
+        <div>
+          <label for="r-f-identity">Identité complète</label>
+          <span class="hint">Vide : composée à partir de NOM et Prénom.</span>
+          <select id="r-f-identity" class="select"></select>
+        </div>
       </div>
-    </section>
+      <h3>Colonnes de la fiche</h3>
+      <p class="hint">Une colonne n’appartient qu’à un seul onglet.</p>
+      <div class="pick-grid" id="r-picks"></div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="r-btn-reset" type="button">Rétablir les valeurs par défaut</button></div>
+    </details>
 
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">4</div><h2>Rappel des sources</h2></div>
-      <p class="lead">Ce que le widget lit actuellement dans le document Grist.</p>
-      <div id="r-recap-callout" class="callout" hidden></div>
-      <div class="meta" id="r-recap-meta"></div>
-      <div class="indent"><div class="table-wrap">
-        <table>
-          <thead><tr><th>Élément</th><th>Source</th><th>Type</th><th>Statut</th></tr></thead>
-          <tbody id="r-recap-rows"></tbody>
-        </table>
-      </div></div>
-      <h3>Valeurs rencontrées dans la colonne affichée en tags</h3>
-      <div class="tagrow indent" id="r-recap-states"></div>
-    </section>
+    <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
+      <span class="bo-bar__state" id="r-bo-state" aria-live="polite">Configuration à jour</span>
+      <span class="bo-bar__saved" id="r-saved" role="status" hidden>✔ Configuration enregistrée</span>
+      <div class="bo-bar__actions">
+        <button class="btn secondary" id="r-btn-cancel" type="button">Annuler</button>
+        <button class="btn" id="r-btn-save" type="button">Enregistrer</button>
+      </div>
+    </div>
   </div>
 
   <div id="r-demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
@@ -812,6 +833,103 @@
         <div class="modal-actions"><button class="round-btn" id="r-cmodal-close" type="button" aria-label="Fermer sans créer" title="Fermer">✕</button></div>
       </div>
       <form id="r-cmodal-form" novalidate></form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Page 3 : Réservations ===== -->
+<div id="page-rsv" hidden>
+<div class="wrap fr-container">
+  <div class="tabs" id="x-tabs" role="tablist" aria-label="Types de réservation">
+    <button class="tab" role="tab" id="x-tab-vmp" data-tab="vmp" aria-selected="true" aria-controls="x-view-list" type="button">VMP</button>
+    <button class="tab" role="tab" id="x-tab-vemi" data-tab="vemi" aria-selected="false" aria-controls="x-view-list" type="button">VEMI</button>
+    <button class="tab" role="tab" id="x-tab-psy" data-tab="psy" aria-selected="false" aria-controls="x-view-list" type="button">Tests psy</button>
+    <button class="tab" role="tab" id="x-tab-admin" data-tab="admin" aria-selected="false" aria-controls="x-view-admin" type="button" hidden>Back office</button>
+  </div>
+
+  <!-- ===== Vue tableau ===== -->
+  <div id="x-view-list" role="tabpanel">
+    <h1 class="fr-sr-only" id="x-list-h1">Réservations</h1>
+    <div id="x-msg-zone" aria-live="polite"></div>
+
+    <div class="toolbar">
+      <div class="tb-field tb-search">
+        <label for="x-q">Rechercher une réservation</label>
+        <input id="x-q" class="input" type="search" placeholder="Nom, NID, Nigend, mail, date, antenne…" autocomplete="off">
+      </div>
+      <label class="x-check"><input type="checkbox" id="x-dup-only"> Doublons uniquement</label>
+      <div class="count" id="x-count" aria-live="polite"></div>
+    </div>
+
+    <div class="table-wrap x-table">
+      <table>
+        <thead id="x-thead"></thead>
+        <tbody id="x-rows"></tbody>
+      </table>
+      <div id="x-state" class="state" hidden></div>
+    </div>
+  </div>
+
+  <!-- ===== Back office ===== -->
+  <div id="x-view-admin" role="tabpanel" hidden>
+    <details class="bo-sources" id="x-bo-sources" open>
+      <summary>Sources de données du widget (lecture seule) <span id="x-recap-sum"></span></summary>
+      <div class="meta" id="x-recap-meta"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Élément</th><th>Source</th><th>Colonnes</th><th>Statut</th></tr></thead>
+          <tbody id="x-recap-rows"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Modèles de courriels</h2></div>
+      <p class="lead">Un modèle par envoi, indépendants les uns des autres. Le corps peut être rédigé en <strong>HTML</strong> ou en <strong>texte</strong> (choix par modèle). Cliquez sur une variable pour l’insérer dans le champ en cours de saisie. L’adresse en copie et « Répondre à » sont ceux de la page Candidats.</p>
+      <div class="bo-vars" id="x-bo-vars" role="group" aria-label="Variables disponibles"></div>
+      <div id="x-mail-forms"></div>
+    </section>
+
+    <details class="bo-advanced">
+      <summary>Options avancées : tables</summary>
+      <p class="hint">Les tables sont détectées automatiquement par leur nom. À modifier uniquement si l’une est « Introuvable » dans le récapitulatif ci-dessus.</p>
+      <div class="fields">
+        <div><label for="x-f-t-vmp">Table des réservations VMP</label><select id="x-f-t-vmp" class="select"></select></div>
+        <div><label for="x-f-t-vemi">Table des réservations VEMI</label><select id="x-f-t-vemi" class="select"></select></div>
+        <div><label for="x-f-t-psy">Table des réservations Tests psy</label><select id="x-f-t-psy" class="select"></select></div>
+        <div><label for="x-f-t-cand">Table des candidats (mails du VEMI)</label><select id="x-f-t-cand" class="select"></select></div>
+      </div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="x-btn-reset" type="button">Rétablir les valeurs par défaut</button></div>
+    </details>
+
+    <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
+      <span class="bo-bar__state" id="x-bo-state" aria-live="polite">Configuration à jour</span>
+      <span class="bo-bar__saved" id="x-saved" role="status" hidden>✔ Configuration enregistrée</span>
+      <div class="bo-bar__actions">
+        <button class="btn secondary" id="x-btn-cancel" type="button">Annuler</button>
+        <button class="btn" id="x-btn-save" type="button">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="x-demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
+</div>
+
+</div><!-- /page-rsv -->
+
+<!-- ===== Doublons de réservation ===== -->
+<div class="modal-overlay" id="x-dmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="x-dmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="x-dmodal-title"></h2>
+          <p class="modal-sub" id="x-dmodal-sub"></p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="x-dmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="x-dmodal-body"></div>
     </div>
   </div>
 </div>
@@ -886,7 +1004,7 @@
   var TAB_DEFS = [
     { key: 'info', title: 'Candidat', cardTitle: 'Informations sur le candidat',
       defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt', 'Âge',
-                 'Numéro de téléphone', 'Email', 'Adresse', 'CP', 'Ville', 'Profession',
+                 'Numéro de téléphone', 'Email', 'Adresse', 'CP', 'Ville', 'Profession', 'Convention',
                  'Commentaires'] },
     { key: 'mil', title: 'Renseignements militaires', cardTitle: 'Renseignements militaires',
       defaults: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO', 'PMG', 'Etat candidature',
@@ -894,7 +1012,7 @@
     { key: 'medico', title: 'Médico-statutaire', cardTitle: 'Situation médicale et statutaire',
       defaults: ['Date tests psy', 'Tests psy', 'Date VEMI', 'Antenne VEMI', 'VEMI', 'Validité VEMI'] },
     { key: 'docs', title: 'Documents', cardTitle: 'Documents du dossier',
-      defaults: ['Lettre intégration', 'Convention', 'Convocations', 'ESR'] }
+      defaults: ['Lettre intégration', 'Convocations', 'ESR'] }
   ];
 
   // Blocs par onglet : seules les colonnes de ces blocs (et cochées dans le back office) sont affichées dans la fiche.
@@ -902,7 +1020,7 @@
     info: [
       { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN', 'Âge'], ['Lieu de naissance', 'Dpt']] },
       { title: 'Coordonnées', rows: [['Numéro de téléphone', 'Email'], ['Adresse'], ['CP', 'Ville']] },
-      { title: 'Profession', labels: ['Profession'] },
+      { title: 'Renseignements professionnels', rows: [['Profession', 'Convention']] },
       { title: '', labels: ['Commentaires'] }
     ],
     mil: [
@@ -948,6 +1066,14 @@
   function rowHtml(label, value) {
     return '    <tr><th style="text-align: left; width: 35%; padding: 6px 10px; background: #f3f3fd; border: 1px solid #ddd;">' + label + '</th><td style="padding: 6px 10px; border: 1px solid #ddd;">' + value + '</td></tr>\n';
   }
+  // Corps de courriel en HTML (styles en ligne, compatible messageries).
+  function mailHtml(inner) {
+    return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' + inner + '\n</div>';
+  }
+  function mailRow(label, value) {
+    return '    <tr><th style="text-align: left; padding: 6px 12px; background: #f3f3fd; border: 1px solid #ddd; white-space: nowrap;">' + label + '</th><td style="padding: 6px 12px; border: 1px solid #ddd;">' + value + '</td></tr>\n';
+  }
+  var MAIL_SIGN_HTML = '  <p>Cordialement,<br>Division réserves jeunesse</p>';
   var SIGN_HTML = '  <p style="margin-top: 32px;">Fait le {{DATE_DU_JOUR}}<br>Division réserves jeunesse</p>';
 
   // Six modèles distincts : réservation, convocation du candidat et convocation transmise au service, pour les tests et pour la VEMI.
@@ -962,14 +1088,12 @@
       },
       convocation: {
         subject: 'Convocation aux tests psychométriques du {{DATE_TESTS}}',
-        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
-          'Veuillez trouver ci-joint votre convocation aux tests psychométriques, qui auront lieu le {{DATE_TESTS}}.\n\n' +
-          'Merci de confirmer votre présence en répondant à ce message. En cas d’empêchement, prévenez-nous dès que possible afin que nous puissions vous proposer une autre date.\n\n' + MAIL_SIGN,
-        template: pageHtml('Convocation aux tests psychométriques',
-          '  <p><strong>{{IDENTITE}}</strong><br>N° de candidature : {{N_CANDIDATURE}}</p>\n' +
-          '  <p>Vous êtes convoqué(e) aux tests psychométriques le <strong>{{DATE_TESTS}}</strong>.</p>\n' +
-          '  <p>Documents à présenter :</p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>la présente convocation.</li>\n  </ul>\n' +
-          '  <p>Merci d’arriver un peu en avance.</p>\n' + SIGN_HTML)
+        body: mailHtml(
+          '  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n' +
+          '  <p>Dans le cadre de votre candidature (n° {{N_CANDIDATURE}}), vous êtes convoqué(e) aux <strong>tests psychométriques</strong>.</p>\n' +
+          '  <table style="border-collapse: collapse; margin: 16px 0;">\n' + mailRow('Candidat', '{{IDENTITE}}') + mailRow('Date et heure', '<strong>{{DATE_TESTS}}</strong>') + '  </table>\n' +
+          '  <p><strong>Documents à présenter :</strong></p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>le présent message.</li>\n  </ul>\n' +
+          '  <p>Merci de confirmer votre présence en répondant à ce message. En cas d’empêchement, prévenez-nous dès que possible afin que nous puissions vous proposer une autre date.</p>\n' + MAIL_SIGN_HTML)
       }
     },
     vemi: {
@@ -982,27 +1106,23 @@
       },
       convocation: {
         subject: 'Convocation à la visite médicale (VEMI) du {{DATE_VEMI}}',
-        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
-          'Veuillez trouver ci-joint votre convocation à la visite d’expertise médicale initiale (VEMI) du {{DATE_VEMI}}, à l’antenne médicale : {{ANTENNE}}.\n\n' +
-          'Cette visite est indispensable à la poursuite de votre candidature. Merci de confirmer votre présence en répondant à ce message.\n\n' + MAIL_SIGN,
-        template: pageHtml('Convocation à la visite d’expertise médicale initiale (VEMI)',
-          '  <p><strong>{{IDENTITE}}</strong><br>N° de candidature : {{N_CANDIDATURE}}</p>\n' +
-          '  <p>Vous êtes convoqué(e) à la visite d’expertise médicale initiale le <strong>{{DATE_VEMI}}</strong>.<br>Lieu : <strong>{{ANTENNE}}</strong></p>\n' +
-          '  <p>Documents à apporter :</p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>la présente convocation ;</li>\n    <li>votre carnet de vaccination et vos éventuelles ordonnances en cours ;</li>\n    <li>vos lunettes ou lentilles de contact, le cas échéant.</li>\n  </ul>\n' +
-          '  <p>Merci d’arriver un peu en avance.</p>\n' + SIGN_HTML)
+        body: mailHtml(
+          '  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n' +
+          '  <p>Pour poursuivre l’instruction de votre candidature (n° {{N_CANDIDATURE}}), vous êtes convoqué(e) à la <strong>visite d’expertise médicale initiale (VEMI)</strong>.</p>\n' +
+          '  <table style="border-collapse: collapse; margin: 16px 0;">\n' + mailRow('Candidat', '{{IDENTITE}}') + mailRow('Date et heure', '<strong>{{DATE_VEMI}}</strong>') + mailRow('Antenne médicale', '<strong>{{ANTENNE}}</strong>') + '  </table>\n' +
+          '  <p><strong>Documents à apporter :</strong></p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>le présent message ;</li>\n    <li>votre carnet de vaccination et vos éventuelles ordonnances en cours ;</li>\n    <li>vos lunettes ou lentilles de contact, le cas échéant.</li>\n  </ul>\n' +
+          '  <p>Cette visite est indispensable à la poursuite de votre candidature. Merci de confirmer votre présence en répondant à ce message.</p>\n' + MAIL_SIGN_HTML)
       },
       service: {
-        to: '',
         subject: 'VEMI du {{DATE_VEMI}} : convocation de {{IDENTITE}}',
-        body: 'Bonjour,\n\n' +
-          'Veuillez trouver ci-joint la fiche de convocation de {{IDENTITE}} (n° {{N_CANDIDATURE}}) à la visite d’expertise médicale initiale (VEMI) du {{DATE_VEMI}} dans votre antenne ({{ANTENNE}}).\n\n' +
-          'Merci de nous transmettre le résultat de la visite dès qu’il est disponible.\n\n' + MAIL_SIGN,
-        template: pageHtml('Fiche de convocation – VEMI',
-          '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
-          rowHtml('Candidat', '<strong>{{IDENTITE}}</strong>') + rowHtml('Date de naissance', '{{DDN}}') + rowHtml('N° de candidature', '{{N_CANDIDATURE}}') + rowHtml('NID', '{{NID}}') +
-          rowHtml('Grade', '{{GRADE}}') + rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('Téléphone', '{{TELEPHONE}}') +
-          rowHtml('Date de la visite', '<strong>{{DATE_VEMI}}</strong>') + rowHtml('Antenne médicale', '{{ANTENNE}}') +
-          '  </table>\n  <p>Merci de recevoir ce candidat pour sa visite d’expertise médicale initiale et de nous en transmettre le résultat.</p>\n' + SIGN_HTML)
+        body: mailHtml(
+          '  <p>Bonjour,</p>\n' +
+          '  <p>Le candidat ci-dessous est convoqué à la <strong>visite d’expertise médicale initiale (VEMI)</strong> dans votre antenne.</p>\n' +
+          '  <table style="border-collapse: collapse; margin: 16px 0;">\n' +
+          mailRow('Candidat', '<strong>{{IDENTITE}}</strong>') + mailRow('Date de naissance', '{{DDN}}') + mailRow('N° de candidature', '{{N_CANDIDATURE}}') + mailRow('NID', '{{NID}}') +
+          mailRow('Grade', '{{GRADE}}') + mailRow('Groupement', '{{AFFECTATION}}') + mailRow('Téléphone', '{{TELEPHONE}}') +
+          mailRow('Date et heure', '<strong>{{DATE_VEMI}}</strong>') + mailRow('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
+          '  <p>Merci de recevoir ce candidat et de nous transmettre le résultat de la visite dès qu’il est disponible.</p>\n' + MAIL_SIGN_HTML)
       }
     }
   };
@@ -1086,6 +1206,7 @@
     sortDir: 1,
     modal: { index: -1, tab: 'info', opener: null },
     mail: { msg: null, pdfUrl: null, pdfName: null }, // résultat de la dernière réservation / convocation
+    esr: { tab: 'info', confirm: false, busy: false, msg: null, dismissed: false }, // « Déjà ESR » : fiche du réserviste à côté, question sur la suppression
     cmp: { active: false },  // doublon : deux fiches côte à côte { baseId, otherId, others, keep, take, busy, msg, confirm }
     notice: null,            // message affiché en tête de la fiche (ex. après suppression d'un doublon)
     edit: null,              // champ de la fiche en cours de modification { colId, value, busy, error }
@@ -1114,11 +1235,12 @@
   function d(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
   var DEMO_ROWS_BY_LABEL = [
     { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'CP': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean' },
-    { 'NID': '1043310', 'PMG': 'PMG 38', 'NOM': 'Bernard', 'Prénom': 'Julien', 'Affectation': 'GD 38', 'Civilité': 'M.', 'DDN': d(2005, 11, 3), 'Âge': 20, 'Etat candidature': ['L', 'En attente', 'Pièces manquantes'], 'Dde BPRO': true, 'Doublon': false },
+    { 'NID': '1043310', 'PMG': 'PMG 38', 'Numéro de téléphone': '612345678', 'NOM': 'Bernard', 'Prénom': 'Julien', 'Affectation': 'GD 38', 'Civilité': 'M.', 'DDN': d(2005, 11, 3), 'Âge': 20, 'Etat candidature': ['L', 'En attente', 'Pièces manquantes'], 'Dde BPRO': true, 'Doublon': false },
     { 'NID': '1043544', 'PMG': 'PMG 73', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Affectation': 'GD 73', 'Civilité': 'Mme', 'Etat candidature': 'Rejet DRJ', 'Email': 'lea.dubois@example.fr', 'Adresse': '4 place du Marché', 'CP': '73000', 'Ville': 'Chambéry', 'VEMI': 'Inapte' },
     { 'NID': '1044002', 'PMG': 'PMG 74', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Affectation': 'GD 74', 'Civilité': 'M.', 'Etat candidature': 'Entretien programmé' },
     { 'NID': '1044120', 'PMG': 'PMG 01', 'NOM': 'Moreau', 'Prénom': 'Sarah', 'Affectation': 'GD 01', 'Civilité': 'Mme', 'Etat candidature': 'Dossier reçu', 'Lettre intégration': ['L', 15, 16] },
     { 'NID': '1044377', 'PMG': 'PMG 38', 'NOM': 'Petit', 'Prénom': 'Nathan', 'Affectation': 'GD 38', 'Civilité': 'M.', 'Etat candidature': 'Abandon' },
+    { 'NID': '1010234', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0460', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Affectation': 'GD 74', 'Civilité': 'M.', 'DDN': d(1981, 4, 9), 'Email': 'antoine.lefevre@example.fr', 'Etat candidature': 'Dossier reçu', 'Déjà ESR': true, 'N° ESR': 'ESR-2021-044', 'Création candidature': d(2026, 6, 20) + 30000 },
     { 'NID': '1042871', 'PMG': 'PMG 74', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Numéro de téléphone': '07 99 88 77 66', 'Ville': 'Chambéry', 'Etat candidature': 'Dossier reçu', 'Doublon': true, 'Convention': ['L', 21], 'Création candidature': d(2026, 4, 10) + 30000, 'Dernière mise à jour': d(2026, 4, 12) + 30000, 'Dernière mise à jour par': 'MARTIN Paul' }
   ];
   var DEMO_CHOICES = {
@@ -1131,7 +1253,15 @@
     Object.keys(r).forEach(function (k) { o[makeId(k)] = r[k]; });
     return o;
   });
-  var DEMO_TABLES = { Candidats_PMG: true, Stagiaires: true };
+  var DEMO_TABLES = { Candidats_PMG: true, Stagiaires: true, Antennes_medicales: true };
+  var DEMO_ANTENNES = {
+    cols: [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Adresse', label: 'Adresse', type: 'Text' }, { id: 'Mail', label: 'Mail', type: 'Text' }],
+    rows: [
+      { id: 1, Nom: 'Antenne médicale de Lyon', Adresse: '12 rue des Soins, 69003 Lyon', Mail: 'antenne.lyon@example.fr' },
+      { id: 2, Nom: 'Antenne médicale de Grenoble', Adresse: '4 avenue de la Santé, 38000 Grenoble', Mail: 'antenne.grenoble@example.fr, secretariat.grenoble@example.fr' },
+      { id: 3, Nom: 'Antenne médicale de Metz', Adresse: '8 place du Docteur, 57000 Metz', Mail: '' }
+    ]
+  };
   var DEMO_ATT_EXTRA = 0; var DEMO_ATT = { 12: { name: 'lettre_integration_martin.pdf', size: 182000 }, 13: { name: 'lettre_integration_signee_martin.pdf', size: 214500 }, 15: { name: 'lettre.pdf', size: 90000 }, 16: { name: 'cni_moreau.jpg', size: 1250000 }, 20: { name: 'convention_martin.pdf', size: 340000 }, 21: { name: 'convention_signee.pdf', size: 250000 } };
   var demoAttSeq = 100;
 
@@ -1200,8 +1330,8 @@
     createRow: function (table, fields) { return grist.getTable(table).create({ fields: fields }).then(function (r) { return newRowId(r); }); }
   } : {
     listTables: function () { return Promise.resolve(Object.keys(DEMO_TABLES)); },
-    listColumns: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.cols : [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }]); },
-    fetchRows: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.rows : []); },
+    listColumns: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.cols : t === 'Antennes_medicales' ? DEMO_ANTENNES.cols : [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }]); },
+    fetchRows: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.rows : t === 'Antennes_medicales' ? DEMO_ANTENNES.rows : []); },
     saveOptions: function () { return Promise.resolve(); },
     attachmentsMeta: function () { return Promise.resolve(JSON.parse(JSON.stringify(DEMO_ATT))); },
     attachmentUrl: function () { return Promise.resolve('#'); },
@@ -1272,6 +1402,7 @@
     });
     return out;
   }
+  window.PMG = { table: function () { return cfg().table; } }; // utilisé par la page « Réservations » (adresses mail des candidats)
   function cfg() {
     var table = state.opts.table || state.boundTable || '';
     return {
@@ -1319,6 +1450,7 @@
       state.tables = r[0];
       state.colsByTable[c.table] = r[1];
       state.rows = r[2];
+      loadAntennes(r[0]); // adresses mail des antennes médicales (table « Antennes medicales »)
       c = cfg(); // les colonnes sont maintenant connues
       state.records = r[2].map(function (row) { return { raw: row, identity: identityOf(row, c), status: statusOf(row, c) }; });
       state.read = { table: c.table, at: new Date(), total: r[2].length, error: null };
@@ -1412,22 +1544,18 @@
 
   // Recherche : nom, état, et les colonnes des blocs « État civil », « Coordonnées » (onglet Candidat) et « Identifiants » (Renseignements militaires).
   function searchColumns(c) {
-    var wanted = [['info', 'État civil'], ['info', 'Coordonnées'], ['mil', 'Identifiants']], cols = [], seen = {};
-    wanted.forEach(function (w) {
-      (TAB_GROUPS[w[0]] || []).filter(function (g) { return g.title === w[1]; }).forEach(function (g) {
-        (g.rows ? [].concat.apply([], g.rows) : g.labels).forEach(function (l) { var col = findCol(c.table, l); if (col && !seen[col.id]) { seen[col.id] = true; cols.push(col); } });
-      });
-    });
+    var cols = [], seen = {};
+    ['NOM', 'Prénom', 'NID', 'Nigend', 'N_Cand', 'Numéro de téléphone', 'Email', 'N° candidature', 'DDN'].forEach(function (l) { var col = findCol(c.table, l); if (col && !seen[col.id]) { seen[col.id] = true; cols.push(col); } });
     return cols;
   }
   function searchHay(r, cols) {
-    var parts = [r.id, toList(r.st).join(' ')];
+    var parts = [r.id];
     cols.forEach(function (col) { var v = textOfValue(col, r.raw[col.id]); if (v) parts.push(v); });
     var hay = norm(parts.join(' '));
-    return hay + ' ' + hay.replace(/[\s.\-]/g, ''); // version compacte : un numéro de téléphone se trouve avec ou sans espaces
+    return hay + ' ' + hay.replace(/[\s.\-\/]/g, ''); // version compacte : un numéro de téléphone se trouve avec ou sans espaces
   }
   function matchesSearch(hay, terms) {
-    return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-]/g, '')) !== -1; });
+    return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-\/]/g, '')) !== -1; });
   }
 
   function renderList() {
@@ -1465,6 +1593,14 @@
     var s = ('0' + dt.getUTCDate()).slice(-2) + '/' + ('0' + (dt.getUTCMonth() + 1)).slice(-2) + '/' + dt.getUTCFullYear();
     return withTime ? s + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : s;
   }
+  // Téléphone : affiché au format « 01 02 03 04 05 » (un 0 est ajouté s'il manque ; +33 devient 0). Autre format : valeur laissée telle quelle.
+  function isPhoneCol(col) { return /telephone|tel\b|portable|mobile/.test(norm(col.label)); }
+  function formatPhone(v) {
+    var s = String(v == null ? '' : v).trim(); if (!s) return '';
+    var d = s.replace(/[\s.\-()]/g, ''), m = /^(?:\+33|0033)(\d{9})$/.exec(d);
+    if (m) d = '0' + m[1]; else if (/^\d{9}$/.test(d)) d = '0' + d;
+    return /^\d{10}$/.test(d) ? d.replace(/(\d{2})(?=\d)/g, '$1 ') : s;
+  }
   // Renvoie { html, empty, pre } pour une valeur de cellule.
   function fmtValue(col, v) {
     var t = typeBase(col.type), lbl = norm(col.label);
@@ -1475,7 +1611,7 @@
     if (t === 'Choice' || t === 'ChoiceList') return { html: '<div class="tagrow">' + tagsHtml(v) + '</div>' };
     if (t === 'Attachments') { var n = toList(v).length; return { html: n + (n > 1 ? ' fichiers joints' : ' fichier joint') }; }
     if (/e-?mail|courriel/.test(lbl)) return { html: '<a href="mailto:' + esc(v) + '">' + esc(v) + '</a>' };
-    if (/telephone|tel\b|portable/.test(lbl)) return { html: '<a href="tel:' + esc(String(v).replace(/\s+/g, '')) + '">' + esc(v) + '</a>' };
+    if (isPhoneCol(col)) return { html: '<a href="tel:' + esc(formatPhone(v).replace(/\s+/g, '')) + '">' + esc(formatPhone(v)) + '</a>' };
     var text = Array.isArray(v) ? toList(v).join(', ') : String(v);
     return { html: esc(text), pre: /\n/.test(text) || /commentaire/.test(lbl), wide: /commentaire/.test(lbl) };
   }
@@ -1506,6 +1642,7 @@
   }
   function textOfValue(col, v) {
     if (v == null || v === '') return '';
+    if (isPhoneCol(col)) return formatPhone(v);
     var t = typeBase(col.type);
     if (t === 'Date') return fmtDate(v, false);
     if (t === 'DateTime') return fmtDate(v, true);
@@ -1568,12 +1705,26 @@
   function emlBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
   function emlWord(str) { return /^[\x20-\x7e]*$/.test(str) ? str : '=?UTF-8?B?' + emlBase64(str) + '?='; }
   // Brouillon .eml (X-Unsent) avec pièce jointe : s'ouvre dans la messagerie, prêt à envoyer.
+  // Version texte d'un corps HTML (repli pour les messageries sans HTML).
+  function htmlToText(h) {
+    var s = String(h).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|h[1-6]|tr|table|ul|ol)>/gi, '\n').replace(/<li[^>]*>/gi, '- ').replace(/<\/li>/gi, '\n').replace(/<\/t[hd]>/gi, ' ');
+    var doc = new DOMParser().parseFromString('<div>' + s + '</div>', 'text/html');
+    return (doc.body.textContent || '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
   function buildEml(m) {
     var b = '----=_Convocation_' + Date.now().toString(36);
     var lines = ['X-Unsent: 1', 'To: ' + m.to];
     if (m.cc) lines.push('Cc: ' + m.cc);
     if (m.replyTo) lines.push('Reply-To: ' + m.replyTo);
     lines.push('Subject: ' + emlWord(m.subject), 'MIME-Version: 1.0');
+    if (m.html) { // corps HTML avec version texte de repli (multipart/alternative), sans pièce jointe
+      var ba = '----=_Corps_' + Date.now().toString(36);
+      lines.push('Content-Type: multipart/alternative; boundary="' + ba + '"', '',
+        '--' + ba, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(String(m.body).replace(/\r?\n/g, '\r\n'))),
+        '--' + ba, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(m.html)),
+        '--' + ba + '--', '');
+      return lines.join('\r\n');
+    }
     if (!m.attB64) { // message simple, sans pièce jointe
       lines.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(String(m.body).replace(/\r?\n/g, '\r\n'))), '');
       return lines.join('\r\n');
@@ -1630,8 +1781,38 @@
     return '<div class="doc-alert ' + m.msg.type + '" role="' + (m.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(m.msg.text) + '</p>' +
       (m.pdfUrl ? '<p><a href="' + m.pdfUrl + '" download="' + esc(m.pdfName) + '">Télécharger le PDF</a></p>' : '') + '</div>';
   }
-  // Adresses du service : une ou plusieurs adresses séparées par une virgule, un point-virgule ou un espace.
-  function serviceAddresses(tpl) { return String(tpl.to || '').split(/[,;\s]+/).filter(Boolean); }
+  // Antennes médicales : adresses mail lues dans la table « Antennes medicales » (colonne « Mail »), retrouvées par le nom de l'antenne de la fiche.
+  function loadAntennes(tables) {
+    var t = (tables || []).filter(function (x) { return norm(x).replace(/[_\s]+/g, ' ') === 'antennes medicales'; })[0] || (tables || []).filter(function (x) { return /antenne/i.test(x); })[0];
+    if (!t) { state.antennes = null; return Promise.resolve(); }
+    return Promise.all([api.listColumns(t), api.fetchRows(t)]).then(function (r) { state.antennes = { table: t, cols: r[0], rows: r[1] }; renderAll(); })
+      .catch(function () { state.antennes = null; });
+  }
+  function antenneMailCol(A) {
+    var cols = (A && A.cols) || [];
+    for (var i = 0; i < cols.length; i++) if (/^(mail|e-?mail|adresse e-?mail|adresse mail|courriel)$/.test(norm(cols[i].label))) return cols[i];
+    return null;
+  }
+  // Ligne de la table des antennes correspondant à l'antenne de la fiche (référence, ou nom identique).
+  function antenneRow(item, c) {
+    var A = state.antennes, col = findCol(c.table, 'Antenne VEMI'), v = col && item.raw[col.id];
+    if (!A || !col || v == null || v === '') return null;
+    if (/^Ref:/.test(col.type || '')) { var id = Number(v); return A.rows.filter(function (r) { return r.id === id; })[0] || null; }
+    var key = norm(String(v)), mc = antenneMailCol(A);
+    return A.rows.filter(function (r) { return A.cols.some(function (cc) { return cc !== mc && typeof r[cc.id] === 'string' && norm(r[cc.id]) === key; }); })[0] || null;
+  }
+  // Adresses de l'antenne (une ou plusieurs, séparées par une virgule, un point-virgule ou un espace).
+  function serviceAddresses(item, c) {
+    var r = antenneRow(item, c), mc = antenneMailCol(state.antennes);
+    return r && mc ? String(r[mc.id] || '').split(/[,;\s]+/).filter(Boolean) : [];
+  }
+  function antenneName(item, c) { var col = findCol(c.table, 'Antenne VEMI'), v = col && item.raw[col.id]; return v == null || v === '' ? '' : (/^Ref:/.test(col.type || '') ? '' : String(v)); }
+  function serviceWhy(item, c) {
+    if (!state.antennes) return ' (table « Antennes medicales » introuvable)';
+    var n = antenneName(item, c), r = antenneRow(item, c);
+    if (!r) return ' (antenne ' + (n ? '« ' + n + ' » ' : '') + 'absente de la table Antennes medicales)';
+    return ' (aucune adresse dans la colonne Mail de la table Antennes medicales' + (n ? ' pour « ' + n + ' »' : '') + ')';
+  }
 
   // Colonne « Pièces jointes » où sont rangées les copies (onglet Documents) : choisie dans le back office, sinon détectée par son libellé.
   function storageColOf(c, kind) {
@@ -1687,8 +1868,8 @@
 
   var MAIL_ACTIONS = {
     reservation: { icon: function () { return ICON_RESERVATION; }, label: function () { return 'Envoyer le mail de réservation au candidat'; }, toService: false },
-    convocation: { icon: function () { return ICON_CONVOCATION; }, label: function () { return 'Générer la convocation et l’envoyer au candidat'; }, toService: false, needsSchedule: true },
-    service: { icon: function () { return ICON_SERVICE; }, label: function (b) { return 'Générer la convocation et l’envoyer ' + b.serviceName; }, toService: true, needsSchedule: true },
+    convocation: { icon: function () { return ICON_CONVOCATION; }, label: function () { return 'Générer la convocation et l’envoyer au candidat'; }, toService: false, needsSchedule: true, htmlMail: true },
+    service: { icon: function () { return ICON_SERVICE; }, label: function (b) { return 'Générer la convocation et l’envoyer ' + b.serviceName; }, toService: true, needsSchedule: true, htmlMail: true },
     lettre: { icon: function () { return ICON_LETTRE; }, label: function () { return 'Générer la lettre d’incorporation et l’envoyer au candidat'; }, toService: false, requireStatus: 'Admis PMG', hideWhenStatus: 'Rejet DRJ' },
     // Lettre de rejet : remplace la lettre d'incorporation quand l'état est « Rejet DRJ ».
     rejet: { icon: function () { return ICON_LETTRE_REJET; }, label: function () { return 'Générer la lettre de rejet et l’envoyer au candidat'; }, toService: false, requireStatus: 'Rejet DRJ', onlyStatus: 'Rejet DRJ', askChrono: true },
@@ -1710,8 +1891,8 @@
       else if (miss.length) { ok = false; why = ' (à renseigner d’abord dans le bloc ' + a.requireGroup[1] + ' : ' + miss.join(', ') + ')'; }
       else if (a.noMail) { ok = true; why = ''; }
       else if (a.toService) {
-        var svc = serviceAddresses(c.mail[blockKey][kind]);
-        ok = svc.length > 0 && svc.every(validEmail); why = ok ? '' : ' (adresse e-mail du service à renseigner dans le back office)';
+        var svc = serviceAddresses(item, c);
+        ok = svc.length > 0 && svc.every(validEmail); why = ok ? '' : serviceWhy(item, c);
       }
       if (a.needsSchedule) { var ms = missingSchedule(item, c, block); if (ms.length) { ok = false; why = ' (à renseigner d’abord : ' + ms.join(', ') + ')'; } }
       var label = a.label(block), when = sentInfo(item.raw.id, blockKey + ':' + kind), doneTxt = when ? ' — déjà fait le ' + when : '';
@@ -1766,8 +1947,9 @@
     // Destinataire : le candidat, ou le service concerné (adresse réglée dans le back office).
     var to;
     if (act.toService) {
-      to = serviceAddresses(tpl).join(',');
-      if (!to || !serviceAddresses(tpl).every(validEmail)) return done('error', 'L’adresse e-mail du service n’est pas renseignée : à régler dans le back office (Courriels et convocations).');
+      var svcAddr = serviceAddresses(item, c);
+      to = svcAddr.join(',');
+      if (!to || !svcAddr.every(validEmail)) return done('error', 'Aucune adresse mail exploitable pour l’antenne médicale' + serviceWhy(item, c) + ' : renseignez la colonne Mail de la table Antennes medicales.');
     } else {
       to = emailOf(item.raw, c);
       if (!validEmail(to)) return done('error', 'Aucune adresse e-mail valide pour ce candidat.');
@@ -1789,6 +1971,29 @@
     if (act.needsSchedule) {
       var ms = missingSchedule(item, c, block);
       if (ms.length) return done('error', 'La convocation ne peut pas être générée : renseignez d’abord ' + ms.join(' et ') + '.');
+    }
+    // Convocations (tests, VEMI) : tout est dans le corps du courriel en HTML, sans pièce jointe. Une copie PDF est seulement archivée dans Documents.
+    if (act.htmlMail) {
+      var htmlBody = sanitizeHtml(fillTemplate(tpl.body, item, c, true, extra));
+      var mbase = 'Convocation_' + (act.toService ? 'service_' : '') + blockKey + '_' + who, mname = mbase + '.pdf';
+      var emlH = buildEml({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: htmlToText(htmlBody), html: htmlBody });
+      downloadBlob(new Blob([emlH], { type: 'message/rfc822' }), mbase + '.eml');
+      markSent(item.raw.id, blockKey, kind);
+      var sentH = act.toService ? 'Convocation prête. Le brouillon du message pour le service (convocation dans le corps du courriel, sans pièce jointe) a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
+        : 'Convocation prête. Le brouillon du message (convocation dans le corps du courriel, sans pièce jointe) a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.';
+      var tkH = mname + Date.now(); state.mail.ticket = tkH;
+      state.mail.msg = { type: 'success', text: sentH + ' Archivage d’une copie PDF dans Documents…' }; renderModal();
+      var pdfHtml = pageHtml((act.toService ? 'Fiche de convocation – ' : 'Convocation – ') + block.title, htmlBody);
+      buildPdfFromHtml(pdfHtml).then(function (ab) {
+        state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = mname;
+        return storeCopy(item, c, kind, mname, ab).then(function (r) {
+          if (state.mail.ticket !== tkH) return;
+          state.mail.msg = r.stored ? { type: 'success', text: sentH + ' Une copie PDF a été archivée dans Documents (' + displayLabel(r.col) + ').' }
+                                    : { type: 'error', text: sentH + ' La copie PDF n’a pas été archivée dans Documents : ' + r.why + '.' };
+          return r.stored ? load() : renderModal();
+        });
+      }).catch(function (e) { if (state.mail.ticket === tkH) { state.mail.msg = { type: 'error', text: sentH + ' La copie PDF n’a pas pu être générée : ' + ((e && e.message) || e) + '.' }; renderModal(); } });
+      return;
     }
     var base = kind === 'lettre' ? 'Lettre_incorporation_' + who : kind === 'rejet' ? 'Lettre_rejet_' + who : 'Convocation_' + (kind === 'service' ? 'service_' : '') + blockKey + '_' + who, name = base + '.pdf';
     var sent = kind === 'rejet' ? 'Lettre de rejet générée. Le brouillon du message, avec la lettre en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
@@ -1818,6 +2023,15 @@
   var ICON_UPLOAD = '<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
   function fmtSize(n) { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : n >= 1024 ? Math.round(n / 1024) + ' Ko' : n + ' o'; }
 
+  // Colonnes de l'onglet Documents : celles de l'onglet + les colonnes « Pièces jointes » affichées dans un autre onglet (ex. Convention).
+  function docTabIds(c) {
+    var ids = (c.tabs.docs || []).slice();
+    Object.keys(c.tabs).forEach(function (k) {
+      if (k === 'docs') return;
+      (c.tabs[k] || []).forEach(function (id) { var m = colMeta(c.table, id); if (m && typeBase(m.type) === 'Attachments' && ids.indexOf(id) === -1) ids.push(id); });
+    });
+    return ids;
+  }
   function attCols(c, ids) {
     return ids.map(function (id) { return colMeta(c.table, id); }).filter(function (m) { return m && typeBase(m.type) === 'Attachments'; });
   }
@@ -2077,7 +2291,7 @@
     }
 
     if (tabDef.key === 'docs') {
-      return docsHtml(item, c, ids, '', opts);
+      return docsHtml(item, c, docTabIds(c), '', opts);
     }
 
     var groups = TAB_GROUPS[tabDef.key];
@@ -2138,7 +2352,7 @@
     if (state.cmp.active) return renderCompare();
     var m = state.modal, item = state.view[m.index]; if (!item) return;
     fillDialog('modal', item, {});
-    $('modal2').hidden = true; $('cmp-bar').hidden = true; $('modal-column').classList.remove('is-compare');
+    if (!renderEsr(item)) { $('modal2').hidden = true; $('cmp-bar').hidden = true; $('modal-column').classList.remove('is-compare'); }
     $('modal-prev').hidden = false; $('modal-next').hidden = false;
     $('modal-prev').disabled = m.index <= 0;
     $('modal-next').disabled = m.index >= state.view.length - 1;
@@ -2172,7 +2386,7 @@
   function startCompare(rec, others, c) {
     state.cmp = { active: true, baseId: rec.raw.id, otherId: others[0].raw.id, others: others.map(function (o) { return o.raw.id; }), keep: 'newer', take: {}, busy: false, msg: null, confirm: false };
   }
-  function exitCompare() { state.cmp = { active: false }; }
+  function exitCompare() { state.cmp = { active: false }; state.esr = { tab: 'info', confirm: false, busy: false, msg: null, dismissed: false }; }
 
   // Colonnes synchronisables : celles affichées dans la fiche, hors formules.
   function syncColumns(c) {
@@ -2278,6 +2492,47 @@
         state.modal.index = idx; state.modal.rowId = state.view[idx].raw.id; renderModal();
       });
     }).catch(function (e) { cmp.busy = false; cmp.confirm = false; cmp.msg = { type: 'error', text: 'Suppression impossible : ' + ((e && e.message) || e) + '.' }; renderModal(); });
+  }
+
+  /* ----- Déjà ESR : la fiche du réserviste s'affiche à côté et on demande s'il faut supprimer la candidature ----- */
+  // Renvoie false si la fiche n'est pas concernée (pas « Déjà ESR », ou question écartée).
+  function renderEsr(item) {
+    var c = cfg(), rec = recById(item.raw.id), e = state.esr;
+    if (!rec || e.dismissed || !flagValue(rec.raw, c, 'Déjà ESR')) return false;
+    function raw(l) { var col = findCol(c.table, l); return col ? rec.raw[col.id] : ''; }
+    var m = window.RES && window.RES.match ? window.RES.match({ nid: raw('NID'), esr: raw('N° ESR'), nigend: raw('Nigend') }) : null;
+    var f = m && window.RES.fiche(m.id, e.tab);
+    if (f) {
+      $('modal2-title').innerHTML = f.title;
+      var sub = $('modal2-sub'); sub.hidden = !f.sub; sub.textContent = f.sub;
+      $('modal2-tags').innerHTML = '<span class="cmp-flag">Réserviste · ligne n° ' + m.id + '</span>' + f.tags;
+      $('modal2-tabs').innerHTML = f.tabs.map(function (t) {
+        return '<button type="button" class="stg-tab" role="tab" id="mt2-' + t.key + '" data-tab="' + t.key + '" aria-selected="' + (t.key === f.active) + '" aria-controls="mp2-' + t.key + '">' + esc(t.title) + '</button>';
+      }).join('');
+      $('modal2-panels').innerHTML = f.tabs.map(function (t) {
+        return '<div class="stg-tabpanel" role="tabpanel" id="mp2-' + t.key + '" aria-labelledby="mt2-' + t.key + '"' + (t.key === f.active ? '' : ' hidden') + '>' + f.panels[t.key] + '</div>';
+      }).join('');
+      $('modal2-foot').innerHTML = f.foot; $('modal2-foot').hidden = !f.foot;
+      $('modal2').hidden = false; $('modal-column').classList.add('is-compare');
+    } else { $('modal2').hidden = true; $('modal-column').classList.remove('is-compare'); }
+    var name = formatName(item.id || 'ce candidat'), bar = $('cmp-bar');
+    bar.innerHTML =
+      '<p class="cmp-title"><strong>Déjà ESR</strong> · ' + (f ? 'ce candidat figure déjà parmi les réservistes (rapprochement par ' + esc(m.by) + ').' : 'aucun réserviste correspondant n’a été retrouvé (NID, N° ESR ou Nigend).') + '</p>' +
+      '<p class="cmp-hint">Faut-il supprimer la candidature de ' + esc(name) + ' ? La fiche du réserviste n’est pas modifiée.</p>' +
+      (e.msg ? '<div class="doc-alert ' + e.msg.type + '" role="alert"><p>' + esc(e.msg.text) + '</p></div>' : '') +
+      (e.confirm
+        ? '<div class="cmp-confirm" role="alert"><p>Supprimer définitivement la candidature de <strong>' + esc(name) + '</strong> ? Cette action est irréversible.</p>' +
+          '<button type="button" class="btn danger sm" data-cmp="esr-delete-confirm"' + (e.busy ? ' disabled' : '') + '>' + (e.busy ? 'Suppression…' : 'Confirmer la suppression') + '</button><button type="button" class="btn secondary sm" data-cmp="esr-cancel"' + (e.busy ? ' disabled' : '') + '>Annuler</button></div>'
+        : '<div class="cmp-actions"><button type="button" class="btn danger" data-cmp="esr-delete">Supprimer la candidature</button>' +
+          '<button type="button" class="btn secondary" data-cmp="esr-keep">Conserver la candidature</button></div>');
+    bar.hidden = false;
+    return true;
+  }
+  function esrDelete() {
+    var c = cfg(), e = state.esr, item = state.view[state.modal.index]; if (!item || e.busy) return;
+    e.busy = true; e.msg = null; renderModal();
+    api.deleteRow(c.table, item.raw.id).then(function () { closeModal(); })
+      .catch(function (err) { e.busy = false; e.confirm = false; e.msg = { type: 'error', text: 'Suppression impossible : ' + ((err && err.message) || err) + '.' }; renderModal(); });
   }
 
   function openModal(index, opener) {
@@ -2416,7 +2671,7 @@
   // Empêche le navigateur d'ouvrir un fichier lâché à côté de la zone.
   ['dragover', 'drop'].forEach(function (t) { $('modal').addEventListener(t, function (e) { if (!e.target.closest('#doc-drop')) e.preventDefault(); }); });
   function currentUploadCol() {
-    var item = state.view[state.modal.index], cols = item ? attCols(cfg(), cfg().tabs.docs || []) : [];
+    var item = state.view[state.modal.index], cols = item ? attCols(cfg(), docTabIds(cfg())) : [];
     var want = state.docs.uploadCol;
     return (cols.filter(function (m) { return m.id === want; })[0] || cols[0] || {}).id;
   }
@@ -2427,6 +2682,7 @@
   [['modal-tabs', 'mt-'], ['modal2-tabs', 'mt2-']].forEach(function (cfgTab) {
     $(cfgTab[0]).addEventListener('click', function (e) {
       var b = e.target.closest('[data-tab]'); if (!b) return;
+      if (cfgTab[0] === 'modal2-tabs' && !state.cmp.active) { state.esr.tab = b.getAttribute('data-tab'); renderModal(); var nb2 = $('mt2-' + state.esr.tab); if (nb2) nb2.focus(); return; } // fiche du réserviste (Déjà ESR)
       state.modal.tab = b.getAttribute('data-tab'); state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null; renderModal();
       var nb = $(cfgTab[1] + state.modal.tab); if (nb) nb.focus();
     });
@@ -2448,6 +2704,10 @@
     else if (act === 'delete') { cmp.confirm = true; cmp.msg = null; renderModal(); }
     else if (act === 'delete-cancel') { cmp.confirm = false; renderModal(); }
     else if (act === 'delete-confirm') cmpDelete();
+    else if (act === 'esr-delete') { state.esr.confirm = true; state.esr.msg = null; renderModal(); }
+    else if (act === 'esr-cancel') { state.esr.confirm = false; renderModal(); }
+    else if (act === 'esr-delete-confirm') esrDelete();
+    else if (act === 'esr-keep') { state.esr.dismissed = true; state.esr.confirm = false; renderModal(); }
     else if (act === 'close') closeModal();
   });
   document.addEventListener('keydown', function (e) {
@@ -2516,10 +2776,10 @@
   var MAIL_KINDS = {
     reservation: { title: 'Courriel de réservation', hint: 'Message envoyé au candidat pour l’inviter à réserver son créneau.',
       fields: [['subject', 'Objet', 'input'], ['body', 'Message', 'textarea']] },
-    convocation: { title: 'Convocation du candidat', hint: 'Courriel adressé au candidat, avec sa convocation en PDF en pièce jointe. ' + TPL_HINT,
-      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la convocation (HTML)', 'textarea tall']] },
-    service: { title: 'Convocation transmise au service', hint: 'Courriel adressé au service concerné, avec la fiche de convocation en PDF. Modèles distincts de ceux du candidat. ' + TPL_HINT,
-      fields: [['to', 'Adresse e-mail du service', 'input'], ['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle du document (HTML)', 'textarea tall']] },
+    convocation: { title: 'Convocation du candidat', html: true, hint: 'Courriel adressé au candidat, sans pièce jointe : toute la convocation figure dans le corps du message (HTML, styles en ligne). Une copie PDF est archivée dans Documents.',
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Corps du courriel (HTML)', 'textarea tall']] },
+    service: { title: 'Convocation transmise au service', html: true, hint: 'Courriel adressé à l’antenne médicale du candidat (adresse lue dans la colonne Mail de la table Antennes medicales), sans pièce jointe : la convocation figure dans le corps du message (HTML). Modèle distinct de celui du candidat. Une copie PDF est archivée dans Documents.',
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Corps du courriel (HTML)', 'textarea tall']] },
     lettre: { title: 'Lettre d’incorporation', hint: 'Icône disponible uniquement si l’état de la candidature est « Admis PMG ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre (HTML)', 'textarea tall']] },
     rejet: { title: 'Lettre de rejet', hint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
@@ -2534,17 +2794,17 @@
       host.innerHTML = MAIL_BLOCKS.map(function (b) {
         return '<h3 class="mail-group">' + esc(b.title) + '</h3>' + b.kinds.map(function (kind) {
           var k = MAIL_KINDS[kind];
-          return '<div class="mail-block"><div class="mail-head"><h4>' + esc(k.title) + '</h4>' +
-            '<button type="button" class="btn secondary sm" data-reset-b="' + b.key + '" data-reset-k="' + kind + '">Rétablir le texte par défaut</button></div>' +
-            '<span class="hint">' + esc(k.hint) + '</span>' + k.fields.map(function (f) {
+          return '<details class="mail-block"><summary>' + esc(k.title) + '</summary><div class="mail-body"><div class="mail-head">' +
+            '<span class="hint">' + esc(k.hint) + '</span>' +
+            '<button type="button" class="btn secondary sm" data-reset-b="' + b.key + '" data-reset-k="' + kind + '">Rétablir le texte par défaut</button></div>' + k.fields.map(function (f) {
               var id = 'mf-' + b.key + '-' + kind + '-' + f[0], attrs = ' id="' + id + '" data-b="' + b.key + '" data-k="' + kind + '" data-f="' + f[0] + '"';
-              if (f[0] === 'template') {
+              if (f[0] === 'template' || (k.html && f[0] === 'body')) {
                 return '<div class="mail-tpl-head"><label for="' + id + '">' + esc(f[1]) + '</label><button type="button" class="btn secondary sm" data-preview-b="' + b.key + '" data-preview-k="' + kind + '">Aperçu</button></div>' +
                   '<textarea class="textarea tall mono"' + attrs + ' spellcheck="false"></textarea>' +
                   '<iframe class="tpl-preview" id="pv-' + b.key + '-' + kind + '" title="Aperçu du modèle" sandbox hidden></iframe>';
               }
               return '<label for="' + id + '">' + esc(f[1]) + '</label>' + (f[2].indexOf('textarea') === 0 ? '<textarea class="textarea"' + attrs + ' spellcheck="true"></textarea>' : '<input class="input" type="' + (f[0] === 'to' ? 'text' : 'text') + '"' + attrs + ' autocomplete="off"' + (f[0] === 'to' ? ' placeholder="service@exemple.fr (plusieurs adresses : séparées par une virgule)"' : '') + '>');
-            }).join('') + '</div>';
+            }).join('') + '</div></details>';
         }).join('');
       }).join('');
     }
@@ -2557,7 +2817,7 @@
   // Aperçu d'un modèle HTML avec les données du premier candidat de la table (rendu isolé, sans script).
   function refreshPreview(blockKey, kind) {
     var frame = $('pv-' + blockKey + '-' + kind), rec = state.records[0]; if (!frame || frame.hidden) return;
-    var c = cfg(), tpl = state.draft.mail[blockKey][kind].template || '';
+    var c = cfg(), tpl = state.draft.mail[blockKey][kind][MAIL_KINDS[kind].html ? 'body' : 'template'] || '';
     var item = rec ? { raw: rec.raw, id: rec.identity, st: rec.status } : { raw: {}, id: '', st: null };
     frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="width:698px;margin:12px auto;padding:36px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);box-sizing:content-box;min-height:800px;">' +
       sanitizeHtml(fillTemplate(tpl, item, c, true)) + '</div></body></html>';
@@ -2590,6 +2850,8 @@
       ['État de la candidature', ms ? esc(ms.label) + ' <code>' + esc(ms.id) + '</code>' : '<code>' + esc(c.status) + '</code>', ms ? typeFr(ms.type) : '—', statusTag(!!ms, 'Trouvée', 'Introuvable')]
     ];
     var em = (c.emailCol && colMeta(c.table, c.emailCol)) || findCol(c.table, 'Email');
+    var AN = state.antennes, anMail = antenneMailCol(AN);
+    rows.push(['Adresses des antennes médicales', AN ? '<code>' + esc(AN.table) + '</code>' + (anMail ? ' colonne <code>' + esc(anMail.id) + '</code>' : '') : 'Table « Antennes medicales » introuvable', anMail ? typeFr(anMail.type) : '—', statusTag(!!(AN && anMail), 'Trouvée', 'Introuvable')]);
     rows.push(['Adresse e-mail du candidat', em ? esc(em.label) + ' <code>' + esc(em.id) + '</code>' : 'Aucune colonne « Email »', em ? typeFr(em.type) : '—', statusTag(!!em, 'Trouvée', 'Introuvable')]);
     TAB_DEFS.forEach(function (t) {
       var n = (c.tabs[t.key] || []).length;
@@ -2605,6 +2867,8 @@
     $('recap-states').innerHTML = order.length
       ? order.map(function (t) { return '<span class="tag ' + color(t) + '">' + esc(t) + '<small>' + counts[t] + '</small></span>'; }).join('')
       : '<span class="tag none">Aucun état renseigné.</span>';
+    var okSrc = !!ok && !!(colMeta(c.table, c.status) || findCol(c.table, 'Etat candidature')) && !!((c.identity && colMeta(c.table, c.identity)) || (findCol(c.table, 'NOM') && findCol(c.table, 'Prénom')));
+    $('recap-sum').innerHTML = okSrc ? '<span class="tag green">Sources trouvées</span>' : '<span class="tag red">À vérifier</span>';
   }
 
   function renderAll() {
@@ -2622,7 +2886,7 @@
     $('view-list').hidden = admin; $('view-admin').hidden = !admin;
     $('tab-list').setAttribute('aria-selected', String(!admin));
     $('tab-admin').setAttribute('aria-selected', String(admin));
-    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); }
+    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); setDirty(false); }
   }
   // Back office masqué : 5 clics rapides sur l'en-tête l'ouvrent, l'onglet « Candidats » le referme.
   $('tab-list').addEventListener('click', function () { showView('list'); $('tabs').hidden = true; });
@@ -2668,7 +2932,8 @@
   $('mail-forms').addEventListener('input', function (e) {
     var el = e.target, b = el.getAttribute && el.getAttribute('data-b'); if (!b) return;
     state.draft.mail[b][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
-    if (el.getAttribute('data-f') === 'template') refreshPreview(b, el.getAttribute('data-k'));
+    var kk = el.getAttribute('data-k');
+    if (el.getAttribute('data-f') === 'template' || (MAIL_KINDS[kk].html && el.getAttribute('data-f') === 'body')) refreshPreview(b, kk);
   });
   $('mail-forms').addEventListener('click', function (e) {
     var pv = e.target.closest('[data-preview-b]');
@@ -2700,7 +2965,8 @@
     var o = { table: dr.table, identity: dr.identity || '', status: dr.status, tabs: normalizeTabs(dr.table, dr.tabs), mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
     if (state.opts.sent) o.sent = state.opts.sent; // conserve l'historique des actions effectuées
     if (state.opts.r) o.r = state.opts.r;          // conserve la configuration de la page « Réservistes »
-    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { $('saved').hidden = false; window.scrollTo(0, 0); });
+    if (state.opts.x) o.x = state.opts.x;          // conserve la configuration de la page « Réservations »
+    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   });
   $('btn-reset').addEventListener('click', function () {
     var t = state.boundTable || '';
@@ -2845,11 +3111,38 @@
     }
   });
 
+  /* ---------- Back office : barre d'enregistrement, variables ---------- */
+  function setDirty(d) {
+    $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
+    $('bo-state').classList.toggle('is-dirty', d);
+    if (d) $('saved').hidden = true;
+  }
+  $('view-admin').addEventListener('input', function () { setDirty(true); });
+  $('view-admin').addEventListener('change', function () { setDirty(true); });
+  $('view-admin').addEventListener('click', function (e) {
+    if (e.target.closest('[data-reset-b]') || e.target.closest('#btn-reset') || e.target.closest('[data-var]')) setDirty(true);
+  });
+  $('btn-cancel').addEventListener('click', function () {
+    state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false);
+  });
+  // Variables : un clic insère la variable dans le champ de modèle actif.
+  var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO'];
+  $('bo-vars').innerHTML = BO_VARS.map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
+  var boLastField = null;
+  $('mail-forms').addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) boLastField = e.target; });
+  $('bo-vars').addEventListener('mousedown', function (e) { e.preventDefault(); }); // garde le focus dans le champ
+  $('bo-vars').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-var]'); if (!b || !boLastField || !document.body.contains(boLastField)) return;
+    var f = boLastField, s = f.selectionStart == null ? f.value.length : f.selectionStart, en = f.selectionEnd == null ? s : f.selectionEnd, v = b.getAttribute('data-var');
+    f.value = f.value.slice(0, s) + v + f.value.slice(en); f.selectionStart = f.selectionEnd = s + v.length;
+    f.dispatchEvent(new Event('input', { bubbles: true })); f.focus();
+  });
+
   /* ---------- Démarrage ---------- */
   if (IN_GRIST) {
     grist.ready({ requiredAccess: 'full' });
     var timer;
-    grist.onOptions(function (o) { state.opts = o || {}; load(); if (window.RES) window.RES.setOptions(o); });
+    grist.onOptions(function (o) { state.opts = o || {}; load(); if (window.RES) window.RES.setOptions(o); if (window.RSV) window.RSV.setOptions(o); });
     grist.onRecords(function () { clearTimeout(timer); timer = setTimeout(load, 150); });
     grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; load(); }).catch(function () {});
   } else {
@@ -2943,8 +3236,8 @@
     'Mouvement': ['Arrivée', 'Mutation', 'Départ'], 'Qualité jud': ['OPJ', 'APJ', 'APJA']
   };
   var DEMO_ROWS_BY_LABEL = [
-    { 'Grade': 'MDC', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '06 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
-    { 'Grade': 'GAV', 'Civilité': 'Mme', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Nigend': '2019-1120', 'Type R': 'RS', 'Affectation': 'GD 38', 'NID': '1020871', 'DDN': d(1996, 11, 2), 'Age': 29, 'Ville': 'Grenoble', 'Dpt': '38', 'Adresse email': 'camille.perrin@example.fr', 'Téléphone': '07 55 66 77 88', 'Mouvement': 'Mutation', 'Exp. contrat': d(2026, 8, 31), 'Exp. VMP': d(2026, 5, 15), 'Exp. tir PA': d(2026, 10, 12), 'Exp. tir HK': d(2026, 10, 12), 'Qualité jud': 'APJ', 'N° ESR': 'ESR-2023-207', 'Date contrat': d(2023, 8, 20), 'Date de début contrat': d(2023, 9, 1) },
+    { 'Grade': 'MDC', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
+    { 'Grade': 'GAV', 'Civilité': 'Mme', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Nigend': '2019-1120', 'Type R': 'RS', 'Affectation': 'GD 38', 'NID': '1020871', 'DDN': d(1996, 11, 2), 'Age': 29, 'Ville': 'Grenoble', 'Dpt': '38', 'Adresse email': 'camille.perrin@example.fr', 'Téléphone': '755667788', 'Mouvement': 'Mutation', 'Exp. contrat': d(2026, 8, 31), 'Exp. VMP': d(2026, 5, 15), 'Exp. tir PA': d(2026, 10, 12), 'Exp. tir HK': d(2026, 10, 12), 'Qualité jud': 'APJ', 'N° ESR': 'ESR-2023-207', 'Date contrat': d(2023, 8, 20), 'Date de début contrat': d(2023, 9, 1) },
     { 'Grade': 'BRI', 'Civilité': 'M.', 'NOM': 'Garnier', 'Prénom': 'Lucas', 'Nigend': '2022-0555', 'Type R': 'RC', 'Affectation': 'GD 73', 'NID': '1031420', 'DDN': d(2000, 1, 25), 'Age': 26, 'Ville': 'Chambéry', 'Dpt': '73', 'Adresse email': 'lucas.garnier@example.fr', 'Téléphone': '06 98 76 54 32', 'Exp. contrat': d(2028, 2, 28), 'Exp. VMP': d(2027, 6, 30), 'Exp. tir PA': d(2027, 4, 5), 'Exp. tir HK': d(2027, 4, 5), 'N° ESR': 'ESR-2022-310', 'Date contrat': d(2022, 2, 10), 'Date de début contrat': d(2022, 3, 1) },
     { 'Grade': 'ADJ', 'Civilité': 'Mme', 'NOM': 'Robin', 'Prénom': 'Sophie', 'Nigend': '2008-0210', 'Type R': 'RO1', 'Affectation': 'GD 01', 'NID': '1000456', 'DDN': d(1978, 7, 14), 'Age': 48, 'Ville': 'Bourg-en-Bresse', 'Dpt': '01', 'Adresse email': 'sophie.robin@example.fr', 'Téléphone': '06 44 55 66 77', 'Exp. contrat': d(2029, 12, 31), 'Exp. VMP': d(2027, 2, 1), 'Exp. tir PA': d(2027, 2, 1), 'Exp. tir HK': d(2027, 2, 1), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2019-012', 'Date contrat': d(2019, 12, 1), 'Date de début contrat': d(2020, 1, 1) },
     { 'Grade': 'GAV', 'Civilité': 'M.', 'NOM': 'Blanc', 'Prénom': 'Théo', 'Type R': 'RS', 'Affectation': 'GD 74', 'NID': '1042990', 'DDN': d(2002, 9, 30), 'Age': 24, 'Ville': 'Thonon-les-Bains', 'Dpt': '74' }
@@ -3082,12 +3375,21 @@
   }
   function textOfValue(col, v) {
     if (v == null || v === '') return '';
+    if (isPhoneCol(col)) return formatPhone(v);
     var t = typeBase(col.type);
     if (t === 'Date') return fmtDate(v, false);
     if (t === 'DateTime') return fmtDate(v, true);
     if (t === 'Bool') return v ? 'Oui' : 'Non';
     if (Array.isArray(v)) return toList(v).join(', ');
     return String(v);
+  }
+  // Téléphone : affiché au format « 01 02 03 04 05 » (un 0 est ajouté s'il manque ; +33 devient 0). Autre format : valeur laissée telle quelle.
+  function isPhoneCol(col) { return /telephone|tel\b|portable|mobile/.test(norm(col.label)); }
+  function formatPhone(v) {
+    var s = String(v == null ? '' : v).trim(); if (!s) return '';
+    var d = s.replace(/[\s.\-()]/g, ''), m = /^(?:\+33|0033)(\d{9})$/.exec(d);
+    if (m) d = '0' + m[1]; else if (/^\d{9}$/.test(d)) d = '0' + d;
+    return /^\d{10}$/.test(d) ? d.replace(/(\d{2})(?=\d)/g, '$1 ') : s;
   }
   // Renvoie { html, empty, pre, wide } pour une valeur de cellule.
   function fmtValue(col, v) {
@@ -3106,7 +3408,7 @@
     if (t === 'Choice' || t === 'ChoiceList') return { html: '<div class="tagrow">' + tagsHtml(v) + '</div>' };
     if (t === 'Attachments') { var n = toList(v).length; return { html: n + (n > 1 ? ' fichiers joints' : ' fichier joint') }; }
     if (/e-?mail|courriel/.test(lbl)) return { html: '<a href="mailto:' + esc(v) + '">' + esc(v) + '</a>' };
-    if (/telephone|tel\b|portable/.test(lbl)) return { html: '<a href="tel:' + esc(String(v).replace(/\s+/g, '')) + '">' + esc(v) + '</a>' };
+    if (isPhoneCol(col)) return { html: '<a href="tel:' + esc(formatPhone(v).replace(/\s+/g, '')) + '">' + esc(formatPhone(v)) + '</a>' };
     var text = Array.isArray(v) ? toList(v).join(', ') : String(v);
     return { html: esc(text), pre: /\n/.test(text), wide: /commentaire/.test(lbl) };
   }
@@ -3198,21 +3500,17 @@
 
   // Recherche : nom, valeur des tags et colonnes des blocs « État civil », « Coordonnées », « Identifiants » et « Affectation ».
   function searchColumns(c) {
-    var wanted = [['info', 'État civil'], ['info', 'Coordonnées'], ['mil', 'Identifiants'], ['mil', 'Affectation']], cols = [], seen = {};
-    wanted.forEach(function (w) {
-      (TAB_GROUPS[w[0]] || []).filter(function (g) { return g.title === w[1]; }).forEach(function (g) {
-        [].concat.apply([], g.rows).forEach(function (l) { var col = findCol(c.table, l); if (col && !seen[col.id]) { seen[col.id] = true; cols.push(col); } });
-      });
-    });
+    var cols = [], seen = {};
+    ['NOM', 'Prénom', 'NID', 'Nigend', 'Téléphone', 'Adresse email', 'DDN'].forEach(function (l) { var col = findCol(c.table, l); if (col && !seen[col.id]) { seen[col.id] = true; cols.push(col); } });
     return cols;
   }
   function searchHay(r, cols) {
-    var parts = [r.id, toList(r.tag).join(' ')];
+    var parts = [r.id];
     cols.forEach(function (col) { var v = textOfValue(col, r.raw[col.id]); if (v) parts.push(v); });
     var hay = norm(parts.join(' '));
-    return hay + ' ' + hay.replace(/[\s.\-]/g, ''); // un numéro de téléphone se trouve avec ou sans espaces
+    return hay + ' ' + hay.replace(/[\s.\-\/]/g, ''); // un numéro de téléphone se trouve avec ou sans espaces
   }
-  function matchesSearch(hay, terms) { return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-]/g, '')) !== -1; }); }
+  function matchesSearch(hay, terms) { return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-\/]/g, '')) !== -1; }); }
 
   // États affichés en tags après le nom : Tir (Exp. tir PA / HK), Médical (Exp. VMP) et Contrat (Exp. contrat).
   var STATUS_DEFS = [
@@ -3375,12 +3673,12 @@
   }
 
   /* ---------- Fiche du réserviste (modale) ---------- */
-  function panelHtml(tabDef, item, c) {
+  function panelHtml(tabDef, item, c, ro) {
     var ids = c.tabs[tabDef.key] || [];
     if (!ids.length) return '<p class="stg-empty">Aucune colonne configurée pour cet onglet.</p>';
     function cell(id, span) {
       var col = colMeta(c.table, id); if (!col) return '';
-      var f = fmtValue(col, item.raw[id]), editable = isEditableCol(col), editing = editable && state.edit && state.edit.colId === id;
+      var f = fmtValue(col, item.raw[id]), editable = !ro && isEditableCol(col), editing = editable && state.edit && state.edit.colId === id;
       return '<th scope="row">' + esc(displayLabel(col)) + '</th><td' + (span ? ' colspan="' + span + '"' : '') +
         (editable && !editing ? ' data-edit="' + esc(id) + '" tabindex="0" role="button" aria-label="Modifier ' + esc(displayLabel(col)) + '" title="Cliquer pour modifier"' : '') +
         ' class="' + (f.empty && !editing ? 'is-empty' : '') + (f.pre ? ' is-pre' : '') + (editable && !editing ? ' is-editable' : '') + (editing ? ' is-editing' : '') + '">' + (editing ? editorHtml(col) : f.html) + '</td>';
@@ -3444,6 +3742,36 @@
     var op = state.modal.opener;
     if (op && document.body.contains(op)) op.focus(); else { var row = document.querySelector('#r-rows tr[data-i="' + state.modal.index + '"]'); if (row) row.focus(); }
     load(); // actualise les données à la fermeture de la fiche
+  }
+  // Utilisé par la page Candidats (candidat « Déjà ESR ») : réserviste correspondant (NID, sinon N° ESR, sinon Nigend) et fiche en lecture seule.
+  function matchRes(keys) {
+    var c = cfg(), pairs = [['NID', keys.nid], ['N° ESR', keys.esr], ['Nigend', keys.nigend]];
+    for (var i = 0; i < pairs.length; i++) {
+      var v = norm(String(pairs[i][1] == null ? '' : pairs[i][1])), col = v && findCol(c.table, pairs[i][0]); if (!col) continue;
+      var r = state.records.filter(function (x) { return norm(String(x.raw[col.id] == null ? '' : x.raw[col.id])) === v; })[0];
+      if (r) return { id: r.raw.id, by: pairs[i][0] };
+    }
+    return null;
+  }
+  function ficheRes(rowId, tabKey) {
+    var rec = state.records.filter(function (x) { return x.raw.id === rowId; })[0]; if (!rec) return null;
+    var c = cfg(), item = { raw: rec.raw, id: rec.identity == null ? '' : String(rec.identity), tag: rec.tag };
+    var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
+    if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
+    var active = tabs.some(function (t) { return t.key === tabKey; }) ? tabKey : tabs[0].key, panels = {};
+    tabs.forEach(function (t) { panels[t.key] = panelHtml(t, item, c, true); });
+    var gr = findCol(c.table, 'Grade'), af = findCol(c.table, 'Affectation');
+    function when(label) { var col = findCol(c.table, label); if (!col) return ''; var f = fmtValue(col, item.raw[col.id]); return f.empty ? '' : f.html; }
+    function who(label) { var col = findCol(c.table, label); return col && item.raw[col.id] ? esc(item.raw[col.id]) : ''; }
+    var parts = [], cr = when(FOOT_LABELS.created), up = when(FOOT_LABELS.updated);
+    if (cr) parts.push('Créé le ' + cr + (who(FOOT_LABELS.createdBy) ? ' par ' + who(FOOT_LABELS.createdBy) : ''));
+    if (up) parts.push('Mise à jour le ' + up + (who(FOOT_LABELS.updatedBy) ? ' par ' + who(FOOT_LABELS.updatedBy) : ''));
+    return {
+      title: esc(item.id ? formatName(item.id) : 'Réserviste') + flagsHtml(item.raw, c),
+      sub: [gr && item.raw[gr.id], af && item.raw[af.id]].filter(Boolean).join(' · '),
+      tags: (toList(item.tag).length ? tagsHtml(item.tag) : '') + statusTagsHtml(item.raw, c),
+      tabs: tabs.map(function (t) { return { key: t.key, title: t.title }; }), active: active, panels: panels, foot: parts.join(' · ')
+    };
   }
   function stepModal(delta) {
     var i = state.modal.index + delta; if (i < 0 || i >= state.view.length) return;
@@ -3641,6 +3969,8 @@
     state.records.forEach(function (r) { toList(r.tag).forEach(function (t) { if (!(t in counts)) { counts[t] = 0; order.push(t); } counts[t]++; }); });
     order.sort(function (a, b) { return counts[b] - counts[a]; });
     $('recap-states').innerHTML = order.length ? order.map(function (t) { return '<span class="fr-tag fr-tag--sm tag-c-' + color(t) + '">' + esc(t) + ' · ' + counts[t] + '</span>'; }).join('') : '<span class="tag none">Aucune valeur.</span>';
+    var okSrc = !!ok && !!mt && !!((c.identity && colMeta(c.table, c.identity)) || (nom && pre));
+    $('recap-sum').innerHTML = okSrc ? '<span class="tag green">Sources trouvées</span>' : '<span class="tag red">À vérifier</span>';
   }
   function renderAll() {
     renderList(); renderAdminForm(); renderRecap();
@@ -3653,7 +3983,7 @@
     var admin = v === 'admin';
     $('view-list').hidden = admin; $('view-admin').hidden = !admin;
     $('tab-list').setAttribute('aria-selected', String(!admin)); $('tab-admin').setAttribute('aria-selected', String(admin));
-    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); var tcol = tagCol(cfg()); if (tcol) state.draft.tag = tcol.id; $('saved').hidden = true; renderAdminForm(); }
+    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); var tcol = tagCol(cfg()); if (tcol) state.draft.tag = tcol.id; $('saved').hidden = true; renderAdminForm(); setDirty(false); }
   }
   // Back office masqué : 5 clics rapides sur l'en-tête l'ouvrent, l'onglet « Réservistes » le referme.
   $('tab-list').addEventListener('click', function () { showView('list'); $('tabs').hidden = true; });
@@ -3691,7 +4021,7 @@
     if (!dr.table || !dr.tag) return;
     var mine = { table: dr.table, identity: dr.identity || '', tag: dr.tag, tabs: normalizeTabs(dr.table, dr.tabs) };
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.r = mine; // conserve la configuration de la première page
-    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { $('saved').hidden = false; window.scrollTo(0, 0); });
+    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   });
   $('btn-reset').addEventListener('click', function () {
     var t = state.detected || '';
@@ -3704,19 +4034,662 @@
     });
   });
 
+  /* ---------- Back office : barre d'enregistrement ---------- */
+  function setDirty(d) {
+    $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
+    $('bo-state').classList.toggle('is-dirty', d);
+    if (d) $('saved').hidden = true;
+  }
+  $('view-admin').addEventListener('input', function () { setDirty(true); });
+  $('view-admin').addEventListener('change', function () { setDirty(true); });
+  $('view-admin').addEventListener('click', function (e) { if (e.target.closest('#r-btn-reset')) setDirty(true); });
+  $('btn-cancel').addEventListener('click', function () {
+    state.draft = JSON.parse(JSON.stringify(cfg())); var tcol = tagCol(cfg()); if (tcol) state.draft.tag = tcol.id; renderAdminForm(); setDirty(false);
+  });
+
   /* ---------- Démarrage ---------- */
   // Les options du widget et le chargement Grist sont pilotés par la première page (grist.ready) : elle nous transmet les options.
   window.RES = {
     setOptions: function (o) { state.opts = o || {}; if (window.__page === 'res' || state.records.length === 0) load(); },
+    refresh: function () { return load(); },
+    match: matchRes,
+    fiche: ficheRes
+  };
+  if (!IN_GRIST) { $('demo').hidden = false; load(); }
+})();
+</script>
+<script>
+(function () {
+  var IN_GRIST = !!(window.grist && window.parent !== window);
+
+  /* ---------- Description des trois onglets (colonnes de référence de chaque table) ---------- */
+  var SPECS = {
+    vmp: {
+      title: 'VMP', person: 'Militaire', key: 'Nigend', email: 'Adresse email', service: true, personWord: 'réserviste', tableRe: /vmp/i,
+      cols: ['Créneau', 'Multi résa', 'Nigend', 'Affectation', 'Militaire', 'DDN', 'Adresse email', 'Date', 'Heure', 'Antenne médicale', 'Convoc. RO', 'Envoyé AM', 'Réservation faite le', 'Dernière mise à jour par', 'Dernière mise à jour'],
+      dupFlags: ['Multi résa'], sentPerson: 'Convoc. RO', sentService: 'Envoyé AM', antenne: 'Antenne médicale'
+    },
+    vemi: {
+      title: 'VEMI', person: 'Candidat', key: 'NID', email: '', service: true, personWord: 'candidat', tableRe: /vemi/i,
+      cols: ['Doublon', 'Multi-résa', 'NID', 'Candidat', 'Affectation', 'Date', 'Heure', 'Antenne médicale', 'MàJ tableau', 'Convoc. cand.', 'Envoyé AM', 'Réservation faite le', 'Créé par', 'Dernière mise à jour', 'Dernière mise à jour par'],
+      dupFlags: ['Doublon', 'Multi-résa'], sentPerson: 'Convoc. cand.', sentService: 'Envoyé AM', antenne: 'Antenne médicale'
+    },
+    psy: {
+      title: 'Tests psy', person: 'Candidat', key: 'NID', email: 'Email', service: false, personWord: 'candidat', tableRe: /psy/i,
+      cols: ['Complet', 'Doublon', 'NID', 'Candidat', 'Email', 'Créneau choisi', 'Date', 'Heure', 'Créneau (complet)', 'MàJ tableau', 'Convocation ?', 'Affectation', 'Réservation faite le', 'Dernière mise à jour par'],
+      dupFlags: ['Doublon'], sentPerson: 'Convocation ?', sentService: '', antenne: ''
+    }
+  };
+  var TAB_ORDER = ['vmp', 'vemi', 'psy'];
+  var KINDS_OF = { vmp: ['convocation', 'service', 'suppression'], vemi: ['convocation', 'service', 'suppression'], psy: ['convocation', 'suppression'] };
+  var KIND_TITLES = { convocation: 'Convocation', service: 'Convocation transmise à l’antenne médicale', suppression: 'Information de suppression d’une réservation (doublon)' };
+
+  /* ---------- Modèles de courriels par défaut ---------- */
+  function mailHtml(inner) { return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' + inner + '\n</div>'; }
+  function row(label, value) { return '    <tr><th style="text-align: left; padding: 6px 12px; background: #f3f3fd; border: 1px solid #ddd; white-space: nowrap;">' + label + '</th><td style="padding: 6px 12px; border: 1px solid #ddd;">' + value + '</td></tr>\n'; }
+  var SIGN = '  <p>Cordialement,<br>Division réserves jeunesse</p>';
+  function convocation(what, withPlace) {
+    return mailHtml('  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n  <p>Votre réservation est confirmée : vous êtes convoqué(e) ' + what + '.</p>\n  <table style="border-collapse: collapse; margin: 16px 0;">\n' +
+      row('Date et heure', '<strong>{{DATE}} {{HEURE}}</strong>') + (withPlace ? row('Antenne médicale', '<strong>{{ANTENNE}}</strong>') : '') + '  </table>\n' +
+      '  <p><strong>À présenter :</strong> une pièce d’identité en cours de validité et le présent message.</p>\n  <p>En cas d’empêchement, merci de nous prévenir dès que possible en répondant à ce message.</p>\n' + SIGN);
+  }
+  function service(what) {
+    return mailHtml('  <p>Bonjour,</p>\n  <p>Le réserviste ci-dessous est convoqué ' + what + ' dans votre antenne.</p>\n  <table style="border-collapse: collapse; margin: 16px 0;">\n' +
+      row('Identité', '<strong>{{IDENTITE}}</strong>') + row('NID / Nigend', '{{NID}}{{NIGEND}}') + row('Affectation', '{{AFFECTATION}}') + row('Date et heure', '<strong>{{DATE}} {{HEURE}}</strong>') + row('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
+      '  <p>Merci de recevoir ce réserviste.</p>\n' + SIGN);
+  }
+  function suppression(what) {
+    return mailHtml('  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n  <p>Vous aviez effectué plusieurs réservations ' + what + '. Nous avons supprimé la réservation suivante afin de ne conserver qu’un seul rendez-vous :</p>\n' +
+      '  <table style="border-collapse: collapse; margin: 16px 0;">\n' + row('Réservation supprimée', '<strong>{{DATE}} {{HEURE}}</strong>') + row('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
+      '  <p>Votre autre réservation reste valable. Pour toute question, répondez à ce message.</p>\n' + SIGN);
+  }
+  var DEFAULT_MAIL = {
+    vmp: {
+      convocation: { subject: 'Convocation à la visite médicale périodique (VMP) du {{DATE}}', format: 'html', body: convocation('à la <strong>visite médicale périodique (VMP)</strong>', true) },
+      service: { subject: 'VMP du {{DATE}} : convocation de {{IDENTITE}}', format: 'html', body: service('à la visite médicale périodique (VMP)') },
+      suppression: { subject: 'Suppression d’une de vos réservations VMP', format: 'html', body: suppression('de visite médicale périodique (VMP)') }
+    },
+    vemi: {
+      convocation: { subject: 'Convocation à la visite médicale (VEMI) du {{DATE}}', format: 'html', body: convocation('à la <strong>visite d’expertise médicale initiale (VEMI)</strong>', true) },
+      service: { subject: 'VEMI du {{DATE}} : convocation de {{IDENTITE}}', format: 'html', body: service('à la visite d’expertise médicale initiale (VEMI)') },
+      suppression: { subject: 'Suppression d’une de vos réservations VEMI', format: 'html', body: suppression('de visite d’expertise médicale initiale (VEMI)') }
+    },
+    psy: {
+      convocation: { subject: 'Convocation aux tests psychométriques du {{DATE}}', format: 'html', body: convocation('aux <strong>tests psychométriques</strong>', false) },
+      suppression: { subject: 'Suppression d’une de vos réservations de tests psychométriques', format: 'html', body: suppression('de tests psychométriques') }
+    }
+  };
+  function mergeMail(saved) {
+    var out = {};
+    TAB_ORDER.forEach(function (t) {
+      out[t] = {};
+      KINDS_OF[t].forEach(function (k) {
+        var d = DEFAULT_MAIL[t][k], s = saved && saved[t] && saved[t][k] || {};
+        out[t][k] = {
+          subject: typeof s.subject === 'string' && s.subject.trim() ? s.subject : d.subject,
+          format: s.format === 'text' || s.format === 'html' ? s.format : d.format,
+          body: typeof s.body === 'string' && s.body.trim() ? s.body : d.body
+        };
+      });
+    });
+    return out;
+  }
+
+  var state = {
+    opts: {}, draft: {}, tab: 'vmp', tables: [], data: { vmp: null, vemi: null, psy: null }, cand: null, ant: null,
+    q: '', dupOnly: false, sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false
+  };
+  function $(id) { return document.getElementById('x-' + id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function makeId(label) { return String(label).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
+  function typeBase(t) { return String(t || '').split(':')[0]; }
+  function toList(v) {
+    if (v == null || v === '') return [];
+    if (Array.isArray(v)) return (v[0] === 'L' ? v.slice(1) : v).filter(function (x) { return x !== '' && x != null; }).map(String);
+    return String(v).split(/\s*[,;\n]\s*/).filter(Boolean);
+  }
+  function isYes(v) { return v === true || (v != null && /^(oui|yes|true|vrai|1|x)$/i.test(String(v).trim())); }
+  function validEmail(s) { return /^[^\s@]+@[^\s@]+$/.test(s); }
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  function fmtDate(v) { if (typeof v !== 'number') return ''; var d = new Date(v * 1000); return pad2(d.getUTCDate()) + '/' + pad2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); }
+  function fmtDateTime(v) { return typeof v === 'number' ? fmtDate(v) + ' ' + new Date(v * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : ''; }
+  function findCol(cols, key) {
+    var k = norm(key), l = cols || [];
+    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
+    return null;
+  }
+  function textOf(col, v) {
+    if (v == null || v === '') return '';
+    var t = typeBase(col.type), l = norm(col.label);
+    if (t === 'Date') return fmtDate(v);
+    if (t === 'DateTime') return l === 'heure' ? new Date(v * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : fmtDateTime(v);
+    if (t === 'Bool') return v ? 'Oui' : 'Non';
+    if (Array.isArray(v)) return toList(v).join(', ');
+    if (/telephone|tel\b|portable|mobile/.test(l)) return formatPhone(v);
+    return String(v);
+  }
+  function formatPhone(v) {
+    var s = String(v == null ? '' : v).trim(); if (!s) return '';
+    var d = s.replace(/[\s.\-()]/g, ''), m = /^(?:\+33|0033)(\d{9})$/.exec(d);
+    if (m) d = '0' + m[1]; else if (/^\d{9}$/.test(d)) d = '0' + d;
+    return /^\d{10}$/.test(d) ? d.replace(/(\d{2})(?=\d)/g, '$1 ') : s;
+  }
+
+  /* ---------- Données de démonstration ---------- */
+  function dd(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
+  var BOOLS = { 'Complet': 1, 'Doublon': 1, 'Multi-résa': 1, 'Multi résa': 1, 'MàJ tableau': 1, 'Convocation ?': 1, 'Convoc. cand.': 1, 'Convoc. RO': 1, 'Envoyé AM': 1 };
+  function demoCols(labels) {
+    return labels.map(function (l) { return { id: makeId(l), label: l, type: BOOLS[l] ? 'Bool' : (l === 'Date' || l === 'DDN' ? 'Date' : (/^Réservation faite le$|^Dernière mise à jour$/.test(l) ? 'DateTime:Europe/Paris' : 'Text')), formula: false }; });
+  }
+  function demoRows(list) { return list.map(function (r, i) { var o = { id: i + 1 }; Object.keys(r).forEach(function (k) { o[makeId(k)] = r[k]; }); return o; }); }
+  var DEMO = {
+    Reservations_VMP: { labels: SPECS.vmp.cols, rows: demoRows([
+      { 'Créneau': 'Mardi 08h00', 'Nigend': '2011-0384', 'Affectation': 'GD 74', 'Militaire': 'LEFÈVRE Antoine', 'DDN': dd(1981, 4, 9), 'Adresse email': 'antoine.lefevre@example.fr', 'Date': dd(2026, 10, 6), 'Heure': '08:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 22) + 36000 },
+      { 'Créneau': 'Jeudi 10h30', 'Multi résa': true, 'Nigend': '2019-1120', 'Affectation': 'GD 38', 'Militaire': 'PERRIN Camille', 'DDN': dd(1996, 11, 2), 'Adresse email': 'camille.perrin@example.fr', 'Date': dd(2026, 10, 8), 'Heure': '10:30', 'Antenne médicale': 'Antenne médicale de Grenoble', 'Convoc. RO': true, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 20) + 30000 },
+      { 'Créneau': 'Vendredi 14h00', 'Multi résa': true, 'Nigend': '2019-1120', 'Affectation': 'GD 38', 'Militaire': 'PERRIN Camille', 'DDN': dd(1996, 11, 2), 'Adresse email': 'camille.perrin@example.fr', 'Date': dd(2026, 10, 16), 'Heure': '14:00', 'Antenne médicale': 'Antenne médicale de Metz', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 25) + 50000 },
+      { 'Créneau': 'Lundi 09h00', 'Nigend': '2022-0555', 'Affectation': 'GD 73', 'Militaire': 'GARNIER Lucas', 'DDN': dd(2000, 1, 25), 'Adresse email': 'lucas.garnier@example.fr', 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 20000 }
+    ]) },
+    Reservations_VEMI: { labels: SPECS.vemi.cols, rows: demoRows([
+      { 'NID': '1042871', 'Candidat': 'MARTIN Camille', 'Affectation': 'GD 74', 'Date': dd(2026, 10, 15), 'Heure': '14:30', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 21) + 42000, 'Créé par': 'MARTIN Camille' },
+      { 'Doublon': true, 'NID': '1043544', 'Candidat': 'DUBOIS Léa', 'Affectation': 'GD 73', 'Date': dd(2026, 10, 20), 'Heure': '09:15', 'Antenne médicale': 'Antenne médicale de Grenoble', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 23) + 33000, 'Créé par': 'DUBOIS Léa' },
+      { 'Doublon': true, 'NID': '1043544', 'Candidat': 'DUBOIS Léa', 'Affectation': 'GD 73', 'Date': dd(2026, 10, 27), 'Heure': '11:00', 'Antenne médicale': 'Antenne médicale de Metz', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 61000, 'Créé par': 'DUBOIS Léa' }
+    ]) },
+    Reservations_tests_psy: { labels: SPECS.psy.cols, rows: demoRows([
+      { 'Complet': false, 'NID': '1042871', 'Candidat': 'MARTIN Camille', 'Email': 'camille.martin@example.fr', 'Créneau choisi': 'Jeudi 08h30', 'Date': dd(2026, 10, 8), 'Heure': '08:30', 'Créneau (complet)': '08/10/2026 08:30', 'Affectation': 'GD 74', 'Réservation faite le': dd(2026, 9, 20) + 40000, 'Convocation ?': false },
+      { 'Doublon': true, 'NID': '1043310', 'Candidat': 'BERNARD Julien', 'Email': 'julien.bernard@example.fr', 'Créneau choisi': 'Mardi 14h00', 'Date': dd(2026, 10, 13), 'Heure': '14:00', 'Affectation': 'GD 38', 'Réservation faite le': dd(2026, 9, 24) + 25000, 'Convocation ?': false },
+      { 'Doublon': true, 'NID': '1043310', 'Candidat': 'BERNARD Julien', 'Email': 'julien.bernard@example.fr', 'Créneau choisi': 'Mercredi 10h00', 'Date': dd(2026, 10, 14), 'Heure': '10:00', 'Affectation': 'GD 38', 'Réservation faite le': dd(2026, 9, 26) + 14000, 'Convocation ?': false }
+    ]) },
+    Candidats_PMG: { labels: ['NID', 'Civilité', 'NOM', 'Prénom', 'Email'], rows: demoRows([
+      { 'NID': '1042871', 'Civilité': 'Mme', 'NOM': 'Martin', 'Prénom': 'Camille', 'Email': 'camille.martin@example.fr' },
+      { 'NID': '1043544', 'Civilité': 'Mme', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Email': 'lea.dubois@example.fr' }
+    ]) },
+    Antennes_medicales: { labels: ['Nom', 'Adresse', 'Mail'], rows: demoRows([
+      { 'Nom': 'Antenne médicale de Lyon', 'Adresse': '12 rue des Soins, 69003 Lyon', 'Mail': 'antenne.lyon@example.fr' },
+      { 'Nom': 'Antenne médicale de Grenoble', 'Adresse': '4 avenue de la Santé, 38000 Grenoble', 'Mail': 'antenne.grenoble@example.fr, secretariat.grenoble@example.fr' },
+      { 'Nom': 'Antenne médicale de Metz', 'Adresse': '8 place du Docteur, 57000 Metz', 'Mail': '' }
+    ]) }
+  };
+
+  /* ---------- Accès aux données ---------- */
+  var api = IN_GRIST ? {
+    listTables: function () { return grist.docApi.listTables().then(function (l) { return l.filter(function (t) { return t.indexOf('_grist') !== 0; }); }); },
+    listColumns: function (table) {
+      return Promise.all([grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]).then(function (r) {
+        var T = r[0], C = r[1], tid = T.id[T.tableId.indexOf(table)], out = [];
+        for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) out.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], pos: C.parentPos[i], formula: !!C.isFormula[i] });
+        out.sort(function (a, b) { return a.pos - b.pos; });
+        return out;
+      });
+    },
+    fetchRows: function (table) {
+      return grist.docApi.fetchTable(table).then(function (t) {
+        var keys = Object.keys(t), n = (t.id || []).length, rows = [];
+        for (var i = 0; i < n; i++) { var o = {}; keys.forEach(function (k) { o[k] = t[k][i]; }); rows.push(o); }
+        return rows;
+      });
+    },
+    saveOptions: function (o) { return grist.setOptions(o); },
+    updateFields: function (table, rowId, fields) { return grist.getTable(table).update({ id: rowId, fields: fields }); },
+    deleteRow: function (table, rowId) { return grist.getTable(table).destroy(rowId); }
+  } : {
+    listTables: function () { return Promise.resolve(Object.keys(DEMO)); },
+    listColumns: function (t) { return Promise.resolve(DEMO[t] ? demoCols(DEMO[t].labels) : []); },
+    fetchRows: function (t) { return Promise.resolve(DEMO[t] ? JSON.parse(JSON.stringify(DEMO[t].rows)) : []); },
+    saveOptions: function () { return Promise.resolve(); },
+    updateFields: function (table, rowId, fields) { DEMO[table].rows.forEach(function (r) { if (r.id === rowId) Object.keys(fields).forEach(function (k) { r[k] = fields[k]; }); }); return Promise.resolve(); },
+    deleteRow: function (table, rowId) { DEMO[table].rows = DEMO[table].rows.filter(function (r) { return r.id !== rowId; }); return Promise.resolve(); }
+  };
+
+  /* ---------- Configuration et chargement ---------- */
+  function xo() { return state.opts.x || {}; }
+  function detectTables(tables) {
+    var out = {}, t = xo().tables || {};
+    var byNorm = function (re, must) { return (tables || []).filter(function (x) { var n = norm(x); return re.test(n) && (!must || must.test(n)); })[0] || ''; };
+    TAB_ORDER.forEach(function (k) { out[k] = t[k] || byNorm(SPECS[k].tableRe, /reserv/); });
+    out.cand = t.cand || (window.PMG && window.PMG.table && window.PMG.table()) || byNorm(/candidats/);
+    out.ant = (tables || []).filter(function (x) { return norm(x).replace(/[_\s]+/g, ' ') === 'antennes medicales'; })[0] || byNorm(/antenne/);
+    return out;
+  }
+  var loadSeq = 0;
+  function loadOne(table) {
+    if (!table) return Promise.resolve(null);
+    return Promise.all([api.listColumns(table), api.fetchRows(table)]).then(function (r) { return { table: table, cols: r[0], rows: r[1] }; }).catch(function () { return null; });
+  }
+  function load() {
+    var seq = ++loadSeq;
+    return api.listTables().then(function (tables) {
+      state.tables = tables;
+      var t = detectTables(tables);
+      return Promise.all([loadOne(t.vmp), loadOne(t.vemi), loadOne(t.psy), loadOne(t.cand), loadOne(t.ant)]).then(function (r) {
+        if (seq !== loadSeq) return;
+        state.data.vmp = r[0]; state.data.vemi = r[1]; state.data.psy = r[2]; state.cand = r[3]; state.ant = r[4];
+        state.error = ''; state.read = { at: new Date() };
+        renderAll();
+      });
+    }).catch(function (e) { if (seq !== loadSeq) return; state.error = (e && e.message) || String(e); renderAll(); });
+  }
+
+  /* ---------- Personnes, antennes, doublons ---------- */
+  function val(tab, row, label) { var d = state.data[tab], c = d && findCol(d.cols, label); return c ? row[c.id] : undefined; }
+  function txt(tab, row, label) { var d = state.data[tab], c = d && findCol(d.cols, label); return c ? textOf(c, row[c.id]) : ''; }
+  function candidateRow(tab, row) {
+    var spec = SPECS[tab], C = state.cand; if (!C || spec.key !== 'NID') return null;
+    var nid = String(val(tab, row, 'NID') || '').trim(), nc = findCol(C.cols, 'NID'); if (!nid || !nc) return null;
+    return C.rows.filter(function (r) { return String(r[nc.id] || '').trim() === nid; })[0] || null;
+  }
+  function candField(cand, label) { var c = findCol(state.cand.cols, label); return c && cand ? (cand[c.id] == null ? '' : String(cand[c.id])) : ''; }
+  function personEmail(tab, row) {
+    var spec = SPECS[tab], e = spec.email ? String(val(tab, row, spec.email) || '').trim() : '';
+    if (!e && spec.key === 'NID') { var cr = candidateRow(tab, row); e = cr ? candField(cr, 'Email').trim() : ''; }
+    return e;
+  }
+  function antenneMailCol() { var cols = (state.ant && state.ant.cols) || []; for (var i = 0; i < cols.length; i++) if (/^(mail|e-?mail|adresse e-?mail|adresse mail|courriel)$/.test(norm(cols[i].label))) return cols[i]; return null; }
+  function antenneAddrs(tab, row) {
+    var A = state.ant, mc = antenneMailCol(), name = norm(String(val(tab, row, SPECS[tab].antenne) || ''));
+    if (!A || !mc || !name) return [];
+    var r = A.rows.filter(function (x) { return A.cols.some(function (cc) { return cc !== mc && typeof x[cc.id] === 'string' && norm(x[cc.id]) === name; }); })[0];
+    return r ? String(r[mc.id] || '').split(/[,;\s]+/).filter(Boolean) : [];
+  }
+  function keyOf(tab, row) { return norm(String(val(tab, row, SPECS[tab].key) || '')); }
+  function groupsOf(tab) {
+    var d = state.data[tab], g = {}; if (!d) return g;
+    d.rows.forEach(function (r) { var k = keyOf(tab, r); if (k) (g[k] = g[k] || []).push(r); });
+    return g;
+  }
+  function flagged(tab, row) { return SPECS[tab].dupFlags.some(function (l) { return isYes(val(tab, row, l)); }); }
+  function isDup(tab, row, groups) { var k = keyOf(tab, row); return flagged(tab, row) || (k && groups[k] && groups[k].length > 1); }
+  function missingFields(tab, row, kind) {
+    var spec = SPECS[tab], need = ['Date', 'Heure'];
+    if (spec.service) need.push(spec.antenne);
+    if (kind === 'suppression') need = [];
+    return need.filter(function (l) { var d = state.data[tab], c = findCol(d.cols, l); return !c || row[c.id] == null || row[c.id] === ''; });
+  }
+
+  /* ---------- Modèles : variables, HTML, courriel ---------- */
+  function ctxOf(tab, row) {
+    var spec = SPECS[tab], name = txt(tab, row, spec.person), cand = candidateRow(tab, row), parts = name.split(/\s+/);
+    var nomFromCand = cand ? candField(cand, 'NOM') : '', preFromCand = cand ? candField(cand, 'Prénom') : '';
+    var today = new Date();
+    return {
+      IDENTITE: name, CIVILITE: cand ? candField(cand, 'Civilité') : '', NOM: (nomFromCand || parts[0] || '').toLocaleUpperCase('fr-FR'), PRENOM: preFromCand || parts.slice(1).join(' '),
+      NID: txt(tab, row, 'NID'), NIGEND: txt(tab, row, 'Nigend'), AFFECTATION: txt(tab, row, 'Affectation'), EMAIL: personEmail(tab, row), DDN: txt(tab, row, 'DDN'),
+      DATE: txt(tab, row, 'Date'), HEURE: txt(tab, row, 'Heure'), ANTENNE: spec.antenne ? txt(tab, row, spec.antenne) : '',
+      DATE_DU_JOUR: pad2(today.getDate()) + '/' + pad2(today.getMonth() + 1) + '/' + today.getFullYear()
+    };
+  }
+  function fill(text, tab, row, asHtml) {
+    var ctx = ctxOf(tab, row), out = function (v) { return asHtml ? esc(v) : v; };
+    return String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
+      var key = name.toUpperCase().replace(/\s+/g, '_');
+      if (Object.prototype.hasOwnProperty.call(ctx, key)) return out(ctx[key]);
+      var d = state.data[tab], col = d && (findCol(d.cols, name) || findCol(d.cols, name.replace(/_/g, ' ')));
+      return col ? out(textOf(col, row[col.id])) : whole;
+    });
+  }
+  function sanitizeHtml(html) {
+    var doc = new DOMParser().parseFromString('<div id="root">' + html + '</div>', 'text/html'), root = doc.getElementById('root');
+    Array.prototype.forEach.call(root.querySelectorAll('script,style,iframe,object,embed,link,meta,base,form,input,button,textarea,select,audio,video'), function (n) { n.parentNode.removeChild(n); });
+    Array.prototype.forEach.call(root.querySelectorAll('*'), function (el) {
+      Array.prototype.slice.call(el.attributes).forEach(function (a) {
+        var n = a.name.toLowerCase(), v = String(a.value).trim().toLowerCase();
+        if (n.indexOf('on') === 0 || ((n === 'href' || n === 'xlink:href') && v.indexOf('javascript:') === 0) || (n === 'src' && v.indexOf('data:image/') !== 0)) el.removeAttribute(a.name);
+      });
+    });
+    return root.innerHTML;
+  }
+  function htmlToText(h) {
+    var s = String(h).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|h[1-6]|tr|table|ul|ol)>/gi, '\n').replace(/<li[^>]*>/gi, '- ').replace(/<\/li>/gi, '\n').replace(/<\/t[hd]>/gi, ' ');
+    var doc = new DOMParser().parseFromString('<div>' + s + '</div>', 'text/html');
+    return (doc.body.textContent || '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function emlBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function b64Lines(b64) { return (b64.match(/.{1,76}/g) || []).join('\r\n'); }
+  function emlWord(str) { return /^[\x20-\x7e]*$/.test(str) ? str : '=?UTF-8?B?' + emlBase64(str) + '?='; }
+  // Brouillon .eml (X-Unsent) : corps HTML (avec repli texte) ou texte simple, sans pièce jointe.
+  function buildEml(m) {
+    var lines = ['X-Unsent: 1', 'To: ' + m.to];
+    if (m.cc) lines.push('Cc: ' + m.cc);
+    if (m.replyTo) lines.push('Reply-To: ' + m.replyTo);
+    lines.push('Subject: ' + emlWord(m.subject), 'MIME-Version: 1.0');
+    if (m.html) {
+      var b = '----=_Corps_' + Date.now().toString(36);
+      lines.push('Content-Type: multipart/alternative; boundary="' + b + '"', '',
+        '--' + b, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(String(m.text).replace(/\r?\n/g, '\r\n'))),
+        '--' + b, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(m.html)), '--' + b + '--', '');
+    } else {
+      lines.push('Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64Lines(emlBase64(String(m.text).replace(/\r?\n/g, '\r\n'))), '');
+    }
+    return lines.join('\r\n');
+  }
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+  function safeName(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'reservation'; }
+  function prepareMail(tab, kind, row, to) {
+    var t = mergeMail(xo().mail)[tab][kind], subject = fill(t.subject, tab, row, false), cc = String(state.opts.cc || '').trim(), replyTo = String(state.opts.replyTo || '').trim();
+    if (t.format === 'html') { var h = sanitizeHtml(fill(t.body, tab, row, true)); return { to: to, cc: cc, replyTo: replyTo, subject: subject, html: h, text: htmlToText(h) }; }
+    return { to: to, cc: cc, replyTo: replyTo, subject: subject, text: fill(t.body, tab, row, false) };
+  }
+  function draftMail(tab, kind, row, to, fileBase) {
+    downloadBlob(new Blob([buildEml(prepareMail(tab, kind, row, to))], { type: 'message/rfc822' }), fileBase + '.eml');
+  }
+
+  /* ---------- Vue tableau ---------- */
+  var ICON_MAIL = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h9v-2H4V8l8 5 8-5v5h2V6c0-1.1-.9-2-2-2zm-8 7L4 6h16l-8 5zm7 4l4 4-4 4v-3h-4v-2h4v-3z"/></svg>';
+  var ICON_SERVICE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>';
+  function cellHtml(col, v) {
+    var t = typeBase(col.type), l = norm(col.label);
+    if (t === 'Bool') return v ? '<span class="fr-tag fr-tag--sm tag-c-green">Oui</span>' : '<span class="x-off">—</span>';
+    if (v == null || v === '') return '<span class="x-off">—</span>';
+    if (/mail/.test(l) && /@/.test(String(v))) return '<a href="mailto:' + esc(v) + '">' + esc(v) + '</a>';
+    if (t === 'Choice' || t === 'ChoiceList') return '<span class="tagrow">' + toList(v).map(function (x) { return '<span class="fr-tag fr-tag--sm tag-c-grey">' + esc(x) + '</span>'; }).join('') + '</span>';
+    return esc(textOf(col, v));
+  }
+  function sortValue(col, v) {
+    var t = typeBase(col.type);
+    if (t === 'Date' || t === 'DateTime' || t === 'Numeric' || t === 'Int') return typeof v === 'number' ? v : -1;
+    if (t === 'Bool') return v ? 1 : 0;
+    return norm(String(v == null ? '' : v));
+  }
+  function searchHay(tab, row) {
+    var d = state.data[tab], parts = [];
+    ['Nigend', 'NID', SPECS[tab].person, SPECS[tab].email, 'Email', 'Affectation', SPECS[tab].antenne, 'Date', 'Heure', 'DDN'].forEach(function (l) { if (!l) return; var c = findCol(d.cols, l); if (c) parts.push(textOf(c, row[c.id])); });
+    var hay = norm(parts.join(' ')); return hay + ' ' + hay.replace(/[\s.\-\/]/g, '');
+  }
+  function renderList() {
+    var tab = state.tab, spec = SPECS[tab], d = state.data[tab], thead = $('thead'), rows = $('rows'), stateEl = $('state');
+    $('list-h1').textContent = 'Réservations ' + spec.title;
+    if (!d) {
+      thead.innerHTML = ''; rows.innerHTML = ''; $('count').textContent = '';
+      stateEl.hidden = false; stateEl.innerHTML = '<strong>Table introuvable</strong>La table des réservations « ' + esc(spec.title) + ' » n’a pas été trouvée : vérifiez le récapitulatif des sources dans le back office.';
+      return;
+    }
+    var cols = spec.cols.map(function (l) { return findCol(d.cols, l); }).filter(Boolean), groups = groupsOf(tab);
+    var q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [];
+    var list = d.rows.filter(function (r) {
+      if (state.dupOnly && !isDup(tab, r, groups)) return false;
+      if (!terms.length) return true;
+      var hay = searchHay(tab, r);
+      return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-\/]/g, '')) !== -1; });
+    });
+    var sc = state.sort.col ? findCol(d.cols, state.sort.col) : null, dc = findCol(d.cols, 'Date'), hc = findCol(d.cols, 'Heure');
+    list.sort(function (a, b) {
+      var keys = sc ? [sc] : [dc, hc].filter(Boolean), dir = sc ? state.sort.dir : 1;
+      for (var i = 0; i < keys.length; i++) { var x = sortValue(keys[i], a[keys[i].id]), y = sortValue(keys[i], b[keys[i].id]); if (x < y) return -dir; if (x > y) return dir; }
+      return 0;
+    });
+    state.view = list;
+    $('count').textContent = list.length + (list.length > 1 ? ' réservations' : ' réservation') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '');
+    thead.innerHTML = '<tr><th scope="col" class="x-sticky">Actions</th>' + cols.map(function (c) {
+      var on = state.sort.col && norm(state.sort.col) === norm(c.label);
+      return '<th scope="col"><button type="button" data-sort="' + esc(c.label) + '">' + esc(c.label) + (on ? ' <span class="arrow">' + (state.sort.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</button></th>';
+    }).join('') + '</tr>';
+    rows.innerHTML = list.map(function (r) {
+      var dup = isDup(tab, r, groups);
+      return '<tr data-id="' + r.id + '"' + (dup ? ' class="x-dup"' : '') + '><td class="x-sticky x-actions">' + actionsHtml(tab, r, dup) + '</td>' + cols.map(function (c) { return '<td>' + cellHtml(c, r[c.id]) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    if (state.error) { stateEl.hidden = false; stateEl.innerHTML = '<strong>Source inaccessible</strong>' + esc(state.error); }
+    else if (!list.length) { stateEl.hidden = false; stateEl.innerHTML = d.rows.length ? '<strong>Aucun résultat</strong>Aucune réservation ne correspond à votre recherche.' : '<strong>Aucune réservation</strong>La table est vide.'; }
+    else stateEl.hidden = true;
+  }
+  function actionsHtml(tab, row, dup) {
+    var spec = SPECS[tab], out = '';
+    function btn(act, icon, label, ok, why, done) {
+      var t = label + (why ? ' (' + why + ')' : '') + (done ? ' — déjà fait' : '');
+      return '<button type="button" class="icon-btn' + (done ? ' is-done' : '') + '" data-act="' + act + '" data-id="' + row.id + '" title="' + esc(t) + '" aria-label="' + esc(t) + '"' + (ok ? '' : ' disabled') + '>' + icon + '</button>';
+    }
+    var email = personEmail(tab, row), miss = missingFields(tab, row, 'convocation'), why = !validEmail(email) ? 'aucune adresse mail' : (miss.length ? 'à renseigner : ' + miss.join(', ') : '');
+    out += btn('person', ICON_MAIL, 'Envoyer la convocation au ' + spec.personWord, !why, why, isYes(val(tab, row, spec.sentPerson)));
+    if (spec.service) {
+      var addrs = antenneAddrs(tab, row), w2 = miss.length ? 'à renseigner : ' + miss.join(', ') : (!state.ant ? 'table Antennes medicales introuvable' : (!addrs.length ? 'aucune adresse pour cette antenne' : ''));
+      out += btn('service', ICON_SERVICE, 'Envoyer la convocation à l’antenne médicale', !w2, w2, isYes(val(tab, row, spec.sentService)));
+    }
+    if (dup) out += '<button type="button" class="icon-btn" data-act="dup" data-id="' + row.id + '" title="Doublon : voir les demandes et choisir laquelle supprimer" aria-label="Voir les doublons"><span class="fr-icon-group-line" aria-hidden="true"></span></button>';
+    return out;
+  }
+  function showMsg(type, text) {
+    state.msg = text ? { type: type, text: text } : null;
+    $('msg-zone').innerHTML = state.msg ? '<div class="doc-alert ' + type + '" role="' + (type === 'error' ? 'alert' : 'status') + '" style="margin-left:0"><p>' + esc(text) + '</p></div>' : '';
+  }
+  // Marque la convocation comme envoyée dans la table (colonne « Convoc… » / « Envoyé AM » : case cochée).
+  function markSent(tab, kind, row) {
+    var spec = SPECS[tab], d = state.data[tab], label = kind === 'service' ? spec.sentService : spec.sentPerson, col = label && findCol(d.cols, label);
+    if (!col || col.formula) return Promise.resolve();
+    var f = {}; f[col.id] = typeBase(col.type) === 'Bool' ? true : 'Oui';
+    return Promise.resolve(api.updateFields(d.table, row.id, f)).then(load).catch(function () {});
+  }
+  function send(tab, kind, rowId) {
+    var d = state.data[tab], row = d && d.rows.filter(function (r) { return r.id === rowId; })[0]; if (!row) return;
+    var spec = SPECS[tab], service = kind === 'service';
+    var to = service ? antenneAddrs(tab, row).join(',') : personEmail(tab, row);
+    var miss = missingFields(tab, row, kind);
+    if (miss.length) return showMsg('error', 'Renseignez d’abord : ' + miss.join(', ') + '.');
+    if (!to || !to.split(',').every(validEmail)) return showMsg('error', service ? 'Aucune adresse mail pour l’antenne médicale (table Antennes medicales, colonne Mail).' : 'Aucune adresse mail valide pour ce ' + spec.personWord + '.');
+    draftMail(tab, kind, row, to, 'Convocation_' + (service ? 'antenne_' : '') + spec.title.replace(/\s/g, '') + '_' + safeName(txt(tab, row, spec.person)));
+    showMsg('success', 'Brouillon du message ' + (service ? 'pour l’antenne médicale' : 'pour le ' + spec.personWord) + ' téléchargé : ouvrez-le dans votre messagerie, vérifiez-le puis envoyez-le.');
+    markSent(tab, kind, row);
+  }
+
+  /* ---------- Doublons : deux demandes, choix de celle à supprimer ---------- */
+  var DUP_COLS = ['Date', 'Heure', 'Antenne médicale', 'Créneau choisi', 'Créneau', 'Réservation faite le', 'Affectation'];
+  function openDup(rowId) {
+    var tab = state.tab, d = state.data[tab], row = d.rows.filter(function (r) { return r.id === rowId; })[0]; if (!row) return;
+    state.dup = { tab: tab, key: keyOf(tab, row), rowId: rowId, confirm: null, sendMail: true, busy: false, error: '' };
+    renderDup();
+    var ov = $('dmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('dmodal-close').focus(); }); });
+  }
+  function closeDup() {
+    var ov = $('dmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.dup = null;
+    setTimeout(function () { ov.hidden = true; }, 200); load();
+  }
+  function dupRows() { var D = state.dup, d = state.data[D.tab]; return (D.key ? d.rows.filter(function (r) { return keyOf(D.tab, r) === D.key; }) : d.rows.filter(function (r) { return r.id === D.rowId; })); }
+  function renderDup() {
+    var D = state.dup; if (!D) return;
+    var spec = SPECS[D.tab], d = state.data[D.tab], rows = dupRows();
+    if (!rows.length) { closeDup(); return; }
+    var name = txt(D.tab, rows[0], spec.person);
+    $('dmodal-title').textContent = 'Doublon de réservation · ' + (name || spec.title);
+    $('dmodal-sub').textContent = rows.length > 1 ? rows.length + ' demandes ' + spec.title + ' pour le même ' + spec.personWord + ' : choisissez celle à supprimer.' : 'Une seule demande trouvée pour ce ' + spec.personWord + ' (doublon signalé mais l’autre demande est introuvable).';
+    var cards = rows.map(function (r) {
+      var items = DUP_COLS.map(function (l) { var c = findCol(d.cols, l); return c ? '<div class="x-kv"><span>' + esc(c.label) + '</span><strong>' + cellHtml(c, r[c.id]) + '</strong></div>' : ''; }).join('');
+      var confirming = D.confirm === r.id;
+      return '<div class="x-card' + (confirming ? ' is-target' : '') + '"><div class="x-card__grid">' + items + '</div>' +
+        (confirming
+          ? '<div class="cmp-confirm" role="alert"><p>Supprimer cette demande du <strong>' + esc(txt(D.tab, r, 'Date')) + ' ' + esc(txt(D.tab, r, 'Heure')) + '</strong> ?</p>' +
+            '<label class="x-check"><input type="checkbox" id="x-dup-mail"' + (D.sendMail ? ' checked' : '') + '> Préparer le mail d’information à ' + esc(name || 'la personne concernée') + (personEmail(D.tab, r) ? ' (' + esc(personEmail(D.tab, r)) + ')' : ' — aucune adresse mail') + '</label>' +
+            '<div class="x-card__btns"><button type="button" class="btn danger sm" data-dup="confirm" data-id="' + r.id + '"' + (D.busy ? ' disabled' : '') + '>' + (D.busy ? 'Suppression…' : 'Confirmer la suppression') + '</button><button type="button" class="btn secondary sm" data-dup="cancel">Annuler</button></div></div>'
+          : (rows.length > 1 ? '<div class="x-card__btns"><button type="button" class="btn danger sm" data-dup="delete" data-id="' + r.id + '">Supprimer cette demande</button></div>' : '')) + '</div>';
+    }).join('');
+    $('dmodal-body').innerHTML = (D.error ? '<div class="doc-alert error" role="alert" style="margin-left:0"><p>' + esc(D.error) + '</p></div>' : '') + '<div class="x-cards">' + cards + '</div>' +
+      '<div class="cf-actions"><button type="button" class="btn secondary" data-dup="close">Fermer</button></div>';
+  }
+  function deleteDup(rowId) {
+    var D = state.dup, tab = D.tab, d = state.data[tab], row = d.rows.filter(function (r) { return r.id === rowId; })[0]; if (!row || D.busy) return;
+    var to = personEmail(tab, row), want = D.sendMail && !!to;
+    D.busy = true; D.error = ''; renderDup();
+    // Le brouillon est préparé avant la suppression (il utilise les données de la demande supprimée).
+    var mail = want ? prepareMail(tab, 'suppression', row, to) : null, base = 'Suppression_' + SPECS[tab].title.replace(/\s/g, '') + '_' + safeName(txt(tab, row, SPECS[tab].person));
+    Promise.resolve(api.deleteRow(d.table, rowId)).then(function () {
+      if (mail) downloadBlob(new Blob([buildEml(mail)], { type: 'message/rfc822' }), base + '.eml');
+      showMsg('success', 'Demande supprimée.' + (mail ? ' Le brouillon du mail d’information (' + to + ') a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.' : (D.sendMail ? ' Aucune adresse mail : aucun brouillon préparé.' : '')));
+      D.busy = false; D.confirm = null;
+      return load();
+    }).then(function () { if (state.dup) renderDup(); }).catch(function (e) { D.busy = false; D.error = 'Suppression impossible : ' + ((e && e.message) || e) + '.'; renderDup(); });
+  }
+
+  /* ---------- Onglets, événements de la vue ---------- */
+  function showTab(k) {
+    state.tab = k === 'admin' ? state.tab : k;
+    ['vmp', 'vemi', 'psy', 'admin'].forEach(function (t) { $('tab-' + t).setAttribute('aria-selected', String(t === k)); });
+    $('view-list').hidden = k === 'admin'; $('view-admin').hidden = k !== 'admin';
+    if (k === 'admin') { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); $('saved').hidden = true; }
+    else { state.sort = { col: '', dir: 1 }; showMsg('', ''); renderList(); }
+  }
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tab]'); if (!b) return;
+    var k = b.getAttribute('data-tab'); showTab(k);
+    if (k !== 'admin') $('tab-admin').hidden = true;
+  });
+  $('q').addEventListener('input', renderList);
+  $('dup-only').addEventListener('change', function (e) { state.dupOnly = e.target.checked; renderList(); });
+  $('thead').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-sort]'); if (!b) return;
+    var l = b.getAttribute('data-sort');
+    state.sort = state.sort.col && norm(state.sort.col) === norm(l) ? { col: l, dir: -state.sort.dir } : { col: l, dir: 1 };
+    renderList();
+  });
+  $('rows').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+    var id = Number(b.getAttribute('data-id')), act = b.getAttribute('data-act');
+    if (act === 'dup') openDup(id); else send(state.tab, act === 'service' ? 'service' : 'convocation', id);
+  });
+  $('dmodal').addEventListener('mousedown', function (e) { if (e.target === $('dmodal') && !(state.dup && state.dup.busy)) closeDup(); });
+  $('dmodal-close').addEventListener('click', closeDup);
+  $('dmodal-body').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-dup]'); if (!b || !state.dup) return;
+    var a = b.getAttribute('data-dup'), id = Number(b.getAttribute('data-id'));
+    if (a === 'delete') { state.dup.confirm = id; state.dup.error = ''; renderDup(); }
+    else if (a === 'cancel') { state.dup.confirm = null; renderDup(); }
+    else if (a === 'confirm') deleteDup(id);
+    else if (a === 'close') closeDup();
+  });
+  $('dmodal-body').addEventListener('change', function (e) { if (e.target.id === 'x-dup-mail' && state.dup) state.dup.sendMail = e.target.checked; });
+  $('dmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.dup && state.dup.busy)) closeDup(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('dmodal').querySelectorAll('button:not(:disabled), input'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  // Back office masqué : 5 clics rapides sur l'en-tête font apparaître l'onglet « Back office ».
+  var hdrClicks = 0, hdrTimer;
+  document.querySelector('.fr-header').addEventListener('click', function (e) {
+    if (window.__page !== 'rsv' || e.target.closest('.fr-header__tools')) return;
+    clearTimeout(hdrTimer); hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
+    if (++hdrClicks >= 5) { hdrClicks = 0; $('tab-admin').hidden = false; showTab('admin'); }
+  });
+
+  /* ---------- Back office ---------- */
+  var TPL_HINT = 'HTML : styles en ligne, images en base64 uniquement. Les valeurs des variables sont insérées sans balises. Texte : texte brut.';
+  function renderAdminForm() {
+    var dr = state.draft, host = $('mail-forms');
+    if (!host.firstChild) {
+      host.innerHTML = TAB_ORDER.map(function (t) {
+        return '<h3 class="mail-group">' + esc(SPECS[t].title) + '</h3>' + KINDS_OF[t].map(function (k) {
+          var p = 'x-mf-' + t + '-' + k;
+          return '<details class="mail-block"><summary>' + esc(KIND_TITLES[k]) + '</summary><div class="mail-body"><div class="mail-head"><span class="hint">' + esc(k === 'service' ? 'Envoyé à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail). ' : k === 'suppression' ? 'Envoyé à la personne dont la réservation est supprimée. ' : 'Envoyé au ' + SPECS[t].personWord + '. ') + TPL_HINT + '</span>' +
+            '<button type="button" class="btn secondary sm" data-reset-t="' + t + '" data-reset-k="' + k + '">Rétablir le texte par défaut</button></div>' +
+            '<label for="' + p + '-subject">Objet du courriel</label><input class="input" type="text" id="' + p + '-subject" data-t="' + t + '" data-k="' + k + '" data-f="subject" autocomplete="off">' +
+            '<label for="' + p + '-format">Format du corps</label><select class="select" id="' + p + '-format" data-t="' + t + '" data-k="' + k + '" data-f="format" style="max-width:14rem"><option value="html">HTML</option><option value="text">Texte</option></select>' +
+            '<div class="mail-tpl-head"><label for="' + p + '-body">Corps du courriel</label><button type="button" class="btn secondary sm" data-preview-t="' + t + '" data-preview-k="' + k + '">Aperçu</button></div>' +
+            '<textarea class="textarea tall mono" id="' + p + '-body" data-t="' + t + '" data-k="' + k + '" data-f="body" spellcheck="false"></textarea>' +
+            '<iframe class="tpl-preview" id="x-pv-' + t + '-' + k + '" title="Aperçu du modèle" sandbox hidden></iframe></div></details>';
+        }).join('');
+      }).join('');
+      $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
+    }
+    Array.prototype.forEach.call(host.querySelectorAll('[data-t]'), function (el) {
+      var v = dr.mail[el.getAttribute('data-t')][el.getAttribute('data-k')][el.getAttribute('data-f')];
+      if (el.value !== v) el.value = v;
+    });
+    var opts = state.tables.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
+    var det = detectTables(state.tables), ph = function (k) { return '<option value="">— Détection automatique' + (det[k] ? ' (' + esc(det[k]) + ')' : '') + ' —</option>'; };
+    [['vmp', 'f-t-vmp'], ['vemi', 'f-t-vemi'], ['psy', 'f-t-psy'], ['cand', 'f-t-cand']].forEach(function (p) { var el = $(p[1]); el.innerHTML = ph(p[0]) + opts; el.value = dr.tables[p[0]] || ''; });
+    renderRecap();
+  }
+  function refreshPreview(t, k) {
+    var frame = $('pv-' + t + '-' + k); if (!frame || frame.hidden) return;
+    var d = state.data[t], row = d && d.rows[0], tpl = state.draft.mail[t][k], body = tpl.body || '';
+    var text = row ? fill(body, t, row, tpl.format === 'html') : body;
+    frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="max-width:640px;margin:12px auto;padding:24px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);">' +
+      (tpl.format === 'html' ? sanitizeHtml(text) : '<pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:14px;margin:0">' + esc(text) + '</pre>') + '</div></body></html>';
+  }
+  function renderRecap() {
+    var rd = state.read, rows = [], ok = true;
+    var t = detectTables(state.tables);
+    function status(good, a, b) { return good ? '<span class="tag green">' + a + '</span>' : '<span class="tag red">' + b + '</span>'; }
+    TAB_ORDER.forEach(function (k) {
+      var d = state.data[k], spec = SPECS[k], found = d ? spec.cols.filter(function (l) { return findCol(d.cols, l); }).length : 0;
+      if (!d || found < spec.cols.length) ok = false;
+      rows.push(['Réservations ' + spec.title, d ? '<code>' + esc(d.table) + '</code> · ' + d.rows.length + ' ligne' + (d.rows.length > 1 ? 's' : '') : (t[k] ? '<code>' + esc(t[k]) + '</code>' : '—'), d ? found + '/' + spec.cols.length + ' colonnes' : '—', status(d && found === spec.cols.length, 'Trouvée', d ? 'Colonnes manquantes' : 'Introuvable')]);
+    });
+    var C = state.cand, ce = C && findCol(C.cols, 'Email'), A = state.ant, am = A && antenneMailCol();
+    rows.push(['Candidats (mails du VEMI)', C ? '<code>' + esc(C.table) + '</code>' : '—', ce ? 'NID, Email' : '—', status(C && ce && findCol(C.cols, 'NID'), 'Trouvée', 'Introuvable')]);
+    rows.push(['Antennes médicales (mails)', A ? '<code>' + esc(A.table) + '</code>' : '—', am ? 'colonne <code>' + esc(am.id) + '</code>' : '—', status(A && am, 'Trouvée', 'Introuvable')]);
+    $('recap-rows').innerHTML = rows.map(function (r) { return '<tr><td class="name">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('');
+    $('recap-meta').innerHTML = rd ? '<span>Dernière lecture : <b>' + rd.at.toLocaleDateString('fr-FR') + ' à ' + rd.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</b></span>' : '';
+    $('recap-sum').innerHTML = ok && C && A ? '<span class="tag green">Sources trouvées</span>' : '<span class="tag red">À vérifier</span>';
+  }
+  function setDirty(d) {
+    $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
+    $('bo-state').classList.toggle('is-dirty', d);
+    if (d) $('saved').hidden = true;
+  }
+  $('view-admin').addEventListener('input', function (e) {
+    var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
+    if (t) { state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value; refreshPreview(t, el.getAttribute('data-k')); }
+    setDirty(true);
+  });
+  $('view-admin').addEventListener('change', function (e) {
+    var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
+    if (t) { state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value; refreshPreview(t, el.getAttribute('data-k')); }
+    var m = /^x-f-t-(vmp|vemi|psy|cand)$/.exec(el.id || ''); if (m) state.draft.tables[m[1]] = el.value;
+    setDirty(true);
+  });
+  $('mail-forms').addEventListener('click', function (e) {
+    var pv = e.target.closest('[data-preview-t]');
+    if (pv) {
+      var t = pv.getAttribute('data-preview-t'), k = pv.getAttribute('data-preview-k'), frame = $('pv-' + t + '-' + k);
+      frame.hidden = !frame.hidden; pv.textContent = frame.hidden ? 'Aperçu' : 'Masquer l’aperçu'; if (!frame.hidden) refreshPreview(t, k); return;
+    }
+    var b = e.target.closest('[data-reset-t]'); if (!b) return;
+    var rt = b.getAttribute('data-reset-t'), rk = b.getAttribute('data-reset-k');
+    state.draft.mail[rt][rk] = JSON.parse(JSON.stringify(DEFAULT_MAIL[rt][rk])); renderAdminForm(); refreshPreview(rt, rk); setDirty(true);
+  });
+  var boLastField = null;
+  $('mail-forms').addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) boLastField = e.target; });
+  $('bo-vars').addEventListener('mousedown', function (e) { e.preventDefault(); });
+  $('bo-vars').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-var]'); if (!b || !boLastField || !document.body.contains(boLastField)) return;
+    var f = boLastField, s = f.selectionStart == null ? f.value.length : f.selectionStart, en = f.selectionEnd == null ? s : f.selectionEnd, v = b.getAttribute('data-var');
+    f.value = f.value.slice(0, s) + v + f.value.slice(en); f.selectionStart = f.selectionEnd = s + v.length;
+    f.dispatchEvent(new Event('input', { bubbles: true })); f.focus();
+  });
+  $('btn-reset').addEventListener('click', function () { state.draft = { tables: {}, mail: mergeMail(null) }; renderAdminForm(); setDirty(true); });
+  $('btn-cancel').addEventListener('click', function () { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); });
+  $('btn-save').addEventListener('click', function () {
+    var tables = {}; Object.keys(state.draft.tables).forEach(function (k) { if (state.draft.tables[k]) tables[k] = state.draft.tables[k]; });
+    var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; });
+    o.x = { tables: tables, mail: mergeMail(state.draft.mail) };
+    Promise.resolve(api.saveOptions(o)).then(function () { state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
+  });
+
+  function renderAll() {
+    renderList();
+    if (!$('view-admin').hidden) renderAdminForm(); else renderRecap();
+    if (state.dup) renderDup();
+  }
+
+  /* ---------- Démarrage : les options du widget sont pilotées par la première page ---------- */
+  window.RSV = {
+    setOptions: function (o) { state.opts = o || {}; if (window.__page === 'rsv' || !state.data.vmp) load(); },
     refresh: function () { return load(); }
   };
   if (!IN_GRIST) { $('demo').hidden = false; load(); }
 })();
 </script>
 <script>
-// Menu : deux pages dans le même widget (mémorisée dans le navigateur).
+// Menu : trois pages dans le même widget (mémorisée dans le navigateur).
 (function () {
-  var pages = { pmg: 'page-pmg', res: 'page-res' }, titles = { pmg: 'PMG et Acculturation', res: 'Réservistes RO1/RS/RC' };
+  var pages = { pmg: 'page-pmg', res: 'page-res', rsv: 'page-rsv' }, titles = { pmg: 'Candidats', res: 'Réservistes RO1/RS/RC', rsv: 'Réservations' };
   function show(p) {
     window.__page = p;
     Object.keys(pages).forEach(function (k) { document.getElementById(pages[k]).hidden = k !== p; });
@@ -3726,6 +4699,7 @@
     document.title = titles[p];
     try { localStorage.setItem('widgetPage', p); } catch (e) {}
     if (p === 'res' && window.RES) window.RES.refresh();
+    if (p === 'rsv' && window.RSV) window.RSV.refresh();
     window.scrollTo(0, 0);
   }
   document.addEventListener('click', function (e) {
