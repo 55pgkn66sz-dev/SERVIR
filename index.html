@@ -638,6 +638,13 @@
       <div id="mail-forms"></div>
     </section>
 
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Importer des candidats manquants</h2></div>
+      <p class="lead">Ajoutez plusieurs candidatures à la fois depuis un fichier .csv, avec les mêmes informations que la création individuelle (bouton « Créer une candidature »).</p>
+      <div id="imp-msg"></div>
+      <div id="imp-body"></div>
+    </section>
+
     <details class="bo-advanced">
       <summary>Options avancées : sources, colonnes de la fiche, copies dans Documents</summary>
       <p class="hint">Par défaut, la table liée à cette page et les colonnes habituelles de la table Candidats PMG sont détectées automatiquement. À modifier uniquement si une colonne est « Introuvable » dans le récapitulatif ci-dessus.</p>
@@ -904,7 +911,7 @@
       </div>
       <label class="x-check"><input type="checkbox" id="x-dup-only"> Doublons uniquement</label>
       <div class="count" id="x-count" aria-live="polite"></div>
-      <button type="button" class="btn secondary" id="x-btn-book">Réserver</button>
+      <button type="button" class="round-btn" id="x-btn-book" title="Réserver" aria-label="Réserver"><span class="fr-icon-calendar-event-line" aria-hidden="true"></span></button>
       <button type="button" class="round-btn" id="x-btn-slots" title="Administrer les créneaux" aria-label="Administrer les créneaux"><span class="fr-icon-settings-5-line" aria-hidden="true"></span></button>
     </div>
 
@@ -1119,7 +1126,7 @@
   var TAB_DEFS = [
     { key: 'info', title: 'Candidat', cardTitle: 'Informations sur le candidat',
       defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt', 'Âge',
-                 'Numéro de téléphone', 'Email', 'Adresse', 'CP', 'Ville', 'Profession', 'Convention',
+                 'Numéro de téléphone', 'Email', 'Adresse', 'Code postal', 'Ville', 'Profession', 'Convention',
                  'Commentaires'] },
     { key: 'mil', title: 'Renseignements militaires', cardTitle: 'Renseignements militaires',
       defaults: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO', 'PMG', 'Etat candidature',
@@ -1136,7 +1143,7 @@
   var TAB_GROUPS = {
     info: [
       { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN', 'Âge'], ['Lieu de naissance', 'Dpt']] },
-      { title: 'Coordonnées', rows: [['Numéro de téléphone', 'Email'], ['Adresse'], ['CP', 'Ville']] },
+      { title: 'Coordonnées', rows: [['Numéro de téléphone', 'Email'], ['Adresse'], ['Code postal', 'Ville']] },
       { title: 'Renseignements professionnels', rows: [['Profession', 'Convention']] },
       { title: '', labels: ['Commentaires'] }
     ],
@@ -1153,7 +1160,7 @@
   };
   // Libellés affichés dans la fiche (le bloc donne le contexte), quand ils diffèrent de ceux de la table.
   var DISPLAY_LABELS = {
-    'nom': 'Nom', 'ddn': 'Date de naissance', 'dpt': 'Département de naissance', 'numero de telephone': 'Tél', 'email': 'Mail', 'cp': 'Code postal',
+    'nom': 'Nom', 'ddn': 'Date de naissance', 'dpt': 'Département de naissance', 'numero de telephone': 'Tél', 'email': 'Mail',
     'n° candidature': 'Numéro de candidature', 'n_cand': 'Numéro CAND (GendForm)', 'n° cand': 'Numéro CAND (GendForm)', 'numero cand': 'Numéro CAND (GendForm)', 'dde bpro': 'Demande BPRO',
     'etat candidature': 'État de la candidature', 'affectation': 'Groupement', 'pmg': 'PMG souhaitée', 'date contrat': 'Date du contrat', 'date de debut contrat': 'Entrée en vigueur du contrat', 'date tests psy': 'Date des tests', 'tests psy': 'Résultats', 'date vemi': 'Date de la VEMI',
     'antenne vemi': 'Antenne médicale', 'vemi': 'Résultats', 'validite vemi': 'Date de validité'
@@ -1293,7 +1300,7 @@
     'CIVILITE': 'Civilité', 'NOM': 'NOM', 'PRENOM': 'Prénom', 'NID': 'NID', 'N_CANDIDATURE': 'N° candidature', 'N_CAND': 'N_Cand',
     'DATE_TESTS': 'Date tests psy', 'RESULTAT_TESTS': 'Tests psy', 'DATE_VEMI': 'Date VEMI', 'ANTENNE': 'Antenne VEMI', 'RESULTAT_VEMI': 'VEMI', 'VALIDITE_VEMI': 'Validité VEMI',
     'DDN': 'DDN', 'CRT': 'CRT', 'NIGEND': 'Nigend', 'PMG': 'PMG', 'N_ESR': 'N° ESR', 'DATE_CONTRAT': 'Date contrat', 'DEBUT_CONTRAT': 'Date de début contrat', 'PROFESSION': 'Profession',
-    'AFFECTATION': 'Affectation', 'GROUPEMENT': 'Affectation', 'ADRESSE': 'Adresse', 'CP': 'CP', 'VILLE': 'Ville', 'EMAIL': 'Email', 'TELEPHONE': 'Numéro de téléphone', 'GRADE': 'Grade', 'CORPS': 'Corps'
+    'AFFECTATION': 'Affectation', 'GROUPEMENT': 'Affectation', 'ADRESSE': 'Adresse', 'CP': 'Code postal', 'VILLE': 'Ville', 'EMAIL': 'Email', 'TELEPHONE': 'Numéro de téléphone', 'GRADE': 'Grade', 'CORPS': 'Corps'
   };
   function mergeMail(saved) {
     var out = {};
@@ -1343,10 +1350,10 @@
 
   /* ---------- Données de démonstration (structure de la table Candidats_PMG) ---------- */
   var DEMO_COLS = [
-    ['NID', 'Text'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Affectation', 'Text'], ['CRT', 'Text'], ['Civilité', 'Choice'], ['DDN', 'Date'], ['Lieu de naissance', 'Text'], ['Dpt', 'Text'],
-    ['Numéro de téléphone', 'Text'], ['N_Cand', 'Text'], ['Email', 'Text'], ['Âge', 'Int'], ['Adresse', 'Text'], ['CP', 'Text'], ['Ville', 'Text'], ['Profession', 'Text'], ['N° candidature', 'Text'],
+    ['NID', 'Text'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Affectation', 'Choice'], ['CRT', 'Text'], ['Civilité', 'Choice'], ['DDN', 'Date'], ['Lieu de naissance', 'Text'], ['Dpt', 'Text'],
+    ['Numéro de téléphone', 'Text'], ['N_Cand', 'Text'], ['Email', 'Text'], ['Âge', 'Int'], ['Adresse', 'Text'], ['Code postal', 'Text'], ['Ville', 'Text'], ['Profession', 'Text'], ['N° candidature', 'Text'],
     ['Date tests psy', 'DateTime:Europe/Paris'], ['Tests psy', 'Choice'], ['Dde BPRO', 'Bool'], ['Date VEMI', 'DateTime:Europe/Paris'], ['Antenne VEMI', 'Text'], ['VEMI', 'Choice'], ['Validité VEMI', 'Date'],
-    ['Etat candidature', 'Choice'], ['PMG', 'Text'], ['Lettre intégration', 'Attachments'], ['Droits EAD', 'Bool'], ['Nigend', 'Text'], ['N° ESR', 'Text'], ['Grade', 'Choice'], ['Corps', 'Choice'],
+    ['Etat candidature', 'Choice'], ['PMG', 'Choice'], ['Lettre intégration', 'Attachments'], ['Droits EAD', 'Bool'], ['Nigend', 'Text'], ['N° ESR', 'Text'], ['Grade', 'Choice'], ['Corps', 'Choice'],
     ['Date de début contrat', 'Date'], ['Date contrat', 'Date'], ['Convention', 'Attachments'], ['Commentaires', 'Text'], ['Acculturation', 'Bool'], ['Doublon', 'Bool'], ['Déjà ESR', 'Bool'],
     ['Création candidature', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text'], ['Convocations', 'Attachments'], ['ESR', 'Attachments'],
     ['Demande d\'admission', 'Attachments'], ['DIPC', 'Attachments'], ['RIB', 'Attachments'], ['Bulletin paie', 'Attachments'], ['CNI', 'Attachments'], ['JDC', 'Attachments'], ['B2', 'Attachments'],
@@ -1354,9 +1361,9 @@
     ['PJ', 'Attachments'], ['Nom PJ', 'Text']  ];
   function d(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
   var DEMO_ROWS_BY_LABEL = [
-    { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'CP': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean', 'RIB': ['L', 40], 'CNI': ['L', 41], 'Diplôme': ['L', 42], 'PJ': ['L', 43], 'Nom PJ': 'Attestation_mutuelle.pdf' },
+    { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'Code postal': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean', 'RIB': ['L', 40], 'CNI': ['L', 41], 'Diplôme': ['L', 42], 'PJ': ['L', 43], 'Nom PJ': 'Attestation_mutuelle.pdf' },
     { 'NID': '1043310', 'PMG': 'PMG 38', 'Numéro de téléphone': '612345678', 'NOM': 'Bernard', 'Prénom': 'Julien', 'Affectation': 'GD 38', 'Civilité': 'M.', 'DDN': d(2005, 11, 3), 'Âge': 20, 'Etat candidature': ['L', 'En attente', 'Pièces manquantes'], 'Dde BPRO': true, 'Doublon': false },
-    { 'NID': '1043544', 'PMG': 'PMG 73', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Affectation': 'GD 73', 'Civilité': 'Mme', 'Etat candidature': 'Rejet DRJ', 'Email': 'lea.dubois@example.fr', 'Adresse': '4 place du Marché', 'CP': '73000', 'Ville': 'Chambéry', 'VEMI': 'Inapte' },
+    { 'NID': '1043544', 'PMG': 'PMG 73', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Affectation': 'GD 73', 'Civilité': 'Mme', 'Etat candidature': 'Rejet DRJ', 'Email': 'lea.dubois@example.fr', 'Adresse': '4 place du Marché', 'Code postal': '73000', 'Ville': 'Chambéry', 'VEMI': 'Inapte' },
     { 'NID': '1044002', 'PMG': 'PMG 74', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Affectation': 'GD 74', 'Civilité': 'M.', 'Etat candidature': 'Entretien programmé' },
     { 'NID': '1044120', 'PMG': 'PMG 01', 'NOM': 'Moreau', 'Prénom': 'Sarah', 'Affectation': 'GD 01', 'Civilité': 'Mme', 'Etat candidature': 'Dossier reçu', 'Lettre intégration': ['L', 15, 16] },
     { 'NID': '1044377', 'PMG': 'PMG 38', 'NOM': 'Petit', 'Prénom': 'Nathan', 'Affectation': 'GD 38', 'Civilité': 'M.', 'Etat candidature': 'Abandon' },
@@ -1365,7 +1372,9 @@
   ];
   var DEMO_CHOICES = {
     'Civilité': ['M.', 'Mme'], 'Etat candidature': ['Dossier reçu', 'En attente', 'Pièces manquantes', 'Entretien programmé', 'Admis PMG', 'Rejet DRJ', 'Abandon', 'Refusé'],
-    'Tests psy': ['Favorable', 'Défavorable'], 'VEMI': ['Apte', 'Inapte'], 'Grade': ['GAV', 'MDL', 'BRI'], 'Corps': ['Gendarmerie', 'Armée de terre', 'Marine']
+    'Tests psy': ['Favorable', 'Défavorable'], 'VEMI': ['Apte', 'Inapte'], 'Grade': ['GAV', 'MDL', 'BRI'], 'Corps': ['Gendarmerie', 'Armée de terre', 'Marine'],
+    'PMG': ['2026/3 - Octobre', 'Toute PMG en 2027', '2027/1 - Avril', '2027/2 - Juillet', '2027/3 - Octobre'],
+    'Affectation': ['GGD78', 'GGD91', 'GGD77', 'GGD95', 'CRR', 'SAJ']
   };
   var DEMO = { cols: DEMO_COLS.map(function (c) { return { id: makeId(c[0]), label: c[0], type: c[1], formula: c[0] === 'Âge', choices: DEMO_CHOICES[c[0]] || null }; }) };
   DEMO.rows = DEMO_ROWS_BY_LABEL.map(function (r, i) {
@@ -3036,6 +3045,7 @@
     fillSelect($('f-esrcol'), attCols, dr.esrCol, '— Détection automatique —');
     renderPicks();
     renderMailForms();
+    renderImportSection();
   }
 
   // Formulaires des modèles : un par envoi (réservation, convocation, convocation du service, lettre d'incorporation, ESR).
@@ -3250,12 +3260,15 @@
   /* ---------- Création d'une candidature ---------- */
   var CREATE_SECTIONS = [
     { title: 'État civil', labels: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt'] },
-    { title: 'Coordonnées', labels: ['Numéro de téléphone', 'Email', 'Adresse', 'CP', 'Ville'] },
-    { title: 'Candidature', labels: ['NID', 'N° candidature', 'PMG', 'Affectation', 'Profession'] }
+    { title: 'Coordonnées', labels: ['Numéro de téléphone', 'Email', 'Adresse', 'Code postal', 'Ville'] },
+    { title: 'Candidature', labels: ['NID', 'N° candidature', 'PMG', 'Affectation'] },
+    { title: 'Renseignements professionnels', labels: ['Profession'] },
+    { title: 'Commentaires', labels: ['Commentaires'] }
   ];
   var CREATE_REQUIRED = ['NOM', 'Prénom', 'DDN', 'Email', 'N° candidature', 'Affectation'];
   state.create = null; // { values, error, warn, confirmDup, busy }
   state.bulk = null;   // { mode, psyResult, psyDate, vemiResult, vemiDate, vemiValidity, nigends, busy, error, warn, confirm, result }
+  state.importState = { busy: false, msg: null }; // import de candidats en bloc depuis un .csv (back office)
 
   function createColumns(c) {
     return CREATE_SECTIONS.map(function (s) {
@@ -3355,6 +3368,161 @@
     if (idx < 0) { $('flt-reset').click(); idx = find(); }
     if (idx >= 0) openModal(idx, $('btn-create'));
   }
+
+  /* ---------- Back office : import de candidats manquants depuis un .csv ---------- */
+  // Colonnes du modèle .csv et de l'import : les mêmes que la création individuelle, sauf « PMG souhaitée ».
+  function importColumns(c) {
+    var out = []; createColumns(c).forEach(function (s) { s.cols.forEach(function (col) { if (norm(col.label) !== 'pmg') out.push(col); }); }); return out;
+  }
+  function csvEscape(s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function downloadCsv(name, rows) {
+    var csv = rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n') + '\r\n';
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+  var IMPORT_EXAMPLES = { 'Civilité': 'M. ou Mme', 'NOM': 'Leclercq', 'Prénom': 'Gauthier', 'DDN': '01/01/1900', 'Lieu de naissance': 'Fourmies', 'Dpt': '59', 'Numéro de téléphone': '06 12 34 56 78', 'Email': 'gauthier.leclercq@example.fr', 'Adresse': '4 avenue Busteau', 'Code postal': '94700', 'Ville': 'Maisons-Alfort', 'N° candidature': '012345678', 'Affectation': 'GGD91 (sans espace)', 'Profession': 'Chief of staff', 'Commentaires': 'Exemple' };
+  var IMPORT_EXAMPLE_MARKER = 'exemple'; // une ligne dont le commentaire vaut « Exemple » (insensible à la casse) est ignorée à l'import
+  function downloadCandidateTemplate() {
+    var c = cfg(), req = requiredIds(c), cols = importColumns(c);
+    var headers = cols.map(function (col) { return displayLabel(col) + (req.indexOf(col.id) !== -1 ? ' *' : ''); });
+    var example = cols.map(function (col) { return IMPORT_EXAMPLES[col.label] || ''; });
+    downloadCsv('modele_candidats.csv', [headers, example]);
+  }
+  // Lecture .csv minimale (guillemets, fins de ligne \r\n ou \n). Séparateur détecté automatiquement (virgule ou point-virgule,
+  // Excel en français enregistre souvent en point-virgule même pour un fichier « .csv »).
+  function parseCsvText(text) {
+    text = String(text || ''); if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM éventuel
+    var firstLine = text.split(/\r\n|\r|\n/, 1)[0] || '';
+    var delim = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+    var rows = [], row = [], field = '', inQ = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (inQ) { if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; } else field += ch; }
+      else if (ch === '"') inQ = true;
+      else if (ch === delim) { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(field); field = ''; rows.push(row); row = []; }
+      else field += ch;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return String(x).trim() !== ''; }); });
+  }
+  function parseCsvDateFr(s) {
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || '').trim()); if (!m) return null;
+    var day = +m[1], month = +m[2], year = +m[3]; if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    var v = Date.UTC(year, month - 1, day);
+    return new Date(v).getUTCMonth() === month - 1 ? v / 1000 : null;
+  }
+  // Colonnes retrouvées par leur libellé affiché (l'éventuel « *» des obligatoires est ignoré), insensible aux accents/majuscules.
+  function parseCandidatesCsv(c, text) {
+    var cols = importColumns(c), req = requiredIds(c);
+    var rows = parseCsvText(text); if (!rows.length) return { error: 'Fichier vide ou illisible.' };
+    var header = rows[0].map(function (h) { return norm(String(h).replace(/\*/g, '').trim()); });
+    var colIdx = cols.map(function (col) { return { col: col, idx: header.indexOf(norm(displayLabel(col))) }; });
+    var missingCols = colIdx.filter(function (x) { return req.indexOf(x.col.id) !== -1 && x.idx === -1; }).map(function (x) { return displayLabel(x.col); });
+    if (missingCols.length) return { error: 'Colonne(s) obligatoire(s) introuvable(s) dans le fichier : ' + missingCols.join(', ') + '.' };
+
+    var comCol = colIdx.filter(function (x) { return norm(displayLabel(x.col)) === 'commentaires'; })[0];
+    var items = [], errors = [], skipped = 0;
+    rows.slice(1).forEach(function (r, i) {
+      var line = i + 2, fields = {}, rowErr = null;
+      // La ligne d'exemple du modèle (commentaire « Exemple ») n'est pas importée.
+      if (comCol && comCol.idx !== -1 && norm((r[comCol.idx] || '').trim()) === IMPORT_EXAMPLE_MARKER) { skipped++; return; }
+      colIdx.forEach(function (x) {
+        if (rowErr || x.idx === -1) return;
+        var raw = (r[x.idx] || '').trim(); if (!raw) return;
+        var col = x.col, t = typeBase(col.type);
+        if (t === 'Date') { var dv = parseCsvDateFr(raw); if (dv == null) { rowErr = 'date invalide (' + displayLabel(col) + ', format attendu JJ/MM/AAAA)'; return; } fields[col.id] = dv; }
+        else if (t === 'Choice' && col.choices && col.choices.length) {
+          var match = col.choices.filter(function (o) { return norm(o) === norm(raw); })[0];
+          if (!match) { rowErr = 'valeur invalide (' + displayLabel(col) + ') : choisir parmi ' + col.choices.join(', '); return; }
+          fields[col.id] = match;
+        }
+        else fields[col.id] = raw;
+      });
+      if (rowErr) { errors.push('ligne ' + line + ' : ' + rowErr); return; }
+      var missing = req.filter(function (rid) { return emptyVal(fields[rid]) || (typeof fields[rid] === 'string' && !fields[rid].trim()); })
+        .map(function (rid) { var col = cols.filter(function (cc) { return cc.id === rid; })[0]; return col ? displayLabel(col) : rid; });
+      if (missing.length) { errors.push('ligne ' + line + ' : champ(s) obligatoire(s) manquant(s) (' + missing.join(', ') + ')'); return; }
+      var em = findCol(c.table, 'Email');
+      if (em && fields[em.id] && !validEmail(String(fields[em.id]).trim())) { errors.push('ligne ' + line + ' : adresse e-mail invalide'); return; }
+      items.push({ line: line, fields: fields });
+    });
+    return { items: items, errors: errors, skipped: skipped };
+  }
+  function pickCsvFile(cb) {
+    var i = document.createElement('input');
+    i.type = 'file'; i.accept = '.csv,text/csv';
+    i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
+    i.click();
+  }
+  function showImportMsg(type, text) { state.importState.msg = { type: type, text: text }; renderImportSection(); }
+  function renderImportSection() {
+    var c = cfg(), st = state.importState, host = $('imp-body'); if (!host) return;
+    var req = requiredIds(c).map(function (rid) { var col = colMeta(c.table, rid); return col ? displayLabel(col) : rid; });
+    host.innerHTML =
+      '<span class="hint">Mêmes colonnes que la création individuelle. Obligatoires : ' + esc(req.join(', ')) + '. ' +
+      '<button type="button" class="btn secondary sm" id="imp-template">Télécharger un modèle .csv</button></span>' +
+      '<div class="doc-drop' + (st.busy ? ' is-busy' : '') + '" id="imp-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (st.busy ? 'true' : 'false') + '">' +
+      ICON_UPLOAD + '<p><strong>' + (st.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ici') + '</strong>' + (st.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
+    $('imp-msg').innerHTML = st.msg ? '<div class="doc-alert ' + st.msg.type + '" role="' + (st.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(st.msg.text) + '</p></div>' : '';
+  }
+  function importCandidatesFile(file) {
+    var c = cfg(), st = state.importState; if (st.busy) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var r = parseCandidatesCsv(c, String(reader.result || ''));
+      if (r.error) { showImportMsg('error', r.error); return; }
+      if (!r.items.length) {
+        showImportMsg('error', r.skipped && !r.errors.length ? 'Le fichier ne contient que la ligne d’exemple (ignorée) : ajoutez vos candidats en dessous.'
+          : 'Aucune ligne valide dans le fichier' + (r.errors.length ? ' (' + r.errors.join(' ; ') + ')' : '') + '.');
+        return;
+      }
+      st.busy = true; st.msg = null; renderImportSection();
+      var nomCol = findCol(c.table, 'NOM'), preCol = findCol(c.table, 'Prénom'), dupCol = findCol(c.table, 'Doublon');
+      var known = {};
+      state.records.forEach(function (rec) { var k = dupKey(rec, c); if (k) known[k] = true; });
+      var created = 0, dupCount = 0, failed = [];
+      r.items.reduce(function (p, it) {
+        return p.then(function () {
+          var idn = [nomCol && it.fields[nomCol.id] ? String(it.fields[nomCol.id]).toLocaleUpperCase('fr-FR') : '', preCol && it.fields[preCol.id] || ''].filter(Boolean).join(' ');
+          var probe = { raw: it.fields, identity: idn }, k = dupKey(probe, c), isDup = !!(k && known[k]);
+          if (k) known[k] = true;
+          if (isDup && dupCol && isEditableCol(dupCol)) it.fields[dupCol.id] = typeBase(dupCol.type) === 'Bool' ? true : 'Oui';
+          return api.createRow(c.table, it.fields).then(function () { created++; if (isDup) dupCount++; })
+            .catch(function (e) { failed.push('ligne ' + it.line + ' : ' + ((e && e.message) || e)); });
+        });
+      }, Promise.resolve()).then(function () {
+        st.busy = false;
+        var parts = [created + ' candidat' + (created > 1 ? 's' : '') + ' importé' + (created > 1 ? 's' : '')];
+        if (dupCount) parts.push(dupCount + ' marqué' + (dupCount > 1 ? 's' : '') + ' doublon' + (dupCount > 1 ? 's' : ''));
+        if (r.skipped) parts.push('ligne d’exemple ignorée');
+        if (r.errors.length) parts.push(r.errors.length + ' ligne(s) ignorée(s) : ' + r.errors.join(' ; '));
+        if (failed.length) parts.push(failed.length + ' échec(s) : ' + failed.join(' ; '));
+        st.msg = { type: (r.errors.length || failed.length) ? 'error' : 'success', text: parts.join(' · ') + '.' };
+        renderImportSection();
+        return load();
+      });
+    };
+    reader.onerror = function () { st.busy = false; showImportMsg('error', 'Lecture du fichier impossible.'); };
+    reader.readAsText(file, 'UTF-8');
+  }
+  $('imp-body') && $('imp-body').addEventListener('click', function (e) {
+    if (e.target.id === 'imp-template') { downloadCandidateTemplate(); return; }
+    if (e.target.closest('#imp-drop') && !state.importState.busy) pickCsvFile(importCandidatesFile);
+  });
+  ['dragenter', 'dragover'].forEach(function (t) {
+    $('imp-body') && $('imp-body').addEventListener(t, function (e) { var z = e.target.closest('#imp-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } });
+  });
+  $('imp-body') && $('imp-body').addEventListener('dragleave', function (e) { var z = e.target.closest('#imp-drop'); if (z) z.classList.remove('is-over'); });
+  $('imp-body') && $('imp-body').addEventListener('drop', function (e) {
+    var z = e.target.closest('#imp-drop'); if (!z) return;
+    e.preventDefault(); z.classList.remove('is-over');
+    if (state.importState.busy || !e.dataTransfer || !e.dataTransfer.files.length) return;
+    importCandidatesFile(e.dataTransfer.files[0]);
+  });
+  ['dragover', 'drop'].forEach(function (t) { $('view-admin').addEventListener(t, function (e) { if (!e.target.closest('#imp-drop')) e.preventDefault(); }); });
 
   $('btn-create').addEventListener('click', openCreate);
   $('cmodal-close').addEventListener('click', closeCreate);
@@ -3648,10 +3816,12 @@
   var TAB_DEFS = [
     { key: 'info', title: 'Réserviste', cardTitle: 'Informations sur le réserviste',
       defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Age', 'Téléphone', 'Adresse email', 'Ville', 'Dpt'] },
-    { key: 'mil', title: 'Situation militaire', cardTitle: 'Situation militaire',
+    { key: 'mil', title: 'Renseignements militaires', cardTitle: 'Renseignements militaires',
       defaults: ['NID', 'Nigend', 'Grade', 'Type R', 'Affectation', 'Affectation précise', 'Mouvement', 'N° ESR', 'Date contrat', 'Date de début contrat', 'Exp. contrat'] },
-    { key: 'hab', title: 'Validités', cardTitle: 'Validités et qualifications',
-      defaults: ['Exp. VMP', 'Exp. tir PA', 'Exp. tir HK', 'Qualité jud'] }
+    { key: 'hab', title: 'Médico-statutaire', cardTitle: 'Médico-statutaire',
+      defaults: ['Exp. VMP'] },
+    { key: 'qual', title: 'Qualifications', cardTitle: 'Qualifications',
+      defaults: ['Exp. tir PA', 'Exp. tir HK', 'Qualité jud'] }
   ];
   // Blocs par onglet : seules les colonnes de ces blocs (et cochées dans le back office) sont affichées dans la fiche.
   var TAB_GROUPS = {
@@ -3661,11 +3831,13 @@
     ],
     mil: [
       { title: 'Identifiants', rows: [['NID', 'Nigend']] },
-      { title: 'Affectation', rows: [['Grade', 'Type R'], ['Affectation', 'Affectation précise'], ['Mouvement']] },
-      { title: 'Contrat', rows: [['N° ESR'], ['Date contrat', 'Date de début contrat'], ['Exp. contrat']] }
+      { title: 'Contrat', rows: [['Grade', 'Type R'], ['Affectation', 'Affectation précise'], ['Mouvement'], ['N° ESR'], ['Date contrat', 'Date de début contrat'], ['Exp. contrat']] }
     ],
     hab: [
-      { title: 'Validités', rows: [['Exp. VMP'], ['Exp. tir PA', 'Exp. tir HK']] },
+      { title: 'VMP', rows: [['Exp. VMP']] }
+    ],
+    qual: [
+      { title: 'Tir', rows: [['Exp. tir PA', 'Exp. tir HK']] },
       { title: 'Qualité judiciaire', rows: [['Qualité jud']] }
     ]
   };
@@ -3681,7 +3853,8 @@
   var CREATE_SECTIONS = [
     { title: 'État civil', labels: ['Civilité', 'NOM', 'Prénom', 'DDN'] },
     { title: 'Coordonnées', labels: ['Téléphone', 'Adresse email', 'Ville', 'Dpt'] },
-    { title: 'Situation militaire', labels: ['Grade', 'Type R', 'NID', 'Nigend', 'Affectation', 'Affectation précise'] }
+    { title: 'Identifiants', labels: ['NID', 'Nigend'] },
+    { title: 'Contrat', labels: ['Grade', 'Type R', 'Affectation', 'Affectation précise'] }
   ];
   var CREATE_REQUIRED = ['NOM', 'Prénom', 'NID', 'Affectation'];
   var SOON_DAYS = 60; // une validité qui expire dans moins de 60 jours est signalée
@@ -5240,7 +5413,7 @@
       out += '<button type="button" class="icon-btn danger" data-act="delete-confirm" data-id="' + row.id + '" title="Confirmer la suppression de cette réservation" aria-label="Confirmer la suppression"><span class="fr-icon-check-line" aria-hidden="true"></span></button>' +
         '<button type="button" class="icon-btn" data-act="delete-cancel" data-id="' + row.id + '" title="Annuler" aria-label="Annuler"><span class="fr-icon-close-line" aria-hidden="true"></span></button>';
     } else {
-      out += '<button type="button" class="icon-btn danger" data-act="delete" data-id="' + row.id + '" title="Supprimer cette réservation" aria-label="Supprimer cette réservation"><span class="fr-icon-delete-line" aria-hidden="true"></span></button>';
+      out += '<button type="button" class="icon-btn" data-act="delete" data-id="' + row.id + '" title="Supprimer cette réservation" aria-label="Supprimer cette réservation"><span class="fr-icon-delete-line" aria-hidden="true"></span></button>';
     }
     return out;
   }
@@ -5530,14 +5703,18 @@
     if (cs.capLabel) example.push('4');
     downloadCsv('modele_creneaux_' + tab + '.csv', [headers, example]);
   }
-  // Lecture .csv minimale (guillemets, virgules, fins de ligne \r\n ou \n) : suffisant pour un fichier au format du modèle fourni.
+  // Lecture .csv minimale (guillemets, fins de ligne \r\n ou \n). Séparateur détecté automatiquement (virgule ou point-virgule,
+  // Excel en français enregistre souvent en point-virgule même pour un fichier « .csv »).
   function parseCsvText(text) {
+    text = String(text || ''); if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM éventuel
+    var firstLine = text.split(/\r\n|\r|\n/, 1)[0] || '';
+    var delim = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
     var rows = [], row = [], field = '', inQ = false;
     for (var i = 0; i < text.length; i++) {
       var c = text[i];
       if (inQ) { if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; } else field += c; }
       else if (c === '"') inQ = true;
-      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === delim) { row.push(field); field = ''; }
       else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(field); field = ''; rows.push(row); row = []; }
       else field += c;
     }
