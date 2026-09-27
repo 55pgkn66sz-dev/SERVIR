@@ -109,6 +109,7 @@
   td.name { font-weight: 700; white-space: nowrap; color: var(--ink); }
   code { font-family: ui-monospace, Menlo, monospace; font-size: .875rem; background: var(--field); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
   .tagrow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-sep { align-self: center; color: var(--muted); font-weight: 700; }
 
   .tb-field { min-width: 0; }
   .tb-search { flex: 1 1 260px; max-width: 360px; }
@@ -126,6 +127,7 @@
   .ms-opt:hover { background: var(--row-hover); }
   .ms-opt input { width: 1.1rem; height: 1.1rem; flex: none; accent-color: var(--accent-bg); }
   .ms-empty { margin: 0; padding: 0.5rem; color: var(--muted); font-size: 0.875rem; }
+  .ms-group { display: flex; flex-direction: column; gap: 2px; }
   .toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .count { color: var(--muted); font-size: .875rem; }
 
@@ -213,12 +215,17 @@
   .ask { margin-bottom: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--border-default-grey); border-left: 4px solid var(--accent-bg); border-radius: 4px; background: var(--bg-alt); }
   .ask .input { max-width: 26rem; margin-top: 2px; }
   .ask label { margin-bottom: 2px; }
+  .pjask-row { margin: 0 0 0.9rem; }
+  .pjask-row:last-of-type { margin-bottom: 0; }
+  .pjask-row label { display: block; font-size: 0.8125rem; color: var(--muted); margin-bottom: 2px; }
   /* Création d'une candidature. */
   .cf-section { margin: 0 0 1.25rem; }
   .cf-section h3 { margin: 0 0 0.6rem; font-size: 0.78em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--blue); }
   .cf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.9rem 1.25rem; }
   .cf-field label { display: block; margin: 0 0 0.25rem; font-size: 0.875rem; color: var(--ink); }
-  .cf-field .input, .cf-field .select { width: 100%; }
+  .cf-field .input, .cf-field .select, .cf-field .textarea { width: 100%; }
+  .bulk-modes { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .bulk-mode { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9375rem; color: var(--ink); }
   .cf-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-default-grey); }
   .cf-warn { margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1px solid #b34000; border-left-width: 6px; color: var(--ink); }
   .cf-warn p { margin: 0; }
@@ -569,8 +576,10 @@
           <div class="ms-panel" id="flt-pmg-panel" role="group" aria-labelledby="flt-pmg-label" hidden></div>
         </div>
       </div>
+      <button type="button" class="btn secondary" id="btn-filters">Filtre avancé</button>
       <button type="button" class="btn secondary" id="flt-reset" disabled>Réinitialiser les filtres</button>
       <div class="count" id="count" aria-live="polite"></div>
+      <button type="button" class="btn secondary" id="btn-bulk">Mettre à jour en bloc</button>
       <button type="button" class="btn" id="btn-create">Créer une candidature</button>
     </div>
 
@@ -713,8 +722,10 @@
           <div class="ms-panel" id="r-flt-b-panel" role="group" aria-labelledby="r-flt-b-label" hidden></div>
         </div>
       </div>
+      <button type="button" class="btn secondary" id="r-btn-filters">Filtre avancé</button>
       <button type="button" class="btn secondary" id="r-flt-reset" disabled>Réinitialiser les filtres</button>
       <div class="count" id="r-count" aria-live="polite"></div>
+      <button type="button" class="btn secondary" id="r-btn-bulk">Mettre à jour en bloc</button>
       <button type="button" class="btn" id="r-btn-create">Créer un réserviste</button>
     </div>
 
@@ -837,6 +848,39 @@
   </div>
 </div>
 
+<!-- ===== Mise à jour en bloc ===== -->
+<div class="modal-overlay" id="r-bmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="r-bmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="r-bmodal-title">Mettre à jour en bloc</h2>
+          <p class="modal-sub">Met à jour une échéance, ou le grade et le corps, de plusieurs réservistes à la fois — un Nigend par ligne.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="r-bmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <form id="r-bmodal-form" novalidate></form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Filtre avancé ===== -->
+<div class="modal-overlay" id="r-fmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="r-fmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="r-fmodal-title">Filtre avancé</h2>
+          <p class="modal-sub">Les critères se cumulent avec la recherche et les filtres Type R / Affectation. Cochez une valeur pour l’appliquer aussitôt.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="r-fmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="r-fmodal-body"></div>
+      <div class="cf-actions"><button type="button" class="btn secondary" id="r-fmodal-reset">Réinitialiser ce filtre</button><button type="button" class="btn" id="r-fmodal-ok">Fermer</button></div>
+    </div>
+  </div>
+</div>
+
 
 <!-- ===== Page 3 : Réservations ===== -->
 <div id="page-rsv" hidden>
@@ -860,6 +904,8 @@
       </div>
       <label class="x-check"><input type="checkbox" id="x-dup-only"> Doublons uniquement</label>
       <div class="count" id="x-count" aria-live="polite"></div>
+      <button type="button" class="btn secondary" id="x-btn-book">Réserver</button>
+      <button type="button" class="round-btn" id="x-btn-slots" title="Administrer les créneaux" aria-label="Administrer les créneaux"><span class="fr-icon-settings-5-line" aria-hidden="true"></span></button>
     </div>
 
     <div class="table-wrap x-table">
@@ -899,6 +945,10 @@
         <div><label for="x-f-t-vemi">Table des réservations VEMI</label><select id="x-f-t-vemi" class="select"></select></div>
         <div><label for="x-f-t-psy">Table des réservations Tests psy</label><select id="x-f-t-psy" class="select"></select></div>
         <div><label for="x-f-t-cand">Table des candidats (mails du VEMI)</label><select id="x-f-t-cand" class="select"></select></div>
+        <div><label for="x-f-t-res">Table des réservistes (bouton Réserver, VMP)</label><select id="x-f-t-res" class="select"></select></div>
+        <div><label for="x-f-t-svmp">Table des créneaux VMP</label><select id="x-f-t-svmp" class="select"></select></div>
+        <div><label for="x-f-t-svemi">Table des créneaux VEMI</label><select id="x-f-t-svemi" class="select"></select></div>
+        <div><label for="x-f-t-spsy">Table des créneaux Tests psy</label><select id="x-f-t-spsy" class="select"></select></div>
       </div>
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="x-btn-reset" type="button">Rétablir les valeurs par défaut</button></div>
     </details>
@@ -930,6 +980,38 @@
         <div class="modal-actions"><button class="round-btn" id="x-dmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
       <div id="x-dmodal-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Administration des créneaux ===== -->
+<div class="modal-overlay" id="x-smodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="x-smodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="x-smodal-title">Créneaux</h2>
+          <p class="modal-sub" id="x-smodal-sub"></p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="x-smodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="x-smodal-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Réserver / modifier une réservation ===== -->
+<div class="modal-overlay" id="x-rmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="x-rmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="x-rmodal-title">Réserver</h2>
+          <p class="modal-sub">Choisissez un créneau (ou saisissez-le librement) et la personne concernée.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="x-rmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="x-rmodal-body"></div>
     </div>
   </div>
 </div>
@@ -989,6 +1071,39 @@
   </div>
 </div>
 
+<!-- ===== Mise à jour en bloc ===== -->
+<div class="modal-overlay" id="bmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="bmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="bmodal-title">Mettre à jour en bloc</h2>
+          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois — un Nigend par ligne.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="bmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <form id="bmodal-form" novalidate></form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Filtre avancé ===== -->
+<div class="modal-overlay" id="fmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="fmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="fmodal-title">Filtre avancé</h2>
+          <p class="modal-sub">Les critères se cumulent avec la recherche et les filtres État de la candidature / PMG. Cochez une valeur pour l’appliquer aussitôt.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="fmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="fmodal-body"></div>
+      <div class="cf-actions"><button type="button" class="btn secondary" id="fmodal-reset">Réinitialiser ce filtre</button><button type="button" class="btn" id="fmodal-ok">Fermer</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
   <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.0</span></p>
@@ -1012,7 +1127,9 @@
     { key: 'medico', title: 'Médico-statutaire', cardTitle: 'Situation médicale et statutaire',
       defaults: ['Date tests psy', 'Tests psy', 'Date VEMI', 'Antenne VEMI', 'VEMI', 'Validité VEMI'] },
     { key: 'docs', title: 'Documents', cardTitle: 'Documents du dossier',
-      defaults: ['Lettre intégration', 'Convocations', 'ESR'] }
+      defaults: ['Lettre intégration', 'Convocations', 'ESR',
+                 'Demande d\'admission', 'DIPC', 'RIB', 'Bulletin paie', 'CNI', 'JDC', 'B2', 'FPR-TAJ',
+                 'Avis impôts', 'Justif domicile', 'Attestation Sécu', 'Diplôme', 'Avis recruteur', 'PJ'] }
   ];
 
   // Blocs par onglet : seules les colonnes de ces blocs (et cochées dans le back office) sont affichées dans la fiche.
@@ -1212,7 +1329,7 @@
     edit: null,              // champ de la fiche en cours de modification { colId, value, busy, error }
     ask: null,               // saisie demandée avant une génération (N° Chrono de la lettre de rejet) { block, kind, value, error }
     att: {},             // métadonnées des pièces jointes : { id: { name, size } }
-    docs: { busy: false, msg: null, confirm: null, uploadCol: null }
+    docs: { busy: false, msg: null, confirm: null, ask: null }
   };
 
   function $(id) { return document.getElementById(id); }
@@ -1231,10 +1348,13 @@
     ['Date tests psy', 'DateTime:Europe/Paris'], ['Tests psy', 'Choice'], ['Dde BPRO', 'Bool'], ['Date VEMI', 'DateTime:Europe/Paris'], ['Antenne VEMI', 'Text'], ['VEMI', 'Choice'], ['Validité VEMI', 'Date'],
     ['Etat candidature', 'Choice'], ['PMG', 'Text'], ['Lettre intégration', 'Attachments'], ['Droits EAD', 'Bool'], ['Nigend', 'Text'], ['N° ESR', 'Text'], ['Grade', 'Choice'], ['Corps', 'Choice'],
     ['Date de début contrat', 'Date'], ['Date contrat', 'Date'], ['Convention', 'Attachments'], ['Commentaires', 'Text'], ['Acculturation', 'Bool'], ['Doublon', 'Bool'], ['Déjà ESR', 'Bool'],
-    ['Création candidature', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text'], ['Convocations', 'Attachments'], ['ESR', 'Attachments']  ];
+    ['Création candidature', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text'], ['Convocations', 'Attachments'], ['ESR', 'Attachments'],
+    ['Demande d\'admission', 'Attachments'], ['DIPC', 'Attachments'], ['RIB', 'Attachments'], ['Bulletin paie', 'Attachments'], ['CNI', 'Attachments'], ['JDC', 'Attachments'], ['B2', 'Attachments'],
+    ['FPR-TAJ', 'Attachments'], ['Avis impôts', 'Attachments'], ['Justif domicile', 'Attachments'], ['Attestation Sécu', 'Attachments'], ['Diplôme', 'Attachments'], ['Avis recruteur', 'Attachments'],
+    ['PJ', 'Attachments'], ['Nom PJ', 'Text']  ];
   function d(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
   var DEMO_ROWS_BY_LABEL = [
-    { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'CP': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean' },
+    { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'CP': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean', 'RIB': ['L', 40], 'CNI': ['L', 41], 'Diplôme': ['L', 42], 'PJ': ['L', 43], 'Nom PJ': 'Attestation_mutuelle.pdf' },
     { 'NID': '1043310', 'PMG': 'PMG 38', 'Numéro de téléphone': '612345678', 'NOM': 'Bernard', 'Prénom': 'Julien', 'Affectation': 'GD 38', 'Civilité': 'M.', 'DDN': d(2005, 11, 3), 'Âge': 20, 'Etat candidature': ['L', 'En attente', 'Pièces manquantes'], 'Dde BPRO': true, 'Doublon': false },
     { 'NID': '1043544', 'PMG': 'PMG 73', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Affectation': 'GD 73', 'Civilité': 'Mme', 'Etat candidature': 'Rejet DRJ', 'Email': 'lea.dubois@example.fr', 'Adresse': '4 place du Marché', 'CP': '73000', 'Ville': 'Chambéry', 'VEMI': 'Inapte' },
     { 'NID': '1044002', 'PMG': 'PMG 74', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Affectation': 'GD 74', 'Civilité': 'M.', 'Etat candidature': 'Entretien programmé' },
@@ -1262,7 +1382,8 @@
       { id: 3, Nom: 'Antenne médicale de Metz', Adresse: '8 place du Docteur, 57000 Metz', Mail: '' }
     ]
   };
-  var DEMO_ATT_EXTRA = 0; var DEMO_ATT = { 12: { name: 'lettre_integration_martin.pdf', size: 182000 }, 13: { name: 'lettre_integration_signee_martin.pdf', size: 214500 }, 15: { name: 'lettre.pdf', size: 90000 }, 16: { name: 'cni_moreau.jpg', size: 1250000 }, 20: { name: 'convention_martin.pdf', size: 340000 }, 21: { name: 'convention_signee.pdf', size: 250000 } };
+  var DEMO_ATT_EXTRA = 0; var DEMO_ATT = { 12: { name: 'lettre_integration_martin.pdf', size: 182000 }, 13: { name: 'lettre_integration_signee_martin.pdf', size: 214500 }, 15: { name: 'lettre.pdf', size: 90000 }, 16: { name: 'cni_moreau.jpg', size: 1250000 }, 20: { name: 'convention_martin.pdf', size: 340000 }, 21: { name: 'convention_signee.pdf', size: 250000 },
+    40: { name: 'RIB_Martin.pdf', size: 88000 }, 41: { name: 'CNI_Martin.jpg', size: 1120000 }, 42: { name: 'Diplome_infirmiere.pdf', size: 410000 }, 43: { name: 'Attestation_mutuelle.pdf', size: 76000 } };
   var demoAttSeq = 100;
 
   /* ---------- Accès aux données ---------- */
@@ -1466,15 +1587,19 @@
   /* ---------- Vue liste ---------- */
   /* ----- Filtres de la liste : états de la candidature (choix multiples) et PMG ----- */
   // Par défaut, les candidatures « Rejet DRJ » et « Abandon » sont masquées : le filtre par état les laisse décochées et permet de les réafficher.
-  var filters = { status: null, pmg: [], known: {}, all: [] }; // status : sélection d'états (null tant que les options ne sont pas connues)
+  // status : sélection d'états (null tant que les options ne sont pas connues) ; psy/vemi/grade/corps/esr/dup : filtre avancé (vide = tout afficher).
+  var filters = { status: null, pmg: [], known: {}, all: [], psy: [], vemi: [], grade: [], corps: [], esr: [], dup: [] };
+  var ADV_KEYS = ['psy', 'vemi', 'grade', 'corps', 'esr', 'dup'];
   var NO_STATUS = '__none__';                                  // candidatures sans état
+  var NO_VALUE = '__vide__';                                   // valeur non renseignée, pour les filtres avancés à choix
   var filterSig = '';
+  function advActive() { return ADV_KEYS.some(function (k) { return filters[k].length > 0; }); }
   function pmgOf(raw, c) { var col = findCol(c.table, 'PMG'); return col ? toList(raw[col.id]) : []; }
   function hiddenByDefault(s) { var n = norm(s); return n === 'rejet drj' || n.indexOf('abandon') === 0; }
   function defaultStatusSelection() { return filters.all.filter(function (s) { return !hiddenByDefault(s); }).concat([NO_STATUS]); }
   function sameSet(a, b) { return a.length === b.length && a.every(function (x) { return b.indexOf(x) !== -1; }); }
   function statusIsDefault() { return filters.status !== null && sameSet(filters.status, defaultStatusSelection()); }
-  function filtersActive() { return !statusIsDefault() || filters.pmg.length > 0 || $('q').value.trim() !== ''; }
+  function filtersActive() { return !statusIsDefault() || filters.pmg.length > 0 || advActive() || $('q').value.trim() !== ''; }
   function statusLabel() {
     var sel = filters.status || [], total = filters.all.length + 1, hidden = filters.all.filter(hiddenByDefault);
     if (sel.length === total) return 'Tous les états';
@@ -1515,6 +1640,8 @@
     var np = filters.pmg.length;
     $('flt-pmg-btn').textContent = np === 0 ? 'Toutes les PMG' : (np === 1 ? filters.pmg[0] : np + ' PMG sélectionnées');
     $('flt-reset').disabled = !filtersActive();
+    var nAdv = ADV_KEYS.reduce(function (n, k) { return n + filters[k].length; }, 0);
+    $('btn-filters').textContent = 'Filtre avancé' + (nAdv ? ' (' + nAdv + ')' : '');
   }
   var MS = { status: { btn: 'flt-status-btn', panel: 'flt-status-panel', root: 'flt-status' }, pmg: { btn: 'flt-pmg-btn', panel: 'flt-pmg-panel', root: 'flt-pmg' } };
   function closeMs(key, returnFocus) {
@@ -1537,7 +1664,7 @@
     $(m.root).addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); closeMs(key, true); } });
   });
   $('flt-reset').addEventListener('click', function () {
-    filters.status = defaultStatusSelection(); filters.pmg = []; $('q').value = ''; filterSig = ''; // les panneaux sont reconstruits avec la sélection par défaut
+    filters.status = defaultStatusSelection(); filters.pmg = []; ADV_KEYS.forEach(function (k) { filters[k] = []; }); $('q').value = ''; filterSig = ''; // les panneaux sont reconstruits avec la sélection par défaut
     Object.keys(MS).forEach(function (k) { closeMs(k, false); }); renderList();
   });
   document.addEventListener('mousedown', function (e) { Object.keys(MS).forEach(function (k) { if (!e.target.closest('#' + MS[k].root)) closeMs(k, false); }); });
@@ -1558,15 +1685,34 @@
     return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-\/]/g, '')) !== -1; });
   }
 
+  function valuesOfCol(rec, col) { return col ? toList(rec.raw[col.id]) : []; }
+  // Filtre à choix avec valeur « non renseigné » (NO_VALUE) explicite.
+  function matchesChoiceFilter(rec, col, arr) {
+    if (!arr.length) return true;
+    var vals = valuesOfCol(rec, col);
+    return vals.length ? vals.some(function (v) { return arr.indexOf(v) !== -1; }) : arr.indexOf(NO_VALUE) !== -1;
+  }
+  function matchesBoolFilter(rec, col, arr) {
+    if (!arr.length) return true;
+    return arr.indexOf(col && isYes(rec.raw[col.id]) ? 'oui' : 'non') !== -1;
+  }
   function renderList() {
     var c = cfg(), q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [], sCols = terms.length ? searchColumns(c) : [];
     renderFilters(c);
+    var psyCol = findCol(c.table, 'Tests psy'), vemiCol = findCol(c.table, 'VEMI'), gradeCol = findCol(c.table, 'Grade'),
+      corpsCol = findCol(c.table, 'Corps'), esrCol = findCol(c.table, 'Déjà ESR'), dupCol = findCol(c.table, 'Doublon');
     var all = state.records.map(function (r) { return { raw: r.raw, id: r.identity == null ? '' : String(r.identity), st: r.status }; })
       .filter(function (r) { return r.id || toList(r.st).length; });
     var list = all
       .filter(function (r) { return !terms.length || matchesSearch(searchHay(r, sCols), terms); })
       .filter(function (r) { var l = toList(r.st); return l.length ? l.some(function (s) { return filters.status.indexOf(s) !== -1; }) : filters.status.indexOf(NO_STATUS) !== -1; })
-      .filter(function (r) { return !filters.pmg.length || pmgOf(r.raw, c).some(function (p) { return filters.pmg.indexOf(p) !== -1; }); });
+      .filter(function (r) { return !filters.pmg.length || pmgOf(r.raw, c).some(function (p) { return filters.pmg.indexOf(p) !== -1; }); })
+      .filter(function (r) { return matchesChoiceFilter(r, psyCol, filters.psy); })
+      .filter(function (r) { return matchesChoiceFilter(r, vemiCol, filters.vemi); })
+      .filter(function (r) { return matchesChoiceFilter(r, gradeCol, filters.grade); })
+      .filter(function (r) { return matchesChoiceFilter(r, corpsCol, filters.corps); })
+      .filter(function (r) { return matchesBoolFilter(r, esrCol, filters.esr); })
+      .filter(function (r) { return matchesBoolFilter(r, dupCol, filters.dup); });
     list.sort(function (a, b) { return state.sortDir * a.id.localeCompare(b.id, 'fr', { sensitivity: 'base' }); });
     state.view = list;
 
@@ -2037,6 +2183,55 @@
   }
   function attIds(item, colId) { return toList(item.raw[colId]).map(Number); }
 
+  // Classement automatique des documents déposés : mots-clés reconnus dans le nom du fichier, colonne par colonne
+  // (dans cet ordre). À défaut de correspondance, le document est rangé dans « PJ » et son nom ajouté à « Nom PJ ».
+  var DOC_DETECT = [
+    { label: 'Demande d\'admission', kws: ['demandedadmission', 'demandeadmission'] },
+    { label: 'DIPC', kws: ['dipc'] },
+    { label: 'RIB', kws: ['rib'] },
+    { label: 'Bulletin paie', kws: ['bulletindepaie', 'bulletinpaie', 'fichedepaie', 'fichepaie'] },
+    { label: 'CNI', kws: ['cni', 'carteidentite', 'piecedidentite'] },
+    { label: 'JDC', kws: ['jdc', 'journeedefense'] },
+    { label: 'B2', kws: ['b2', 'casierjudiciaire'] },
+    { label: 'FPR-TAJ', kws: ['fprtaj', 'fpr', 'taj'] },
+    { label: 'Avis impôts', kws: ['avisimpot', 'avisimposition'] },
+    { label: 'Justif domicile', kws: ['justifdomicile', 'justificatifdomicile'] },
+    { label: 'Attestation Sécu', kws: ['attestationsecu', 'attestationsecuritesociale', 'cartevitale'] },
+    { label: 'Diplôme', kws: ['diplome'] },
+    { label: 'Avis recruteur', kws: ['avisrecruteur'] }
+  ];
+  function normFileKey(name) { return norm(String(name || '').replace(/\.[a-z0-9]{1,6}$/i, '')).replace(/[^a-z0-9]+/g, ''); }
+  // Colonne détectée pour ce nom de fichier, ou null (le document ira dans « PJ »).
+  function detectDocCol(c, fileName) {
+    var key = normFileKey(fileName);
+    for (var i = 0; i < DOC_DETECT.length; i++) {
+      var col = findCol(c.table, DOC_DETECT[i].label);
+      if (!col || typeBase(col.type) !== 'Attachments') continue;
+      if (DOC_DETECT[i].kws.some(function (k) { return key.indexOf(k) !== -1; })) return col;
+    }
+    return null;
+  }
+  function pjCol(c) { return findCol(c.table, 'PJ'); }
+  function isPjCol(c, colId) { var p = pjCol(c); return !!p && p.id === colId; }
+  function nomPjCol(c) { return findCol(c.table, 'Nom PJ'); }
+  // « Nom PJ » (texte, noms séparés par des virgules) : un nom par pièce jointe de « PJ », dans le même ordre.
+  function nomPjList(item, c) {
+    var col = nomPjCol(c); if (!col) return [];
+    return String(item.raw[col.id] || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  function setNomPjList(item, c, list) {
+    var col = nomPjCol(c); if (!col || col.formula) return Promise.resolve();
+    return api.updateCell(c.table, item.raw.id, col.id, list.join(', '));
+  }
+  // Nom à afficher par pièce jointe de « PJ » (id de la pièce jointe -> nom saisi).
+  function pjNamesFor(item, c) {
+    var pj = pjCol(c), map = {}; if (!pj) return map;
+    var ids = attIds(item, pj.id), names = nomPjList(item, c);
+    ids.forEach(function (id, i) { map[id] = names[i] || ''; });
+    return map;
+  }
+  function baseFileName(name) { return String(name || '').replace(/\.[A-Za-z0-9]{1,6}$/, ''); }
+
   function ensureAttachments(missing) {
     if (state.attLoading) return;
     state.attLoading = true;
@@ -2054,6 +2249,7 @@
     if (d.msg && !ro) out += '<div class="doc-alert ' + d.msg.type + '" role="' + (d.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(d.msg.text) + '</p></div>';
     if (!cols.length) return out + '<p class="stg-empty">Aucune colonne de type « Pièces jointes » n’est configurée pour cet onglet (voir Back office).</p>' + othersHtml;
 
+    var pj = pjCol(c), showNom = !!pj, nomMap = showNom ? pjNamesFor(item, c) : {};
     var multi = cols.length > 1, files = [], missing = [];
     cols.forEach(function (col) {
       attIds(item, col.id).forEach(function (aid) { if (!state.att[aid]) missing.push(aid); files.push({ col: col, id: aid }); });
@@ -2067,24 +2263,43 @@
         ? '<span class="doc-confirm">Supprimer ce document ?</span> <button type="button" class="btn danger sm" data-act="confirm">Supprimer</button> <button type="button" class="btn secondary sm" data-act="cancel">Annuler</button>'
         : '<button type="button" class="icon-btn" data-act="edit" title="Remplacer le fichier" aria-label="Remplacer ' + esc(meta.name) + '"' + (d.busy ? ' disabled' : '') + '>' + ICON_EDIT + '</button>' +
           '<button type="button" class="icon-btn danger" data-act="delete" title="Supprimer" aria-label="Supprimer ' + esc(meta.name) + '"' + (d.busy ? ' disabled' : '') + '>' + ICON_DELETE + '</button>';
+      var isPj = pj && f.col.id === pj.id;
       return '<tr data-col="' + esc(f.col.id) + '" data-att="' + f.id + '"><td class="name"><a href="#" data-dl="' + f.id + '" target="_blank" rel="noopener">' + esc(meta.name) + '</a>' +
         (meta.size ? ' <span class="doc-size">' + fmtSize(meta.size) + '</span>' : '') + '</td>' +
         (multi ? '<td><span class="tag grey">' + esc(displayLabel(f.col)) + '</span></td>' : '') +
+        (showNom ? '<td>' + (isPj && nomMap[f.id] ? esc(nomMap[f.id]) : '<span class="is-empty">—</span>') + '</td>' : '') +
         (ro ? '' : '<td class="doc-actions">' + actions + '</td>') + '</tr>';
     }).join('');
-    if (!rows) rows = '<tr><td colspan="' + ((multi ? 3 : 2) - (ro ? 1 : 0)) + '" class="is-empty">Aucun document déposé.</td></tr>';
+    var colCount = 1 + (multi ? 1 : 0) + (showNom ? 1 : 0) + (ro ? 0 : 1);
+    if (!rows) rows = '<tr><td colspan="' + colCount + '" class="is-empty">Aucun document déposé.</td></tr>';
 
     out += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Documents du candidat</caption><thead><tr><th scope="col">Document</th>' +
-      (multi ? '<th scope="col">Type</th>' : '') + (ro ? '' : '<th scope="col" class="doc-actions"><span class="fr-sr-only">Actions</span></th>') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      (multi ? '<th scope="col">Type</th>' : '') + (showNom ? '<th scope="col">Nom à afficher</th>' : '') +
+      (ro ? '' : '<th scope="col" class="doc-actions"><span class="fr-sr-only">Actions</span></th>') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 
-    if (multi && !ro) {
-      var sel = d.uploadCol && cols.some(function (m) { return m.id === d.uploadCol; }) ? d.uploadCol : cols[0].id;
-      out += '<div class="doc-type"><label for="doc-col">Type du document à déposer</label><select id="doc-col" class="select">' +
-        cols.map(function (m) { return '<option value="' + esc(m.id) + '"' + (m.id === sel ? ' selected' : '') + '>' + esc(displayLabel(m)) + '</option>'; }).join('') + '</select></div>';
+    if (!ro) {
+      if (d.ask) {
+        out += askPjHtml(d.ask);
+      } else {
+        out += '<span class="hint">Le document est classé automatiquement selon son nom (RIB, CNI, Diplôme…)' + (pj ? ' ; à défaut, il est déposé dans « Pièces jointes » et son nom à afficher est demandé.' : '.') + '</span>';
+        out += '<div class="doc-drop' + (d.busy ? ' is-busy' : '') + '" id="doc-drop" role="button" tabindex="0" aria-label="Déposer un document : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (d.busy ? 'true' : 'false') + '">' +
+          ICON_UPLOAD + '<p><strong>' + (d.busy ? 'Envoi en cours…' : 'Glissez-déposez un fichier ici') + '</strong>' + (d.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
+      }
     }
-    if (!ro) out += '<div class="doc-drop' + (d.busy ? ' is-busy' : '') + '" id="doc-drop" role="button" tabindex="0" aria-label="Déposer un document : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (d.busy ? 'true' : 'false') + '">' +
-      ICON_UPLOAD + '<p><strong>' + (d.busy ? 'Envoi en cours…' : 'Glissez-déposez un fichier ici') + '</strong>' + (d.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
     return out + othersHtml;
+  }
+  // Nom à afficher demandé pour chaque document qui ira dans « PJ » (aucun type reconnu dans son nom).
+  function askPjHtml(a) {
+    var n = a.items.length;
+    return '<div class="ask" role="group" aria-label="Nom à afficher">' +
+      '<p class="hint">' + (n > 1 ? 'Ces documents ne correspondent à aucun type reconnu : indiquez le nom à afficher pour chacun.' : 'Ce document ne correspond à aucun type reconnu : indiquez le nom à afficher.') + '<span class="req" aria-hidden="true">*</span></p>' +
+      a.items.map(function (it, i) {
+        return '<div class="pjask-row"><label for="pjask-' + i + '">' + esc(it.file.name) + '</label>' +
+          '<input id="pjask-' + i + '" class="input" type="text" autocomplete="off" data-pjidx="' + i + '" value="' + esc(it.name) + '"' + (it.error ? ' aria-invalid="true"' : '') + '>' +
+          (it.error ? '<p class="ed-error" role="alert">' + esc(it.error) + '</p>' : '') + '</div>';
+      }).join('') +
+      '<div class="ed-actions"><button type="button" class="btn sm" data-pjask-act="ok"' + (a.busy ? ' disabled' : '') + '>' + (a.busy ? 'Envoi…' : 'Ajouter') + '</button>' +
+      '<button type="button" class="btn secondary sm" data-pjask-act="cancel"' + (a.busy ? ' disabled' : '') + '>Annuler</button></div></div>';
   }
 
   // Résout les liens de téléchargement (jeton Grist) une fois le panneau affiché.
@@ -2115,21 +2330,68 @@
   }
   function saveAttachments(item, c, colId, list) { return api.updateCell(c.table, item.raw.id, colId, ['L'].concat(list)); }
 
-  function uploadFiles(files, colId) {
+  // Point d'entrée du dépôt : si un ou plusieurs fichiers n'ont aucun type reconnu, demande d'abord leur nom à afficher.
+  function queueUpload(files) {
+    var c = cfg(), pj = pjCol(c);
+    if (!pj) return uploadFiles(files, []);
+    var matched = [], items = [];
+    files.forEach(function (f) {
+      if (detectDocCol(c, f.name)) matched.push(f); else items.push({ file: f, name: baseFileName(f.name), error: '' });
+    });
+    if (!items.length) return uploadFiles(files, []);
+    state.docs.ask = { matched: matched, items: items, busy: false };
+    renderModal();
+  }
+  function confirmPjAsk() {
+    var a = state.docs.ask; if (!a || a.busy) return;
+    var bad = false;
+    a.items.forEach(function (it) { var v = it.name.trim(); if (v) it.error = ''; else { it.error = 'Indiquez le nom à afficher.'; bad = true; } });
+    if (bad) { renderModal(); return; }
+    var pjItems = a.items.map(function (it) { return { file: it.file, name: it.name.trim().replace(/,/g, ' ') }; });
+    var files = a.matched.concat(pjItems.map(function (x) { return x.file; }));
+    state.docs.ask = null;
+    uploadFiles(files, pjItems);
+  }
+  // Répartit les fichiers déposés entre leur colonne détectée et « PJ » (à défaut), en associant à chaque fichier de « PJ »
+  // son nom à afficher (déjà saisi, ou sinon son nom de fichier), puis enregistre chaque colonne modifiée.
+  function uploadFiles(files, pjItems) {
     docOp(files.length > 1 ? files.length + ' documents ajoutés.' : 'Document ajouté.', function (item, c) {
-      return files.reduce(function (p, f) { return p.then(function (acc) { return api.uploadAttachment(f).then(function (id) { return acc.concat(id); }); }); }, Promise.resolve([]))
-        .then(function (added) { return saveAttachments(item, c, colId, attIds(item, colId).concat(added)); });
+      var pj = pjCol(c), fallback = attCols(c, docTabIds(c))[0], groups = {}, order = [], pjNames = [];
+      files.forEach(function (f) {
+        var col = detectDocCol(c, f.name) || pj || fallback; if (!col) return;
+        if (!groups[col.id]) { groups[col.id] = { col: col, files: [] }; order.push(col.id); }
+        groups[col.id].files.push(f);
+        if (pj && col.id === pj.id) {
+          var given = (pjItems || []).filter(function (x) { return x.file === f; })[0];
+          pjNames.push(given ? given.name : baseFileName(f.name));
+        }
+      });
+      return order.reduce(function (p, colId) {
+        return p.then(function () {
+          var g = groups[colId];
+          return g.files.reduce(function (pp, f) { return pp.then(function (acc) { return api.uploadAttachment(f).then(function (id) { return acc.concat(id); }); }); }, Promise.resolve([]))
+            .then(function (added) { return saveAttachments(item, c, colId, attIds(item, colId).concat(added)); });
+        });
+      }, Promise.resolve()).then(function () { return pjNames.length ? setNomPjList(item, c, nomPjList(item, c).concat(pjNames)) : null; });
     });
   }
   function replaceFile(file, colId, oldId) {
     docOp('Document remplacé.', function (item, c) {
       return api.uploadAttachment(file).then(function (id) {
         return saveAttachments(item, c, colId, attIds(item, colId).map(function (x) { return x === oldId ? id : x; }));
-      });
+      }); // le nom à afficher (le cas échéant) reste attaché à la même position, il n'est pas redemandé.
     });
   }
   function deleteFile(colId, id) {
-    docOp('Document supprimé.', function (item, c) { return saveAttachments(item, c, colId, attIds(item, colId).filter(function (x) { return x !== id; })); });
+    docOp('Document supprimé.', function (item, c) {
+      var idx = isPjCol(c, colId) ? attIds(item, colId).indexOf(id) : -1;
+      return saveAttachments(item, c, colId, attIds(item, colId).filter(function (x) { return x !== id; }))
+        .then(function () {
+          if (idx === -1) return null;
+          var names = nomPjList(item, c); if (idx >= names.length) return null;
+          names.splice(idx, 1); return setNomPjList(item, c, names);
+        });
+    });
   }
 
   /* ----- Édition au clic d'un champ de la fiche ----- */
@@ -2537,7 +2799,7 @@
 
   function openModal(index, opener) {
     if (!state.view[index]) return;
-    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
+    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
     if (!state.modal.tab) state.modal.tab = 'info';
     // Doublon = oui : les deux fiches s'ouvrent côte à côte.
     exitCompare();
@@ -2568,7 +2830,7 @@
   function stepModal(delta) {
     var i = state.modal.index + delta;
     if (i < 0 || i >= state.view.length) return;
-    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
+    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
     // Le candidat suivant peut lui aussi être un doublon : on rouvre proprement (comparaison ou fiche simple).
     var rec = recById(state.view[i].raw.id), c = cfg();
     exitCompare();
@@ -2651,13 +2913,23 @@
       return;
     }
     if (e.target.closest('a[data-dl]')) { var a = e.target.closest('a[data-dl]'); if (!a.getAttribute('href') || a.getAttribute('href') === '#') e.preventDefault(); return; }
+    var pjb = e.target.closest('[data-pjask-act]');
+    if (pjb) { if (pjb.getAttribute('data-pjask-act') === 'ok') confirmPjAsk(); else { d.ask = null; renderModal(); } return; }
     var zone = e.target.closest('#doc-drop');
-    if (zone && !d.busy) pickFiles(true, function (files) { uploadFiles(files, currentUploadCol()); });
+    if (zone && !d.busy && !d.ask) pickFiles(true, function (files) { queueUpload(files); });
   });
   panels.addEventListener('keydown', function (e) {
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'doc-drop' && !state.docs.busy) { e.preventDefault(); pickFiles(true, function (files) { uploadFiles(files, currentUploadCol()); }); }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'doc-drop' && !state.docs.busy) { e.preventDefault(); pickFiles(true, function (files) { queueUpload(files); }); }
+    if (e.target.closest('.pjask-row')) {
+      if (e.key === 'Enter') { e.preventDefault(); confirmPjAsk(); }
+      else if (e.key === 'Escape') { e.preventDefault(); state.docs.ask = null; renderModal(); }
+    }
   });
-  panels.addEventListener('change', function (e) { if (e.target.id === 'doc-col') state.docs.uploadCol = e.target.value; });
+  panels.addEventListener('input', function (e) {
+    var idx = e.target.getAttribute && e.target.getAttribute('data-pjidx');
+    if (idx == null || !state.docs.ask) return;
+    var it = state.docs.ask.items[+idx]; if (it) { it.name = e.target.value; it.error = ''; }
+  });
   ['dragenter', 'dragover'].forEach(function (t) {
     panels.addEventListener(t, function (e) { var z = e.target.closest('#doc-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } });
   });
@@ -2665,16 +2937,11 @@
   panels.addEventListener('drop', function (e) {
     var z = e.target.closest('#doc-drop'); if (!z) return;
     e.preventDefault(); z.classList.remove('is-over');
-    if (state.docs.busy || !e.dataTransfer || !e.dataTransfer.files.length) return;
-    uploadFiles(Array.prototype.slice.call(e.dataTransfer.files), currentUploadCol());
+    if (state.docs.busy || state.docs.ask || !e.dataTransfer || !e.dataTransfer.files.length) return;
+    queueUpload(Array.prototype.slice.call(e.dataTransfer.files));
   });
   // Empêche le navigateur d'ouvrir un fichier lâché à côté de la zone.
   ['dragover', 'drop'].forEach(function (t) { $('modal').addEventListener(t, function (e) { if (!e.target.closest('#doc-drop')) e.preventDefault(); }); });
-  function currentUploadCol() {
-    var item = state.view[state.modal.index], cols = item ? attCols(cfg(), docTabIds(cfg())) : [];
-    var want = state.docs.uploadCol;
-    return (cols.filter(function (m) { return m.id === want; })[0] || cols[0] || {}).id;
-  }
 
   $('modal-prev').addEventListener('click', function () { stepModal(-1); });
   $('modal-next').addEventListener('click', function () { stepModal(1); });
@@ -2683,7 +2950,7 @@
     $(cfgTab[0]).addEventListener('click', function (e) {
       var b = e.target.closest('[data-tab]'); if (!b) return;
       if (cfgTab[0] === 'modal2-tabs' && !state.cmp.active) { state.esr.tab = b.getAttribute('data-tab'); renderModal(); var nb2 = $('mt2-' + state.esr.tab); if (nb2) nb2.focus(); return; } // fiche du réserviste (Déjà ESR)
-      state.modal.tab = b.getAttribute('data-tab'); state.docs.msg = null; state.docs.confirm = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null; renderModal();
+      state.modal.tab = b.getAttribute('data-tab'); state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null; renderModal();
       var nb = $(cfgTab[1] + state.modal.tab); if (nb) nb.focus();
     });
   });
@@ -2988,6 +3255,7 @@
   ];
   var CREATE_REQUIRED = ['NOM', 'Prénom', 'DDN', 'Email', 'N° candidature', 'Affectation'];
   state.create = null; // { values, error, warn, confirmDup, busy }
+  state.bulk = null;   // { mode, psyResult, psyDate, vemiResult, vemiDate, vemiValidity, nigends, busy, error, warn, confirm, result }
 
   function createColumns(c) {
     return CREATE_SECTIONS.map(function (s) {
@@ -3111,6 +3379,225 @@
     }
   });
 
+  /* ---------- Mise à jour en bloc (Tests psy ou VEMI) ---------- */
+  function parseNigendList(text) {
+    var seen = {}, out = [];
+    String(text || '').split(/[\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (n) {
+      var k = norm(n); if (!seen[k]) { seen[k] = true; out.push(n); }
+    });
+    return out;
+  }
+  // Chaque ligne est reconnue automatiquement comme un N° de candidature ou un NID (l'un ou l'autre, sans distinction à la saisie).
+  function matchByIdentifier(c, list) {
+    var candCol = findCol(c.table, 'N° candidature'), nidCol = findCol(c.table, 'NID'), matched = [], notFound = [];
+    if (!candCol && !nidCol) return { col: null, matched: matched, notFound: list };
+    list.forEach(function (n) {
+      var k = norm(n);
+      var rec = (candCol && state.records.filter(function (r) { return norm(String(r.raw[candCol.id] || '')) === k; })[0]) ||
+        (nidCol && state.records.filter(function (r) { return norm(String(r.raw[nidCol.id] || '')) === k; })[0]);
+      if (rec) matched.push({ nigend: n, rec: rec }); else notFound.push(n);
+    });
+    return { col: candCol || nidCol, matched: matched, notFound: notFound };
+  }
+  // Champ de saisie adapté au type de la colonne (même logique que controlHtml, avec une clé d'état libre en data-bulk).
+  function bulkCtl(col, id, key, v) {
+    var t = typeBase(col.type), attr = ' id="' + id + '" data-bulk="' + key + '" aria-label="' + esc(displayLabel(col)) + '"';
+    if (t === 'Choice' && col.choices) {
+      return '<select class="select"' + attr + '><option value=""></option>' + col.choices.map(function (o) { return '<option value="' + esc(o) + '"' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') +
+        (v && col.choices.indexOf(v) === -1 ? '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>' : '') + '</select>';
+    }
+    if (t === 'DateTime') return '<input type="datetime-local" class="input"' + attr + ' value="' + esc(v) + '">';
+    if (t === 'Date') return '<input type="date" class="input"' + attr + ' value="' + esc(v) + '">';
+    return '<input type="text" class="input"' + attr + ' value="' + esc(v) + '" autocomplete="off"' + (isScheduleCol(col) ? ' placeholder="JJ/MM/AAAA HH:mm"' : '') + '>';
+  }
+  function openBulk() {
+    var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
+    state.bulk = { mode: 'psy', psyResult: '', psyDate: '', vemiResult: '', vemiDate: '', vemiValidity: '', nigends: '', busy: false, error: '', warn: '', confirm: false, result: null };
+    renderBulkForm();
+    var ov = $('bmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('bmodal-form').querySelector('input, select'); if (f) f.focus(); }); });
+  }
+  function closeBulk() {
+    var ov = $('bmodal'); if (ov.hidden) return;
+    var reload = !!(state.bulk && state.bulk.result);
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.bulk = null;
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-bulk').focus();
+    if (reload) load();
+  }
+  function renderBulkForm() {
+    var c = cfg(), b = state.bulk; if (!b) return;
+    if (b.result) {
+      $('bmodal-form').innerHTML =
+        '<div class="doc-alert ' + (b.result.failed.length ? 'error' : 'success') + '" role="' + (b.result.failed.length ? 'alert' : 'status') + '"><p>' +
+        esc(b.result.ok + ' candidat' + (b.result.ok > 1 ? 's' : '') + ' mis à jour (' + b.result.summary + ')' +
+          (b.result.failed.length ? ' · ' + b.result.failed.length + ' échec' + (b.result.failed.length > 1 ? 's' : '') + ' : ' +
+            b.result.failed.map(function (f) { return f.nigend + ' (' + f.error + ')'; }).join(', ') : '') + '.') + '</p></div>' +
+        '<div class="cf-actions"><button type="button" class="btn" id="bf-close2">Fermer</button><button type="button" class="btn secondary" id="bf-again">Nouvelle mise à jour</button></div>';
+      return;
+    }
+    var html = (b.error ? '<div class="doc-alert error" role="alert"><p>' + esc(b.error) + '</p></div>' : '') +
+      (b.warn ? '<div class="cf-warn" role="alert"><p>' + esc(b.warn) + '</p></div>' : '');
+
+    html += '<section class="cf-section"><h3>Que mettre à jour</h3><div class="bulk-modes" role="radiogroup" aria-label="Que mettre à jour">' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="psy"' + (b.mode === 'psy' ? ' checked' : '') + '> Résultats des tests psychométriques</label>' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="vemi"' + (b.mode === 'vemi' ? ' checked' : '') + '> Résultats de la VEMI</label>' +
+      '</div></section>';
+
+    if (b.mode === 'psy') {
+      var resCol = findCol(c.table, 'Tests psy');
+      html += '<section class="cf-section"><h3>Tests psy</h3><div class="cf-grid">' +
+        (resCol ? '<div class="cf-field"><label for="bf-psy-res">Résultat<span class="req" aria-hidden="true">*</span></label>' + bulkCtl(resCol, 'bf-psy-res', 'psyResult', b.psyResult) + '</div>' : '') +
+        '</div>' + (!resCol ? '<span class="hint">Colonne introuvable dans cette table : Tests psy.</span>' : '') + '</section>';
+    } else {
+      var resCol2 = findCol(c.table, 'VEMI'), validCol = findCol(c.table, 'Validité VEMI');
+      var miss2 = [!resCol2 && 'VEMI', !validCol && 'Validité VEMI'].filter(Boolean);
+      html += '<section class="cf-section"><h3>VEMI</h3><div class="cf-grid">' +
+        (resCol2 ? '<div class="cf-field"><label for="bf-vemi-res">Résultat<span class="req" aria-hidden="true">*</span></label>' + bulkCtl(resCol2, 'bf-vemi-res', 'vemiResult', b.vemiResult) + '</div>' : '') +
+        (validCol ? '<div class="cf-field"><label for="bf-vemi-valid">Validité VEMI</label>' + bulkCtl(validCol, 'bf-vemi-valid', 'vemiValidity', b.vemiValidity) + '</div>' : '') +
+        '</div><span class="hint">' + (validCol ? 'Laissez la validité vide pour ne pas la modifier.' : '') + (miss2.length ? ' Colonne introuvable dans cette table : ' + esc(miss2.join(', ')) + '.' : '') + '</span></section>';
+    }
+
+    html += '<section class="cf-section"><h3>Candidats concernés</h3><div class="cf-field">' +
+      '<label for="bf-nigends">Par N° de candidature ou NID<span class="req" aria-hidden="true">*</span> — un par ligne</label>' +
+      '<textarea class="textarea" id="bf-nigends" data-bulk="nigends" rows="5" placeholder="PMG-2026-0451&#10;1042871">' + esc(b.nigends) + '</textarea></div></section>' +
+      '<div class="cf-actions"><button type="submit" class="btn"' + (b.busy ? ' disabled' : '') + '>' + (b.busy ? 'Mise à jour…' : (b.confirm ? 'Mettre à jour quand même' : 'Mettre à jour')) + '</button>' +
+      '<button type="button" class="btn secondary" id="bf-cancel"' + (b.busy ? ' disabled' : '') + '>Annuler</button></div>';
+    $('bmodal-form').innerHTML = html;
+  }
+  function submitBulk() {
+    var c = cfg(), b = state.bulk; if (!b || b.busy) return;
+    var list = parseNigendList(b.nigends);
+    if (!list.length) { b.error = 'Indiquez au moins un N° de candidature ou NID.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+
+    var fields = {}, summary;
+    if (b.mode === 'psy') {
+      var resCol = findCol(c.table, 'Tests psy');
+      if (!resCol) { b.error = 'La colonne Tests psy est introuvable dans cette table.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      if (!b.psyResult) { b.error = 'Le résultat est obligatoire.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      fields[resCol.id] = b.psyResult;
+      summary = 'Tests psy';
+    } else {
+      var resCol2 = findCol(c.table, 'VEMI'), validCol = findCol(c.table, 'Validité VEMI');
+      if (!resCol2) { b.error = 'La colonne VEMI est introuvable dans cette table.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      if (!b.vemiResult) { b.error = 'Le résultat est obligatoire.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      fields[resCol2.id] = b.vemiResult;
+      if (validCol && b.vemiValidity) {
+        var p3 = parseEdit(validCol, b.vemiValidity);
+        if (p3.error) { b.error = displayLabel(validCol) + ' : ' + p3.error; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+        fields[validCol.id] = p3.value;
+      }
+      summary = 'VEMI';
+    }
+
+    var m = matchByIdentifier(c, list);
+    if (!m.col) { b.error = 'Les colonnes N° de candidature et NID sont introuvables dans cette table.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (!m.matched.length) { b.error = 'Aucun candidat ne correspond aux N° de candidature / NID saisis.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (m.notFound.length && !b.confirm) {
+      b.warn = m.notFound.length + ' identifiant' + (m.notFound.length > 1 ? 's introuvables' : ' introuvable') + ' (' + m.notFound.join(', ') + '). ' +
+        m.matched.length + ' candidat' + (m.matched.length > 1 ? 's seront mis à jour' : ' sera mis à jour') + '.';
+      b.confirm = true; b.error = ''; renderBulkForm(); return;
+    }
+
+    b.busy = true; b.error = ''; renderBulkForm();
+    var failed = [];
+    m.matched.reduce(function (p, item) {
+      return p.then(function () { return api.updateFields(c.table, item.rec.raw.id, fields).catch(function (e) { failed.push({ nigend: item.nigend, error: (e && e.message) || String(e) }); }); });
+    }, Promise.resolve()).then(function () {
+      b.busy = false; b.confirm = false; b.warn = '';
+      b.result = { ok: m.matched.length - failed.length, failed: failed, summary: summary };
+      return load();
+    }).then(function () { if (!$('bmodal').hidden) renderBulkForm(); });
+  }
+  function readBulkField(el) {
+    var b = state.bulk, k = el.getAttribute && el.getAttribute('data-bulk'); if (!b || !k) return;
+    b[k] = el.value; b.error = ''; b.warn = ''; b.confirm = false; b.result = null;
+  }
+  $('btn-bulk').addEventListener('click', openBulk);
+  $('bmodal-close').addEventListener('click', closeBulk);
+  $('bmodal').addEventListener('mousedown', function (e) { if (e.target === $('bmodal') && !(state.bulk && state.bulk.busy)) closeBulk(); });
+  $('bmodal-form').addEventListener('submit', function (e) { e.preventDefault(); submitBulk(); });
+  $('bmodal-form').addEventListener('click', function (e) {
+    if (e.target.id === 'bf-cancel') closeBulk();
+    else if (e.target.id === 'bf-close2') closeBulk();
+    else if (e.target.id === 'bf-again') openBulk();
+  });
+  $('bmodal-form').addEventListener('input', function (e) { readBulkField(e.target); });
+  $('bmodal-form').addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.name === 'bulk-mode') { state.bulk.mode = el.value; state.bulk.error = ''; state.bulk.warn = ''; state.bulk.confirm = false; renderBulkForm(); return; }
+    readBulkField(el);
+  });
+  $('bmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.bulk && state.bulk.busy)) closeBulk(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('bmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select, textarea'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
+  /* ---------- Filtre avancé (Tests psy, VEMI, Grade, Corps, Déjà ESR, Doublon) ---------- */
+  var ADV_CHOICE_GROUPS = [
+    { key: 'psy', title: 'Tests psy', label: 'Tests psy' },
+    { key: 'vemi', title: 'VEMI', label: 'VEMI' },
+    { key: 'grade', title: 'Grade', label: 'Grade' },
+    { key: 'corps', title: 'Corps', label: 'Corps' }
+  ];
+  var ADV_BOOL_GROUPS = [{ key: 'esr', title: 'Déjà ESR' }, { key: 'dup', title: 'Doublon' }];
+  function advColValues(c, label) {
+    var col = findCol(c.table, label), set = {};
+    (col && col.choices || []).forEach(function (v) { set[v] = true; });
+    state.records.forEach(function (r) { valuesOfCol(r, col).forEach(function (v) { set[v] = true; }); });
+    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' }); });
+  }
+  function renderAdvFilters() {
+    var c = cfg();
+    var choiceHtml = ADV_CHOICE_GROUPS.map(function (g) {
+      var opts = advColValues(c, g.label).map(function (v) { return { value: v, label: v }; }).concat([{ value: NO_VALUE, label: 'Non renseigné' }]);
+      var rows = opts.map(function (o) {
+        return '<label class="ms-opt"><input type="checkbox" data-adv="' + g.key + '" value="' + esc(o.value) + '"' + (filters[g.key].indexOf(o.value) !== -1 ? ' checked' : '') + '> <span>' + esc(o.label) + '</span></label>';
+      }).join('');
+      return '<section class="cf-section"><h3>' + esc(g.title) + '</h3><div class="ms-group">' + rows + '</div></section>';
+    }).join('');
+    var boolHtml = ADV_BOOL_GROUPS.map(function (g) {
+      var rows = ['oui', 'non'].map(function (v) {
+        return '<label class="ms-opt"><input type="checkbox" data-adv="' + g.key + '" value="' + v + '"' + (filters[g.key].indexOf(v) !== -1 ? ' checked' : '') + '> <span>' + (v === 'oui' ? 'Oui' : 'Non') + '</span></label>';
+      }).join('');
+      return '<section class="cf-section"><h3>' + esc(g.title) + '</h3><div class="ms-group">' + rows + '</div></section>';
+    }).join('');
+    $('fmodal-body').innerHTML = choiceHtml + boolHtml;
+  }
+  $('btn-filters').addEventListener('click', function () {
+    renderAdvFilters();
+    var ov = $('fmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('fmodal-close').focus(); }); });
+  });
+  function closeAdvFilters() {
+    var ov = $('fmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = '';
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-filters').focus();
+  }
+  $('fmodal-close').addEventListener('click', closeAdvFilters);
+  $('fmodal-ok').addEventListener('click', closeAdvFilters);
+  $('fmodal').addEventListener('mousedown', function (e) { if (e.target === $('fmodal')) closeAdvFilters(); });
+  $('fmodal-body').addEventListener('change', function (e) {
+    var cb = e.target, key = cb.getAttribute('data-adv'); if (!key) return;
+    var arr = filters[key], i = arr.indexOf(cb.value);
+    if (cb.checked && i === -1) arr.push(cb.value); else if (!cb.checked && i !== -1) arr.splice(i, 1);
+    renderList();
+  });
+  $('fmodal-reset').addEventListener('click', function () { ADV_KEYS.forEach(function (k) { filters[k] = []; }); renderAdvFilters(); renderList(); });
+  $('fmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAdvFilters(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('fmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden])'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
   /* ---------- Back office : barre d'enregistrement, variables ---------- */
   function setDirty(d) {
     $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
@@ -3203,7 +3690,7 @@
     opts: {}, draft: {}, tables: [], colsByTable: {}, boundTable: null,
     records: [], view: [], read: null, sortDir: 1,
     modal: { index: -1, tab: 'info', opener: null, rowId: null },
-    edit: null, create: null
+    edit: null, create: null, bulk: null
   };
 
   // Identifiants de cette page préfixés « r- » (la première page du widget utilise les mêmes noms sans préfixe).
@@ -3229,6 +3716,7 @@
     ['Grade', 'Choice'], ['Civilité', 'Choice'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Nigend', 'Text'], ['Type R', 'Choice'], ['Affectation', 'Choice'], ['NID', 'Text'], ['DDN', 'Date'], ['Age', 'Int'],
     ['Ville', 'Text'], ['Dpt', 'Text'], ['Affectation précise', 'Text'], ['Adresse email', 'Text'], ['Téléphone', 'Text'], ['Mouvement', 'Choice'], ['Exp. contrat', 'Date'], ['Exp. VMP', 'Date'],
     ['Exp. tir PA', 'Date'], ['Exp. tir HK', 'Date'], ['Qualité jud', 'Choice'], ['N° ESR', 'Text'], ['Date contrat', 'Date'], ['Date de début contrat', 'Date'],
+    ['Etat CIAPT', 'Choice'], ['Etat VMP', 'Choice'], ['Etat contrat', 'Choice'],
     ['Créé le', 'DateTime:Europe/Paris'], ['Créé par', 'Text'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ];
   var DEMO_CHOICES = {
@@ -3236,7 +3724,7 @@
     'Mouvement': ['Arrivée', 'Mutation', 'Départ'], 'Qualité jud': ['OPJ', 'APJ', 'APJA']
   };
   var DEMO_ROWS_BY_LABEL = [
-    { 'Grade': 'MDC', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
+    { 'Grade': 'MDC', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Etat CIAPT': 'Apte', 'Etat VMP': 'Apte avec réserve', 'Etat contrat': 'En cours', 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
     { 'Grade': 'GAV', 'Civilité': 'Mme', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Nigend': '2019-1120', 'Type R': 'RS', 'Affectation': 'GD 38', 'NID': '1020871', 'DDN': d(1996, 11, 2), 'Age': 29, 'Ville': 'Grenoble', 'Dpt': '38', 'Adresse email': 'camille.perrin@example.fr', 'Téléphone': '755667788', 'Mouvement': 'Mutation', 'Exp. contrat': d(2026, 8, 31), 'Exp. VMP': d(2026, 5, 15), 'Exp. tir PA': d(2026, 10, 12), 'Exp. tir HK': d(2026, 10, 12), 'Qualité jud': 'APJ', 'N° ESR': 'ESR-2023-207', 'Date contrat': d(2023, 8, 20), 'Date de début contrat': d(2023, 9, 1) },
     { 'Grade': 'BRI', 'Civilité': 'M.', 'NOM': 'Garnier', 'Prénom': 'Lucas', 'Nigend': '2022-0555', 'Type R': 'RC', 'Affectation': 'GD 73', 'NID': '1031420', 'DDN': d(2000, 1, 25), 'Age': 26, 'Ville': 'Chambéry', 'Dpt': '73', 'Adresse email': 'lucas.garnier@example.fr', 'Téléphone': '06 98 76 54 32', 'Exp. contrat': d(2028, 2, 28), 'Exp. VMP': d(2027, 6, 30), 'Exp. tir PA': d(2027, 4, 5), 'Exp. tir HK': d(2027, 4, 5), 'N° ESR': 'ESR-2022-310', 'Date contrat': d(2022, 2, 10), 'Date de début contrat': d(2022, 3, 1) },
     { 'Grade': 'ADJ', 'Civilité': 'Mme', 'NOM': 'Robin', 'Prénom': 'Sophie', 'Nigend': '2008-0210', 'Type R': 'RO1', 'Affectation': 'GD 01', 'NID': '1000456', 'DDN': d(1978, 7, 14), 'Age': 48, 'Ville': 'Bourg-en-Bresse', 'Dpt': '01', 'Adresse email': 'sophie.robin@example.fr', 'Téléphone': '06 44 55 66 77', 'Exp. contrat': d(2029, 12, 31), 'Exp. VMP': d(2027, 2, 1), 'Exp. tir PA': d(2027, 2, 1), 'Exp. tir HK': d(2027, 2, 1), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2019-012', 'Date contrat': d(2019, 12, 1), 'Date de début contrat': d(2020, 1, 1) },
@@ -3442,11 +3930,14 @@
   }
 
   /* ---------- Liste : recherche, filtres ---------- */
-  var filters = { a: [], b: [] };   // a : colonne affichée en tags (Type R) ; b : Affectation. Vide = tout afficher.
+  // a : colonne affichée en tags (Type R) ; b : Affectation ; tir/vmp/contrat : état de l'échéance ; grade, qual : Grade et Qualité judiciaire. Vide = tout afficher.
+  var filters = { a: [], b: [], tir: [], vmp: [], contrat: [], grade: [], qual: [] };
+  var ADV_KEYS = ['tir', 'vmp', 'contrat', 'grade', 'qual'];
   var filterSig = '';
   var MS = { a: { btn: 'flt-a-btn', panel: 'flt-a-panel', root: 'flt-a' }, b: { btn: 'flt-b-btn', panel: 'flt-b-panel', root: 'flt-b' } };
   function valuesOfCol(rec, col) { return col ? toList(rec.raw[col.id]) : []; }
-  function filtersActive() { return filters.a.length > 0 || filters.b.length > 0 || $('q').value.trim() !== ''; }
+  function advActive() { return ADV_KEYS.some(function (k) { return filters[k].length > 0; }); }
+  function filtersActive() { return filters.a.length > 0 || filters.b.length > 0 || advActive() || $('q').value.trim() !== ''; }
 
   function renderFilters(c) {
     var ta = tagCol(c), cb = findCol(c.table, 'Affectation');
@@ -3472,6 +3963,8 @@
     $('flt-a-btn').textContent = na === 0 ? (isType ? 'Tous les types' : 'Toutes les valeurs') : (na === 1 ? filters.a[0] : na + (isType ? ' types sélectionnés' : ' valeurs sélectionnées'));
     $('flt-b-btn').textContent = nb === 0 ? 'Toutes les affectations' : (nb === 1 ? filters.b[0] : nb + ' affectations sélectionnées');
     $('flt-reset').disabled = !filtersActive();
+    var nAdv = ADV_KEYS.reduce(function (n, k) { return n + filters[k].length; }, 0);
+    $('btn-filters').textContent = 'Filtre avancé' + (nAdv ? ' (' + nAdv + ')' : '');
   }
   function closeMs(key, returnFocus) {
     var m = MS[key], p = $(m.panel); if (p.hidden) return;
@@ -3493,10 +3986,71 @@
     $(m.root).addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); closeMs(key, true); } });
   });
   $('flt-reset').addEventListener('click', function () {
-    filters.a = []; filters.b = []; $('q').value = ''; filterSig = '';
+    filters.a = []; filters.b = []; ADV_KEYS.forEach(function (k) { filters[k] = []; }); $('q').value = ''; filterSig = '';
     Object.keys(MS).forEach(function (k) { closeMs(k, false); }); renderList();
   });
   document.addEventListener('mousedown', function (e) { Object.keys(MS).forEach(function (k) { if (!e.target.closest('#r-' + MS[k].root)) closeMs(k, false); }); });
+
+  /* ---------- Filtre avancé (état Tir/VMP/Contrat, Grade, Qualité judiciaire) ---------- */
+  var ADV_GROUPS = [
+    { key: 'tir', title: 'État Tir', kind: 'state' },
+    { key: 'vmp', title: 'État VMP', kind: 'state' },
+    { key: 'contrat', title: 'État Contrat', kind: 'state' },
+    { key: 'grade', title: 'Grade', kind: 'col', label: 'Grade' },
+    { key: 'qual', title: 'Qualité judiciaire', kind: 'col', label: 'Qualité jud' }
+  ];
+  var STATE_ORDER = ['expired', 'soon', 'ok', 'none'];
+  function advColValues(c, label) {
+    var col = findCol(c.table, label), set = {};
+    (col && col.choices || []).forEach(function (v) { set[v] = true; });
+    state.records.forEach(function (r) { valuesOfCol(r, col).forEach(function (v) { set[v] = true; }); });
+    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' }); });
+  }
+  function recStateOf(r, c, key) {
+    var def = STATUS_DEFS.filter(function (d) { return norm(d.name) === key; })[0];
+    return def ? statusOfDef(r.raw, c, def).state : 'none';
+  }
+  function renderAdvFilters() {
+    var c = cfg();
+    $('fmodal-body').innerHTML = ADV_GROUPS.map(function (g) {
+      var opts = g.kind === 'state'
+        ? STATE_ORDER.map(function (s) { var t = STATE_TXT[s]; return { value: s, html: '<span class="fr-tag fr-tag--sm tag-c-' + t[1] + '">' + esc(g.title.replace('État ', '') + ' ' + t[0]) + '</span>' }; })
+        : advColValues(c, g.label).map(function (v) { return { value: v, html: '<span>' + esc(v) + '</span>' }; });
+      var rows = opts.length ? opts.map(function (o) {
+        return '<label class="ms-opt"><input type="checkbox" data-adv="' + g.key + '" value="' + esc(o.value) + '"' + (filters[g.key].indexOf(o.value) !== -1 ? ' checked' : '') + '> ' + o.html + '</label>';
+      }).join('') : '<p class="ms-empty">Aucune valeur.</p>';
+      return '<section class="cf-section"><h3>' + esc(g.title) + '</h3><div class="ms-group">' + rows + '</div></section>';
+    }).join('');
+  }
+  $('btn-filters').addEventListener('click', function () {
+    renderAdvFilters();
+    var ov = $('fmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('fmodal-close').focus(); }); });
+  });
+  function closeAdvFilters() {
+    var ov = $('fmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = '';
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-filters').focus();
+  }
+  $('fmodal-close').addEventListener('click', closeAdvFilters);
+  $('fmodal-ok').addEventListener('click', closeAdvFilters);
+  $('fmodal').addEventListener('mousedown', function (e) { if (e.target === $('fmodal')) closeAdvFilters(); });
+  $('fmodal-body').addEventListener('change', function (e) {
+    var cb = e.target, key = cb.getAttribute('data-adv'); if (!key) return;
+    var arr = filters[key], i = arr.indexOf(cb.value);
+    if (cb.checked && i === -1) arr.push(cb.value); else if (!cb.checked && i !== -1) arr.splice(i, 1);
+    renderList();
+  });
+  $('fmodal-reset').addEventListener('click', function () { ADV_KEYS.forEach(function (k) { filters[k] = []; }); renderAdvFilters(); renderList(); });
+  $('fmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAdvFilters(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('fmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden])'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
 
   // Recherche : nom, valeur des tags et colonnes des blocs « État civil », « Coordonnées », « Identifiants » et « Affectation ».
   function searchColumns(c) {
@@ -3512,10 +4066,10 @@
   }
   function matchesSearch(hay, terms) { return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-\/]/g, '')) !== -1; }); }
 
-  // États affichés en tags après le nom : Tir (Exp. tir PA / HK), Médical (Exp. VMP) et Contrat (Exp. contrat).
+  // États affichés en tags après le nom : Tir (Exp. tir PA / HK), VMP (Exp. VMP) et Contrat (Exp. contrat).
   var STATUS_DEFS = [
     { name: 'Tir', cols: ['Exp. tir PA', 'Exp. tir HK'] },
-    { name: 'Médical', cols: ['Exp. VMP'] },
+    { name: 'VMP', cols: ['Exp. VMP'] },
     { name: 'Contrat', cols: ['Exp. contrat'] }
   ];
   var STATE_TXT = { expired: ['expiré', 'red'], soon: ['expire bientôt', 'orange'], ok: ['à jour', 'green'], none: ['non renseigné', 'grey'] };
@@ -3531,14 +4085,18 @@
     });
     return { state: worst, detail: dates.join(' · ') };
   }
+  // Le code couleur seul étant équivoque, le tag n'affiche que la catégorie (Tir, VMP, Contrat) ; le détail (état, échéances) est dans l'info-bulle.
   function statusTagsHtml(raw, c) {
     return STATUS_DEFS.map(function (def) {
       var s = statusOfDef(raw, c, def), t = STATE_TXT[s.state];
-      return '<span class="fr-tag fr-tag--sm tag-c-' + t[1] + '" title="' + esc(def.name + ' ' + t[0] + (s.detail ? ' — ' + s.detail : '')) + '">' + esc(def.name + ' ' + t[0]) + '</span>';
+      return '<span class="fr-tag fr-tag--sm tag-c-' + t[1] + '" title="' + esc(def.name + ' ' + t[0] + (s.detail ? ' — ' + s.detail : '')) + '">' + esc(def.name) + '</span>';
     }).join('');
   }
+  // Sépare le tag Type R des tags d'état (Tir, VMP, Contrat) par un « · ».
+  function tagSep() { return '<span class="tag-sep" aria-hidden="true">·</span>'; }
+  function joinTags(typeTags, statusTags) { return typeTags + (typeTags && statusTags ? tagSep() : '') + statusTags; }
   function rowTags(r, c) {
-    var t = (toList(r.tag).length ? tagsHtml(r.tag) : '') + statusTagsHtml(r.raw, c);
+    var t = joinTags(toList(r.tag).length ? tagsHtml(r.tag) : '', statusTagsHtml(r.raw, c));
     return t ? '<span class="tagrow">' + t + '</span>' : '';
   }
   // Repère en bout de ligne : validité expirée (icône d'alerte du système de design).
@@ -3550,12 +4108,17 @@
   function renderList() {
     var c = cfg(), q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [], sCols = terms.length ? searchColumns(c) : [];
     renderFilters(c);
-    var ta = tagCol(c), cb = findCol(c.table, 'Affectation');
+    var ta = tagCol(c), cb = findCol(c.table, 'Affectation'), gradeCol = findCol(c.table, 'Grade'), qualCol = findCol(c.table, 'Qualité jud');
     var all = state.records.map(function (r) { return { raw: r.raw, id: r.identity == null ? '' : String(r.identity), tag: r.tag }; }).filter(function (r) { return r.id || toList(r.tag).length; });
     var list = all
       .filter(function (r) { return !terms.length || matchesSearch(searchHay(r, sCols), terms); })
       .filter(function (r) { return !filters.a.length || valuesOfCol(r, ta).some(function (v) { return filters.a.indexOf(v) !== -1; }); })
-      .filter(function (r) { return !filters.b.length || valuesOfCol(r, cb).some(function (v) { return filters.b.indexOf(v) !== -1; }); });
+      .filter(function (r) { return !filters.b.length || valuesOfCol(r, cb).some(function (v) { return filters.b.indexOf(v) !== -1; }); })
+      .filter(function (r) { return !filters.tir.length || filters.tir.indexOf(recStateOf(r, c, 'tir')) !== -1; })
+      .filter(function (r) { return !filters.vmp.length || filters.vmp.indexOf(recStateOf(r, c, 'vmp')) !== -1; })
+      .filter(function (r) { return !filters.contrat.length || filters.contrat.indexOf(recStateOf(r, c, 'contrat')) !== -1; })
+      .filter(function (r) { return !filters.grade.length || valuesOfCol(r, gradeCol).some(function (v) { return filters.grade.indexOf(v) !== -1; }); })
+      .filter(function (r) { return !filters.qual.length || valuesOfCol(r, qualCol).some(function (v) { return filters.qual.indexOf(v) !== -1; }); });
     list.sort(function (a, b) { return state.sortDir * a.id.localeCompare(b.id, 'fr', { sensitivity: 'base' }); });
     state.view = list;
 
@@ -3673,15 +4236,23 @@
   }
 
   /* ---------- Fiche du réserviste (modale) ---------- */
+  // Échéances : à côté de la date, reprend l'intitulé de la colonne d'état correspondante.
+  var ECHEANCE_STATE_COL = { 'exp vmp': 'Etat VMP', 'exp tir pa': 'Etat CIAPT', 'exp tir hk': 'Etat CIAPT', 'exp contrat': 'Etat contrat' };
+  function normLoose(s) { return norm(s).replace(/[^a-z0-9]+/g, ' ').trim(); } // insensible à la ponctuation (« Exp. VMP » ~ « exp vmp »)
   function panelHtml(tabDef, item, c, ro) {
     var ids = c.tabs[tabDef.key] || [];
     if (!ids.length) return '<p class="stg-empty">Aucune colonne configurée pour cet onglet.</p>';
     function cell(id, span) {
       var col = colMeta(c.table, id); if (!col) return '';
       var f = fmtValue(col, item.raw[id]), editable = !ro && isEditableCol(col), editing = editable && state.edit && state.edit.colId === id;
+      var extra = '';
+      if (!editing) {
+        var stateLbl = ECHEANCE_STATE_COL[normLoose(col.label)], sc = stateLbl && findCol(c.table, stateLbl), sv = sc && item.raw[sc.id];
+        if (sv != null && sv !== '') extra = ' <span class="tag grey">' + esc(sv) + '</span>';
+      }
       return '<th scope="row">' + esc(displayLabel(col)) + '</th><td' + (span ? ' colspan="' + span + '"' : '') +
         (editable && !editing ? ' data-edit="' + esc(id) + '" tabindex="0" role="button" aria-label="Modifier ' + esc(displayLabel(col)) + '" title="Cliquer pour modifier"' : '') +
-        ' class="' + (f.empty && !editing ? 'is-empty' : '') + (f.pre ? ' is-pre' : '') + (editable && !editing ? ' is-editable' : '') + (editing ? ' is-editing' : '') + '">' + (editing ? editorHtml(col) : f.html) + '</td>';
+        ' class="' + (f.empty && !editing ? 'is-empty' : '') + (f.pre ? ' is-pre' : '') + (editable && !editing ? ' is-editable' : '') + (editing ? ' is-editing' : '') + '">' + (editing ? editorHtml(col) : f.html + extra) + '</td>';
     }
     function tableHtml(rows, caption) {
       return '<div class="table-wrap"><table class="detail-table"><caption class="fr-sr-only">' + esc(caption) + '</caption><tbody>' +
@@ -3707,7 +4278,7 @@
     var gr = findCol(c.table, 'Grade'), af = findCol(c.table, 'Affectation'), sub = $('modal-sub');
     var subTxt = [gr && item.raw[gr.id], af && item.raw[af.id]].filter(Boolean).join(' · ');
     sub.hidden = !subTxt; sub.textContent = subTxt;
-    $('modal-tags').innerHTML = (toList(item.tag).length ? tagsHtml(item.tag) : '') + statusTagsHtml(item.raw, c);
+    $('modal-tags').innerHTML = joinTags(toList(item.tag).length ? tagsHtml(item.tag) : '', statusTagsHtml(item.raw, c));
     var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
     if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
     if (!tabs.some(function (t) { return t.key === m.tab; })) m.tab = tabs[0].key;
@@ -3769,7 +4340,7 @@
     return {
       title: esc(item.id ? formatName(item.id) : 'Réserviste') + flagsHtml(item.raw, c),
       sub: [gr && item.raw[gr.id], af && item.raw[af.id]].filter(Boolean).join(' · '),
-      tags: (toList(item.tag).length ? tagsHtml(item.tag) : '') + statusTagsHtml(item.raw, c),
+      tags: joinTags(toList(item.tag).length ? tagsHtml(item.tag) : '', statusTagsHtml(item.raw, c)),
       tabs: tabs.map(function (t) { return { key: t.key, title: t.title }; }), active: active, panels: panels, foot: parts.join(' · ')
     };
   }
@@ -3917,6 +4488,166 @@
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.create && state.create.busy)) closeCreate(); return; }
     if (e.key === 'Tab') {
       var f = Array.prototype.filter.call($('cmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select, textarea'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
+  /* ---------- Mise à jour en bloc (échéance, ou grade et corps) ---------- */
+  // « Tir » met à jour les deux colonnes d'échéance (PA et HK) avec la même date.
+  var BULK_ECH = {
+    tir: { title: 'Tir', dates: [{ field: 'dateA', label: 'Exp. tir PA', title: 'Expiration tir PA' }, { field: 'dateB', label: 'Exp. tir HK', title: 'Expiration tir HK' }] },
+    vmp: { title: 'VMP', dates: [{ field: 'date', label: 'Exp. VMP', title: 'Nouvelle échéance' }] },
+    contrat: { title: 'Contrat', dates: [{ field: 'date', label: 'Exp. contrat', title: 'Nouvelle échéance' }] }
+  };
+  function parseDateLike(col, dateStr) {
+    if (!dateStr) return { value: null };
+    return typeBase(col.type) === 'DateTime' ? parseEdit(col, dateStr + 'T00:00') : parseEdit(col, dateStr);
+  }
+  function parseNigendList(text) {
+    var seen = {}, out = [];
+    String(text || '').split(/[\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (n) {
+      var k = norm(n); if (!seen[k]) { seen[k] = true; out.push(n); }
+    });
+    return out;
+  }
+  function matchByNigend(c, list) {
+    var col = findCol(c.table, 'Nigend'), matched = [], notFound = [];
+    if (!col) return { col: null, matched: matched, notFound: list };
+    list.forEach(function (n) {
+      var rec = state.records.filter(function (r) { return norm(String(r.raw[col.id] || '')) === norm(n); })[0];
+      if (rec) matched.push({ nigend: n, rec: rec }); else notFound.push(n);
+    });
+    return { col: col, matched: matched, notFound: notFound };
+  }
+  function openBulk() {
+    var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
+    state.bulk = { mode: 'ech', ech: 'tir', date: '', dateA: '', dateB: '', grade: '', corps: '', nigends: '', busy: false, error: '', warn: '', confirm: false, result: null };
+    renderBulkForm();
+    var ov = $('bmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('bmodal-form').querySelector('input, select'); if (f) f.focus(); }); });
+  }
+  function closeBulk() {
+    var ov = $('bmodal'); if (ov.hidden) return;
+    var reload = !!(state.bulk && state.bulk.result);
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.bulk = null;
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-bulk').focus();
+    if (reload) load();
+  }
+  function renderBulkForm() {
+    var c = cfg(), b = state.bulk; if (!b) return;
+    if (b.result) {
+      $('bmodal-form').innerHTML =
+        '<div class="doc-alert ' + (b.result.failed.length ? 'error' : 'success') + '" role="' + (b.result.failed.length ? 'alert' : 'status') + '"><p>' +
+        esc(b.result.ok + ' réserviste' + (b.result.ok > 1 ? 's' : '') + ' mis à jour (' + b.result.summary + ')' +
+          (b.result.failed.length ? ' · ' + b.result.failed.length + ' échec' + (b.result.failed.length > 1 ? 's' : '') + ' : ' +
+            b.result.failed.map(function (f) { return f.nigend + ' (' + f.error + ')'; }).join(', ') : '') + '.') + '</p></div>' +
+        '<div class="cf-actions"><button type="button" class="btn" id="r-bf-close2">Fermer</button><button type="button" class="btn secondary" id="r-bf-again">Nouvelle mise à jour</button></div>';
+      return;
+    }
+    var html = (b.error ? '<div class="doc-alert error" role="alert"><p>' + esc(b.error) + '</p></div>' : '') +
+      (b.warn ? '<div class="cf-warn" role="alert"><p>' + esc(b.warn) + '</p></div>' : '');
+
+    html += '<section class="cf-section"><h3>Que mettre à jour</h3><div class="bulk-modes" role="radiogroup" aria-label="Que mettre à jour">' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="ech"' + (b.mode === 'ech' ? ' checked' : '') + '> Échéance (Tir, VMP ou Contrat)</label>' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="grade"' + (b.mode === 'grade' ? ' checked' : '') + '> Grade et Corps</label>' +
+      '</div></section>';
+
+    if (b.mode === 'ech') {
+      var def = BULK_ECH[b.ech], multi = def.dates.length > 1;
+      var missDate = def.dates.filter(function (dd) { return !findCol(c.table, dd.label); });
+      html += '<section class="cf-section"><h3>Échéance</h3><div class="cf-grid">' +
+        '<div class="cf-field"><label for="r-bf-ech">Laquelle</label><select class="select" id="r-bf-ech" data-bulk="ech">' +
+        Object.keys(BULK_ECH).map(function (k) { return '<option value="' + k + '"' + (k === b.ech ? ' selected' : '') + '>' + esc(BULK_ECH[k].title) + '</option>'; }).join('') +
+        '</select></div>' +
+        def.dates.map(function (dd) {
+          return '<div class="cf-field"><label for="r-bf-' + dd.field + '">' + esc(dd.title) + (multi ? '' : '<span class="req" aria-hidden="true">*</span>') +
+            '</label><input type="date" class="input" id="r-bf-' + dd.field + '" data-bulk="' + dd.field + '" value="' + esc(b[dd.field]) + '"></div>';
+        }).join('') +
+        '</div>' +
+        (multi ? '<span class="hint">Renseignez au moins l’une des deux échéances.</span>' : '') +
+        (missDate.length ? '<span class="hint">Colonne(s) introuvable(s) dans cette table : ' + esc(missDate.map(function (dd) { return dd.label; }).join(', ')) + '.</span>' : '') +
+        '</section>';
+    } else {
+      var gradeCol = findCol(c.table, 'Grade'), corpsCol = findCol(c.table, 'Corps');
+      html += '<section class="cf-section"><h3>Grade et Corps</h3><div class="cf-grid">' +
+        (gradeCol ? '<div class="cf-field"><label for="r-bf-grade">Grade</label>' + controlHtml(gradeCol, 'r-bf-grade', b.grade, '', ' data-bulk="grade"') + '</div>' : '') +
+        (corpsCol ? '<div class="cf-field"><label for="r-bf-corps">Corps</label>' + controlHtml(corpsCol, 'r-bf-corps', b.corps, '', ' data-bulk="corps"') + '</div>' : '') +
+        '</div><span class="hint">Laissez un champ vide pour ne pas le modifier.' + (!gradeCol || !corpsCol ? ' Colonne introuvable dans cette table : ' + [!gradeCol && 'Grade', !corpsCol && 'Corps'].filter(Boolean).join(', ') + '.' : '') + '</span></section>';
+    }
+
+    html += '<section class="cf-section"><h3>Réservistes concernés</h3><div class="cf-field">' +
+      '<label for="r-bf-nigends">Nigend<span class="req" aria-hidden="true">*</span> — un par ligne</label>' +
+      '<textarea class="textarea" id="r-bf-nigends" data-bulk="nigends" rows="5" placeholder="392206&#10;357867">' + esc(b.nigends) + '</textarea></div></section>' +
+      '<div class="cf-actions"><button type="submit" class="btn"' + (b.busy ? ' disabled' : '') + '>' + (b.busy ? 'Mise à jour…' : (b.confirm ? 'Mettre à jour quand même' : 'Mettre à jour')) + '</button>' +
+      '<button type="button" class="btn secondary" id="r-bf-cancel"' + (b.busy ? ' disabled' : '') + '>Annuler</button></div>';
+    $('bmodal-form').innerHTML = html;
+  }
+  function submitBulk() {
+    var c = cfg(), b = state.bulk; if (!b || b.busy) return;
+    var list = parseNigendList(b.nigends);
+    if (!list.length) { b.error = 'Indiquez au moins un Nigend.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+
+    var fields = {}, summary;
+    if (b.mode === 'ech') {
+      var def = BULK_ECH[b.ech], filled = def.dates.filter(function (dd) { return b[dd.field]; });
+      if (!filled.length) { b.error = def.dates.length > 1 ? 'Indiquez au moins une des deux échéances.' : 'Indiquez la nouvelle échéance.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      var cols = filled.map(function (dd) { return { dd: dd, col: findCol(c.table, dd.label) }; }).filter(function (x) { return x.col; });
+      if (!cols.length) { b.error = 'Les colonnes d’échéance ' + def.title + ' sont introuvables dans cette table.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      cols.forEach(function (x) { var p = parseDateLike(x.col, b[x.dd.field]); if (!p.error) fields[x.col.id] = p.value; });
+      summary = 'échéance ' + def.title;
+    } else {
+      var gradeCol = findCol(c.table, 'Grade'), corpsCol = findCol(c.table, 'Corps'), any = false;
+      if (gradeCol && b.grade) { fields[gradeCol.id] = b.grade; any = true; }
+      if (corpsCol && b.corps) { fields[corpsCol.id] = b.corps; any = true; }
+      if (!any) { b.error = 'Renseignez au moins le grade ou le corps.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+      summary = 'grade / corps';
+    }
+
+    var m = matchByNigend(c, list);
+    if (!m.col) { b.error = 'La colonne Nigend est introuvable dans cette table.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (!m.matched.length) { b.error = 'Aucun réserviste ne correspond aux Nigend saisis.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (m.notFound.length && !b.confirm) {
+      b.warn = m.notFound.length + ' Nigend introuvable' + (m.notFound.length > 1 ? 's' : '') + ' (' + m.notFound.join(', ') + '). ' +
+        m.matched.length + ' réserviste' + (m.matched.length > 1 ? 's seront mis à jour' : ' sera mis à jour') + '.';
+      b.confirm = true; b.error = ''; renderBulkForm(); return;
+    }
+
+    b.busy = true; b.error = ''; renderBulkForm();
+    var failed = [];
+    m.matched.reduce(function (p, item) {
+      return p.then(function () { return api.updateFields(c.table, item.rec.raw.id, fields).catch(function (e) { failed.push({ nigend: item.nigend, error: (e && e.message) || String(e) }); }); });
+    }, Promise.resolve()).then(function () {
+      b.busy = false; b.confirm = false; b.warn = '';
+      b.result = { ok: m.matched.length - failed.length, failed: failed, summary: summary };
+      return load();
+    }).then(function () { if (!$('bmodal').hidden) renderBulkForm(); });
+  }
+  function readBulkField(el) {
+    var b = state.bulk, k = el.getAttribute && el.getAttribute('data-bulk'); if (!b || !k) return;
+    b[k] = el.value; b.error = ''; b.warn = ''; b.confirm = false; b.result = null;
+  }
+  $('btn-bulk').addEventListener('click', openBulk);
+  $('bmodal-close').addEventListener('click', closeBulk);
+  $('bmodal').addEventListener('mousedown', function (e) { if (e.target === $('bmodal') && !(state.bulk && state.bulk.busy)) closeBulk(); });
+  $('bmodal-form').addEventListener('submit', function (e) { e.preventDefault(); submitBulk(); });
+  $('bmodal-form').addEventListener('click', function (e) {
+    if (e.target.id === 'r-bf-cancel') closeBulk();
+    else if (e.target.id === 'r-bf-close2') closeBulk();
+    else if (e.target.id === 'r-bf-again') openBulk();
+  });
+  $('bmodal-form').addEventListener('input', function (e) { readBulkField(e.target); });
+  $('bmodal-form').addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.name === 'bulk-mode') { state.bulk.mode = el.value; state.bulk.error = ''; state.bulk.warn = ''; state.bulk.confirm = false; renderBulkForm(); return; }
+    if (el.getAttribute('data-bulk') === 'ech') { state.bulk.ech = el.value; state.bulk.error = ''; state.bulk.warn = ''; state.bulk.confirm = false; renderBulkForm(); return; }
+    readBulkField(el);
+  });
+  $('bmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.bulk && state.bulk.busy)) closeBulk(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('bmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select, textarea'), function (n) { return n.offsetParent !== null; });
       if (!f.length) return;
       if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
@@ -4081,6 +4812,13 @@
     }
   };
   var TAB_ORDER = ['vmp', 'vemi', 'psy'];
+  // Créneaux proposés aux réservations : Date (+ Heure et Antenne médicale pour VMP/VEMI, + Capacité pour Tests psy).
+  // L'interrupteur « Proposé ? » ouvre/ferme le créneau ; « Etat créneau » (VMP/VEMI) est un état affiché, non modifié ici.
+  var CRENEAU_SPECS = {
+    vmp: { title: 'VMP', dateLabel: 'Date', timeLabel: 'Heure', antenneLabel: 'Antenne médicale', capLabel: '', toggleLabel: 'Proposé ?', etatLabel: 'Etat créneau' },
+    vemi: { title: 'VEMI', dateLabel: 'Date', timeLabel: 'Heure', antenneLabel: 'Antenne médicale', capLabel: '', toggleLabel: 'Proposé ?', etatLabel: 'Etat créneau' },
+    psy: { title: 'Tests psy', dateLabel: 'Date', timeLabel: '', antenneLabel: '', capLabel: 'Capacité', toggleLabel: 'Proposé ?', etatLabel: '' }
+  };
   var KINDS_OF = { vmp: ['convocation', 'service', 'suppression'], vemi: ['convocation', 'service', 'suppression'], psy: ['convocation', 'suppression'] };
   var KIND_TITLES = { convocation: 'Convocation', service: 'Convocation transmise à l’antenne médicale', suppression: 'Information de suppression d’une réservation (doublon)' };
 
@@ -4137,7 +4875,9 @@
 
   var state = {
     opts: {}, draft: {}, tab: 'vmp', tables: [], data: { vmp: null, vemi: null, psy: null }, cand: null, ant: null,
-    q: '', dupOnly: false, sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false
+    slots: { vmp: null, vemi: null, psy: null }, slotAdmin: null, // { tab, create, edit, confirmDelete, busy, error, msg }
+    res: null, book: null, // réservistes (source pour « Réserver » côté VMP) ; book : { mode, tab, id, date, time, antenne, personId, query, warn, confirmDup, error, busy }
+    q: '', dupOnly: false, sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false, confirmDelete: null
   };
   function $(id) { return document.getElementById('x-' + id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -4178,9 +4918,9 @@
 
   /* ---------- Données de démonstration ---------- */
   function dd(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
-  var BOOLS = { 'Complet': 1, 'Doublon': 1, 'Multi-résa': 1, 'Multi résa': 1, 'MàJ tableau': 1, 'Convocation ?': 1, 'Convoc. cand.': 1, 'Convoc. RO': 1, 'Envoyé AM': 1 };
+  var BOOLS = { 'Complet': 1, 'Doublon': 1, 'Multi-résa': 1, 'Multi résa': 1, 'MàJ tableau': 1, 'Convocation ?': 1, 'Convoc. cand.': 1, 'Convoc. RO': 1, 'Envoyé AM': 1, 'Proposé ?': 1 };
   function demoCols(labels) {
-    return labels.map(function (l) { return { id: makeId(l), label: l, type: BOOLS[l] ? 'Bool' : (l === 'Date' || l === 'DDN' ? 'Date' : (/^Réservation faite le$|^Dernière mise à jour$/.test(l) ? 'DateTime:Europe/Paris' : 'Text')), formula: false }; });
+    return labels.map(function (l) { return { id: makeId(l), label: l, type: BOOLS[l] ? 'Bool' : (l === 'Date' || l === 'DDN' ? 'Date' : l === 'Capacité' ? 'Int' : (/^Réservation faite le$|^Dernière mise à jour$/.test(l) ? 'DateTime:Europe/Paris' : 'Text')), formula: false }; });
   }
   function demoRows(list) { return list.map(function (r, i) { var o = { id: i + 1 }; Object.keys(r).forEach(function (k) { o[makeId(k)] = r[k]; }); return o; }); }
   var DEMO = {
@@ -4200,14 +4940,38 @@
       { 'Doublon': true, 'NID': '1043310', 'Candidat': 'BERNARD Julien', 'Email': 'julien.bernard@example.fr', 'Créneau choisi': 'Mardi 14h00', 'Date': dd(2026, 10, 13), 'Heure': '14:00', 'Affectation': 'GD 38', 'Réservation faite le': dd(2026, 9, 24) + 25000, 'Convocation ?': false },
       { 'Doublon': true, 'NID': '1043310', 'Candidat': 'BERNARD Julien', 'Email': 'julien.bernard@example.fr', 'Créneau choisi': 'Mercredi 10h00', 'Date': dd(2026, 10, 14), 'Heure': '10:00', 'Affectation': 'GD 38', 'Réservation faite le': dd(2026, 9, 26) + 14000, 'Convocation ?': false }
     ]) },
-    Candidats_PMG: { labels: ['NID', 'Civilité', 'NOM', 'Prénom', 'Email'], rows: demoRows([
-      { 'NID': '1042871', 'Civilité': 'Mme', 'NOM': 'Martin', 'Prénom': 'Camille', 'Email': 'camille.martin@example.fr' },
-      { 'NID': '1043544', 'Civilité': 'Mme', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Email': 'lea.dubois@example.fr' }
+    Candidats_PMG: { labels: ['NID', 'Civilité', 'NOM', 'Prénom', 'Email', 'Affectation'], rows: demoRows([
+      { 'NID': '1042871', 'Civilité': 'Mme', 'NOM': 'Martin', 'Prénom': 'Camille', 'Email': 'camille.martin@example.fr', 'Affectation': 'GD 74' },
+      { 'NID': '1043544', 'Civilité': 'Mme', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Email': 'lea.dubois@example.fr', 'Affectation': 'GD 73' },
+      { 'NID': '1044002', 'Civilité': 'M.', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Email': 'hugo.lambert@example.fr', 'Affectation': 'GD 74' }
+    ]) },
+    Reservistes_RO1_RS_RC: { labels: ['Nigend', 'NOM', 'Prénom', 'Affectation', 'Adresse email'], rows: demoRows([
+      { 'Nigend': '2011-0384', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Affectation': 'GD 74', 'Adresse email': 'antoine.lefevre@example.fr' },
+      { 'Nigend': '2019-1120', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Affectation': 'GD 38', 'Adresse email': 'camille.perrin@example.fr' },
+      { 'Nigend': '2022-0555', 'NOM': 'Garnier', 'Prénom': 'Lucas', 'Affectation': 'GD 73', 'Adresse email': 'lucas.garnier@example.fr' },
+      { 'Nigend': '2008-0210', 'NOM': 'Robin', 'Prénom': 'Sophie', 'Affectation': 'GD 01', 'Adresse email': 'sophie.robin@example.fr' }
     ]) },
     Antennes_medicales: { labels: ['Nom', 'Adresse', 'Mail'], rows: demoRows([
       { 'Nom': 'Antenne médicale de Lyon', 'Adresse': '12 rue des Soins, 69003 Lyon', 'Mail': 'antenne.lyon@example.fr' },
       { 'Nom': 'Antenne médicale de Grenoble', 'Adresse': '4 avenue de la Santé, 38000 Grenoble', 'Mail': 'antenne.grenoble@example.fr, secretariat.grenoble@example.fr' },
       { 'Nom': 'Antenne médicale de Metz', 'Adresse': '8 place du Docteur, 57000 Metz', 'Mail': '' }
+    ]) },
+    Creneaux_VMP: { labels: ['Etat créneau', 'Proposé ?', 'Date', 'Heure', 'Antenne médicale'], rows: demoRows([
+      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 6), 'Heure': '08:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Complet', 'Proposé ?': true, 'Date': dd(2026, 10, 8), 'Heure': '10:30', 'Antenne médicale': 'Antenne médicale de Grenoble' },
+      { 'Etat créneau': 'Fermé', 'Proposé ?': false, 'Date': dd(2026, 10, 20), 'Heure': '15:00', 'Antenne médicale': 'Antenne médicale de Metz' }
+    ]) },
+    Creneaux_VEMI: { labels: ['Etat créneau', 'Proposé ?', 'Date', 'Heure', 'Antenne médicale'], rows: demoRows([
+      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 15), 'Heure': '14:30', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 20), 'Heure': '09:15', 'Antenne médicale': 'Antenne médicale de Grenoble' },
+      { 'Etat créneau': 'Fermé', 'Proposé ?': false, 'Date': dd(2026, 10, 27), 'Heure': '11:00', 'Antenne médicale': 'Antenne médicale de Metz' }
+    ]) },
+    Creneaux_psy: { labels: ['Proposé ?', 'Date', 'Capacité'], rows: demoRows([
+      { 'Proposé ?': true, 'Date': dd(2026, 10, 8), 'Capacité': 1 },
+      { 'Proposé ?': true, 'Date': dd(2026, 10, 13), 'Capacité': 4 },
+      { 'Proposé ?': true, 'Date': dd(2026, 10, 14), 'Capacité': 4 },
+      { 'Proposé ?': false, 'Date': dd(2026, 10, 21), 'Capacité': 4 }
     ]) }
   };
 
@@ -4231,15 +4995,26 @@
     },
     saveOptions: function (o) { return grist.setOptions(o); },
     updateFields: function (table, rowId, fields) { return grist.getTable(table).update({ id: rowId, fields: fields }); },
-    deleteRow: function (table, rowId) { return grist.getTable(table).destroy(rowId); }
+    deleteRow: function (table, rowId) { return grist.getTable(table).destroy(rowId); },
+    createRow: function (table, fields) { return grist.getTable(table).create({ fields: fields }).then(function (r) { return newRowId(r); }); }
   } : {
     listTables: function () { return Promise.resolve(Object.keys(DEMO)); },
     listColumns: function (t) { return Promise.resolve(DEMO[t] ? demoCols(DEMO[t].labels) : []); },
     fetchRows: function (t) { return Promise.resolve(DEMO[t] ? JSON.parse(JSON.stringify(DEMO[t].rows)) : []); },
     saveOptions: function () { return Promise.resolve(); },
     updateFields: function (table, rowId, fields) { DEMO[table].rows.forEach(function (r) { if (r.id === rowId) Object.keys(fields).forEach(function (k) { r[k] = fields[k]; }); }); return Promise.resolve(); },
-    deleteRow: function (table, rowId) { DEMO[table].rows = DEMO[table].rows.filter(function (r) { return r.id !== rowId; }); return Promise.resolve(); }
+    deleteRow: function (table, rowId) { DEMO[table].rows = DEMO[table].rows.filter(function (r) { return r.id !== rowId; }); return Promise.resolve(); },
+    createRow: function (table, fields) {
+      var id = DEMO[table].rows.reduce(function (m, r) { return Math.max(m, r.id); }, 0) + 1, row = { id: id };
+      Object.keys(fields).forEach(function (k) { row[k] = fields[k]; });
+      DEMO[table].rows.push(row); return Promise.resolve(id);
+    }
   };
+  function newRowId(r) {
+    if (Array.isArray(r)) return newRowId(r[0]);
+    if (r && typeof r === 'object') return newRowId(r.id);
+    return typeof r === 'number' ? r : null;
+  }
 
   /* ---------- Configuration et chargement ---------- */
   function xo() { return state.opts.x || {}; }
@@ -4249,6 +5024,8 @@
     TAB_ORDER.forEach(function (k) { out[k] = t[k] || byNorm(SPECS[k].tableRe, /reserv/); });
     out.cand = t.cand || (window.PMG && window.PMG.table && window.PMG.table()) || byNorm(/candidats/);
     out.ant = (tables || []).filter(function (x) { return norm(x).replace(/[_\s]+/g, ' ') === 'antennes medicales'; })[0] || byNorm(/antenne/);
+    out.res = t.res || byNorm(/reservistes/i);
+    TAB_ORDER.forEach(function (k) { var sk = 's' + k; out[sk] = t[sk] || byNorm(SPECS[k].tableRe, /creneau/); });
     return out;
   }
   var loadSeq = 0;
@@ -4261,11 +5038,14 @@
     return api.listTables().then(function (tables) {
       state.tables = tables;
       var t = detectTables(tables);
-      return Promise.all([loadOne(t.vmp), loadOne(t.vemi), loadOne(t.psy), loadOne(t.cand), loadOne(t.ant)]).then(function (r) {
+      return Promise.all([loadOne(t.vmp), loadOne(t.vemi), loadOne(t.psy), loadOne(t.cand), loadOne(t.ant), loadOne(t.svmp), loadOne(t.svemi), loadOne(t.spsy), loadOne(t.res)]).then(function (r) {
         if (seq !== loadSeq) return;
         state.data.vmp = r[0]; state.data.vemi = r[1]; state.data.psy = r[2]; state.cand = r[3]; state.ant = r[4];
+        state.slots.vmp = r[5]; state.slots.vemi = r[6]; state.slots.psy = r[7]; state.res = r[8];
         state.error = ''; state.read = { at: new Date() };
         renderAll();
+        if (state.slotAdmin) renderSlots();
+        if (state.book) renderBook();
       });
     }).catch(function (e) { if (seq !== loadSeq) return; state.error = (e && e.message) || String(e); renderAll(); });
   }
@@ -4408,7 +5188,8 @@
       stateEl.hidden = false; stateEl.innerHTML = '<strong>Table introuvable</strong>La table des réservations « ' + esc(spec.title) + ' » n’a pas été trouvée : vérifiez le récapitulatif des sources dans le back office.';
       return;
     }
-    var cols = spec.cols.map(function (l) { return findCol(d.cols, l); }).filter(Boolean), groups = groupsOf(tab);
+    var dispLabels = [spec.person, spec.key, 'Affectation', 'Date', 'Heure'].concat(spec.antenne ? [spec.antenne] : []);
+    var cols = dispLabels.map(function (l) { return findCol(d.cols, l); }).filter(Boolean), groups = groupsOf(tab);
     var q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [];
     var list = d.rows.filter(function (r) {
       if (state.dupOnly && !isDup(tab, r, groups)) return false;
@@ -4442,13 +5223,25 @@
       var t = label + (why ? ' (' + why + ')' : '') + (done ? ' — déjà fait' : '');
       return '<button type="button" class="icon-btn' + (done ? ' is-done' : '') + '" data-act="' + act + '" data-id="' + row.id + '" title="' + esc(t) + '" aria-label="' + esc(t) + '"' + (ok ? '' : ' disabled') + '>' + icon + '</button>';
     }
-    var email = personEmail(tab, row), miss = missingFields(tab, row, 'convocation'), why = !validEmail(email) ? 'aucune adresse mail' : (miss.length ? 'à renseigner : ' + miss.join(', ') : '');
+    out += '<button type="button" class="icon-btn" data-act="edit-res" data-id="' + row.id + '" title="Modifier cette réservation" aria-label="Modifier cette réservation">' + ICON_EDIT + '</button>';
+    // Un doublon doit être traité (fusionné ou supprimé) avant l'envoi de la convocation.
+    var dupWhy = dup ? 'doublon à traiter d’abord' : '';
+    var email = personEmail(tab, row), miss = missingFields(tab, row, 'convocation');
+    var why = dupWhy || (!validEmail(email) ? 'aucune adresse mail' : (miss.length ? 'à renseigner : ' + miss.join(', ') : ''));
     out += btn('person', ICON_MAIL, 'Envoyer la convocation au ' + spec.personWord, !why, why, isYes(val(tab, row, spec.sentPerson)));
     if (spec.service) {
-      var addrs = antenneAddrs(tab, row), w2 = miss.length ? 'à renseigner : ' + miss.join(', ') : (!state.ant ? 'table Antennes medicales introuvable' : (!addrs.length ? 'aucune adresse pour cette antenne' : ''));
+      var addrs = antenneAddrs(tab, row);
+      var w2 = dupWhy || (miss.length ? 'à renseigner : ' + miss.join(', ') : (!state.ant ? 'table Antennes medicales introuvable' : (!addrs.length ? 'aucune adresse pour cette antenne' : '')));
       out += btn('service', ICON_SERVICE, 'Envoyer la convocation à l’antenne médicale', !w2, w2, isYes(val(tab, row, spec.sentService)));
     }
     if (dup) out += '<button type="button" class="icon-btn" data-act="dup" data-id="' + row.id + '" title="Doublon : voir les demandes et choisir laquelle supprimer" aria-label="Voir les doublons"><span class="fr-icon-group-line" aria-hidden="true"></span></button>';
+    var confirming = state.confirmDelete && state.confirmDelete.tab === tab && state.confirmDelete.id === row.id;
+    if (confirming) {
+      out += '<button type="button" class="icon-btn danger" data-act="delete-confirm" data-id="' + row.id + '" title="Confirmer la suppression de cette réservation" aria-label="Confirmer la suppression"><span class="fr-icon-check-line" aria-hidden="true"></span></button>' +
+        '<button type="button" class="icon-btn" data-act="delete-cancel" data-id="' + row.id + '" title="Annuler" aria-label="Annuler"><span class="fr-icon-close-line" aria-hidden="true"></span></button>';
+    } else {
+      out += '<button type="button" class="icon-btn danger" data-act="delete" data-id="' + row.id + '" title="Supprimer cette réservation" aria-label="Supprimer cette réservation"><span class="fr-icon-delete-line" aria-hidden="true"></span></button>';
+    }
     return out;
   }
   function showMsg(type, text) {
@@ -4529,7 +5322,7 @@
     ['vmp', 'vemi', 'psy', 'admin'].forEach(function (t) { $('tab-' + t).setAttribute('aria-selected', String(t === k)); });
     $('view-list').hidden = k === 'admin'; $('view-admin').hidden = k !== 'admin';
     if (k === 'admin') { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); $('saved').hidden = true; }
-    else { state.sort = { col: '', dir: 1 }; showMsg('', ''); renderList(); }
+    else { state.sort = { col: '', dir: 1 }; state.confirmDelete = null; showMsg('', ''); renderList(); }
   }
   $('tabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-tab]'); if (!b) return;
@@ -4544,10 +5337,27 @@
     state.sort = state.sort.col && norm(state.sort.col) === norm(l) ? { col: l, dir: -state.sort.dir } : { col: l, dir: 1 };
     renderList();
   });
+  // Suppression d'une réservation directement depuis la ligne (confirmation avant suppression effective).
+  function deleteRow(id) {
+    var tab = state.tab, d = state.data[tab]; if (!d || state.busy) return;
+    state.busy = true; renderList();
+    Promise.resolve(api.deleteRow(d.table, id)).then(function () {
+      state.confirmDelete = null; showMsg('success', 'Réservation supprimée.');
+      return load();
+    }).catch(function (e) {
+      state.confirmDelete = null;
+      showMsg('error', 'Suppression impossible : ' + ((e && e.message) || e) + '.'); renderList();
+    }).then(function () { state.busy = false; });
+  }
   $('rows').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
     var id = Number(b.getAttribute('data-id')), act = b.getAttribute('data-act');
-    if (act === 'dup') openDup(id); else send(state.tab, act === 'service' ? 'service' : 'convocation', id);
+    if (act === 'dup') openDup(id);
+    else if (act === 'edit-res') openBookEdit(id);
+    else if (act === 'delete') { state.confirmDelete = { tab: state.tab, id: id }; renderList(); }
+    else if (act === 'delete-cancel') { state.confirmDelete = null; renderList(); }
+    else if (act === 'delete-confirm') deleteRow(id);
+    else send(state.tab, act === 'service' ? 'service' : 'convocation', id);
   });
   $('dmodal').addEventListener('mousedown', function (e) { if (e.target === $('dmodal') && !(state.dup && state.dup.busy)) closeDup(); });
   $('dmodal-close').addEventListener('click', closeDup);
@@ -4569,6 +5379,541 @@
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
     }
   });
+  /* ---------- Administration des créneaux (tables Créneaux VMP / VEMI / Tests psy) ---------- */
+  var ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+  var ICON_DELETE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+  function dateInputVal(v) { if (typeof v !== 'number') return ''; var d = new Date(v * 1000); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()); }
+  function parseDateInput(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '').trim()); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : null; }
+  function antenneNames() { var nc = state.ant && findCol(state.ant.cols, 'Nom'); return nc ? state.ant.rows.map(function (r) { return r[nc.id]; }).filter(Boolean) : []; }
+  function antenneOptionsHtml(value) {
+    return '<option value=""></option>' + antenneNames().map(function (n) { return '<option value="' + esc(n) + '"' + (n === value ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+  }
+  // Réservations déjà prises pour ce créneau (même date, et même heure/antenne si applicable) : indicatif, et capacité pour les tests psy.
+  function slotBookedCount(tab, slot, s) {
+    var cs = CRENEAU_SPECS[tab], d = state.data[tab]; if (!d) return 0;
+    var sdc = findCol(s.cols, cs.dateLabel), ddc = findCol(d.cols, 'Date'); if (!sdc || !ddc) return 0;
+    var day = Math.floor((slot[sdc.id] || 0) / 86400);
+    var stc = cs.timeLabel && findCol(s.cols, cs.timeLabel), dtc = cs.timeLabel && findCol(d.cols, cs.timeLabel);
+    var sac = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), dac = cs.antenneLabel && findCol(d.cols, cs.antenneLabel);
+    var time = stc ? slot[stc.id] : null, ant = sac ? slot[sac.id] : null;
+    return d.rows.filter(function (r) {
+      if (Math.floor((r[ddc.id] || 0) / 86400) !== day) return false;
+      if (dtc && String(r[dtc.id] || '') !== String(time || '')) return false;
+      if (dac && String(r[dac.id] || '') !== String(ant || '')) return false;
+      return true;
+    }).length;
+  }
+  function openSlots() {
+    state.slotAdmin = { tab: state.tab, create: null, import: null, edit: null, confirmDelete: null, busy: false, msg: null };
+    renderSlots();
+    var ov = $('smodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('smodal-close').focus(); }); });
+  }
+  function closeSlots() {
+    var ov = $('smodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.slotAdmin = null;
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-slots').focus();
+  }
+  function renderSlots() {
+    var sa = state.slotAdmin; if (!sa) return;
+    var tab = sa.tab, cs = CRENEAU_SPECS[tab], s = state.slots[tab];
+    $('smodal-title').textContent = 'Créneaux · ' + cs.title;
+    if (!s) {
+      $('smodal-sub').textContent = '';
+      $('smodal-body').innerHTML = '<div class="doc-alert error" role="alert"><p>La table des créneaux ' + esc(cs.title) + ' est introuvable : configurez-la dans le back office (Options avancées : tables).</p></div>';
+      return;
+    }
+    $('smodal-sub').textContent = s.table;
+    var dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
+      antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel),
+      toggleCol = findCol(s.cols, cs.toggleLabel), etatCol = cs.etatLabel && findCol(s.cols, cs.etatLabel);
+    var missing = [!dateCol && cs.dateLabel, (cs.timeLabel && !timeCol) && cs.timeLabel, (cs.antenneLabel && !antCol) && cs.antenneLabel, (cs.capLabel && !capCol) && cs.capLabel, !toggleCol && cs.toggleLabel].filter(Boolean);
+
+    var rows = s.rows.slice().sort(function (a, b) {
+      var av = dateCol ? (a[dateCol.id] || 0) : 0, bv = dateCol ? (b[dateCol.id] || 0) : 0;
+      if (av !== bv) return av - bv;
+      return timeCol ? String(a[timeCol.id] || '').localeCompare(String(b[timeCol.id] || '')) : 0;
+    });
+
+    var out = sa.msg ? '<div class="doc-alert ' + sa.msg.type + '" role="' + (sa.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(sa.msg.text) + '</p></div>' : '';
+    if (missing.length) out += '<div class="doc-alert error" role="alert"><p>Colonnes introuvables dans cette table : ' + esc(missing.join(', ')) + '.</p></div>';
+
+    out += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Créneaux ' + esc(cs.title) + '</caption><thead><tr>' +
+      '<th scope="col" class="doc-actions" style="text-align:left">Actions</th><th scope="col">Date</th>' + (timeCol ? '<th scope="col">Heure</th>' : '') + (antCol ? '<th scope="col">Antenne médicale</th>' : '') +
+      (capCol ? '<th scope="col">Places</th>' : '<th scope="col">Réservations</th>') + (etatCol ? '<th scope="col">État</th>' : '') +
+      '<th scope="col">Proposé ?</th></tr></thead><tbody>';
+
+    var colCount = 4 + (timeCol ? 1 : 0) + (antCol ? 1 : 0) + (etatCol ? 1 : 0);
+    if (!rows.length) out += '<tr><td colspan="' + colCount + '" class="is-empty">Aucun créneau.</td></tr>';
+
+    rows.forEach(function (r) {
+      var booked = slotBookedCount(tab, r, s);
+      if (sa.edit && sa.edit.id === r.id) {
+        var e = sa.edit;
+        var actionsCell = (e.error ? '<p class="ed-error" role="alert">' + esc(e.error) + '</p>' : '') +
+          '<button type="button" class="btn sm" data-sact="edit-save" data-id="' + r.id + '"' + (e.busy ? ' disabled' : '') + '>' + (e.busy ? 'Enregistrement…' : 'Enregistrer') + '</button> ' +
+          '<button type="button" class="btn secondary sm" data-sact="edit-cancel"' + (e.busy ? ' disabled' : '') + '>Annuler</button>';
+        var cells = ['<input type="date" class="input" data-ef="date" value="' + esc(e.date) + '">'];
+        if (timeCol) cells.push('<input type="text" class="input" data-ef="time" placeholder="HH:mm" value="' + esc(e.time) + '" style="max-width:6rem">');
+        if (antCol) cells.push('<select class="select" data-ef="antenne">' + antenneOptionsHtml(e.antenne) + '</select>');
+        cells.push(capCol ? '<input type="text" inputmode="numeric" class="input" data-ef="cap" value="' + esc(e.cap) + '" style="max-width:5rem">' : String(booked));
+        if (etatCol) cells.push(esc(r[etatCol.id] || '—'));
+        cells.push('—');
+        out += '<tr data-id="' + r.id + '"><td class="doc-actions" style="text-align:left">' + actionsCell + '</td>' + cells.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
+        return;
+      }
+      var confirming = sa.confirmDelete === r.id;
+      var actionsCell2 = confirming
+        ? '<span class="doc-confirm">Supprimer ?</span> <button type="button" class="btn danger sm" data-sact="delete-confirm" data-id="' + r.id + '">Supprimer</button> <button type="button" class="btn secondary sm" data-sact="delete-cancel">Annuler</button>'
+        : '<button type="button" class="icon-btn" data-sact="edit" data-id="' + r.id + '" title="Modifier" aria-label="Modifier ce créneau">' + ICON_EDIT + '</button> <button type="button" class="icon-btn danger" data-sact="delete" data-id="' + r.id + '" title="Supprimer" aria-label="Supprimer ce créneau">' + ICON_DELETE + '</button>';
+      var cells2 = [dateCol ? esc(fmtDate(r[dateCol.id])) : '—'];
+      if (timeCol) cells2.push(esc(r[timeCol.id] || '—'));
+      if (antCol) cells2.push(esc(r[antCol.id] || '—'));
+      cells2.push(capCol ? (booked + ' / ' + (r[capCol.id] == null ? '—' : r[capCol.id])) : String(booked));
+      if (etatCol) cells2.push(esc(r[etatCol.id] || '—'));
+      var proposed = toggleCol ? isYes(r[toggleCol.id]) : null;
+      var toggleCell = toggleCol
+        ? '<button type="button" class="tag ' + (proposed ? 'green' : 'grey') + '" style="border:0;cursor:pointer;font:inherit" data-sact="toggle" data-id="' + r.id + '" title="Cliquer pour ' + (proposed ? 'fermer' : 'proposer') + '" aria-label="' + (proposed ? 'Fermer ce créneau' : 'Proposer ce créneau') + '">' + (proposed ? 'Oui' : 'Non') + '</button>'
+        : '—';
+      out += '<tr data-id="' + r.id + '"><td class="doc-actions" style="text-align:left">' + actionsCell2 + '</td>' + cells2.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '<td>' + toggleCell + '</td></tr>';
+    });
+    out += '</tbody></table></div>';
+
+    var cr = sa.create, imp = sa.import;
+    if (!cr && !imp) {
+      out += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button type="button" class="btn secondary sm" id="x-sf-add">+ Ajouter un créneau</button>' +
+        '<button type="button" class="btn secondary sm" id="x-sf-import-open">+ Ajouter un lot de créneaux</button>' +
+        '</div>';
+    } else if (cr) {
+      out += '<section class="cf-section" style="margin-top:16px"><h3>Nouveau créneau</h3>' +
+        (cr.error ? '<div class="doc-alert error" role="alert"><p>' + esc(cr.error) + '</p></div>' : '') +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="x-sf-date">Date<span class="req" aria-hidden="true">*</span></label><input type="date" class="input" id="x-sf-date" data-cf="date" value="' + esc(cr.date) + '"></div>' +
+        (timeCol ? '<div class="cf-field"><label for="x-sf-time">Heure<span class="req" aria-hidden="true">*</span></label><input type="text" class="input" id="x-sf-time" data-cf="time" placeholder="HH:mm" value="' + esc(cr.time) + '"></div>' : '') +
+        (antCol ? '<div class="cf-field"><label for="x-sf-ant">Antenne médicale<span class="req" aria-hidden="true">*</span></label><select class="select" id="x-sf-ant" data-cf="antenne">' + antenneOptionsHtml(cr.antenne) + '</select></div>' : '') +
+        (capCol ? '<div class="cf-field"><label for="x-sf-cap">Capacité</label><input type="text" inputmode="numeric" class="input" id="x-sf-cap" data-cf="cap" value="' + esc(cr.cap) + '" style="max-width:8rem"></div>' : '') +
+        '</div><div class="cf-actions"><button type="button" class="btn sm" id="x-sf-create"' + (cr.busy ? ' disabled' : '') + '>' + (cr.busy ? 'Création…' : 'Créer') + '</button>' +
+        '<button type="button" class="btn secondary sm" id="x-sf-cancel"' + (cr.busy ? ' disabled' : '') + '>Annuler</button></div></section>';
+    } else {
+      out += '<section class="cf-section" style="margin-top:16px"><h3>Ajouter un lot de créneaux</h3>' +
+        '<span class="hint">Colonnes attendues : ' + esc(slotCsvHeaders(cs).join(', ')) + '. <button type="button" class="btn secondary sm" id="x-sf-template">Télécharger un modèle .csv</button></span>' +
+        (imp.error ? '<div class="doc-alert error" role="alert"><p>' + esc(imp.error) + '</p></div>' : '') +
+        '<div class="doc-drop' + (imp.busy ? ' is-busy' : '') + '" id="x-sf-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (imp.busy ? 'true' : 'false') + '">' +
+        ICON_UPLOAD + '<p><strong>' + (imp.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ici') + '</strong>' + (imp.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>' +
+        '<div class="cf-actions"><button type="button" class="btn secondary sm" id="x-sf-import-cancel"' + (imp.busy ? ' disabled' : '') + '>Annuler</button></div></section>';
+    }
+    $('smodal-body').innerHTML = out;
+  }
+  var ICON_UPLOAD = '<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
+  // Colonnes attendues dans le .csv (mêmes libellés que dans Grist).
+  function slotCsvHeaders(cs) {
+    var h = ['Date'];
+    if (cs.timeLabel) h.push(cs.timeLabel);
+    if (cs.antenneLabel) h.push(cs.antenneLabel);
+    if (cs.capLabel) h.push(cs.capLabel);
+    return h;
+  }
+  function csvEscape(s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function downloadCsv(name, rows) {
+    var csv = rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n') + '\r\n';
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+  function downloadSlotTemplate(tab) {
+    var cs = CRENEAU_SPECS[tab], headers = slotCsvHeaders(cs);
+    var example = ['06/10/2026'];
+    if (cs.timeLabel) example.push('08:00');
+    if (cs.antenneLabel) example.push(antenneNames()[0] || 'Antenne médicale de Lyon');
+    if (cs.capLabel) example.push('4');
+    downloadCsv('modele_creneaux_' + tab + '.csv', [headers, example]);
+  }
+  // Lecture .csv minimale (guillemets, virgules, fins de ligne \r\n ou \n) : suffisant pour un fichier au format du modèle fourni.
+  function parseCsvText(text) {
+    var rows = [], row = [], field = '', inQ = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (inQ) { if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; } else field += c; }
+      else if (c === '"') inQ = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(field); field = ''; rows.push(row); row = []; }
+      else field += c;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return String(x).trim() !== ''; }); });
+  }
+  function parseCsvDate(s) {
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s || '').trim()); if (!m) return null;
+    var day = +m[1], month = +m[2], year = +m[3]; if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    var v = Date.UTC(year, month - 1, day); // rejette aussi les dates qui n'existent pas (ex. 31/04) : le mois recalculé doit correspondre
+    return new Date(v).getUTCMonth() === month - 1 ? v / 1000 : null;
+  }
+  // Analyse le .csv déposé et prépare les lignes à créer (colonnes retrouvées par leur libellé, insensible à l'ordre et aux accents/majuscules).
+  function parseSlotCsv(tab, text) {
+    var cs = CRENEAU_SPECS[tab], s = state.slots[tab];
+    var dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
+      antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel),
+      toggleCol = findCol(s.cols, cs.toggleLabel);
+    var rows = parseCsvText(text); if (!rows.length) return { error: 'Fichier vide ou illisible.' };
+    var header = rows[0].map(norm);
+    function idx(label) { return header.indexOf(norm(label)); }
+    var iDate = idx('Date'), iTime = cs.timeLabel ? idx(cs.timeLabel) : -1, iAnt = cs.antenneLabel ? idx(cs.antenneLabel) : -1, iCap = cs.capLabel ? idx(cs.capLabel) : -1;
+    if (iDate === -1) return { error: 'Colonne « Date » introuvable dans le fichier (première ligne = en-têtes).' };
+    if (cs.timeLabel && iTime === -1) return { error: 'Colonne « ' + cs.timeLabel + ' » introuvable dans le fichier.' };
+    if (cs.antenneLabel && iAnt === -1) return { error: 'Colonne « ' + cs.antenneLabel + ' » introuvable dans le fichier.' };
+    var items = [], errors = [];
+    rows.slice(1).forEach(function (r, i) {
+      var line = i + 2, dv = parseCsvDate(r[iDate]);
+      if (dv == null) { errors.push('ligne ' + line + ' : date invalide'); return; }
+      var fields = {}; fields[dateCol.id] = dv;
+      if (timeCol) { var t = (r[iTime] || '').trim(); if (!t) { errors.push('ligne ' + line + ' : heure manquante'); return; } fields[timeCol.id] = t; }
+      if (antCol) { var a = (r[iAnt] || '').trim(); if (!a) { errors.push('ligne ' + line + ' : antenne manquante'); return; } fields[antCol.id] = a; }
+      if (capCol && iCap !== -1) {
+        var c = (r[iCap] || '').trim();
+        if (c !== '') { var n = Number(c.replace(',', '.')); if (!isFinite(n) || Math.round(n) !== n) { errors.push('ligne ' + line + ' : capacité invalide'); return; } fields[capCol.id] = n; }
+      }
+      if (toggleCol) fields[toggleCol.id] = true;
+      items.push(fields);
+    });
+    return { items: items, errors: errors };
+  }
+  function pickCsvFile(cb) {
+    var i = document.createElement('input');
+    i.type = 'file'; i.accept = '.csv,text/csv';
+    i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
+    i.click();
+  }
+  function importSlotsFile(file) {
+    var sa = state.slotAdmin; if (!sa || !sa.import || sa.import.busy) return;
+    var tab = sa.tab, reader = new FileReader();
+    reader.onload = function () {
+      var r = parseSlotCsv(tab, String(reader.result || ''));
+      if (r.error) { sa.import.error = r.error; renderSlots(); return; }
+      if (!r.items.length) { sa.import.error = 'Aucune ligne valide dans le fichier' + (r.errors.length ? ' (' + r.errors.join(' ; ') + ')' : '') + '.'; renderSlots(); return; }
+      sa.import.busy = true; sa.import.error = ''; renderSlots();
+      var s = state.slots[tab], createFailed = [];
+      r.items.reduce(function (p, fields) {
+        return p.then(function () { return api.createRow(s.table, fields).catch(function (e) { createFailed.push((e && e.message) || String(e)); }); });
+      }, Promise.resolve()).then(function () {
+        var ok = r.items.length - createFailed.length, parts = [ok + ' créneau' + (ok > 1 ? 'x' : '') + ' importé' + (ok > 1 ? 's' : '')];
+        if (r.errors.length) parts.push(r.errors.length + ' ligne(s) ignorée(s) : ' + r.errors.join(' ; '));
+        if (createFailed.length) parts.push(createFailed.length + ' échec(s) à la création : ' + createFailed.join(' ; '));
+        sa.import = null; sa.msg = { type: (r.errors.length || createFailed.length) ? 'error' : 'success', text: parts.join(' · ') + '.' };
+        return load();
+      });
+    };
+    reader.onerror = function () { sa.import.busy = false; sa.import.error = 'Lecture du fichier impossible.'; renderSlots(); };
+    reader.readAsText(file, 'UTF-8');
+  }
+  function slotFieldsFromForm(cs, s, vals) {
+    var fields = {}, dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
+      antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel);
+    if (!vals.date) return { error: 'Indiquez la date.' };
+    var dv = parseDateInput(vals.date); if (dv == null) return { error: 'Date invalide.' };
+    if (dateCol) fields[dateCol.id] = dv;
+    if (timeCol) {
+      if (!vals.time || !vals.time.trim()) return { error: 'Indiquez l’heure (HH:mm).' };
+      fields[timeCol.id] = vals.time.trim();
+    }
+    if (antCol) {
+      if (!vals.antenne) return { error: 'Choisissez l’antenne médicale.' };
+      fields[antCol.id] = vals.antenne;
+    }
+    if (capCol && vals.cap !== '' && vals.cap != null) {
+      var n = Number(String(vals.cap).replace(',', '.'));
+      if (!isFinite(n) || Math.round(n) !== n) return { error: 'La capacité doit être un nombre entier.' };
+      fields[capCol.id] = n;
+    }
+    return { fields: fields };
+  }
+  function startEditSlot(id) {
+    var sa = state.slotAdmin, cs = CRENEAU_SPECS[sa.tab], s = state.slots[sa.tab]; if (!s) return;
+    var row = s.rows.filter(function (r) { return r.id === id; })[0]; if (!row) return;
+    var dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
+      antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel);
+    sa.edit = {
+      id: id, date: dateCol ? dateInputVal(row[dateCol.id]) : '', time: timeCol ? (row[timeCol.id] || '') : '',
+      antenne: antCol ? (row[antCol.id] || '') : '', cap: capCol ? (row[capCol.id] == null ? '' : String(row[capCol.id])) : '',
+      error: '', busy: false
+    };
+    sa.confirmDelete = null; sa.create = null;
+    renderSlots();
+  }
+  function submitCreateSlot() {
+    var sa = state.slotAdmin, cs = CRENEAU_SPECS[sa.tab], s = state.slots[sa.tab], cr = sa.create; if (!s || !cr || cr.busy) return;
+    var r = slotFieldsFromForm(cs, s, cr);
+    if (r.error) { cr.error = r.error; renderSlots(); return; }
+    var toggleCol = findCol(s.cols, cs.toggleLabel); if (toggleCol) r.fields[toggleCol.id] = true;
+    cr.busy = true; cr.error = ''; renderSlots();
+    api.createRow(s.table, r.fields).then(function () {
+      sa.create = null; sa.msg = { type: 'success', text: 'Créneau créé.' };
+      return load();
+    }).catch(function (e) { cr.busy = false; cr.error = 'Création impossible : ' + ((e && e.message) || e) + '.'; renderSlots(); });
+  }
+  function submitEditSlot(id) {
+    var sa = state.slotAdmin, cs = CRENEAU_SPECS[sa.tab], s = state.slots[sa.tab], e = sa.edit; if (!s || !e || e.id !== id || e.busy) return;
+    var r = slotFieldsFromForm(cs, s, e);
+    if (r.error) { e.error = r.error; renderSlots(); return; }
+    e.busy = true; e.error = ''; renderSlots();
+    api.updateFields(s.table, id, r.fields).then(function () {
+      sa.edit = null; sa.msg = { type: 'success', text: 'Créneau modifié.' };
+      return load();
+    }).catch(function (err) { e.busy = false; e.error = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; renderSlots(); });
+  }
+  function toggleSlot(id) {
+    var sa = state.slotAdmin, cs = CRENEAU_SPECS[sa.tab], s = state.slots[sa.tab]; if (!s || sa.busy) return;
+    var row = s.rows.filter(function (r) { return r.id === id; })[0], toggleCol = findCol(s.cols, cs.toggleLabel); if (!row || !toggleCol) return;
+    var fields = {}; fields[toggleCol.id] = !isYes(row[toggleCol.id]);
+    sa.busy = true; renderSlots();
+    api.updateFields(s.table, id, fields).then(function () { return load(); })
+      .catch(function (e) { sa.msg = { type: 'error', text: 'Modification impossible : ' + ((e && e.message) || e) + '.' }; })
+      .then(function () { sa.busy = false; if (state.slotAdmin) renderSlots(); });
+  }
+  function deleteSlot(id) {
+    var sa = state.slotAdmin, s = state.slots[sa.tab]; if (!s || sa.busy) return;
+    sa.busy = true; renderSlots();
+    api.deleteRow(s.table, id).then(function () {
+      sa.confirmDelete = null; sa.msg = { type: 'success', text: 'Créneau supprimé.' };
+      return load();
+    }).catch(function (e) {
+      sa.confirmDelete = null; sa.msg = { type: 'error', text: 'Suppression impossible : ' + ((e && e.message) || e) + '.' };
+    }).then(function () { sa.busy = false; if (state.slotAdmin) renderSlots(); });
+  }
+  function readSlotField(el) {
+    var sa = state.slotAdmin; if (!sa) return;
+    var cf = el.getAttribute && el.getAttribute('data-cf'), ef = el.getAttribute && el.getAttribute('data-ef');
+    if (cf && sa.create) { sa.create[cf] = el.value; sa.create.error = ''; }
+    else if (ef && sa.edit) { sa.edit[ef] = el.value; sa.edit.error = ''; }
+  }
+  $('btn-slots').addEventListener('click', openSlots);
+  $('smodal-close').addEventListener('click', closeSlots);
+  $('smodal').addEventListener('mousedown', function (e) { if (e.target === $('smodal') && !(state.slotAdmin && state.slotAdmin.busy)) closeSlots(); });
+  $('smodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.slotAdmin && state.slotAdmin.busy)) closeSlots(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('smodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select, [tabindex="0"]'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  $('smodal-body').addEventListener('click', function (e) {
+    var sa = state.slotAdmin; if (!sa) return;
+    if (e.target.id === 'x-sf-add') { sa.create = { date: '', time: '', antenne: '', cap: '', error: '', busy: false }; sa.edit = null; renderSlots(); return; }
+    if (e.target.id === 'x-sf-cancel') { sa.create = null; renderSlots(); return; }
+    if (e.target.id === 'x-sf-create') { submitCreateSlot(); return; }
+    if (e.target.id === 'x-sf-template') { downloadSlotTemplate(sa.tab); return; }
+    if (e.target.id === 'x-sf-import-open') { sa.import = { error: '', busy: false }; sa.edit = null; renderSlots(); return; }
+    if (e.target.id === 'x-sf-import-cancel') { sa.import = null; renderSlots(); return; }
+    if (e.target.closest('#x-sf-drop') && sa.import && !sa.import.busy) { pickCsvFile(importSlotsFile); return; }
+    var b = e.target.closest('[data-sact]'); if (!b) return;
+    var id = Number(b.getAttribute('data-id')), act = b.getAttribute('data-sact');
+    if (act === 'edit') startEditSlot(id);
+    else if (act === 'edit-cancel') { sa.edit = null; renderSlots(); }
+    else if (act === 'edit-save') submitEditSlot(id);
+    else if (act === 'delete') { sa.confirmDelete = id; renderSlots(); }
+    else if (act === 'delete-cancel') { sa.confirmDelete = null; renderSlots(); }
+    else if (act === 'delete-confirm') deleteSlot(id);
+    else if (act === 'toggle') toggleSlot(id);
+  });
+  $('smodal-body').addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'x-sf-drop' && state.slotAdmin && state.slotAdmin.import && !state.slotAdmin.import.busy) { e.preventDefault(); pickCsvFile(importSlotsFile); }
+  });
+  ['dragenter', 'dragover'].forEach(function (t) {
+    $('smodal-body').addEventListener(t, function (e) { var z = e.target.closest('#x-sf-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } });
+  });
+  $('smodal-body').addEventListener('dragleave', function (e) { var z = e.target.closest('#x-sf-drop'); if (z) z.classList.remove('is-over'); });
+  $('smodal-body').addEventListener('drop', function (e) {
+    var z = e.target.closest('#x-sf-drop'); if (!z) return;
+    e.preventDefault(); z.classList.remove('is-over');
+    var sa = state.slotAdmin; if (!sa || !sa.import || sa.import.busy || !e.dataTransfer || !e.dataTransfer.files.length) return;
+    importSlotsFile(e.dataTransfer.files[0]);
+  });
+  // Empêche le navigateur d'ouvrir un fichier lâché à côté de la zone.
+  ['dragover', 'drop'].forEach(function (t) { $('smodal').addEventListener(t, function (e) { if (!e.target.closest('#x-sf-drop')) e.preventDefault(); }); });
+  $('smodal-body').addEventListener('input', function (e) { readSlotField(e.target); });
+  $('smodal-body').addEventListener('change', function (e) { readSlotField(e.target); });
+
+  /* ---------- Réserver / modifier une réservation (créer une ligne pour un réserviste ou un candidat) ---------- */
+  // Source des personnes : réservistes pour VMP, candidats pour VEMI et Tests psy.
+  function personSourceFor(tab) { return tab === 'vmp' ? state.res : state.cand; }
+  function personLabel(tab, row) {
+    var src = personSourceFor(tab); if (!src) return '';
+    var nom = findCol(src.cols, 'NOM'), pre = findCol(src.cols, 'Prénom'), keyCol = findCol(src.cols, SPECS[tab].key);
+    var name = [nom && row[nom.id], pre && row[pre.id]].filter(Boolean).join(' ');
+    return name + (keyCol && row[keyCol.id] ? ' · ' + row[keyCol.id] : '');
+  }
+  function personSearchHay(tab, row) {
+    var src = personSourceFor(tab); if (!src) return '';
+    var parts = []; ['NOM', 'Prénom', 'Nigend', 'NID'].forEach(function (l) { var c = findCol(src.cols, l); if (c && row[c.id] != null) parts.push(row[c.id]); });
+    return norm(parts.join(' '));
+  }
+  function openBook() {
+    var tab = state.tab; if (!state.data[tab]) { showMsg('error', 'La table des réservations ' + SPECS[tab].title + ' est introuvable.'); return; }
+    state.book = { mode: 'create', tab: tab, id: null, date: '', time: '', antenne: '', personId: '', query: '', warn: '', confirmDup: false, error: '', busy: false };
+    renderBook(); showBookModal();
+  }
+  function openBookEdit(id) {
+    var tab = state.tab, d = state.data[tab], spec = SPECS[tab], cs = CRENEAU_SPECS[tab]; if (!d) return;
+    var row = d.rows.filter(function (r) { return r.id === id; })[0]; if (!row) return;
+    var dateCol = findCol(d.cols, 'Date'), timeCol = cs.timeLabel && findCol(d.cols, cs.timeLabel), antCol = spec.antenne && findCol(d.cols, spec.antenne);
+    var src = personSourceFor(tab), keyCol = findCol(d.cols, spec.key), pKeyCol = src && findCol(src.cols, spec.key);
+    var kv = keyCol && row[keyCol.id] != null ? norm(String(row[keyCol.id])) : '';
+    var personRow = (src && pKeyCol && kv) ? src.rows.filter(function (r) { return norm(String(r[pKeyCol.id] || '')) === kv; })[0] : null;
+    state.book = {
+      mode: 'edit', tab: tab, id: id,
+      date: dateCol ? dateInputVal(row[dateCol.id]) : '', time: timeCol ? (row[timeCol.id] || '') : '', antenne: antCol ? (row[antCol.id] || '') : '',
+      personId: personRow ? personRow.id : '', query: '', warn: '', confirmDup: false, error: '', busy: false
+    };
+    renderBook(); showBookModal();
+  }
+  function showBookModal() {
+    var ov = $('rmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('rmodal-close').focus(); }); });
+  }
+  function closeBook() {
+    var ov = $('rmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.book = null;
+    setTimeout(function () { ov.hidden = true; }, 200); if ($('btn-book')) $('btn-book').focus();
+  }
+  function renderBookPersonListHtml() {
+    var bk = state.book, src = personSourceFor(bk.tab); if (!src) return '';
+    var q = norm(bk.query.trim()), terms = q ? q.split(/\s+/) : [];
+    var list = src.rows.filter(function (r) { return !terms.length || terms.every(function (t) { return personSearchHay(bk.tab, r).indexOf(t) !== -1; }); }).slice(0, 50);
+    if (!list.length) return '<p class="ms-empty">Aucun résultat.</p>';
+    return '<div class="ms-group" style="max-height:12rem;overflow:auto;border:1px solid var(--border-default-grey);border-radius:.5rem;padding:4px">' +
+      list.map(function (r) { return '<button type="button" class="ms-opt" style="width:100%;text-align:left;border:0;background:none;cursor:pointer" data-pid="' + r.id + '">' + esc(personLabel(bk.tab, r)) + '</button>'; }).join('') + '</div>';
+  }
+  function renderBookList() { var el = $('bk-list'); if (el) el.innerHTML = renderBookPersonListHtml(); }
+  function renderBook() {
+    var bk = state.book; if (!bk) return;
+    var tab = bk.tab, spec = SPECS[tab], cs = CRENEAU_SPECS[tab], s = state.slots[tab], src = personSourceFor(tab);
+    $('rmodal-title').textContent = (bk.mode === 'edit' ? 'Modifier la réservation · ' : 'Réserver · ') + spec.title;
+    var out = (bk.error ? '<div class="doc-alert error" role="alert"><p>' + esc(bk.error) + '</p></div>' : '') +
+      (bk.warn ? '<div class="cf-warn" role="alert"><p>' + esc(bk.warn) + '</p></div>' : '');
+
+    out += '<section class="cf-section"><h3>Créneau</h3>';
+    if (s) {
+      var sDateCol = findCol(s.cols, cs.dateLabel), sTimeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
+        sAntCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), sCapCol = cs.capLabel && findCol(s.cols, cs.capLabel), sToggleCol = findCol(s.cols, cs.toggleLabel);
+      var opts = s.rows.filter(function (r) { return !sToggleCol || isYes(r[sToggleCol.id]); })
+        .sort(function (a, b) { var av = sDateCol ? (a[sDateCol.id] || 0) : 0, bv = sDateCol ? (b[sDateCol.id] || 0) : 0; if (av !== bv) return av - bv; return sTimeCol ? String(a[sTimeCol.id] || '').localeCompare(String(b[sTimeCol.id] || '')) : 0; })
+        .map(function (r) {
+          var full = sCapCol && slotBookedCount(tab, r, s) >= (r[sCapCol.id] || 0);
+          var label = (sDateCol ? fmtDate(r[sDateCol.id]) : '') + (sTimeCol ? ' ' + (r[sTimeCol.id] || '') : '') + (sAntCol ? ' — ' + (r[sAntCol.id] || '') : '') + (sCapCol ? ' (' + slotBookedCount(tab, r, s) + '/' + (r[sCapCol.id] == null ? '—' : r[sCapCol.id]) + ')' : '');
+          return '<option value="' + r.id + '"' + (full ? ' disabled' : '') + '>' + esc(label + (full ? ' — complet' : '')) + '</option>';
+        });
+      out += '<div class="cf-field"><label for="x-bk-slot">Choisir un créneau proposé</label><select class="select" id="x-bk-slot"><option value="">— Choisir —</option>' + opts.join('') + '</select></div>';
+    }
+    out += '<div class="cf-grid">' +
+      '<div class="cf-field"><label for="x-bk-date">Date<span class="req" aria-hidden="true">*</span></label><input type="date" class="input" id="x-bk-date" value="' + esc(bk.date) + '"></div>' +
+      (cs.timeLabel ? '<div class="cf-field"><label for="x-bk-time">Heure<span class="req" aria-hidden="true">*</span></label><input type="text" class="input" id="x-bk-time" placeholder="HH:mm" value="' + esc(bk.time) + '"></div>' : '') +
+      (cs.antenneLabel ? '<div class="cf-field"><label for="x-bk-ant">Antenne médicale<span class="req" aria-hidden="true">*</span></label><select class="select" id="x-bk-ant">' + antenneOptionsHtml(bk.antenne) + '</select></div>' : '') +
+      '</div></section>';
+
+    out += '<section class="cf-section"><h3>' + (tab === 'vmp' ? 'Réserviste' : 'Candidat') + '</h3>';
+    if (!src) out += '<p class="stg-empty">Table introuvable : configurez-la dans le back office.</p>';
+    else {
+      var chosen = bk.personId ? src.rows.filter(function (r) { return String(r.id) === String(bk.personId); })[0] : null;
+      out += '<div class="cf-field"><label for="x-bk-q">Rechercher (nom' + (tab === 'vmp' ? ', Nigend' : ', NID') + ')</label><input class="input" type="text" id="x-bk-q" autocomplete="off" value="' + esc(bk.query) + '" placeholder="Tapez pour rechercher…"></div>';
+      out += chosen
+        ? '<p class="hint">Sélectionné : <strong>' + esc(personLabel(tab, chosen)) + '</strong> · <button type="button" class="btn secondary sm" id="x-bk-clear">Changer</button></p>'
+        : '<div id="x-bk-list">' + renderBookPersonListHtml() + '</div>';
+    }
+    out += '</section>';
+
+    out += '<div class="cf-actions"><button type="button" class="btn"' + (bk.busy ? ' disabled' : '') + ' id="x-bk-submit">' +
+      (bk.busy ? (bk.mode === 'edit' ? 'Enregistrement…' : 'Réservation…') : (bk.confirmDup ? (bk.mode === 'edit' ? 'Enregistrer quand même' : 'Réserver quand même') : (bk.mode === 'edit' ? 'Enregistrer' : 'Réserver'))) + '</button>' +
+      '<button type="button" class="btn secondary" id="x-bk-cancel"' + (bk.busy ? ' disabled' : '') + '>Annuler</button></div>';
+    $('rmodal-body').innerHTML = out;
+  }
+  function submitBook() {
+    var bk = state.book; if (!bk || bk.busy) return;
+    var tab = bk.tab, spec = SPECS[tab], cs = CRENEAU_SPECS[tab], d = state.data[tab], src = personSourceFor(tab);
+    function fail(msg) { bk.error = msg; bk.warn = ''; bk.confirmDup = false; renderBook(); }
+    if (!d) return fail('Table des réservations introuvable.');
+    if (!bk.date) return fail('Indiquez la date.');
+    var dv = parseDateInput(bk.date); if (dv == null) return fail('Date invalide.');
+    if (cs.timeLabel && !bk.time.trim()) return fail('Indiquez l’heure.');
+    if (cs.antenneLabel && !bk.antenne) return fail('Choisissez l’antenne médicale.');
+    if (!src) return fail('Table des ' + (tab === 'vmp' ? 'réservistes' : 'candidats') + ' introuvable.');
+    if (!bk.personId) return fail('Choisissez ' + (tab === 'vmp' ? 'un réserviste' : 'un candidat') + '.');
+    var personRow = src.rows.filter(function (r) { return String(r.id) === String(bk.personId); })[0];
+    if (!personRow) return fail('Sélection invalide.');
+
+    var fields = {};
+    var dateCol = findCol(d.cols, 'Date'), timeCol = cs.timeLabel && findCol(d.cols, cs.timeLabel), antCol = spec.antenne && findCol(d.cols, spec.antenne);
+    if (dateCol) fields[dateCol.id] = dv;
+    if (timeCol) fields[timeCol.id] = bk.time.trim();
+    if (antCol) fields[antCol.id] = bk.antenne;
+    var keyCol = findCol(d.cols, spec.key), pKeyCol = findCol(src.cols, spec.key);
+    if (keyCol && pKeyCol) fields[keyCol.id] = personRow[pKeyCol.id];
+    var personCol = findCol(d.cols, spec.person), nomC = findCol(src.cols, 'NOM'), preC = findCol(src.cols, 'Prénom');
+    var name = [nomC && personRow[nomC.id] ? String(personRow[nomC.id]).toLocaleUpperCase('fr-FR') : '', preC && personRow[preC.id]].filter(Boolean).join(' ');
+    if (personCol) fields[personCol.id] = name;
+    var affD = findCol(d.cols, 'Affectation'), affS = findCol(src.cols, 'Affectation');
+    if (affD && affS) fields[affD.id] = personRow[affS.id];
+    if (spec.email) {
+      var emD = findCol(d.cols, spec.email), emS = findCol(src.cols, tab === 'vmp' ? 'Adresse email' : 'Email');
+      if (emD && emS) fields[emD.id] = personRow[emS.id];
+    }
+    if (bk.mode !== 'edit') { var madeCol = findCol(d.cols, 'Réservation faite le'); if (madeCol) fields[madeCol.id] = Math.floor(Date.now() / 1000); }
+
+    var keyVal = keyCol && fields[keyCol.id] != null ? norm(String(fields[keyCol.id])) : '';
+    var existing = keyVal ? d.rows.filter(function (r) { return r.id !== bk.id && norm(String(r[keyCol.id] || '')) === keyVal; }) : [];
+    if (existing.length && !bk.confirmDup) {
+      bk.warn = (tab === 'vmp' ? 'Ce réserviste a' : 'Ce candidat a') + ' déjà ' + (existing.length > 1 ? 'plusieurs réservations' : 'une réservation') + ' ' + spec.title + '. Continuer quand même (marquée comme doublon) ?';
+      bk.confirmDup = true; bk.error = ''; renderBook(); return;
+    }
+    if (existing.length && bk.confirmDup) spec.dupFlags.forEach(function (l) { var c = findCol(d.cols, l); if (c) fields[c.id] = typeBase(c.type) === 'Bool' ? true : 'Oui'; });
+
+    bk.busy = true; bk.error = ''; renderBook();
+    Promise.resolve(bk.mode === 'edit' ? api.updateFields(d.table, bk.id, fields) : api.createRow(d.table, fields)).then(function () {
+      var wasEdit = bk.mode === 'edit'; closeBook(); showMsg('success', wasEdit ? 'Réservation modifiée.' : 'Réservation créée.');
+      return load();
+    }).catch(function (e) { bk.busy = false; bk.error = (bk.mode === 'edit' ? 'Enregistrement impossible : ' : 'Création impossible : ') + ((e && e.message) || e) + '.'; renderBook(); });
+  }
+  $('btn-book').addEventListener('click', openBook);
+  $('rmodal-close').addEventListener('click', closeBook);
+  $('rmodal').addEventListener('mousedown', function (e) { if (e.target === $('rmodal') && !(state.book && state.book.busy)) closeBook(); });
+  $('rmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (!(state.book && state.book.busy)) closeBook(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('rmodal').querySelectorAll('button:not(:disabled), input:not([type=hidden]), select'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  $('rmodal-body').addEventListener('input', function (e) {
+    var bk = state.book; if (!bk) return;
+    if (e.target.id === 'x-bk-date') { bk.date = e.target.value; bk.error = ''; }
+    else if (e.target.id === 'x-bk-time') { bk.time = e.target.value; bk.error = ''; }
+    else if (e.target.id === 'x-bk-q') { bk.query = e.target.value; renderBookList(); }
+  });
+  $('rmodal-body').addEventListener('change', function (e) {
+    var bk = state.book; if (!bk) return;
+    if (e.target.id === 'x-bk-ant') { bk.antenne = e.target.value; bk.error = ''; }
+    else if (e.target.id === 'x-bk-slot') {
+      var s = state.slots[bk.tab], cs = CRENEAU_SPECS[bk.tab]; if (!s || !e.target.value) return;
+      var row = s.rows.filter(function (r) { return String(r.id) === e.target.value; })[0]; if (!row) return;
+      var dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel), antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel);
+      bk.date = dateCol ? dateInputVal(row[dateCol.id]) : bk.date;
+      bk.time = timeCol ? (row[timeCol.id] || '') : bk.time;
+      bk.antenne = antCol ? (row[antCol.id] || '') : bk.antenne;
+      bk.error = ''; renderBook();
+    }
+  });
+  $('rmodal-body').addEventListener('click', function (e) {
+    var bk = state.book; if (!bk) return;
+    if (e.target.id === 'x-bk-cancel') { closeBook(); return; }
+    if (e.target.id === 'x-bk-clear') { bk.personId = ''; bk.query = ''; renderBook(); return; }
+    if (e.target.id === 'x-bk-submit') { submitBook(); return; }
+    var pb = e.target.closest('[data-pid]'); if (pb) { bk.personId = pb.getAttribute('data-pid'); bk.query = ''; renderBook(); }
+  });
+
   // Back office masqué : 5 clics rapides sur l'en-tête font apparaître l'onglet « Back office ».
   var hdrClicks = 0, hdrTimer;
   document.querySelector('.fr-header').addEventListener('click', function (e) {
@@ -4602,7 +5947,7 @@
     });
     var opts = state.tables.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
     var det = detectTables(state.tables), ph = function (k) { return '<option value="">— Détection automatique' + (det[k] ? ' (' + esc(det[k]) + ')' : '') + ' —</option>'; };
-    [['vmp', 'f-t-vmp'], ['vemi', 'f-t-vemi'], ['psy', 'f-t-psy'], ['cand', 'f-t-cand']].forEach(function (p) { var el = $(p[1]); el.innerHTML = ph(p[0]) + opts; el.value = dr.tables[p[0]] || ''; });
+    [['vmp', 'f-t-vmp'], ['vemi', 'f-t-vemi'], ['psy', 'f-t-psy'], ['cand', 'f-t-cand'], ['res', 'f-t-res'], ['svmp', 'f-t-svmp'], ['svemi', 'f-t-svemi'], ['spsy', 'f-t-spsy']].forEach(function (p) { var el = $(p[1]); el.innerHTML = ph(p[0]) + opts; el.value = dr.tables[p[0]] || ''; });
     renderRecap();
   }
   function refreshPreview(t, k) {
@@ -4624,6 +5969,14 @@
     var C = state.cand, ce = C && findCol(C.cols, 'Email'), A = state.ant, am = A && antenneMailCol();
     rows.push(['Candidats (mails du VEMI)', C ? '<code>' + esc(C.table) + '</code>' : '—', ce ? 'NID, Email' : '—', status(C && ce && findCol(C.cols, 'NID'), 'Trouvée', 'Introuvable')]);
     rows.push(['Antennes médicales (mails)', A ? '<code>' + esc(A.table) + '</code>' : '—', am ? 'colonne <code>' + esc(am.id) + '</code>' : '—', status(A && am, 'Trouvée', 'Introuvable')]);
+    var R = state.res, rn = R && findCol(R.cols, 'Nigend');
+    rows.push(['Réservistes (bouton Réserver, VMP)', R ? '<code>' + esc(R.table) + '</code>' : '—', rn ? 'Nigend, NOM, Prénom' : '—', status(R && rn, 'Trouvée', 'Introuvable')]);
+    TAB_ORDER.forEach(function (k) {
+      var cs = CRENEAU_SPECS[k], s = state.slots[k];
+      var need = [cs.dateLabel, cs.toggleLabel].concat(cs.timeLabel ? [cs.timeLabel] : [], cs.antenneLabel ? [cs.antenneLabel] : [], cs.capLabel ? [cs.capLabel] : []);
+      var found = s ? need.filter(function (l) { return findCol(s.cols, l); }).length : 0;
+      rows.push(['Créneaux ' + cs.title, s ? '<code>' + esc(s.table) + '</code> · ' + s.rows.length + ' ligne' + (s.rows.length > 1 ? 's' : '') : (t['s' + k] ? '<code>' + esc(t['s' + k]) + '</code>' : '—'), s ? found + '/' + need.length + ' colonnes' : '—', status(s && found === need.length, 'Trouvée', s ? 'Colonnes manquantes' : 'Introuvable')]);
+    });
     $('recap-rows').innerHTML = rows.map(function (r) { return '<tr><td class="name">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('');
     $('recap-meta').innerHTML = rd ? '<span>Dernière lecture : <b>' + rd.at.toLocaleDateString('fr-FR') + ' à ' + rd.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</b></span>' : '';
     $('recap-sum').innerHTML = ok && C && A ? '<span class="tag green">Sources trouvées</span>' : '<span class="tag red">À vérifier</span>';
@@ -4641,7 +5994,7 @@
   $('view-admin').addEventListener('change', function (e) {
     var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
     if (t) { state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value; refreshPreview(t, el.getAttribute('data-k')); }
-    var m = /^x-f-t-(vmp|vemi|psy|cand)$/.exec(el.id || ''); if (m) state.draft.tables[m[1]] = el.value;
+    var m = /^x-f-t-(vmp|vemi|psy|cand|res|svmp|svemi|spsy)$/.exec(el.id || ''); if (m) state.draft.tables[m[1]] = el.value;
     setDirty(true);
   });
   $('mail-forms').addEventListener('click', function (e) {
