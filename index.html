@@ -638,13 +638,6 @@
       <div id="mail-forms"></div>
     </section>
 
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">3</div><h2>Importer des candidats manquants</h2></div>
-      <p class="lead">Ajoutez plusieurs candidatures à la fois depuis un fichier .csv, avec les mêmes informations que la création individuelle (bouton « Créer une candidature »).</p>
-      <div id="imp-msg"></div>
-      <div id="imp-body"></div>
-    </section>
-
     <details class="bo-advanced">
       <summary>Options avancées : sources, colonnes de la fiche, copies dans Documents</summary>
       <p class="hint">Par défaut, la table liée à cette page et les colonnes habituelles de la table Candidats PMG sont détectées automatiquement. À modifier uniquement si une colonne est « Introuvable » dans le récapitulatif ci-dessus.</p>
@@ -909,7 +902,14 @@
         <label for="x-q">Rechercher une réservation</label>
         <input id="x-q" class="input" type="search" placeholder="Nom, NID, Nigend, mail, date, antenne…" autocomplete="off">
       </div>
-      <label class="x-check"><input type="checkbox" id="x-dup-only"> Doublons uniquement</label>
+      <div class="tb-field">
+        <label for="x-flt-action">Afficher</label>
+        <select id="x-flt-action" class="select">
+          <option value="action">Action attendue</option>
+          <option value="dup">Doublons uniquement</option>
+          <option value="all">Toutes les réservations</option>
+        </select>
+      </div>
       <div class="count" id="x-count" aria-live="polite"></div>
       <button type="button" class="round-btn" id="x-btn-book" title="Réserver" aria-label="Réserver"><span class="fr-icon-calendar-event-line" aria-hidden="true"></span></button>
       <button type="button" class="round-btn" id="x-btn-slots" title="Administrer les créneaux" aria-label="Administrer les créneaux"><span class="fr-icon-settings-5-line" aria-hidden="true"></span></button>
@@ -1073,7 +1073,16 @@
         </div>
         <div class="modal-actions"><button class="round-btn" id="cmodal-close" type="button" aria-label="Fermer sans créer" title="Fermer">✕</button></div>
       </div>
+      <div class="tabs" id="cf-mode" role="tablist" aria-label="Mode de création" style="margin-bottom:20px">
+        <button type="button" class="tab" role="tab" id="cf-mode-single" aria-selected="true">Un candidat</button>
+        <button type="button" class="tab" role="tab" id="cf-mode-bulk" aria-selected="false">Plusieurs candidats (.csv)</button>
+      </div>
       <form id="cmodal-form" novalidate></form>
+      <div id="cmodal-bulk" hidden>
+        <p class="hint">Ajoutez plusieurs candidatures à la fois depuis un fichier .csv, avec les mêmes informations que la création individuelle.</p>
+        <div id="imp-msg"></div>
+        <div id="imp-body"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1200,56 +1209,34 @@
   var MAIL_SIGN_HTML = '  <p>Cordialement,<br>Division réserves jeunesse</p>';
   var SIGN_HTML = '  <p style="margin-top: 32px;">Fait le {{DATE_DU_JOUR}}<br>Division réserves jeunesse</p>';
 
-  // Six modèles distincts : réservation, convocation du candidat et convocation transmise au service, pour les tests et pour la VEMI.
-  var DEFAULT_MAIL = {
-    tests: {
-      reservation: {
-        subject: 'Tests psychométriques : merci de réserver votre créneau',
-        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
-          'Votre candidature à la réserve (n° {{N_CANDIDATURE}}) passe à l’étape suivante : le passage des tests psychométriques.\n\n' +
-          'Merci de nous indiquer, en répondant à ce message, au moins deux créneaux qui vous conviendraient. Nous vous confirmerons ensuite la date retenue et vous adresserons votre convocation.\n\n' +
-          MAIL_SIGN
-      },
-      convocation: {
-        subject: 'Convocation aux tests psychométriques du {{DATE_TESTS}}',
-        body: mailHtml(
-          '  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n' +
-          '  <p>Dans le cadre de votre candidature (n° {{N_CANDIDATURE}}), vous êtes convoqué(e) aux <strong>tests psychométriques</strong>.</p>\n' +
-          '  <table style="border-collapse: collapse; margin: 16px 0;">\n' + mailRow('Candidat', '{{IDENTITE}}') + mailRow('Date et heure', '<strong>{{DATE_TESTS}}</strong>') + '  </table>\n' +
-          '  <p><strong>Documents à présenter :</strong></p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>le présent message.</li>\n  </ul>\n' +
-          '  <p>Merci de confirmer votre présence en répondant à ce message. En cas d’empêchement, prévenez-nous dès que possible afin que nous puissions vous proposer une autre date.</p>\n' + MAIL_SIGN_HTML)
-      }
+  // Réservation, convocation et transmission au service : modèles communs à toutes les pages du widget (Candidats et Réservations),
+  // un seul texte à tenir à jour. {{TYPE}} est rempli automatiquement selon le contexte (Tests psychométriques, VEMI, VMP…).
+  var SHARED_KINDS = ['reservation', 'convocation', 'service'];
+  var DEFAULT_SHARED_MAIL = {
+    reservation: {
+      subject: '{{TYPE}} : merci de réserver votre créneau',
+      body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+        'Votre candidature à la réserve (n° {{N_CANDIDATURE}}) passe à l’étape suivante : {{TYPE}}.\n\n' +
+        'Merci de nous indiquer, en répondant à ce message, au moins deux créneaux qui vous conviendraient. Nous vous confirmerons ensuite la date retenue et vous adresserons votre convocation.\n\n' +
+        MAIL_SIGN
     },
-    vemi: {
-      reservation: {
-        subject: 'Visite médicale (VEMI) : merci de prendre rendez-vous',
-        body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
-          'Pour poursuivre l’instruction de votre candidature (n° {{N_CANDIDATURE}}), vous devez passer une visite d’expertise médicale initiale (VEMI) auprès d’une antenne médicale.\n\n' +
-          'Merci de réserver votre rendez-vous dans les meilleurs délais et de nous en communiquer la date en répondant à ce message.\n\n' +
-          'Le jour de la visite, pensez à apporter votre carnet de vaccination, vos éventuelles ordonnances en cours ainsi que vos lunettes ou lentilles si vous en portez.\n\n' + MAIL_SIGN
-      },
-      convocation: {
-        subject: 'Convocation à la visite médicale (VEMI) du {{DATE_VEMI}}',
-        body: mailHtml(
-          '  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n' +
-          '  <p>Pour poursuivre l’instruction de votre candidature (n° {{N_CANDIDATURE}}), vous êtes convoqué(e) à la <strong>visite d’expertise médicale initiale (VEMI)</strong>.</p>\n' +
-          '  <table style="border-collapse: collapse; margin: 16px 0;">\n' + mailRow('Candidat', '{{IDENTITE}}') + mailRow('Date et heure', '<strong>{{DATE_VEMI}}</strong>') + mailRow('Antenne médicale', '<strong>{{ANTENNE}}</strong>') + '  </table>\n' +
-          '  <p><strong>Documents à apporter :</strong></p>\n  <ul>\n    <li>une pièce d’identité en cours de validité ;</li>\n    <li>le présent message ;</li>\n    <li>votre carnet de vaccination et vos éventuelles ordonnances en cours ;</li>\n    <li>vos lunettes ou lentilles de contact, le cas échéant.</li>\n  </ul>\n' +
-          '  <p>Cette visite est indispensable à la poursuite de votre candidature. Merci de confirmer votre présence en répondant à ce message.</p>\n' + MAIL_SIGN_HTML)
-      },
-      service: {
-        subject: 'VEMI du {{DATE_VEMI}} : convocation de {{IDENTITE}}',
-        body: mailHtml(
-          '  <p>Bonjour,</p>\n' +
-          '  <p>Le candidat ci-dessous est convoqué à la <strong>visite d’expertise médicale initiale (VEMI)</strong> dans votre antenne.</p>\n' +
-          '  <table style="border-collapse: collapse; margin: 16px 0;">\n' +
-          mailRow('Candidat', '<strong>{{IDENTITE}}</strong>') + mailRow('Date de naissance', '{{DDN}}') + mailRow('N° de candidature', '{{N_CANDIDATURE}}') + mailRow('NID', '{{NID}}') +
-          mailRow('Grade', '{{GRADE}}') + mailRow('Groupement', '{{AFFECTATION}}') + mailRow('Téléphone', '{{TELEPHONE}}') +
-          mailRow('Date et heure', '<strong>{{DATE_VEMI}}</strong>') + mailRow('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
-          '  <p>Merci de recevoir ce candidat et de nous transmettre le résultat de la visite dès qu’il est disponible.</p>\n' + MAIL_SIGN_HTML)
-      }
+    convocation: {
+      subject: 'Convocation : {{TYPE}} du {{DATE}}',
+      body: 'Bonjour {{CIVILITE}} {{NOM}},\n\n' +
+        'Vous êtes convoqué(e) : {{TYPE}}.\n\n' +
+        'Date et heure : {{DATE}} {{HEURE}}\nAntenne médicale : {{ANTENNE}}\n\n' +
+        'À présenter : une pièce d’identité en cours de validité et le présent message.\n\n' +
+        'En cas d’empêchement, merci de nous prévenir dès que possible en répondant à ce message.\n\n' + MAIL_SIGN
+    },
+    service: {
+      subject: '{{TYPE}} du {{DATE}} : convocation de {{IDENTITE}}',
+      body: 'Bonjour,\n\n' +
+        'La personne ci-dessous est convoquée : {{TYPE}}, dans votre antenne.\n\n' +
+        'Identité : {{IDENTITE}}\nNID : {{NID}}\nAffectation : {{AFFECTATION}}\nTéléphone : {{TELEPHONE}}\nDate et heure : {{DATE}} {{HEURE}}\nAntenne médicale : {{ANTENNE}}\n\n' +
+        'Merci de recevoir cette personne et de nous transmettre le résultat dès qu’il est disponible.\n\n' + MAIL_SIGN
     }
   };
+  var DEFAULT_MAIL = {};
   // Lettre d'incorporation (envoyée au candidat) et ESR (engagement à servir dans la réserve, rangé dans Documents) : modèles propres.
   DEFAULT_MAIL.stage = {
     lettre: {
@@ -1306,12 +1293,21 @@
     var out = {};
     MAIL_BLOCKS.forEach(function (b) {
       out[b.key] = {};
-      Object.keys(DEFAULT_MAIL[b.key]).forEach(function (kind) {
+      (DEFAULT_MAIL[b.key] ? Object.keys(DEFAULT_MAIL[b.key]) : []).forEach(function (kind) {
         out[b.key][kind] = {};
         Object.keys(DEFAULT_MAIL[b.key][kind]).forEach(function (f) {
           var v = saved && saved[b.key] && saved[b.key][kind] && saved[b.key][kind][f];
           out[b.key][kind][f] = (typeof v === 'string' && v.trim() !== '') ? v : DEFAULT_MAIL[b.key][kind][f];
         });
+      });
+    });
+    // Modèles communs (réservation, convocation, transmission au service) : partagés avec la page Réservations.
+    out.shared = {};
+    Object.keys(DEFAULT_SHARED_MAIL).forEach(function (kind) {
+      out.shared[kind] = {};
+      Object.keys(DEFAULT_SHARED_MAIL[kind]).forEach(function (f) {
+        var v = saved && saved.shared && saved.shared[kind] && saved.shared[kind][f];
+        out.shared[kind][f] = (typeof v === 'string' && v.trim() !== '') ? v : DEFAULT_SHARED_MAIL[kind][f];
       });
     });
     return out;
@@ -1532,7 +1528,10 @@
     });
     return out;
   }
-  window.PMG = { table: function () { return cfg().table; } }; // utilisé par la page « Réservations » (adresses mail des candidats)
+  window.PMG = {
+    table: function () { return cfg().table; }, // utilisé par la page « Réservations » (adresses mail des candidats)
+    sharedMail: function (kind) { return mergeMail(state.opts.mail).shared[kind]; } // modèles communs (réservation, convocation, transmission au service)
+  };
   function cfg() {
     var table = state.opts.table || state.boundTable || '';
     return {
@@ -1840,8 +1839,9 @@
   function safeFileName(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'document'; }
 
   // Ouvre la messagerie sur un message pré-rempli (retours à la ligne en CRLF, comme l'attend mailto:).
-  function openMailto(email, subject, body, cc) {
-    var url = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(String(body).replace(/\r?\n/g, '\r\n')) + (cc ? '&cc=' + encodeURIComponent(cc) : '');
+  // mailto: n'affiche jamais de corps HTML (limite de tous les clients de messagerie) : le corps est toujours du texte brut.
+  function openMailto(email, subject, body, cc, replyTo) {
+    var url = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(String(body).replace(/\r?\n/g, '\r\n')) + (cc ? '&cc=' + encodeURIComponent(cc) : '') + (replyTo ? '&reply-to=' + encodeURIComponent(replyTo) : '');
     var a = document.createElement('a'); a.href = url; a.style.display = 'none';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
@@ -2069,11 +2069,22 @@
 
   function runMail(blockKey, kind, extra) {
     var item = state.view[state.modal.index]; if (!item) return;
-    var c = cfg(), block = MAIL_BLOCKS.filter(function (b) { return b.key === blockKey; })[0], tpl = c.mail[blockKey][kind], act = MAIL_ACTIONS[kind];
+    var c = cfg(), block = MAIL_BLOCKS.filter(function (b) { return b.key === blockKey; })[0], act = MAIL_ACTIONS[kind];
+    var shared = SHARED_KINDS.indexOf(kind) !== -1, tpl = shared ? c.mail.shared[kind] : c.mail[blockKey][kind];
     if (state.mail.pdfUrl) URL.revokeObjectURL(state.mail.pdfUrl);
     state.mail = { msg: null, pdfUrl: null, pdfName: null };
     // Lettre de rejet : le N° Chrono est demandé avant la génération.
     if (act.askChrono && !extra) { state.ask = { block: blockKey, kind: kind, value: '', error: '' }; renderModal(); return; }
+    // Modèles communs : {{TYPE}} (et {{DATE}}/{{HEURE}} pour convocation/service) sont fournis selon le contexte du bloc.
+    if (shared) {
+      extra = extra || {};
+      extra.TYPE = block.title;
+      if (kind !== 'reservation') {
+        var dateCol = block.dateLabel && findCol(c.table, block.dateLabel);
+        extra.DATE = dateCol ? textOfValue(dateCol, item.raw[dateCol.id]) : '';
+        extra.HEURE = '';
+      }
+    }
     function done(type, text) { state.mail.msg = { type: type, text: text }; renderModal(); }
 
     // ESR : pas de courriel, le PDF est téléchargé puis copié dans Documents.
@@ -2112,12 +2123,7 @@
     var subject = fillTemplate(tpl.subject, item, c, false, extra), body = fillTemplate(tpl.body, item, c, false, extra), cc = act.toService ? '' : c.cc, who = safeFileName(formatName(item.id || 'candidat'));
 
     if (kind === 'reservation') {
-      if (c.replyTo) { // mailto: ne permet pas de fixer « Répondre à » : on passe par un brouillon .eml
-        downloadBlob(new Blob([buildEml({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: body })], { type: 'message/rfc822' }), 'Reservation_' + blockKey + '_' + who + '.eml');
-        markSent(item.raw.id, blockKey, kind);
-        return done('success', 'Brouillon du message de réservation (' + block.title + ') téléchargé : ouvrez-le dans votre messagerie, vérifiez-le puis envoyez-le.');
-      }
-      openMailto(to, subject, body, cc);
+      openMailto(to, subject, body, cc, c.replyTo);
       markSent(item.raw.id, blockKey, kind);
       return done('success', 'Message de réservation (' + block.title + ') préparé dans votre messagerie : vérifiez-le puis envoyez-le.');
     }
@@ -2127,39 +2133,41 @@
       var ms = missingSchedule(item, c, block);
       if (ms.length) return done('error', 'La convocation ne peut pas être générée : renseignez d’abord ' + ms.join(' et ') + '.');
     }
-    // Convocations (tests, VEMI) : tout est dans le corps du courriel en HTML, sans pièce jointe. Une copie PDF est seulement archivée dans Documents.
+    // Convocations (tests, VEMI) : message en texte brut ouvert directement dans la messagerie.
+    // Une copie PDF est archivée dans Documents ; pour le service, elle est en plus téléchargée pour être glissée dans le message.
     if (act.htmlMail) {
-      var htmlBody = sanitizeHtml(fillTemplate(tpl.body, item, c, true, extra));
+      var textBody = fillTemplate(tpl.body, item, c, false, extra);
       var mbase = 'Convocation_' + (act.toService ? 'service_' : '') + blockKey + '_' + who, mname = mbase + '.pdf';
-      var emlH = buildEml({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: htmlToText(htmlBody), html: htmlBody });
-      downloadBlob(new Blob([emlH], { type: 'message/rfc822' }), mbase + '.eml');
+      openMailto(to, subject, textBody, cc, c.replyTo);
       markSent(item.raw.id, blockKey, kind);
-      var sentH = act.toService ? 'Convocation prête. Le brouillon du message pour le service (convocation dans le corps du courriel, sans pièce jointe) a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
-        : 'Convocation prête. Le brouillon du message (convocation dans le corps du courriel, sans pièce jointe) a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.';
+      var sentH = act.toService ? 'Convocation préparée dans votre messagerie pour le service : vérifiez-la puis envoyez-la.'
+        : 'Convocation préparée dans votre messagerie : vérifiez-la puis envoyez-la.';
       var tkH = mname + Date.now(); state.mail.ticket = tkH;
-      state.mail.msg = { type: 'success', text: sentH + ' Archivage d’une copie PDF dans Documents…' }; renderModal();
-      var pdfHtml = pageHtml((act.toService ? 'Fiche de convocation – ' : 'Convocation – ') + block.title, htmlBody);
+      state.mail.msg = { type: 'success', text: sentH + ' Génération du PDF à archiver' + (act.toService ? ' et à joindre' : '') + '…' }; renderModal();
+      var pdfHtml = pageHtml((act.toService ? 'Fiche de convocation – ' : 'Convocation – ') + block.title, '<p>' + esc(textBody).replace(/\n/g, '<br>') + '</p>');
       buildPdfFromHtml(pdfHtml).then(function (ab) {
         state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = mname;
+        if (act.toService) downloadBlob(new Blob([ab], { type: 'application/pdf' }), mname); // à glisser manuellement dans le message ouvert
         return storeCopy(item, c, kind, mname, ab).then(function (r) {
           if (state.mail.ticket !== tkH) return;
-          state.mail.msg = r.stored ? { type: 'success', text: sentH + ' Une copie PDF a été archivée dans Documents (' + displayLabel(r.col) + ').' }
+          state.mail.msg = r.stored ? { type: 'success', text: sentH + ' Une copie PDF a été archivée dans Documents (' + displayLabel(r.col) + ')' + (act.toService ? ' et téléchargée : glissez-la dans le message ouvert.' : '.') }
                                     : { type: 'error', text: sentH + ' La copie PDF n’a pas été archivée dans Documents : ' + r.why + '.' };
           return r.stored ? load() : renderModal();
         });
       }).catch(function (e) { if (state.mail.ticket === tkH) { state.mail.msg = { type: 'error', text: sentH + ' La copie PDF n’a pas pu être générée : ' + ((e && e.message) || e) + '.' }; renderModal(); } });
       return;
     }
+    // Lettre d'incorporation / de rejet : le PDF est téléchargé (à glisser dans le message ouvert) en plus d'être archivé dans Documents.
     var base = kind === 'lettre' ? 'Lettre_incorporation_' + who : kind === 'rejet' ? 'Lettre_rejet_' + who : 'Convocation_' + (kind === 'service' ? 'service_' : '') + blockKey + '_' + who, name = base + '.pdf';
-    var sent = kind === 'rejet' ? 'Lettre de rejet générée. Le brouillon du message, avec la lettre en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
-      : kind === 'lettre' ? 'Lettre d’incorporation générée. Le brouillon du message, avec la lettre en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
-      : (act.toService ? 'Convocation générée. Le brouillon du message pour le service, avec la convocation en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.'
-        : 'Convocation générée. Le brouillon du message, avec la convocation en pièce jointe, a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.');
+    var sent = kind === 'rejet' ? 'Lettre de rejet générée et message préparé dans votre messagerie : glissez-y le PDF téléchargé, vérifiez puis envoyez.'
+      : kind === 'lettre' ? 'Lettre d’incorporation générée et message préparé dans votre messagerie : glissez-y le PDF téléchargé, vérifiez puis envoyez.'
+      : (act.toService ? 'Convocation générée et message préparé dans votre messagerie pour le service : glissez-y le PDF téléchargé, vérifiez puis envoyez.'
+        : 'Convocation générée et message préparé dans votre messagerie : glissez-y le PDF téléchargé, vérifiez puis envoyez.');
     var ticket = name + Date.now(); state.mail.ticket = ticket;
     done('success', 'Génération du PDF en cours…');
     buildPdfFromHtml(fillTemplate(tpl.template, item, c, true, extra)).then(function (ab) {
-      var eml = buildEml({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: body, attName: name, attB64: abToB64(ab) });
-      downloadBlob(new Blob([eml], { type: 'message/rfc822' }), base + '.eml');
+      openMailto(to, subject, body, cc, c.replyTo);
+      downloadBlob(new Blob([ab], { type: 'application/pdf' }), name);
       markSent(item.raw.id, blockKey, kind);
       state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = name;
       state.mail.msg = { type: 'success', text: sent + ' Enregistrement d’une copie dans Documents…' }; renderModal();
@@ -3050,13 +3058,14 @@
 
   // Formulaires des modèles : un par envoi (réservation, convocation, convocation du service, lettre d'incorporation, ESR).
   var TPL_HINT = 'Modèle HTML converti en PDF (A4). Styles en ligne uniquement ; images uniquement en base64 (data:). Les valeurs des variables sont insérées sans balises.';
+  var SHARED_HINT = ' Modèle commun à toutes les pages du widget (Candidats et Réservations) : {{TYPE}} est rempli automatiquement selon le contexte (Tests psychométriques, VEMI, VMP…).';
   var MAIL_KINDS = {
-    reservation: { title: 'Courriel de réservation', hint: 'Message envoyé au candidat pour l’inviter à réserver son créneau.',
+    reservation: { title: 'Courriel de réservation', hint: 'Message envoyé au candidat pour l’inviter à réserver son créneau.' + SHARED_HINT,
       fields: [['subject', 'Objet', 'input'], ['body', 'Message', 'textarea']] },
-    convocation: { title: 'Convocation du candidat', html: true, hint: 'Courriel adressé au candidat, sans pièce jointe : toute la convocation figure dans le corps du message (HTML, styles en ligne). Une copie PDF est archivée dans Documents.',
-      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Corps du courriel (HTML)', 'textarea tall']] },
-    service: { title: 'Convocation transmise au service', html: true, hint: 'Courriel adressé à l’antenne médicale du candidat (adresse lue dans la colonne Mail de la table Antennes medicales), sans pièce jointe : la convocation figure dans le corps du message (HTML). Modèle distinct de celui du candidat. Une copie PDF est archivée dans Documents.',
-      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Corps du courriel (HTML)', 'textarea tall']] },
+    convocation: { title: 'Convocation', hint: 'Courriel adressé au candidat ou réserviste, sans pièce jointe : toute la convocation figure dans le corps du message (texte brut). Une copie PDF est archivée dans Documents.' + SHARED_HINT,
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Corps du courriel', 'textarea tall']] },
+    service: { title: 'Transmission de la convocation à l’antenne médicale', hint: 'Courriel adressé à l’antenne médicale (adresse lue dans la colonne Mail de la table Antennes medicales), sans pièce jointe : la convocation figure dans le corps du message (texte brut). Une copie PDF est archivée dans Documents.' + SHARED_HINT,
+      fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Corps du courriel', 'textarea tall']] },
     lettre: { title: 'Lettre d’incorporation', hint: 'Icône disponible uniquement si l’état de la candidature est « Admis PMG ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre (HTML)', 'textarea tall']] },
     rejet: { title: 'Lettre de rejet', hint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
@@ -3064,26 +3073,30 @@
     esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT,
       fields: [['template', 'Modèle de l’ESR (HTML)', 'textarea tall']] }
   };
+  function kindBlockHtml(bKey, kind) {
+    var k = MAIL_KINDS[kind];
+    return '<details class="mail-block"><summary>' + esc(k.title) + '</summary><div class="mail-body"><div class="mail-head">' +
+      '<span class="hint">' + esc(k.hint) + '</span>' +
+      '<button type="button" class="btn secondary sm" data-reset-b="' + bKey + '" data-reset-k="' + kind + '">Rétablir le texte par défaut</button></div>' + k.fields.map(function (f) {
+        var id = 'mf-' + bKey + '-' + kind + '-' + f[0], attrs = ' id="' + id + '" data-b="' + bKey + '" data-k="' + kind + '" data-f="' + f[0] + '"';
+        if (f[0] === 'template' || (k.html && f[0] === 'body')) {
+          return '<div class="mail-tpl-head"><label for="' + id + '">' + esc(f[1]) + '</label><button type="button" class="btn secondary sm" data-preview-b="' + bKey + '" data-preview-k="' + kind + '">Aperçu</button></div>' +
+            '<textarea class="textarea tall mono"' + attrs + ' spellcheck="false"></textarea>' +
+            '<iframe class="tpl-preview" id="pv-' + bKey + '-' + kind + '" title="Aperçu du modèle" sandbox hidden></iframe>';
+        }
+        return '<label for="' + id + '">' + esc(f[1]) + '</label>' + (f[2].indexOf('textarea') === 0 ? '<textarea class="textarea' + (f[2].indexOf('tall') !== -1 ? ' tall' : '') + '"' + attrs + ' spellcheck="true"></textarea>' : '<input class="input" type="' + (f[0] === 'to' ? 'text' : 'text') + '"' + attrs + ' autocomplete="off"' + (f[0] === 'to' ? ' placeholder="service@exemple.fr (plusieurs adresses : séparées par une virgule)"' : '') + '>');
+      }).join('') + '</div></details>';
+  }
   function renderMailForms() {
     var host = $('mail-forms'), dr = state.draft;
     if (!dr.mail) return;
     if (!host.firstChild) {
-      host.innerHTML = MAIL_BLOCKS.map(function (b) {
-        return '<h3 class="mail-group">' + esc(b.title) + '</h3>' + b.kinds.map(function (kind) {
-          var k = MAIL_KINDS[kind];
-          return '<details class="mail-block"><summary>' + esc(k.title) + '</summary><div class="mail-body"><div class="mail-head">' +
-            '<span class="hint">' + esc(k.hint) + '</span>' +
-            '<button type="button" class="btn secondary sm" data-reset-b="' + b.key + '" data-reset-k="' + kind + '">Rétablir le texte par défaut</button></div>' + k.fields.map(function (f) {
-              var id = 'mf-' + b.key + '-' + kind + '-' + f[0], attrs = ' id="' + id + '" data-b="' + b.key + '" data-k="' + kind + '" data-f="' + f[0] + '"';
-              if (f[0] === 'template' || (k.html && f[0] === 'body')) {
-                return '<div class="mail-tpl-head"><label for="' + id + '">' + esc(f[1]) + '</label><button type="button" class="btn secondary sm" data-preview-b="' + b.key + '" data-preview-k="' + kind + '">Aperçu</button></div>' +
-                  '<textarea class="textarea tall mono"' + attrs + ' spellcheck="false"></textarea>' +
-                  '<iframe class="tpl-preview" id="pv-' + b.key + '-' + kind + '" title="Aperçu du modèle" sandbox hidden></iframe>';
-              }
-              return '<label for="' + id + '">' + esc(f[1]) + '</label>' + (f[2].indexOf('textarea') === 0 ? '<textarea class="textarea"' + attrs + ' spellcheck="true"></textarea>' : '<input class="input" type="' + (f[0] === 'to' ? 'text' : 'text') + '"' + attrs + ' autocomplete="off"' + (f[0] === 'to' ? ' placeholder="service@exemple.fr (plusieurs adresses : séparées par une virgule)"' : '') + '>');
-            }).join('') + '</div></details>';
+      host.innerHTML = '<h3 class="mail-group">Modèles communs · Candidats et Réservations</h3>' + SHARED_KINDS.map(function (kind) { return kindBlockHtml('shared', kind); }).join('') +
+        MAIL_BLOCKS.map(function (b) {
+          var kinds = b.kinds.filter(function (kind) { return SHARED_KINDS.indexOf(kind) === -1; });
+          if (!kinds.length) return '';
+          return '<h3 class="mail-group">' + esc(b.title) + '</h3>' + kinds.map(function (kind) { return kindBlockHtml(b.key, kind); }).join('');
         }).join('');
-      }).join('');
     }
     Array.prototype.forEach.call(host.querySelectorAll('[data-b]'), function (el) {
       var v = dr.mail[el.getAttribute('data-b')][el.getAttribute('data-k')][el.getAttribute('data-f')];
@@ -3222,7 +3235,8 @@
     }
     var b = e.target.closest('[data-reset-b]'); if (!b) return;
     var blk = b.getAttribute('data-reset-b'), kind = b.getAttribute('data-reset-k'), keepTo = state.draft.mail[blk][kind].to;
-    state.draft.mail[blk][kind] = JSON.parse(JSON.stringify(DEFAULT_MAIL[blk][kind]));
+    var def = blk === 'shared' ? DEFAULT_SHARED_MAIL[kind] : DEFAULT_MAIL[blk][kind];
+    state.draft.mail[blk][kind] = JSON.parse(JSON.stringify(def));
     if (keepTo !== undefined) state.draft.mail[blk][kind].to = keepTo; // l'adresse du service n'est pas un texte par défaut
     renderMailForms();
     refreshPreview(blk, kind);
@@ -3312,17 +3326,29 @@
       '<button type="button" class="btn secondary" id="cf-cancel"' + (cr.busy ? ' disabled' : '') + '>Annuler</button></div>';
   }
 
+  // Mode de la modale de création : un candidat (formulaire) ou plusieurs (.csv).
+  function setCreateMode(m) {
+    if (state.create) state.create.mode = m;
+    $('cf-mode-single').setAttribute('aria-selected', String(m === 'single'));
+    $('cf-mode-bulk').setAttribute('aria-selected', String(m === 'bulk'));
+    $('cmodal-form').hidden = m !== 'single';
+    $('cmodal-bulk').hidden = m !== 'bulk';
+    if (m === 'bulk') renderImportSection();
+  }
   function openCreate() {
     var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
     var values = {};
     createColumns(c).forEach(function (s) { s.cols.forEach(function (col) { values[col.id] = editInitial(col, null); }); });
-    state.create = { values: values, error: '', warn: '', confirmDup: false, busy: false };
+    state.create = { values: values, error: '', warn: '', confirmDup: false, busy: false, mode: 'single' };
+    state.importState = { busy: false, msg: null };
     renderCreateForm();
+    setCreateMode('single');
     var ov = $('cmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('cmodal-form').querySelector('input, select'); if (f) f.focus(); }); });
   }
   function closeCreate() {
     var ov = $('cmodal'); if (ov.hidden) return;
+    if (state.importState && state.importState.busy) return; // import en cours : on ne ferme pas
     ov.classList.remove('is-open'); document.body.style.overflow = ''; state.create = null;
     setTimeout(function () { ov.hidden = true; }, 200); $('btn-create').focus();
     load(); // actualise les données à la fermeture de la fenêtre
@@ -3522,9 +3548,11 @@
     if (state.importState.busy || !e.dataTransfer || !e.dataTransfer.files.length) return;
     importCandidatesFile(e.dataTransfer.files[0]);
   });
-  ['dragover', 'drop'].forEach(function (t) { $('view-admin').addEventListener(t, function (e) { if (!e.target.closest('#imp-drop')) e.preventDefault(); }); });
+  ['dragover', 'drop'].forEach(function (t) { $('cmodal').addEventListener(t, function (e) { if (!e.target.closest('#imp-drop')) e.preventDefault(); }); });
 
   $('btn-create').addEventListener('click', openCreate);
+  $('cf-mode-single').addEventListener('click', function () { setCreateMode('single'); });
+  $('cf-mode-bulk').addEventListener('click', function () { setCreateMode('bulk'); });
   $('cmodal-close').addEventListener('click', closeCreate);
   $('cmodal').addEventListener('mousedown', function (e) { if (e.target === $('cmodal') && !(state.create && state.create.busy)) closeCreate(); });
   $('cmodal-form').addEventListener('click', function (e) { if (e.target.id === 'cf-cancel') closeCreate(); });
@@ -4992,43 +5020,21 @@
     vemi: { title: 'VEMI', dateLabel: 'Date', timeLabel: 'Heure', antenneLabel: 'Antenne médicale', capLabel: '', toggleLabel: 'Proposé ?', etatLabel: 'Etat créneau' },
     psy: { title: 'Tests psy', dateLabel: 'Date', timeLabel: '', antenneLabel: '', capLabel: 'Capacité', toggleLabel: 'Proposé ?', etatLabel: '' }
   };
-  var KINDS_OF = { vmp: ['convocation', 'service', 'suppression'], vemi: ['convocation', 'service', 'suppression'], psy: ['convocation', 'suppression'] };
-  var KIND_TITLES = { convocation: 'Convocation', service: 'Convocation transmise à l’antenne médicale', suppression: 'Information de suppression d’une réservation (doublon)' };
+  // Convocation et transmission au service : modèles communs à toutes les pages du widget (édités depuis le back office de la page Candidats).
+  var KINDS_OF = { vmp: ['suppression'], vemi: ['suppression'], psy: ['suppression'] };
+  var KIND_TITLES = { suppression: 'Information de suppression d’une réservation (doublon)' };
 
-  /* ---------- Modèles de courriels par défaut ---------- */
-  function mailHtml(inner) { return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' + inner + '\n</div>'; }
-  function row(label, value) { return '    <tr><th style="text-align: left; padding: 6px 12px; background: #f3f3fd; border: 1px solid #ddd; white-space: nowrap;">' + label + '</th><td style="padding: 6px 12px; border: 1px solid #ddd;">' + value + '</td></tr>\n'; }
-  var SIGN = '  <p>Cordialement,<br>Division réserves jeunesse</p>';
-  function convocation(what, withPlace) {
-    return mailHtml('  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n  <p>Votre réservation est confirmée : vous êtes convoqué(e) ' + what + '.</p>\n  <table style="border-collapse: collapse; margin: 16px 0;">\n' +
-      row('Date et heure', '<strong>{{DATE}} {{HEURE}}</strong>') + (withPlace ? row('Antenne médicale', '<strong>{{ANTENNE}}</strong>') : '') + '  </table>\n' +
-      '  <p><strong>À présenter :</strong> une pièce d’identité en cours de validité et le présent message.</p>\n  <p>En cas d’empêchement, merci de nous prévenir dès que possible en répondant à ce message.</p>\n' + SIGN);
-  }
-  function service(what) {
-    return mailHtml('  <p>Bonjour,</p>\n  <p>Le réserviste ci-dessous est convoqué ' + what + ' dans votre antenne.</p>\n  <table style="border-collapse: collapse; margin: 16px 0;">\n' +
-      row('Identité', '<strong>{{IDENTITE}}</strong>') + row('NID / Nigend', '{{NID}}{{NIGEND}}') + row('Affectation', '{{AFFECTATION}}') + row('Date et heure', '<strong>{{DATE}} {{HEURE}}</strong>') + row('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
-      '  <p>Merci de recevoir ce réserviste.</p>\n' + SIGN);
-  }
+  /* ---------- Modèles de courriels par défaut (texte brut) ---------- */
+  var SIGN = 'Cordialement,\nDivision réserves jeunesse';
   function suppression(what) {
-    return mailHtml('  <p>Bonjour {{CIVILITE}} {{NOM}},</p>\n  <p>Vous aviez effectué plusieurs réservations ' + what + '. Nous avons supprimé la réservation suivante afin de ne conserver qu’un seul rendez-vous :</p>\n' +
-      '  <table style="border-collapse: collapse; margin: 16px 0;">\n' + row('Réservation supprimée', '<strong>{{DATE}} {{HEURE}}</strong>') + row('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
-      '  <p>Votre autre réservation reste valable. Pour toute question, répondez à ce message.</p>\n' + SIGN);
+    return 'Bonjour {{CIVILITE}} {{NOM}},\n\nVous aviez effectué plusieurs réservations ' + what + '. Nous avons supprimé la réservation suivante afin de ne conserver qu’un seul rendez-vous :\n\n' +
+      'Réservation supprimée : {{DATE}} {{HEURE}}\nAntenne médicale : {{ANTENNE}}\n\n' +
+      'Votre autre réservation reste valable. Pour toute question, répondez à ce message.\n\n' + SIGN;
   }
   var DEFAULT_MAIL = {
-    vmp: {
-      convocation: { subject: 'Convocation à la visite médicale périodique (VMP) du {{DATE}}', format: 'html', body: convocation('à la <strong>visite médicale périodique (VMP)</strong>', true) },
-      service: { subject: 'VMP du {{DATE}} : convocation de {{IDENTITE}}', format: 'html', body: service('à la visite médicale périodique (VMP)') },
-      suppression: { subject: 'Suppression d’une de vos réservations VMP', format: 'html', body: suppression('de visite médicale périodique (VMP)') }
-    },
-    vemi: {
-      convocation: { subject: 'Convocation à la visite médicale (VEMI) du {{DATE}}', format: 'html', body: convocation('à la <strong>visite d’expertise médicale initiale (VEMI)</strong>', true) },
-      service: { subject: 'VEMI du {{DATE}} : convocation de {{IDENTITE}}', format: 'html', body: service('à la visite d’expertise médicale initiale (VEMI)') },
-      suppression: { subject: 'Suppression d’une de vos réservations VEMI', format: 'html', body: suppression('de visite d’expertise médicale initiale (VEMI)') }
-    },
-    psy: {
-      convocation: { subject: 'Convocation aux tests psychométriques du {{DATE}}', format: 'html', body: convocation('aux <strong>tests psychométriques</strong>', false) },
-      suppression: { subject: 'Suppression d’une de vos réservations de tests psychométriques', format: 'html', body: suppression('de tests psychométriques') }
-    }
+    vmp: { suppression: { subject: 'Suppression d’une de vos réservations VMP', body: suppression('de visite médicale périodique (VMP)') } },
+    vemi: { suppression: { subject: 'Suppression d’une de vos réservations VEMI', body: suppression('de visite d’expertise médicale initiale (VEMI)') } },
+    psy: { suppression: { subject: 'Suppression d’une de vos réservations de tests psychométriques', body: suppression('de tests psychométriques') } }
   };
   function mergeMail(saved) {
     var out = {};
@@ -5038,19 +5044,23 @@
         var d = DEFAULT_MAIL[t][k], s = saved && saved[t] && saved[t][k] || {};
         out[t][k] = {
           subject: typeof s.subject === 'string' && s.subject.trim() ? s.subject : d.subject,
-          format: s.format === 'text' || s.format === 'html' ? s.format : d.format,
           body: typeof s.body === 'string' && s.body.trim() ? s.body : d.body
         };
       });
     });
     return out;
   }
+  // Convocation et transmission au service : modèles communs (o.mail.shared), édités depuis le back office de la page Candidats.
+  function sharedMail(kind) {
+    var s = window.PMG && window.PMG.sharedMail && window.PMG.sharedMail(kind);
+    return s || { subject: '', body: '' };
+  }
 
   var state = {
     opts: {}, draft: {}, tab: 'vmp', tables: [], data: { vmp: null, vemi: null, psy: null }, cand: null, ant: null,
     slots: { vmp: null, vemi: null, psy: null }, slotAdmin: null, // { tab, create, edit, confirmDelete, busy, error, msg }
     res: null, book: null, // réservistes (source pour « Réserver » côté VMP) ; book : { mode, tab, id, date, time, antenne, personId, query, warn, confirmDup, error, busy }
-    q: '', dupOnly: false, sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false, confirmDelete: null
+    q: '', filter: 'action', sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false, confirmDelete: null
   };
   function $(id) { return document.getElementById('x-' + id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -5252,6 +5262,14 @@
   }
   function flagged(tab, row) { return SPECS[tab].dupFlags.some(function (l) { return isYes(val(tab, row, l)); }); }
   function isDup(tab, row, groups) { var k = keyOf(tab, row); return flagged(tab, row) || (k && groups[k] && groups[k].length > 1); }
+  // Une réservation « attend une action » tant que sa convocation (candidat/réserviste, et service le cas échéant) n'est pas marquée envoyée, ou tant qu'elle est en doublon.
+  function needsAction(tab, row, groups) {
+    var spec = SPECS[tab];
+    if (isDup(tab, row, groups)) return true;
+    if (!isYes(val(tab, row, spec.sentPerson))) return true;
+    if (spec.service && !isYes(val(tab, row, spec.sentService))) return true;
+    return false;
+  }
   function missingFields(tab, row, kind) {
     var spec = SPECS[tab], need = ['Date', 'Heure'];
     if (spec.service) need.push(spec.antenne);
@@ -5267,14 +5285,17 @@
     return {
       IDENTITE: name, CIVILITE: cand ? candField(cand, 'Civilité') : '', NOM: (nomFromCand || parts[0] || '').toLocaleUpperCase('fr-FR'), PRENOM: preFromCand || parts.slice(1).join(' '),
       NID: txt(tab, row, 'NID'), NIGEND: txt(tab, row, 'Nigend'), AFFECTATION: txt(tab, row, 'Affectation'), EMAIL: personEmail(tab, row), DDN: txt(tab, row, 'DDN'),
+      TELEPHONE: txt(tab, row, 'Téléphone') || txt(tab, row, 'Numéro de téléphone') || (cand ? candField(cand, 'Numéro de téléphone') : ''),
       DATE: txt(tab, row, 'Date'), HEURE: txt(tab, row, 'Heure'), ANTENNE: spec.antenne ? txt(tab, row, spec.antenne) : '',
       DATE_DU_JOUR: pad2(today.getDate()) + '/' + pad2(today.getMonth() + 1) + '/' + today.getFullYear()
     };
   }
-  function fill(text, tab, row, asHtml) {
+  // extra : variables fournies par l'appelant (ex. {{TYPE}} pour un modèle commun à plusieurs pages), prioritaires sur le contexte.
+  function fill(text, tab, row, asHtml, extra) {
     var ctx = ctxOf(tab, row), out = function (v) { return asHtml ? esc(v) : v; };
     return String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
       var key = name.toUpperCase().replace(/\s+/g, '_');
+      if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return out(extra[key]);
       if (Object.prototype.hasOwnProperty.call(ctx, key)) return out(ctx[key]);
       var d = state.data[tab], col = d && (findCol(d.cols, name) || findCol(d.cols, name.replace(/_/g, ' ')));
       return col ? out(textOf(col, row[col.id])) : whole;
@@ -5321,14 +5342,18 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
   }
+  // Ouvre la messagerie sur un message pré-rempli. mailto: n'affiche jamais de corps HTML (limite de tous les clients de messagerie) : toujours du texte brut.
+  function openMailto(email, subject, body, cc, replyTo) {
+    var url = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(String(body).replace(/\r?\n/g, '\r\n')) + (cc ? '&cc=' + encodeURIComponent(cc) : '') + (replyTo ? '&reply-to=' + encodeURIComponent(replyTo) : '');
+    var a = document.createElement('a'); a.href = url; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
   function safeName(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'reservation'; }
   function prepareMail(tab, kind, row, to) {
-    var t = mergeMail(xo().mail)[tab][kind], subject = fill(t.subject, tab, row, false), cc = String(state.opts.cc || '').trim(), replyTo = String(state.opts.replyTo || '').trim();
-    if (t.format === 'html') { var h = sanitizeHtml(fill(t.body, tab, row, true)); return { to: to, cc: cc, replyTo: replyTo, subject: subject, html: h, text: htmlToText(h) }; }
-    return { to: to, cc: cc, replyTo: replyTo, subject: subject, text: fill(t.body, tab, row, false) };
-  }
-  function draftMail(tab, kind, row, to, fileBase) {
-    downloadBlob(new Blob([buildEml(prepareMail(tab, kind, row, to))], { type: 'message/rfc822' }), fileBase + '.eml');
+    // Convocation et transmission au service : modèle commun aux pages du widget ({{TYPE}} = VMP/VEMI/Tests psy selon l'onglet).
+    var shared = kind !== 'suppression', t = shared ? sharedMail(kind) : mergeMail(xo().mail)[tab][kind], extra = shared ? { TYPE: SPECS[tab].title } : null;
+    var subject = fill(t.subject, tab, row, false, extra), cc = String(state.opts.cc || '').trim(), replyTo = String(state.opts.replyTo || '').trim();
+    return { to: to, cc: cc, replyTo: replyTo, subject: subject, text: fill(t.body, tab, row, false, extra) };
   }
 
   /* ---------- Vue tableau ---------- */
@@ -5365,7 +5390,8 @@
     var cols = dispLabels.map(function (l) { return findCol(d.cols, l); }).filter(Boolean), groups = groupsOf(tab);
     var q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [];
     var list = d.rows.filter(function (r) {
-      if (state.dupOnly && !isDup(tab, r, groups)) return false;
+      if (state.filter === 'dup' && !isDup(tab, r, groups)) return false;
+      if (state.filter === 'action' && !needsAction(tab, r, groups)) return false;
       if (!terms.length) return true;
       var hay = searchHay(tab, r);
       return terms.every(function (t) { return hay.indexOf(t) !== -1 || hay.indexOf(t.replace(/[\s.\-\/]/g, '')) !== -1; });
@@ -5435,8 +5461,9 @@
     var miss = missingFields(tab, row, kind);
     if (miss.length) return showMsg('error', 'Renseignez d’abord : ' + miss.join(', ') + '.');
     if (!to || !to.split(',').every(validEmail)) return showMsg('error', service ? 'Aucune adresse mail pour l’antenne médicale (table Antennes medicales, colonne Mail).' : 'Aucune adresse mail valide pour ce ' + spec.personWord + '.');
-    draftMail(tab, kind, row, to, 'Convocation_' + (service ? 'antenne_' : '') + spec.title.replace(/\s/g, '') + '_' + safeName(txt(tab, row, spec.person)));
-    showMsg('success', 'Brouillon du message ' + (service ? 'pour l’antenne médicale' : 'pour le ' + spec.personWord) + ' téléchargé : ouvrez-le dans votre messagerie, vérifiez-le puis envoyez-le.');
+    var m = prepareMail(tab, kind, row, to);
+    openMailto(m.to, m.subject, m.text, m.cc, m.replyTo);
+    showMsg('success', 'Message ' + (service ? 'pour l’antenne médicale' : 'pour le ' + spec.personWord) + ' préparé dans votre messagerie : vérifiez-le puis envoyez-le.');
     markSent(tab, kind, row);
   }
 
@@ -5480,10 +5507,10 @@
     var to = personEmail(tab, row), want = D.sendMail && !!to;
     D.busy = true; D.error = ''; renderDup();
     // Le brouillon est préparé avant la suppression (il utilise les données de la demande supprimée).
-    var mail = want ? prepareMail(tab, 'suppression', row, to) : null, base = 'Suppression_' + SPECS[tab].title.replace(/\s/g, '') + '_' + safeName(txt(tab, row, SPECS[tab].person));
+    var mail = want ? prepareMail(tab, 'suppression', row, to) : null;
     Promise.resolve(api.deleteRow(d.table, rowId)).then(function () {
-      if (mail) downloadBlob(new Blob([buildEml(mail)], { type: 'message/rfc822' }), base + '.eml');
-      showMsg('success', 'Demande supprimée.' + (mail ? ' Le brouillon du mail d’information (' + to + ') a été téléchargé : ouvrez-le dans votre messagerie pour l’envoyer.' : (D.sendMail ? ' Aucune adresse mail : aucun brouillon préparé.' : '')));
+      if (mail) openMailto(mail.to, mail.subject, mail.text, mail.cc, mail.replyTo);
+      showMsg('success', 'Demande supprimée.' + (mail ? ' Le message d’information (' + to + ') a été préparé dans votre messagerie : vérifiez-le puis envoyez-le.' : (D.sendMail ? ' Aucune adresse mail : aucun message préparé.' : '')));
       D.busy = false; D.confirm = null;
       return load();
     }).then(function () { if (state.dup) renderDup(); }).catch(function (e) { D.busy = false; D.error = 'Suppression impossible : ' + ((e && e.message) || e) + '.'; renderDup(); });
@@ -5503,7 +5530,7 @@
     if (k !== 'admin') $('tab-admin').hidden = true;
   });
   $('q').addEventListener('input', renderList);
-  $('dup-only').addEventListener('change', function (e) { state.dupOnly = e.target.checked; renderList(); });
+  $('flt-action').addEventListener('change', function (e) { state.filter = e.target.value; renderList(); });
   $('thead').addEventListener('click', function (e) {
     var b = e.target.closest('[data-sort]'); if (!b) return;
     var l = b.getAttribute('data-sort');
@@ -6100,20 +6127,19 @@
   });
 
   /* ---------- Back office ---------- */
-  var TPL_HINT = 'HTML : styles en ligne, images en base64 uniquement. Les valeurs des variables sont insérées sans balises. Texte : texte brut.';
+  var TPL_HINT = 'Texte brut. Les valeurs des variables sont insérées telles quelles.';
   function renderAdminForm() {
     var dr = state.draft, host = $('mail-forms');
     if (!host.firstChild) {
-      host.innerHTML = TAB_ORDER.map(function (t) {
+      host.innerHTML = '<p class="hint">Les modèles de convocation et de transmission à l’antenne médicale sont communs à toutes les pages du widget : ils se règlent une seule fois, dans le back office de la page Candidats.</p>' +
+        TAB_ORDER.map(function (t) {
         return '<h3 class="mail-group">' + esc(SPECS[t].title) + '</h3>' + KINDS_OF[t].map(function (k) {
           var p = 'x-mf-' + t + '-' + k;
           return '<details class="mail-block"><summary>' + esc(KIND_TITLES[k]) + '</summary><div class="mail-body"><div class="mail-head"><span class="hint">' + esc(k === 'service' ? 'Envoyé à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail). ' : k === 'suppression' ? 'Envoyé à la personne dont la réservation est supprimée. ' : 'Envoyé au ' + SPECS[t].personWord + '. ') + TPL_HINT + '</span>' +
             '<button type="button" class="btn secondary sm" data-reset-t="' + t + '" data-reset-k="' + k + '">Rétablir le texte par défaut</button></div>' +
             '<label for="' + p + '-subject">Objet du courriel</label><input class="input" type="text" id="' + p + '-subject" data-t="' + t + '" data-k="' + k + '" data-f="subject" autocomplete="off">' +
-            '<label for="' + p + '-format">Format du corps</label><select class="select" id="' + p + '-format" data-t="' + t + '" data-k="' + k + '" data-f="format" style="max-width:14rem"><option value="html">HTML</option><option value="text">Texte</option></select>' +
-            '<div class="mail-tpl-head"><label for="' + p + '-body">Corps du courriel</label><button type="button" class="btn secondary sm" data-preview-t="' + t + '" data-preview-k="' + k + '">Aperçu</button></div>' +
-            '<textarea class="textarea tall mono" id="' + p + '-body" data-t="' + t + '" data-k="' + k + '" data-f="body" spellcheck="false"></textarea>' +
-            '<iframe class="tpl-preview" id="x-pv-' + t + '-' + k + '" title="Aperçu du modèle" sandbox hidden></iframe></div></details>';
+            '<label for="' + p + '-body">Corps du courriel</label>' +
+            '<textarea class="textarea tall" id="' + p + '-body" data-t="' + t + '" data-k="' + k + '" data-f="body" spellcheck="true"></textarea></div></details>';
         }).join('');
       }).join('');
       $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
@@ -6126,13 +6152,6 @@
     var det = detectTables(state.tables), ph = function (k) { return '<option value="">— Détection automatique' + (det[k] ? ' (' + esc(det[k]) + ')' : '') + ' —</option>'; };
     [['vmp', 'f-t-vmp'], ['vemi', 'f-t-vemi'], ['psy', 'f-t-psy'], ['cand', 'f-t-cand'], ['res', 'f-t-res'], ['svmp', 'f-t-svmp'], ['svemi', 'f-t-svemi'], ['spsy', 'f-t-spsy']].forEach(function (p) { var el = $(p[1]); el.innerHTML = ph(p[0]) + opts; el.value = dr.tables[p[0]] || ''; });
     renderRecap();
-  }
-  function refreshPreview(t, k) {
-    var frame = $('pv-' + t + '-' + k); if (!frame || frame.hidden) return;
-    var d = state.data[t], row = d && d.rows[0], tpl = state.draft.mail[t][k], body = tpl.body || '';
-    var text = row ? fill(body, t, row, tpl.format === 'html') : body;
-    frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="max-width:640px;margin:12px auto;padding:24px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);">' +
-      (tpl.format === 'html' ? sanitizeHtml(text) : '<pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:14px;margin:0">' + esc(text) + '</pre>') + '</div></body></html>';
   }
   function renderRecap() {
     var rd = state.read, rows = [], ok = true;
@@ -6165,24 +6184,19 @@
   }
   $('view-admin').addEventListener('input', function (e) {
     var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
-    if (t) { state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value; refreshPreview(t, el.getAttribute('data-k')); }
+    if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
     setDirty(true);
   });
   $('view-admin').addEventListener('change', function (e) {
     var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
-    if (t) { state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value; refreshPreview(t, el.getAttribute('data-k')); }
+    if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
     var m = /^x-f-t-(vmp|vemi|psy|cand|res|svmp|svemi|spsy)$/.exec(el.id || ''); if (m) state.draft.tables[m[1]] = el.value;
     setDirty(true);
   });
   $('mail-forms').addEventListener('click', function (e) {
-    var pv = e.target.closest('[data-preview-t]');
-    if (pv) {
-      var t = pv.getAttribute('data-preview-t'), k = pv.getAttribute('data-preview-k'), frame = $('pv-' + t + '-' + k);
-      frame.hidden = !frame.hidden; pv.textContent = frame.hidden ? 'Aperçu' : 'Masquer l’aperçu'; if (!frame.hidden) refreshPreview(t, k); return;
-    }
     var b = e.target.closest('[data-reset-t]'); if (!b) return;
     var rt = b.getAttribute('data-reset-t'), rk = b.getAttribute('data-reset-k');
-    state.draft.mail[rt][rk] = JSON.parse(JSON.stringify(DEFAULT_MAIL[rt][rk])); renderAdminForm(); refreshPreview(rt, rk); setDirty(true);
+    state.draft.mail[rt][rk] = JSON.parse(JSON.stringify(DEFAULT_MAIL[rt][rk])); renderAdminForm(); setDirty(true);
   });
   var boLastField = null;
   $('mail-forms').addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) boLastField = e.target; });
