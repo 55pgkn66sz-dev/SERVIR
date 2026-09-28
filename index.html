@@ -257,14 +257,15 @@
   #r-btn-create { white-space: nowrap; }
   .fr-nav__link { cursor: pointer; }
   /* Back office simplifié : récapitulatif des sources, options avancées repliées, barre d'enregistrement fixe. */
-  .bo-sources, .bo-advanced, .bo-page-section { border: 1px solid var(--border-default-grey); border-radius: 0.5rem; padding: 0.75rem 1.25rem; margin-bottom: 32px; background: var(--bg); }
-  .bo-page-section > summary { font-size: 1.25rem; font-weight: 700; }
+  .bo-sources, .bo-advanced { border: 1px solid var(--border-default-grey); border-radius: 0.5rem; padding: 0.75rem 1.25rem; margin-bottom: 32px; background: var(--bg); }
   .bo-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border-default-grey); }
   .bo-page-head h1 { font-size: 1.75rem; }
   .bo-sources summary, .bo-advanced summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 0.25rem 0; }
   .bo-sources summary:focus-visible, .bo-advanced summary:focus-visible, .mail-block summary:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
   .bo-sources[open] summary, .bo-advanced[open] summary { margin-bottom: 0.75rem; }
   .bo-sources #recap-sum, .bo-sources #r-recap-sum { margin-left: 0.5rem; font-weight: 400; }
+  .bo-sources h4 { margin: 16px 0 8px; font-size: 0.95rem; }
+  .bo-sources .bo-src + .bo-src { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border-default-grey); }
   .bo-sources h3, .bo-advanced h3 { margin: 24px 0 8px; font-size: 1rem; }
   .bo-sources .callout { margin-left: 0; }
   .bo-sources .meta { margin-left: 0; }
@@ -645,7 +646,7 @@
     </section>
 
     <details class="bo-advanced">
-      <summary>Options avancées : sources, colonnes de la fiche, copies dans Documents</summary>
+      <summary>Options avancées · Candidats : sources, colonnes de la fiche, copies dans Documents</summary>
       <p class="hint">Par défaut, la table liée à cette page et les colonnes habituelles de la table Candidats PMG sont détectées automatiquement. À modifier uniquement si une colonne est « Introuvable » dans le récapitulatif ci-dessus.</p>
       <div class="fields">
         <div>
@@ -766,21 +767,8 @@
       <div class="tagrow" id="r-recap-states"></div>
     </details>
 
-    <section class="step">
-      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Affichage</h2></div>
-      <p class="lead">La table « Réservistes RO1/RS/RC » est détectée par son nom et les colonnes par leur libellé. Choisissez ici la colonne affichée en tags après le nom dans la liste.</p>
-      <div class="fields">
-        <div>
-          <label for="r-f-tag">Colonne affichée en tags<span class="req" aria-hidden="true">*</span></label>
-          <span class="hint">Par défaut « Type R » (RO1, RS, RC) ; sert aussi au premier filtre. Les tags Tir, Médical et Contrat sont calculés à partir des dates d’expiration.</span>
-          <select id="r-f-tag" class="select"></select>
-          <div class="field-error" id="r-e-tag" hidden>Sélectionnez une colonne.</div>
-        </div>
-      </div>
-    </section>
-
     <details class="bo-advanced">
-      <summary>Options avancées : source, colonnes de la fiche</summary>
+      <summary>Options avancées · Réservistes RO1/RS/RC : source, colonnes de la fiche</summary>
       <p class="hint">À modifier uniquement si une colonne est « Introuvable » dans le récapitulatif ci-dessus.</p>
       <div class="fields">
         <div>
@@ -1016,7 +1004,7 @@
     </section>
 
     <details class="bo-advanced">
-      <summary>Options avancées : tables</summary>
+      <summary>Options avancées · Réservations : tables</summary>
       <p class="hint">Les tables sont détectées automatiquement par leur nom. À modifier uniquement si l’une est « Introuvable » dans le récapitulatif ci-dessus.</p>
       <div class="fields">
         <div><label for="x-f-t-vmp">Table des réservations VMP</label><select id="x-f-t-vmp" class="select"></select></div>
@@ -1587,8 +1575,18 @@
     table: function () { return cfg().table; }, // utilisé par la page « Réservations » (adresses mail des candidats)
     // Back office unifié (page à part, cf. script de navigation) : initialise et affiche le formulaire de réglages de cette page.
     openAdmin: function () { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); setDirty(false); },
-    closeAdmin: function () {}
+    closeAdmin: function () {},
+    save: function () { return savePmg(); },   // enregistrement global du back office (une seule barre pour les trois pages)
+    cancel: function () { cancelPmg(); },
+    setOpts: function (o) { state.opts = o || {}; }
   };
+  // Après chaque enregistrement, les trois pages repartent des mêmes options (sinon l'une écraserait la configuration enregistrée par une autre).
+  function pushOpts(o) {
+    state.opts = o;
+    if (window.RES && window.RES.setOpts) window.RES.setOpts(o);
+    if (window.RSV && window.RSV.setOpts) window.RSV.setOpts(o);
+  }
+  window.__pushOpts = pushOpts;
   function cfg() {
     var table = state.opts.table || state.boundTable || '';
     return {
@@ -2150,6 +2148,7 @@
       var dateCol = block.dateLabel && findCol(c.table, block.dateLabel);
       extra.DATE = dateCol ? textOfValue(dateCol, item.raw[dateCol.id]) : '';
       extra.HEURE = '';
+      extra.TYPE = { vemi: 'VEMI', psy: 'Tests psy' }[SHARED_TYPE_OF[blockKey]] || ''; // {{TYPE}} du modèle commun à l'antenne médicale
     }
     function done(type, text) { state.mail.msg = { type: type, text: text }; renderModal(); }
 
@@ -2206,18 +2205,26 @@
       var mbase = 'Convocation_' + (act.toService ? 'service_' : '') + blockKey + '_' + who, mname = mbase + '.pdf';
       openMailto(to, subject, textBody, cc, c.replyTo);
       markSent(item.raw.id, blockKey, kind);
+      // Confirmation à l'antenne médicale (VEMI) : la fiche de poste et la fiche de présentation (modèles HTML du back office) sont téléchargées en PDF, à glisser dans le message.
+      var withPj = !!(act.toService && SHARED_TYPE_OF[blockKey] === 'vemi' && window.RSV && window.RSV.sharedMail);
       var sentH = act.toService ? 'Convocation préparée dans votre messagerie pour le service : vérifiez-la puis envoyez-la.'
         : 'Convocation préparée dans votre messagerie : vérifiez-la puis envoyez-la.';
       var tkH = mname + Date.now(); state.mail.ticket = tkH;
-      state.mail.msg = { type: 'success', text: sentH + ' Génération du PDF à archiver' + (act.toService ? ' et à joindre' : '') + '…' }; renderModal();
+      state.mail.msg = { type: 'success', text: sentH + ' Génération du PDF à archiver' + (withPj ? ' et des pièces jointes' : '') + '…' }; renderModal();
       var pdfHtml = pageHtml((act.toService ? 'Fiche de convocation – ' : 'Convocation – ') + block.title, '<p>' + esc(textBody).replace(/\n/g, '<br>') + '</p>');
-      buildPdfFromHtml(pdfHtml).then(function (ab) {
+      var pjDone = withPj ? [['fichePoste', 'Fiche_de_poste_'], ['fichePresentation', 'Fiche_de_presentation_']].reduce(function (p, it) {
+        return p.then(function () {
+          var t = window.RSV.sharedMail(SHARED_TYPE_OF[blockKey], it[0]); if (!t || !t.template) return;
+          return buildPdfFromHtml(fillTemplate(t.template, item, c, true, extra)).then(function (ab2) { downloadBlob(new Blob([ab2], { type: 'application/pdf' }), it[1] + who + '.pdf'); });
+        });
+      }, Promise.resolve()) : Promise.resolve();
+      pjDone.then(function () { return buildPdfFromHtml(pdfHtml); }).then(function (ab) {
         state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = mname;
-        if (act.toService) downloadBlob(new Blob([ab], { type: 'application/pdf' }), mname); // à glisser manuellement dans le message ouvert
         return storeCopy(item, c, kind, mname, ab).then(function (r) {
           if (state.mail.ticket !== tkH) return;
-          state.mail.msg = r.stored ? { type: 'success', text: sentH + ' Une copie PDF a été archivée dans Documents (' + displayLabel(r.col) + ')' + (act.toService ? ' et téléchargée : glissez-la dans le message ouvert.' : '.') }
-                                    : { type: 'error', text: sentH + ' La copie PDF n’a pas été archivée dans Documents : ' + r.why + '.' };
+          var pjTxt = withPj ? ' La fiche de poste et la fiche de présentation ont été téléchargées : glissez ces deux PDF dans le message ouvert.' : '';
+          state.mail.msg = r.stored ? { type: 'success', text: sentH + ' Une copie PDF a été archivée dans Documents (' + displayLabel(r.col) + ').' + pjTxt }
+                                    : { type: 'error', text: sentH + ' La copie PDF n’a pas été archivée dans Documents : ' + r.why + '.' + pjTxt };
           return r.stored ? load() : renderModal();
         });
       }).catch(function (e) { if (state.mail.ticket === tkH) { state.mail.msg = { type: 'error', text: sentH + ' La copie PDF n’a pas pu être générée : ' + ((e && e.message) || e) + '.' }; renderModal(); } });
@@ -3157,7 +3164,7 @@
     if (!dr.mail) return;
     if (!host.firstChild) {
       // Réservation, convocation, transmission au service : modèles par type (VMP/VEMI/Tests psy), édités dans le back office de la page Réservations.
-      host.innerHTML = '<p class="hint">Les courriels de réservation, de convocation et de transmission à l’antenne médicale ont un modèle par type (VMP, VEMI, Tests psy) : ils se règlent dans le back office de la page Réservations, ci-dessous.</p>' +
+      host.innerHTML = '<p class="hint">Les invitations à réserver, les confirmations de réservation et la confirmation à l’antenne médicale se règlent dans la section « Modèles de courriels » en tête de ce back office.</p>' +
         MAIL_BLOCKS.map(function (b) {
           var kinds = b.kinds.filter(function (kind) { return SHARED_KINDS.indexOf(kind) === -1; });
           if (!kinds.length) return '';
@@ -3374,16 +3381,17 @@
   $('f-rejetcol').addEventListener('change', function (e) { state.draft.rejetCol = e.target.value; });
   $('f-esrcol').addEventListener('change', function (e) { state.draft.esrCol = e.target.value; });
 
-  $('btn-save').addEventListener('click', function () {
+  function savePmg() {
     var dr = state.draft;
     $('e-status').hidden = !!dr.status;
-    if (!dr.table || !dr.status) return;
+    if (!dr.table || !dr.status) return Promise.reject(new Error('Candidats : sélectionnez la colonne « État de la candidature » (options avancées).'));
     var o = { table: dr.table, identity: dr.identity || '', status: dr.status, tabs: normalizeTabs(dr.table, dr.tabs), mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
     if (state.opts.sent) o.sent = state.opts.sent; // conserve l'historique des actions effectuées
     if (state.opts.r) o.r = state.opts.r;          // conserve la configuration de la page « Réservistes »
     if (state.opts.x) o.x = state.opts.x;          // conserve la configuration de la page « Réservations »
-    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
-  });
+    return Promise.resolve(api.saveOptions(o)).then(function () { pushOpts(o); return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
+  }
+  $('btn-save').addEventListener('click', function () { savePmg().catch(function () {}); });
   $('btn-reset').addEventListener('click', function () {
     var t = state.boundTable || '';
     state.draft = { table: t, identity: DEFAULTS.identity, status: DEFAULTS.status, tabs: { info: [], mil: [], medico: [], docs: [] }, mail: mergeMail(null), emailCol: '', cc: '', replyTo: '', convCol: '', letterCol: '', rejetCol: '', esrCol: '' };
@@ -3930,9 +3938,8 @@
   $('view-admin').addEventListener('click', function (e) {
     if (e.target.closest('[data-reset-b]') || e.target.closest('#btn-reset') || e.target.closest('[data-var]')) setDirty(true);
   });
-  $('btn-cancel').addEventListener('click', function () {
-    state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false);
-  });
+  function cancelPmg() { state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false); }
+  $('btn-cancel').addEventListener('click', cancelPmg);
   // Variables : un clic insère la variable dans le champ de modèle actif.
   var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO'];
   $('bo-vars').innerHTML = BO_VARS.map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
@@ -4201,7 +4208,7 @@
     return {
       table: table,
       identity: ('identity' in o) ? o.identity : DEFAULTS.identity,
-      tag: o.tag || DEFAULTS.tag,
+      tag: DEFAULTS.tag, // colonne « Type R » : fixe, pas de choix en back office
       tabs: o.tabs ? normalizeTabs(table, o.tabs) : defaultTabs(table)
     };
   }
@@ -4705,7 +4712,7 @@
   }
   function openModal(index, opener) {
     if (!state.view[index]) return;
-    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.edit = null; state.vmpMsg = null;
+    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.edit = null; state.vmpMsg = null; state.vmpLive = false;
     if (!state.modal.tab) state.modal.tab = 'info';
     renderModal();
     if (window.RSV && window.RSV.refresh) window.RSV.refresh().then(function () { if (!$('modal').hidden && !state.edit) renderModal(); }); // réservations VMP à jour
@@ -4752,7 +4759,7 @@
   }
   function stepModal(delta) {
     var i = state.modal.index + delta; if (i < 0 || i >= state.view.length) return;
-    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.edit = null; state.vmpMsg = null;
+    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.edit = null; state.vmpMsg = null; state.vmpLive = false;
     renderModal(); var dlg = $('modal').querySelector('.modal-dialog'); if (dlg) dlg.scrollIntoView({ block: 'nearest' });
   }
   $('rows').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) openModal(+tr.getAttribute('data-i'), tr); });
@@ -5371,10 +5378,10 @@
   $('modal-panels').addEventListener('click', function (e) {
     var b = e.target.closest('[data-vmp]'); if (!b || b.disabled || !window.RSV) return;
     var item = state.view[state.modal.index], c = cfg(), ng = findCol(c.table, 'Nigend'); if (!item) return;
-    window.RSV.onChange = function () { if (!$('modal').hidden) renderModal(); }; // icônes mises à jour après la réservation ou l'envoi
+    window.RSV.onChange = function () { if (!$('modal').hidden) { if (state.vmpLive) state.vmpMsg = window.RSV.lastMsg(); renderModal(); } }; // icônes et message mis à jour après la réservation ou l'envoi
     var act = b.getAttribute('data-vmp');
-    if (act === 'book') { var err = window.RSV.bookVmp(item.raw.id, ng && item.raw[ng.id]); state.vmpMsg = err ? { type: 'error', text: err } : null; }
-    else { var info = window.RSV.vmpInfo(ng && item.raw[ng.id]); if (!info) return; state.vmpMsg = window.RSV.sendVmp(act, info.id); }
+    if (act === 'book') { var err = window.RSV.bookVmp(item.raw.id, ng && item.raw[ng.id]); state.vmpLive = false; state.vmpMsg = err ? { type: 'error', text: err } : null; }
+    else { var info = window.RSV.vmpInfo(ng && item.raw[ng.id]); if (!info) return; state.vmpMsg = window.RSV.sendVmp(act, info.id); state.vmpLive = true; }
     renderModal();
   });
 
@@ -5561,7 +5568,6 @@
     fillSelect($('f-table'), state.tables.map(function (t) { return { value: t, label: t }; }), dr.table, '— Choisir une table —');
     var cols = (state.colsByTable[dr.table] || []).map(function (c) { return { value: c.id, label: colLabel(c) }; });
     fillSelect($('f-identity'), cols, dr.identity, '— Composer à partir de NOM et Prénom —');
-    fillSelect($('f-tag'), cols, dr.tag, '— Choisir une colonne —');
     renderPicks();
   }
   function renderRecap() {
@@ -5598,23 +5604,21 @@
     var admin = v === 'admin';
     $('view-list').hidden = admin; $('view-admin').hidden = !admin;
     $('tab-list').setAttribute('aria-selected', String(!admin)); $('tab-admin').setAttribute('aria-selected', String(admin));
-    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); var tcol = tagCol(cfg()); if (tcol) state.draft.tag = tcol.id; $('saved').hidden = true; renderAdminForm(); setDirty(false); }
+    if (admin) { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); setDirty(false); }
   }
   // Back office masqué : 5 clics rapides sur l'en-tête l'ouvrent, l'onglet « Réservistes » le referme.
   $('tab-list').addEventListener('click', function () { showView('list'); $('tabs').hidden = true; });
   $('tab-admin').addEventListener('click', function () { showView('admin'); });
   $('f-table').addEventListener('change', function (e) {
     var t = e.target.value;
-    state.draft.table = t; state.draft.identity = ''; state.draft.tag = ''; state.draft.tabs = { info: [], mil: [], hab: [] };
+    state.draft.table = t; state.draft.identity = ''; state.draft.tabs = { info: [], mil: [], hab: [] };
     if (!t) { renderAdminForm(); return; }
     api.listColumns(t).then(function (cols) {
       state.colsByTable[t] = cols;
-      state.draft.tag = findCol(t, DEFAULTS.tag) ? findCol(t, DEFAULTS.tag).id : '';
       state.draft.tabs = defaultTabs(t); renderAdminForm();
     });
   });
   $('f-identity').addEventListener('change', function (e) { state.draft.identity = e.target.value; });
-  $('f-tag').addEventListener('change', function (e) { state.draft.tag = e.target.value; $('e-tag').hidden = true; });
   $('picks').addEventListener('change', function (e) {
     var cb = e.target; if (!cb.matches('input[data-col]')) return;
     var tab = cb.getAttribute('data-tab'), id = cb.getAttribute('data-col'), tabs = state.draft.tabs;
@@ -5624,21 +5628,20 @@
     TAB_DEFS.forEach(function (t) { tabs[t.key].sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); }); });
     renderPicks();
   });
-  $('btn-save').addEventListener('click', function () {
+  function saveRes() {
     var dr = state.draft;
-    $('e-tag').hidden = !!dr.tag;
-    if (!dr.table || !dr.tag) return;
-    var mine = { table: dr.table, identity: dr.identity || '', tag: dr.tag, tabs: normalizeTabs(dr.table, dr.tabs) };
+    if (!dr.table) return Promise.reject(new Error('Réservistes : sélectionnez la table des réservistes (options avancées).'));
+    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs) };
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.r = mine; // conserve la configuration de la première page
-    api.saveOptions(o).then(function () { state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
-  });
+    return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
+  }
+  $('btn-save').addEventListener('click', function () { saveRes().catch(function () {}); });
   $('btn-reset').addEventListener('click', function () {
     var t = state.detected || '';
-    state.draft = { table: t, identity: '', tag: '', tabs: { info: [], mil: [], hab: [] } };
+    state.draft = { table: t, identity: '', tabs: { info: [], mil: [], hab: [] } };
     $('saved').hidden = true;
     api.listColumns(t).then(function (cols) {
       state.colsByTable[t] = cols;
-      var tg = findCol(t, DEFAULTS.tag); state.draft.tag = tg ? tg.id : '';
       state.draft.tabs = defaultTabs(t); renderAdminForm();
     });
   });
@@ -5652,9 +5655,10 @@
   $('view-admin').addEventListener('input', function () { setDirty(true); });
   $('view-admin').addEventListener('change', function () { setDirty(true); });
   $('view-admin').addEventListener('click', function (e) { if (e.target.closest('#r-btn-reset')) setDirty(true); });
-  $('btn-cancel').addEventListener('click', function () {
-    state.draft = JSON.parse(JSON.stringify(cfg())); var tcol = tagCol(cfg()); if (tcol) state.draft.tag = tcol.id; renderAdminForm(); setDirty(false);
-  });
+  function cancelRes() {
+    state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false);
+  }
+  $('btn-cancel').addEventListener('click', cancelRes);
 
   /* ---------- Démarrage ---------- */
   // Les options du widget et le chargement Grist sont pilotés par la première page (grist.ready) : elle nous transmet les options.
@@ -5665,7 +5669,10 @@
     match: matchRes,
     fiche: ficheRes,
     openAdmin: function () { showView('admin'); },   // back office unifié (déclenché depuis la page Candidats)
-    closeAdmin: function () { showView('list'); }
+    closeAdmin: function () { showView('list'); },
+    save: function () { return saveRes(); },   // enregistrement global du back office
+    cancel: function () { cancelRes(); },
+    setOpts: function (o) { state.opts = o || {}; }
   };
   if (!IN_GRIST) { $('demo').hidden = false; load(); }
 })();
@@ -5702,8 +5709,10 @@
   };
   // Réservation, convocation, transmission au service : un modèle par type (VMP, VEMI, Tests psy), édités ici et repris tels quels
   // par la page Candidats pour ses blocs Tests psychométriques (psy) et VEMI (vemi).
-  var KINDS_OF = { vmp: ['reservation', 'convocation', 'service', 'suppression'], vemi: ['reservation', 'convocation', 'service', 'suppression'], psy: ['reservation', 'convocation', 'suppression'] };
-  var KIND_TITLES = { reservation: 'Courriel de réservation', convocation: 'Convocation', service: 'Transmission de la convocation à l’antenne médicale', suppression: 'Information de suppression d’une réservation (doublon)' };
+  // Modèles : invitation à réserver et confirmation de réservation par type (VMP, VEMI, Tests psy) ; un seul modèle commun pour la
+  // confirmation à l'antenne médicale (VMP ou VEMI, variable {{TYPE}}), rangé sous « common ».
+  var KINDS_OF = { vmp: ['reservation', 'convocation', 'suppression'], vemi: ['reservation', 'convocation', 'suppression'], psy: ['reservation', 'convocation', 'suppression'] };
+  var KIND_TITLES = { reservation: 'Invitation à réserver', convocation: 'Confirmation de réservation', service: 'Confirmation à l’antenne médicale (VMP ou VEMI)', suppression: 'Information de suppression d’une réservation (doublon)' };
 
   /* ---------- Modèles de courriels par défaut (texte brut) ---------- */
   var SIGN = 'Cordialement,\nDivision réserves jeunesse';
@@ -5719,8 +5728,8 @@
       'Date et heure : {{DATE}} {{HEURE}}' + (withPlace ? '\nAntenne médicale : {{ANTENNE}}' : '') + '\n\n' +
       'À présenter : une pièce d’identité en cours de validité et le présent message.\n\nEn cas d’empêchement, merci de nous prévenir dès que possible en répondant à ce message.\n\n' + SIGN;
   }
-  function service(what) {
-    return 'Bonjour,\n\nLa personne ci-dessous est convoquée ' + what + ', dans votre antenne.\n\n' +
+  function service() {
+    return 'Bonjour,\n\nLa personne ci-dessous est convoquée à une visite médicale ({{TYPE}}), dans votre antenne.\n\n' +
       'Identité : {{IDENTITE}}\nNID : {{NID}}\nAffectation : {{AFFECTATION}}\nTéléphone : {{TELEPHONE}}\nDate et heure : {{DATE}} {{HEURE}}\nAntenne médicale : {{ANTENNE}}\n\n' +
       'Merci de recevoir cette personne et de nous transmettre le résultat dès qu’il est disponible.\n\n' + SIGN;
   }
@@ -5733,39 +5742,56 @@
     vmp: {
       reservation: { subject: 'Visite médicale périodique (VMP) : merci de prendre rendez-vous', body: 'Bonjour {{CIVILITE}} {{NOM}},\n\nVotre visite médicale périodique (VMP) doit être renouvelée. Merci de réserver votre rendez-vous auprès d’une antenne médicale dans les meilleurs délais et de nous en communiquer la date en répondant à ce message.\n\nLe jour de la visite, pensez à apporter votre carnet de vaccination, vos éventuelles ordonnances en cours ainsi que vos lunettes ou lentilles si vous en portez.\n\n' + SIGN },
       convocation: { subject: 'Convocation à la visite médicale périodique (VMP) du {{DATE}}', body: convocation('à la visite médicale périodique (VMP)', true) },
-      service: { subject: 'VMP du {{DATE}} : convocation de {{IDENTITE}}', body: service('à la visite médicale périodique (VMP)') },
       suppression: { subject: 'Suppression d’une de vos réservations VMP', body: suppression('de visite médicale périodique (VMP)') }
     },
     vemi: {
       reservation: { subject: 'Visite médicale (VEMI) : merci de prendre rendez-vous', body: reservation('une visite d’expertise médicale initiale (VEMI)', true) },
       convocation: { subject: 'Convocation à la visite médicale (VEMI) du {{DATE}}', body: convocation('à la visite d’expertise médicale initiale (VEMI)', true) },
-      service: { subject: 'VEMI du {{DATE}} : convocation de {{IDENTITE}}', body: service('à la visite d’expertise médicale initiale (VEMI)') },
       suppression: { subject: 'Suppression d’une de vos réservations VEMI', body: suppression('de visite d’expertise médicale initiale (VEMI)') }
     },
     psy: {
       reservation: { subject: 'Tests psychométriques : merci de réserver votre créneau', body: reservation('le passage des tests psychométriques', false) },
       convocation: { subject: 'Convocation aux tests psychométriques du {{DATE}}', body: convocation('aux tests psychométriques', false) },
       suppression: { subject: 'Suppression d’une de vos réservations de tests psychométriques', body: suppression('de tests psychométriques') }
+    },
+    common: {
+      service: { subject: '{{TYPE}} du {{DATE}} : convocation de {{IDENTITE}}', body: service() },
+      // Pièces jointes du message à l'antenne médicale (cadre VEMI uniquement) : modèles HTML, téléchargés en PDF à glisser dans le message.
+      fichePoste: { template: pageHtml('Fiche de poste',
+        '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' + pjRow('Candidat', '<strong>{{IDENTITE}}</strong>') + pjRow('NID', '{{NID}}') + pjRow('Affectation', '{{AFFECTATION}}') +
+        pjRow('Visite', '{{TYPE}} · {{DATE}} {{HEURE}}') + pjRow('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
+        '  <p><strong>Intitulé du poste :</strong> à compléter</p>\n  <p><strong>Missions :</strong> à compléter</p>\n  <p><strong>Conditions d’aptitude requises :</strong> à compléter</p>') },
+      fichePresentation: { template: pageHtml('Fiche de présentation',
+        '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' + pjRow('Identité', '<strong>{{IDENTITE}}</strong>') + pjRow('Date de naissance', '{{DDN}}') + pjRow('NID', '{{NID}}') + pjRow('Affectation', '{{AFFECTATION}}') +
+        pjRow('Téléphone', '{{TELEPHONE}}') + pjRow('Mail', '{{EMAIL}}') + '  </table>\n' +
+        '  <p>Le candidat est convoqué à la visite d’expertise médicale initiale (VEMI) le <strong>{{DATE}} {{HEURE}}</strong>, {{ANTENNE}}.</p>') }
     }
   };
+  function pjRow(label, value) { return '    <tr><th style="text-align: left; width: 35%; padding: 6px 10px; background: #f3f3fd; border: 1px solid #ddd;">' + label + '</th><td style="padding: 6px 10px; border: 1px solid #ddd;">' + value + '</td></tr>\n'; }
+  function mergeOne(d, s) {
+    s = s || {};
+    return { subject: typeof s.subject === 'string' && s.subject.trim() ? s.subject : d.subject, body: typeof s.body === 'string' && s.body.trim() ? s.body : d.body };
+  }
   function mergeMail(saved) {
     var out = {};
     TAB_ORDER.forEach(function (t) {
       out[t] = {};
-      KINDS_OF[t].forEach(function (k) {
-        var d = DEFAULT_MAIL[t][k], s = saved && saved[t] && saved[t][k] || {};
-        out[t][k] = {
-          subject: typeof s.subject === 'string' && s.subject.trim() ? s.subject : d.subject,
-          body: typeof s.body === 'string' && s.body.trim() ? s.body : d.body
-        };
-      });
+      KINDS_OF[t].forEach(function (k) { out[t][k] = mergeOne(DEFAULT_MAIL[t][k], saved && saved[t] && saved[t][k]); });
+    });
+    // Confirmation à l'antenne médicale : modèle commun (à défaut, l'ancien texte enregistré pour VEMI ou VMP).
+    var legacy = saved && ((saved.vemi && saved.vemi.service) || (saved.vmp && saved.vmp.service));
+    var sc = (saved && saved.common) || {};
+    out.common = { service: mergeOne(DEFAULT_MAIL.common.service, sc.service || legacy) };
+    ['fichePoste', 'fichePresentation'].forEach(function (k) { // modèles HTML des pièces jointes : un seul champ (le document)
+      out.common[k] = { template: sc[k] && typeof sc[k].template === 'string' && sc[k].template.trim() ? sc[k].template : DEFAULT_MAIL.common[k].template };
     });
     return out;
   }
   // Modèles repris tels quels par la page Candidats (blocs Tests psychométriques → psy, VEMI → vemi).
   function sharedMail(type, kind) {
-    var m = mergeMail(xo().mail)[type];
-    return (m && m[kind]) || { subject: '', body: '' };
+    var m = mergeMail(xo().mail);
+    if (m.common[kind]) return m.common[kind]; // service, fichePoste, fichePresentation : modèles communs
+    return (m[type] && m[type][kind]) || { subject: '', body: '' };
   }
 
   var state = {
@@ -6064,8 +6090,9 @@
   }
   function safeName(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'reservation'; }
   function prepareMail(tab, kind, row, to) {
-    var t = mergeMail(xo().mail)[tab][kind], subject = fill(t.subject, tab, row, false), cc = String(state.opts.cc || '').trim(), replyTo = String(state.opts.replyTo || '').trim();
-    return { to: to, cc: cc, replyTo: replyTo, subject: subject, text: fill(t.body, tab, row, false) };
+    var m = mergeMail(xo().mail), t = kind === 'service' ? m.common.service : m[tab][kind], extra = { TYPE: SPECS[tab].title }; // {{TYPE}} : VMP, VEMI, Tests psy
+    var subject = fill(t.subject, tab, row, false, extra), cc = String(state.opts.cc || '').trim(), replyTo = String(state.opts.replyTo || '').trim();
+    return { to: to, cc: cc, replyTo: replyTo, subject: subject, text: fill(t.body, tab, row, false, extra) };
   }
 
   /* ---------- Vue tableau ---------- */
@@ -6178,7 +6205,23 @@
     if (!to || !to.split(',').every(validEmail)) return showMsg('error', service ? 'Aucune adresse mail pour l’antenne médicale (table Antennes medicales, colonne Mail).' : 'Aucune adresse mail valide pour ce ' + spec.personWord + '.');
     var m = prepareMail(tab, kind, row, to);
     openMailto(m.to, m.subject, m.text, m.cc, m.replyTo);
-    showMsg('success', 'Message ' + (service ? 'pour l’antenne médicale' : 'pour le ' + spec.personWord) + ' préparé dans votre messagerie : vérifiez-le puis envoyez-le.');
+    var base = 'Message ' + (service ? 'pour l’antenne médicale' : 'pour le ' + spec.personWord) + ' préparé dans votre messagerie : vérifiez-le puis envoyez-le.';
+    // Antenne médicale : la fiche de poste (VMP et VEMI) et la fiche de présentation (cadre VEMI uniquement), modèles HTML du back office,
+    // sont téléchargées en PDF, à glisser dans le message.
+    if (service && (tab === 'vemi' || tab === 'vmp')) {
+      var pjs = tab === 'vemi' ? [['fichePoste', 'Fiche_de_poste_'], ['fichePresentation', 'Fiche_de_presentation_']] : [['fichePoste', 'Fiche_de_poste_']];
+      var pjNames = tab === 'vemi' ? 'La fiche de poste et la fiche de présentation ont été téléchargées : glissez ces deux PDF' : 'La fiche de poste a été téléchargée : glissez ce PDF';
+      showMsg('success', base + ' Génération de ' + (pjs.length > 1 ? 'la fiche de poste et de la fiche de présentation' : 'la fiche de poste') + '…');
+      var C = mergeMail(xo().mail).common, who = safeName(txt(tab, row, spec.person));
+      pjs.reduce(function (p, it) {
+        return p.then(function () {
+          return buildPdfFromHtml(fill(C[it[0]].template, tab, row, true, { TYPE: spec.title })).then(function (ab) { downloadBlob(new Blob([ab], { type: 'application/pdf' }), it[1] + who + '.pdf'); });
+        });
+      }, Promise.resolve()).then(function () {
+        showMsg('success', base + ' ' + pjNames + ' dans le message avant de l’envoyer.');
+      }).catch(function (e) { showMsg('error', base + ' Les pièces jointes n’ont pas pu être générées : ' + ((e && e.message) || e) + '.'); })
+        .then(notifyChange); // met à jour le message affiché dans la fiche d'un réserviste
+    } else showMsg('success', base);
     markSent(tab, kind, row);
   }
 
@@ -7021,18 +7064,33 @@
   function renderAdminForm() {
     var dr = state.draft, host = $('mail-forms');
     if (!host.firstChild) {
-      host.innerHTML = '<p class="hint">Les courriels de réservation (VMP, VEMI, Tests psy) et de convocation (VMP, VEMI, Tests psy) sont repris tels quels par la page Candidats : un seul modèle par type, à jour partout.</p>' +
-        TAB_ORDER.map(function (t) {
-        return '<h3 class="mail-group">' + esc(SPECS[t].title) + '</h3>' + KINDS_OF[t].map(function (k) {
-          var p = 'x-mf-' + t + '-' + k;
-          return '<details class="mail-block"><summary>' + esc(KIND_TITLES[k]) + '</summary><div class="mail-body"><div class="mail-head"><span class="hint">' + esc(k === 'service' ? 'Envoyé à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail). ' : k === 'suppression' ? 'Envoyé à la personne dont la réservation est supprimée. ' : 'Envoyé au ' + SPECS[t].personWord + '. ') + TPL_HINT + '</span>' +
-            '<button type="button" class="btn secondary sm" data-reset-t="' + t + '" data-reset-k="' + k + '">Rétablir le texte par défaut</button></div>' +
-            '<label for="' + p + '-subject">Objet du courriel</label><input class="input" type="text" id="' + p + '-subject" data-t="' + t + '" data-k="' + k + '" data-f="subject" autocomplete="off">' +
-            '<label for="' + p + '-body">Corps du courriel</label>' +
-            '<textarea class="textarea tall" id="' + p + '-body" data-t="' + t + '" data-k="' + k + '" data-f="body" spellcheck="true"></textarea></div></details>';
-        }).join('');
-      }).join('');
-      $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
+      // Un modèle par envoi, communs aux trois pages : invitations, confirmations, confirmation à l'antenne médicale, information de suppression.
+      function block(t, k, title, hint) {
+        var p = 'x-mf-' + t + '-' + k;
+        return '<details class="mail-block"><summary>' + esc(title) + '</summary><div class="mail-body"><div class="mail-head"><span class="hint">' + esc(hint) + ' ' + TPL_HINT + '</span>' +
+          '<button type="button" class="btn secondary sm" data-reset-t="' + t + '" data-reset-k="' + k + '">Rétablir le texte par défaut</button></div>' +
+          '<label for="' + p + '-subject">Objet du courriel</label><input class="input" type="text" id="' + p + '-subject" data-t="' + t + '" data-k="' + k + '" data-f="subject" autocomplete="off">' +
+          '<label for="' + p + '-body">Corps du courriel</label>' +
+          '<textarea class="textarea tall" id="' + p + '-body" data-t="' + t + '" data-k="' + k + '" data-f="body" spellcheck="true"></textarea></div></details>';
+      }
+      function tplBlock(k, title, hint) { // modèle HTML d'une pièce jointe (converti en PDF au moment de l'envoi)
+        var p = 'x-mf-common-' + k;
+        return '<details class="mail-block"><summary>' + esc(title) + '</summary><div class="mail-body"><div class="mail-head"><span class="hint">' + esc(hint) + ' HTML : styles en ligne, images en base64 uniquement ; les valeurs des variables sont insérées sans balises. Converti en PDF A4.</span>' +
+          '<button type="button" class="btn secondary sm" data-reset-t="common" data-reset-k="' + k + '">Rétablir le texte par défaut</button></div>' +
+          '<label for="' + p + '-template">Modèle du document (HTML)</label>' +
+          '<textarea class="textarea tall mono" id="' + p + '-template" data-t="common" data-k="' + k + '" data-f="template" spellcheck="false"></textarea></div></details>';
+      }
+      function group(title, kind, hintFn) {
+        return '<h3 class="mail-group">' + esc(title) + '</h3>' + TAB_ORDER.map(function (t) { return block(t, kind, KIND_TITLES[kind] + ' · ' + SPECS[t].title, hintFn(t)); }).join('');
+      }
+      host.innerHTML =
+        group('Invitations à réserver', 'reservation', function (t) { return 'Envoyée au ' + SPECS[t].personWord + ' pour l’inviter à réserver un créneau.'; }) +
+        group('Confirmations de réservation', 'convocation', function (t) { return 'Envoyée au ' + SPECS[t].personWord + ' pour confirmer sa réservation.'; }) +
+        '<h3 class="mail-group">Confirmation à l’antenne médicale</h3>' + block('common', 'service', KIND_TITLES.service, 'Envoyée à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail) ; {{TYPE}} vaut VMP ou VEMI.') +
+          tplBlock('fichePoste', 'Pièce jointe 1 · Fiche de poste (VMP et VEMI)', 'Téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VMP ou VEMI : l’utilisateur la glisse dans le message avant envoi.') +
+          tplBlock('fichePresentation', 'Pièce jointe 2 · Fiche de présentation (cadre VEMI uniquement)', 'Téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VEMI uniquement : l’utilisateur la glisse dans le message avant envoi.') +
+        group('Information de suppression d’une réservation (doublon)', 'suppression', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est supprimée.'; });
+      $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
     }
     Array.prototype.forEach.call(host.querySelectorAll('[data-t]'), function (el) {
       var v = dr.mail[el.getAttribute('data-t')][el.getAttribute('data-k')][el.getAttribute('data-f')];
@@ -7072,16 +7130,19 @@
     $('bo-state').classList.toggle('is-dirty', d);
     if (d) $('saved').hidden = true;
   }
-  $('view-admin').addEventListener('input', function (e) {
-    var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
-    if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
-    setDirty(true);
-  });
-  $('view-admin').addEventListener('change', function (e) {
-    var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
-    if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
-    var m = /^x-f-t-(vmp|vemi|psy|cand|res|svmp|svemi|spsy)$/.exec(el.id || ''); if (m) state.draft.tables[m[1]] = el.value;
-    setDirty(true);
+  // Les modèles de courriels sont dans la section commune du back office (hors de cette page) : on écoute aussi leur conteneur.
+  [$('view-admin'), $('mail-forms')].forEach(function (host) {
+    host.addEventListener('input', function (e) {
+      var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
+      if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
+      setDirty(true);
+    });
+    host.addEventListener('change', function (e) {
+      var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
+      if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
+      var m = /^x-f-t-(vmp|vemi|psy|cand|res|svmp|svemi|spsy)$/.exec(el.id || ''); if (m) state.draft.tables[m[1]] = el.value;
+      setDirty(true);
+    });
   });
   $('mail-forms').addEventListener('click', function (e) {
     var b = e.target.closest('[data-reset-t]'); if (!b) return;
@@ -7098,13 +7159,15 @@
     f.dispatchEvent(new Event('input', { bubbles: true })); f.focus();
   });
   $('btn-reset').addEventListener('click', function () { state.draft = { tables: {}, mail: mergeMail(null) }; renderAdminForm(); setDirty(true); });
-  $('btn-cancel').addEventListener('click', function () { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); });
-  $('btn-save').addEventListener('click', function () {
+  function cancelAdmin() { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); }
+  function saveAdmin() { // tables et modèles de courriels de cette page (les modèles s'éditent dans la section commune du back office)
     var tables = {}; Object.keys(state.draft.tables).forEach(function (k) { if (state.draft.tables[k]) tables[k] = state.draft.tables[k]; });
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; });
     o.x = { tables: tables, mail: mergeMail(state.draft.mail) };
-    Promise.resolve(api.saveOptions(o)).then(function () { state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
-  });
+    return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
+  }
+  $('btn-cancel').addEventListener('click', cancelAdmin);
+  $('btn-save').addEventListener('click', function () { saveAdmin().catch(function () {}); });
 
   function renderAll() {
     renderList();
@@ -7119,8 +7182,10 @@
     openAdmin: function () { showTab('admin'); },              // back office unifié (déclenché depuis la page Candidats)
     closeAdmin: function () { showTab(state.tab || 'vmp'); },
     sharedMail: sharedMail,                                    // modèles de réservation/convocation par type, repris par la page Candidats
+    saveAdmin: saveAdmin, cancelAdmin: cancelAdmin,            // enregistrement global du back office (tables et modèles de courriels communs)
+    setOpts: function (o) { state.opts = o || {}; },
     // Réservation VMP depuis la fiche d'un réserviste (page Réservistes)
-    bookVmp: bookVmpFor, bookFor: bookFor, vmpInfo: vmpInfo, sendVmp: sendVmpFor, onChange: null
+    bookVmp: bookVmpFor, bookFor: bookFor, vmpInfo: vmpInfo, sendVmp: sendVmpFor, lastMsg: function () { return state.msg; }, onChange: null
   };
   if (!IN_GRIST) { $('demo').hidden = false; load(); }
 })();
@@ -7172,16 +7237,69 @@
   pageBo.appendChild(wrap);
   document.getElementById('page-rsv').insertAdjacentElement('afterend', pageBo);
 
-  function attach(id, title) {
-    var el = document.getElementById(id); if (!el) return;
-    var d = document.createElement('details');
-    d.className = 'bo-page-section';
-    var s = document.createElement('summary'); s.textContent = title; d.appendChild(s);
-    d.appendChild(el); // reste masqué jusqu'à l'ouverture du back office (openAdmin)
-    pmgAdmin.appendChild(d);
+  // Sources de données : un seul bloc, en tête, avec un récapitulatif par page (les éléments gardent leurs identifiants : chaque page les alimente comme avant).
+  var sources = document.createElement('details'); sources.className = 'bo-sources'; sources.id = 'bo-all-sources'; sources.open = true;
+  sources.innerHTML = '<summary>Sources de données du widget (lecture seule)</summary>';
+  [['bo-sources', 'Candidats', 'recap-sum'], ['r-bo-sources', 'Réservistes RO1/RS/RC', 'r-recap-sum'], ['x-bo-sources', 'Réservations', 'x-recap-sum']].forEach(function (s) {
+    var old = document.getElementById(s[0]); if (!old) return;
+    var sec = document.createElement('section'); sec.className = 'bo-src';
+    var h = document.createElement('h3'); h.appendChild(document.createTextNode(s[1] + ' '));
+    var sum = document.getElementById(s[2]); if (sum) { sum.style.marginLeft = '0.5rem'; h.appendChild(sum); }
+    sec.appendChild(h);
+    Array.prototype.slice.call(old.children).forEach(function (c) {
+      if (c.tagName === 'SUMMARY') return;
+      if (c.tagName === 'H3') { var h4 = document.createElement('h4'); h4.innerHTML = c.innerHTML; c = h4; }
+      sec.appendChild(c);
+    });
+    sources.appendChild(sec);
+    old.parentNode.removeChild(old);
+  });
+  wrap.insertBefore(sources, pmgAdmin);
+  // Réglages propres à chaque page : plus de sections « Back office · … », leurs blocs s'enchaînent dans le même flux.
+  ['r-view-admin', 'x-view-admin'].forEach(function (id) { var el = document.getElementById(id); if (el) wrap.appendChild(el); }); // masqués jusqu'à openAdmin
+  // Modèles de courriels : une seule section, commune aux trois pages (invitations, confirmations, antenne médicale…), en tête du back office.
+  var xMail = document.querySelector('#x-view-admin > section.step'), xVars = document.getElementById('x-bo-vars'), xForms = document.getElementById('x-mail-forms');
+  if (xMail && xVars && xForms) {
+    var common = document.createElement('section'); common.className = 'step'; common.id = 'bo-common-mail';
+    common.innerHTML = '<div class="head"><h2>Modèles de courriels</h2></div>' +
+      '<p class="lead" style="margin-left:0">Un modèle par envoi, communs aux trois pages. Cliquez sur une variable pour l’insérer dans le champ en cours de saisie.</p>';
+    common.appendChild(xVars); common.appendChild(xForms);
+    xMail.parentNode.removeChild(xMail);
+    wrap.insertBefore(common, pmgAdmin);
   }
-  attach('r-view-admin', 'Back office · Réservistes RO1/RS/RC');
-  attach('x-view-admin', 'Back office · Réservations');
+
+  // Une seule barre d'enregistrement pour tout le back office : les trois pages sont enregistrées l'une après l'autre.
+  var pageBars = Array.prototype.slice.call(wrap.querySelectorAll('.bo-bar'));
+  var stateEls = pageBars.map(function (b) { return b.querySelector('.bo-bar__state'); });
+  pageBars.forEach(function (b) { b.hidden = true; b.style.display = 'none'; });
+  var gbar = document.createElement('div'); gbar.className = 'bo-bar'; gbar.setAttribute('role', 'region'); gbar.setAttribute('aria-label', 'Enregistrement de la configuration');
+  gbar.innerHTML = '<span class="bo-bar__state" id="bo-g-state" aria-live="polite">Configuration à jour</span>' +
+    '<span class="bo-bar__saved" id="bo-g-saved" role="status" hidden>✔ Configuration enregistrée</span>' +
+    '<span class="bo-bar__state" id="bo-g-err" role="alert" style="color:var(--text-default-error)" hidden></span>' +
+    '<div class="bo-bar__actions"><button class="btn secondary" id="bo-g-cancel" type="button">Annuler</button>' +
+    '<button class="btn" id="bo-g-save" type="button">Enregistrer</button></div>';
+  wrap.appendChild(gbar);
+  var gState = gbar.querySelector('#bo-g-state'), gSaved = gbar.querySelector('#bo-g-saved'), gErr = gbar.querySelector('#bo-g-err');
+  function syncState() {
+    var dirty = stateEls.some(function (s) { return s && s.classList.contains('is-dirty'); });
+    gState.textContent = dirty ? '● Modifications non enregistrées' : 'Configuration à jour';
+    gState.classList.toggle('is-dirty', dirty);
+    if (dirty) { gSaved.hidden = true; }
+  }
+  stateEls.forEach(function (s) { if (s) new MutationObserver(syncState).observe(s, { attributes: true, attributeFilter: ['class'] }); });
+  gbar.querySelector('#bo-g-save').addEventListener('click', function () {
+    var savers = [window.PMG && window.PMG.save, window.RES && window.RES.save, window.RSV && window.RSV.saveAdmin].filter(Boolean);
+    gErr.hidden = true; gSaved.hidden = true;
+    savers.reduce(function (p, fn) { return p.then(function () { return fn(); }); }, Promise.resolve())
+      .then(function () { gSaved.hidden = false; })
+      .catch(function (e) { gErr.textContent = (e && e.message) || 'Enregistrement impossible.'; gErr.hidden = false; });
+  });
+  gbar.querySelector('#bo-g-cancel').addEventListener('click', function () {
+    [window.PMG && window.PMG.cancel, window.RES && window.RES.cancel, window.RSV && window.RSV.cancelAdmin].forEach(function (fn) { if (fn) fn(); });
+    gErr.hidden = true; gSaved.hidden = true;
+  });
+  // Numérotation des étapes continue d'une page à l'autre.
+  Array.prototype.slice.call(wrap.querySelectorAll('.badge-num')).forEach(function (b, i) { b.textContent = String(i + 1); });
 
   var returnPage = 'pmg', hdrClicks = 0, hdrTimer;
   document.querySelector('.fr-header').addEventListener('click', function (e) {
