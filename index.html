@@ -7,6 +7,12 @@
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- Articles de la page Bienvenue : rédaction en Markdown (éditeur WYSIWYG) dans le back office, converti en HTML à l'affichage. -->
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.20.0/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.20.0/dist/easymde.min.js"></script>
+<!-- Navigation rapide de la page Bienvenue : sommaire généré par tocbot (comme dans le widget Markdown DSFR pris pour modèle). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.32.2/tocbot.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/utility/icons/icons.min.css">
 <script type="module" src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.module.min.js"></script>
@@ -91,6 +97,47 @@
   .meta { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 0 16px 56px; font-size: .875rem; color: var(--muted); }
   .meta b { color: var(--ink); font-weight: 500; }
   h3 { margin: 24px 0 12px 56px; font-size: 1rem; font-weight: 700; color: var(--ink); }
+
+  /* Page Bienvenue : articles gérés depuis le back office. */
+  .wel-card { margin-bottom: 40px; }
+  .wel-card:last-child { margin-bottom: 0; }
+  .wel-title { display: flex; align-items: baseline; gap: 0.6rem; font-size: 1.75rem; margin: 0 0 12px; }
+  /* Tag de date : composant DSFR officiel « Badge » (fr-badge), cf. systeme-de-design.gouv.fr → composants → Badge → Code.
+     fr-badge gère déjà lui-même la couleur, le gras, les majuscules et l'icône selon la variante (fr-badge--success/warning/…) ;
+     .wel-date n'ajoute qu'un espacement sous le tag. */
+  .wel-date { margin: 0 0 16px; }
+  .wel-body p, .wel-intro p { margin: 0 0 1rem; }
+  .wel-body p:last-child, .wel-intro p:last-child { margin-bottom: 0; }
+  .wel-body a, .wel-intro a { color: var(--blue); }
+  .wel-intro { margin-bottom: 40px; }
+  .wel-sep { border: 0; border-top: 1px solid var(--border-default-grey); margin: 32px 0; }
+
+  /* Navigation rapide (sommaire) : généré par tocbot (toc-list/toc-link/is-active-link), collant à droite un peu plus bas que le haut
+     de la colonne principale ; repliable en haut de page sur petit écran. */
+  .wel-layout { display: flex; align-items: flex-start; gap: 48px; }
+  .wel-main { flex: 1 1 0; min-width: 0; }
+  .wel-toc { flex: 0 0 15rem; position: sticky; top: 32px; margin-top: 3.5rem; }
+  .wel-toc summary { cursor: pointer; font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-mention-grey); margin-bottom: 12px; }
+  .wel-toc .toc-list { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border-default-grey); }
+  .wel-toc .toc-list .toc-list { margin-left: 1rem; }
+  .wel-toc .toc-list-item { margin: 0; }
+  .wel-toc .toc-link { display: block; padding: 6px 0 6px 16px; margin-left: -2px; border-left: 2px solid transparent; color: var(--text-mention-grey); text-decoration: none; font-size: .875rem; line-height: 1.3; }
+  .wel-toc .toc-link:hover, .wel-toc .toc-link:focus-visible { color: var(--ink); }
+  .wel-toc .toc-link.is-active-link { border-left-color: var(--blue); color: var(--blue); font-weight: 700; }
+  @media (min-width: 769px) { .wel-toc summary { cursor: default; pointer-events: none; } .wel-toc summary::marker, .wel-toc summary::-webkit-details-marker { display: none; } }
+  @media (max-width: 768px) { .wel-layout { flex-direction: column; gap: 24px; } .wel-toc { position: static; width: 100%; order: -1; flex: none; margin-top: 0; } }
+
+  /* Éditeur Markdown (EasyMDE) des articles Bienvenue : repris dans les couleurs du widget (thème clair/sombre). */
+  .w-md .EasyMDEContainer { margin-bottom: 1.25rem; }
+  .w-md .CodeMirror, .w-md .editor-toolbar, .w-md .editor-preview, .w-md .editor-preview-side { background: var(--field); color: var(--text); border-color: var(--border-strong); }
+  .w-md .CodeMirror { border-radius: 0 0 4px 4px; }
+  .w-md .editor-toolbar { border-radius: 4px 4px 0 0; opacity: 1; }
+  .w-md .editor-toolbar a { color: var(--text) !important; }
+  .w-md .editor-toolbar a:hover, .w-md .editor-toolbar a.active { background: var(--blue-tint); border-color: var(--border-strong); }
+  .w-md .editor-toolbar i.separator { border-color: var(--border-strong); }
+  .w-md .CodeMirror-cursor { border-left-color: var(--text); }
+  .w-md .editor-preview, .w-md .editor-preview-side { opacity: 1; }
+  .w-md .editor-preview p, .w-md .editor-preview-side p { margin: 0 0 1rem; }
 
   /* Tables */
   /* Tableau : même design que le widget Documents (.bulk-table). */
@@ -194,17 +241,17 @@
   .textarea:focus { outline: 2px solid #0a76f6; outline-offset: 2px; }
   @media (max-width: 640px) { .mail-block { margin-left: 0; padding: 12px; } }
 
-  /* Édition au clic des champs de la fiche. */
-  .detail-table td.is-editable { cursor: text; position: relative; padding-right: 2rem; }
-  .detail-table td.is-editable:hover, .detail-table td.is-editable:focus-visible { background: var(--blue-tint); }
-  .detail-table td.is-editable:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-  .detail-table td.is-editable::after {
+  /* Édition au clic des champs de la fiche (et, dans les Réservations Tests psy, de la colonne Heure). */
+  .detail-table td.is-editable, .x-table td.is-editable { cursor: text; position: relative; padding-right: 2rem; }
+  .detail-table td.is-editable:hover, .detail-table td.is-editable:focus-visible, .x-table td.is-editable:hover, .x-table td.is-editable:focus-visible { background: var(--blue-tint); }
+  .detail-table td.is-editable:focus-visible, .x-table td.is-editable:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .detail-table td.is-editable::after, .x-table td.is-editable::after {
     content: ""; position: absolute; right: 0.6rem; top: 0.75rem; width: 1rem; height: 1rem; background: currentColor; opacity: 0;
     -webkit-mask: url("https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/icons/design/pencil-line.svg") center / contain no-repeat;
     mask: url("https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/icons/design/pencil-line.svg") center / contain no-repeat;
   }
-  .detail-table td.is-editable:hover::after, .detail-table td.is-editable:focus-visible::after { opacity: 0.55; }
-  .detail-table td.is-editing { background: var(--bg-alt); }
+  .detail-table td.is-editable:hover::after, .detail-table td.is-editable:focus-visible::after, .x-table td.is-editable:hover::after, .x-table td.is-editable:focus-visible::after { opacity: 0.55; }
+  .detail-table td.is-editing, .x-table td.is-editing { background: var(--bg-alt); }
   .ed .ed-input { width: 100%; }
   .ed .textarea { min-height: 5rem; margin: 0; }
   .ed-multi { display: flex; flex-direction: column; gap: 0.3rem; max-height: 12rem; overflow-y: auto; padding: 0.25rem 0; }
@@ -498,7 +545,8 @@
       <div class="fr-header__menu-links"></div>
       <nav class="fr-nav" id="header-navigation" role="navigation" aria-label="Menu principal">
         <ul class="fr-nav__list">
-          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" aria-current="page" data-page="pmg">Candidats</a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" aria-current="page" data-page="welcome">Bienvenue</a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="pmg">Candidats</a></li>
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="res">Réservistes RO1/RS/RC</a></li>
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="rsv">Réservations</a></li>
         </ul>
@@ -551,6 +599,38 @@
     </div>
   </div>
 </dialog>
+
+<div id="page-welcome">
+<div class="wrap fr-container">
+  <h1 class="fr-sr-only">Bienvenue</h1>
+  <div id="w-list"></div>
+
+  <!-- ===== Back office ===== -->
+  <div id="w-view-admin" hidden>
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Bloc d’introduction (facultatif)</h2></div>
+      <p class="lead">Affiché avant les articles, sur la page Bienvenue. En Markdown (ou en HTML) ; non repris dans le sommaire (navigation rapide).</p>
+      <textarea class="textarea tall" id="w-intro-md" spellcheck="true"></textarea>
+    </section>
+
+    <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Articles de la page Bienvenue</h2></div>
+      <p class="lead">Affichés dans cet ordre sur la page Bienvenue (première page du widget). Titre et date sont obligatoires ; le texte se rédige en Markdown (le bouton <span class="fr-icon-eye-line" aria-hidden="true"></span> de l’éditeur en affiche l’aperçu) — le HTML est aussi accepté.</p>
+      <div id="w-articles"></div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-btn-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un article</button></div>
+    </section>
+
+    <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
+      <span class="bo-bar__state" id="w-bo-state" aria-live="polite">Configuration à jour</span>
+      <span class="bo-bar__saved" id="w-saved" role="status" hidden>✔ Configuration enregistrée</span>
+      <div class="bo-bar__actions">
+        <button class="btn secondary" id="w-btn-cancel" type="button">Annuler</button>
+        <button class="btn" id="w-btn-save" type="button">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /page-welcome -->
 
 <div id="page-pmg">
 <div class="wrap fr-container">
@@ -1583,6 +1663,7 @@
   // Après chaque enregistrement, les trois pages repartent des mêmes options (sinon l'une écraserait la configuration enregistrée par une autre).
   function pushOpts(o) {
     state.opts = o;
+    if (window.WEL && window.WEL.setOpts) window.WEL.setOpts(o);
     if (window.RES && window.RES.setOpts) window.RES.setOpts(o);
     if (window.RSV && window.RSV.setOpts) window.RSV.setOpts(o);
   }
@@ -3386,9 +3467,10 @@
     $('e-status').hidden = !!dr.status;
     if (!dr.table || !dr.status) return Promise.reject(new Error('Candidats : sélectionnez la colonne « État de la candidature » (options avancées).'));
     var o = { table: dr.table, identity: dr.identity || '', status: dr.status, tabs: normalizeTabs(dr.table, dr.tabs), mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
-    if (state.opts.sent) o.sent = state.opts.sent; // conserve l'historique des actions effectuées
-    if (state.opts.r) o.r = state.opts.r;          // conserve la configuration de la page « Réservistes »
-    if (state.opts.x) o.x = state.opts.x;          // conserve la configuration de la page « Réservations »
+    if (state.opts.sent) o.sent = state.opts.sent;         // conserve l'historique des actions effectuées
+    if (state.opts.welcome) o.welcome = state.opts.welcome; // conserve la configuration de la page « Bienvenue »
+    if (state.opts.r) o.r = state.opts.r;                  // conserve la configuration de la page « Réservistes »
+    if (state.opts.x) o.x = state.opts.x;                  // conserve la configuration de la page « Réservations »
     return Promise.resolve(api.saveOptions(o)).then(function () { pushOpts(o); return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
   $('btn-save').addEventListener('click', function () { savePmg().catch(function () {}); });
@@ -3957,7 +4039,7 @@
   if (IN_GRIST) {
     grist.ready({ requiredAccess: 'full' });
     var timer;
-    grist.onOptions(function (o) { state.opts = o || {}; load(); if (window.RES) window.RES.setOptions(o); if (window.RSV) window.RSV.setOptions(o); });
+    grist.onOptions(function (o) { state.opts = o || {}; load(); if (window.WEL) window.WEL.setOptions(o); if (window.RES) window.RES.setOptions(o); if (window.RSV) window.RSV.setOptions(o); });
     grist.onRecords(function () { clearTimeout(timer); timer = setTimeout(load, 150); });
     grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; load(); }).catch(function () {});
   } else {
@@ -3965,6 +4047,223 @@
     state.boundTable = 'Candidats_PMG';
     load();
   }
+})();
+</script>
+<script>
+// Page Bienvenue : articles de type actualité, entièrement gérés depuis le back office (aucune table Grist).
+(function () {
+  var IN_GRIST = !!(window.grist && window.parent !== window);
+  function $(id) { return document.getElementById('w-' + id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmtArtDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function saveOptions(o) { return IN_GRIST ? grist.setOptions(o) : Promise.resolve(); }
+  // Texte et encadré des articles : rédigés en Markdown (éditeur WYSIWYG EasyMDE en back office), convertis en HTML à l'affichage.
+  // Le HTML brut passe aussi tel quel (marked ne l'échappe pas) : compatible avec les articles écrits avant ce changement.
+  function mdToHtml(md) { return window.marked ? marked.parse(md || '') : esc(md || ''); }
+  // Tag de date : composant DSFR « Badge » (fr-badge), petite taille (fr-badge--sm) ; variante de couleur optionnelle (statut,
+  // avec l'icône DSFR associée, incluse automatiquement par fr-badge--{variante}) + texte libre avant/après la date
+  // (ex. « À LA UNE · 29/09/2026 » ou « 29/09/2026 · NOUVEAUTÉ » — fr-badge met déjà le texte en gras et en majuscules).
+  var STATUS_OPTS = [['', '— Aucun (gris)'], ['success', 'Succès'], ['warning', 'Avertissement'], ['error', 'Erreur'], ['info', 'Information'], ['new', 'Nouveauté']];
+  function dateTagHtml(a) {
+    if (!a.date) return '';
+    var parts = [a.before, fmtArtDate(a.date), a.after].filter(function (s) { return s && String(s).trim(); }).map(esc).join(' · ');
+    var cls = 'wel-date fr-badge fr-badge--sm' + (a.status ? ' fr-badge--' + a.status : '');
+    return '<p class="' + cls + '">' + parts + '</p>';
+  }
+
+  // Article affiché avant toute configuration (première ouverture du widget).
+  var DEFAULT_ARTICLES = [{
+    title: 'Bienvenue', date: todayISO(), endDate: '', status: '', before: '', after: '',
+    body: 'Cette page s’affiche en premier. Ajoutez, modifiez ou réordonnez ses articles depuis le back office (cinq clics sur l’en-tête), en **Markdown**.'
+  }];
+
+  var state = { opts: {}, draft: { intro: '', articles: [] } };
+  function cfg() {
+    var o = state.opts.welcome, arts = o && Array.isArray(o.articles) ? o.articles : null;
+    return {
+      intro: (o && o.intro) || '',
+      articles: arts ? arts.map(function (a) { return { title: a.title || '', date: a.date || '', endDate: a.endDate || '', status: a.status || '', before: a.before || '', after: a.after || '', body: a.body || '' }; }) : JSON.parse(JSON.stringify(DEFAULT_ARTICLES))
+    };
+  }
+  // Fin de publication (facultative) : un article dont la date de fin est dépassée n'est plus affiché sur la page (mais reste
+  // visible et modifiable dans le back office, pour la prolonger ou la retirer).
+  function isExpired(a) { return !!a.endDate && a.endDate < todayISO(); }
+
+  /* ---------- Affichage ---------- */
+  // Navigation rapide (sommaire des titres), collante à droite un peu plus bas que le haut de la colonne principale, comme dans le
+  // widget Markdown DSFR pris pour modèle : générée par tocbot (surbrillance de l'article visible au défilement, molette fluide),
+  // repliable en haut de page sur petit écran.
+  var TOC_OPTS = {
+    tocSelector: '.wel-toc-list', contentSelector: '.wel-main', headingSelector: 'h2, h3',
+    hasInnerContainers: true, scrollSmooth: true, headingsOffset: 0, scrollSmoothOffset: 0,
+    linkClass: 'toc-link', listClass: 'toc-list', activeLinkClass: 'is-active-link',
+    orderedList: false, ignoreSelector: '.toc-ignore'
+  };
+  function wireTocMobileCollapse() {
+    var nav = $('list').querySelector('.wel-toc'); if (!nav) return;
+    nav.addEventListener('click', function (e) {
+      if (!e.target.closest('.toc-link')) return;
+      var det = nav.querySelector('details'); // repliée sur petit écran une fois la destination choisie (tocbot gère le défilement)
+      if (det && window.matchMedia('(max-width: 768px)').matches) det.open = false;
+    });
+  }
+  function render() {
+    var c = cfg(), arts = c.articles.filter(function (a) { return !isExpired(a); });
+    if (window.tocbot) tocbot.destroy();
+    // Bloc d'introduction : avant les articles, hors de la zone scrutée par le sommaire (jamais capté par tocbot).
+    var introHtml = c.intro ? '<div class="wel-intro toc-ignore">' + mdToHtml(c.intro) + '</div>' : '';
+    if (!arts.length) {
+      $('list').innerHTML = introHtml + '<p class="hint">Aucun article pour le moment' + (IN_GRIST ? ' : ajoutez-en depuis le back office (cinq clics sur l’en-tête).' : '.') + '</p>';
+      return;
+    }
+    var main = arts.map(function (a, i) {
+      return '<article class="wel-card">' +
+        '<h2 class="wel-title" id="w-art-' + i + '">' + esc(a.title) + '</h2>' +
+        dateTagHtml(a) +
+        (a.body ? '<div class="wel-body">' + mdToHtml(a.body) + '</div>' : '') +
+        '</article>';
+    }).join('<hr class="wel-sep">');
+    var toc = arts.length > 1 ? '<nav class="wel-toc" aria-label="Navigation rapide"><details open><summary>Navigation rapide</summary><div class="wel-toc-list"></div></details></nav>' : '';
+    $('list').innerHTML = introHtml + '<div class="wel-layout"><div class="wel-main">' + main + '</div>' + toc + '</div>';
+    if (toc) { wireTocMobileCollapse(); if (window.tocbot) tocbot.init(TOC_OPTS); }
+  }
+
+  /* ---------- Back office : bloc d'introduction (éditeur Markdown à part, un seul champ, hors liste d'articles) ---------- */
+  function destroyIntroEditor() {
+    if (!state.introEditor) return;
+    try { state.introEditor.toTextArea(); } catch (err) {}
+    state.introEditor = null;
+  }
+  function mountIntroEditor() {
+    destroyIntroEditor();
+    var ta = $('intro-md'); if (!ta || !window.EasyMDE) return;
+    ta.value = state.draft.intro || '';
+    var mde = new EasyMDE({
+      element: ta, spellChecker: false, status: false, autoDownloadFontAwesome: true,
+      autoRefresh: { delay: 300 },
+      placeholder: 'Bloc d’introduction, en Markdown…',
+      previewRender: mdToHtml,
+      toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', '|', 'preview', 'guide']
+    });
+    mde.codemirror.getWrapperElement().parentNode.classList.add('w-md');
+    mde.codemirror.on('change', function () { state.draft.intro = mde.value(); setDirty(true); });
+    state.introEditor = mde;
+  }
+
+  /* ---------- Back office : liste des articles, ajout/suppression/réordonnancement, un seul champ par ligne ---------- */
+  // Texte et encadré : éditeur Markdown WYSIWYG (EasyMDE) ; les instances précédentes sont détruites avant de reconstruire la liste.
+  function destroyEditors() {
+    (state.editors || []).forEach(function (e) { try { e.toTextArea(); } catch (err) {} });
+    state.editors = [];
+  }
+  function mountEditors() {
+    state.editors = [];
+    if (!window.EasyMDE) return; // hors ligne ou CDN inaccessible : les <textarea> restent utilisables tels quels
+    Array.prototype.forEach.call($('articles').querySelectorAll('textarea[data-wf]'), function (ta) {
+      var i = Number(ta.getAttribute('data-i')), f = ta.getAttribute('data-wf');
+      var mde = new EasyMDE({
+        element: ta, spellChecker: false, status: false, autoDownloadFontAwesome: true,
+        autoRefresh: { delay: 300 }, // la section peut encore être masquée à l'initialisation (ouverture du back office)
+        placeholder: 'Texte de l’article, en Markdown…',
+        previewRender: mdToHtml,
+        toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', '|', 'preview', 'guide']
+      });
+      mde.codemirror.getWrapperElement().parentNode.classList.add('w-md');
+      mde.codemirror.on('change', function () {
+        if (!state.draft.articles[i]) return;
+        state.draft.articles[i][f] = mde.value();
+        setDirty(true);
+      });
+      state.editors.push(mde);
+    });
+  }
+  function renderArticles() {
+    destroyEditors();
+    var arts = state.draft.articles;
+    $('articles').innerHTML = arts.length ? arts.map(function (a, i) {
+      var p = 'w-a-' + i;
+      var expired = isExpired(a);
+      return '<details class="mail-block" open><summary>' + esc(a.title || '(sans titre)') + '</summary><div class="mail-body">' +
+        '<div class="mail-head"><span class="hint">Article ' + (i + 1) + ' sur ' + arts.length + (expired ? ' · <span class="tag red">Expiré, non affiché</span>' : '') + '</span>' +
+        '<button type="button" class="btn secondary sm" data-wact="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Monter" aria-label="Monter cet article"><span class="fr-icon-arrow-up-line" aria-hidden="true"></span></button> ' +
+        '<button type="button" class="btn secondary sm" data-wact="down" data-i="' + i + '"' + (i === arts.length - 1 ? ' disabled' : '') + ' title="Descendre" aria-label="Descendre cet article"><span class="fr-icon-arrow-down-line" aria-hidden="true"></span></button> ' +
+        '<button type="button" class="btn secondary sm" data-wact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer cet article"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="' + p + '-title">Titre<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-title" data-wf="title" data-i="' + i + '" value="' + esc(a.title) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + '-date">Date<span class="req" aria-hidden="true">*</span></label><input class="input" type="date" id="' + p + '-date" data-wf="date" data-i="' + i + '" value="' + esc(a.date) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + '-endDate">Fin de publication (facultatif)</label><input class="input" type="date" id="' + p + '-endDate" data-wf="endDate" data-i="' + i + '" value="' + esc(a.endDate) + '"></div>' +
+        '</div>' +
+        '<p class="hint" style="margin:0.75rem 0 0.35rem">L’article n’est plus affiché sur la page à partir du lendemain de sa fin de publication (il reste ici, modifiable). Tag affiché sous le titre : couleur facultative, avec la date et, si besoin, du texte avant et/ou après (ex. « À la une · ' + esc(fmtArtDate(a.date) || 'JJ/MM/AAAA') + ' », ou « ' + esc(fmtArtDate(a.date) || 'JJ/MM/AAAA') + ' · Nouveauté »).</p>' +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="' + p + '-status">Couleur du tag</label><select class="select" id="' + p + '-status" data-wf="status" data-i="' + i + '">' + STATUS_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === a.status ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+        '<div class="cf-field"><label for="' + p + '-before">Texte avant la date (facultatif)</label><input class="input" type="text" id="' + p + '-before" data-wf="before" data-i="' + i + '" value="' + esc(a.before) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + '-after">Texte après la date (facultatif)</label><input class="input" type="text" id="' + p + '-after" data-wf="after" data-i="' + i + '" value="' + esc(a.after) + '"></div>' +
+        '</div>' +
+        '<label for="' + p + '-body">Texte, en Markdown (ou en HTML)</label><textarea class="textarea tall" id="' + p + '-body" data-wf="body" data-i="' + i + '" spellcheck="true">' + esc(a.body) + '</textarea>' +
+        '</div></details>';
+    }).join('') : '<p class="hint">Aucun article pour le moment.</p>';
+    mountEditors();
+  }
+  function renderAdminForm() { mountIntroEditor(); renderArticles(); }
+  function setDirty(d) {
+    $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
+    $('bo-state').classList.toggle('is-dirty', d);
+    if (d) $('saved').hidden = true;
+  }
+  function onFieldChange(e) {
+    var f = e.target.getAttribute('data-wf'), i = Number(e.target.getAttribute('data-i'));
+    if (!f || !state.draft.articles[i]) return;
+    state.draft.articles[i][f] = e.target.value;
+    if (f === 'title') {
+      var d = e.target.closest('details'); if (d) d.querySelector('summary').textContent = state.draft.articles[i].title || '(sans titre)';
+    }
+    setDirty(true);
+  }
+  $('articles').addEventListener('input', onFieldChange);
+  $('articles').addEventListener('change', onFieldChange); // <select> Couleur du tag (l'événement 'input' n'y est pas garanti)
+  $('articles').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-wact]'); if (!b) return;
+    var i = Number(b.getAttribute('data-i')), act = b.getAttribute('data-wact'), arts = state.draft.articles, t;
+    if (act === 'del') arts.splice(i, 1);
+    else if (act === 'up' && i > 0) { t = arts[i - 1]; arts[i - 1] = arts[i]; arts[i] = t; }
+    else if (act === 'down' && i < arts.length - 1) { t = arts[i + 1]; arts[i + 1] = arts[i]; arts[i] = t; }
+    else return;
+    renderArticles(); setDirty(true);
+  });
+  $('btn-add').addEventListener('click', function () {
+    state.draft.articles.push({ title: 'Nouvel article', date: todayISO(), endDate: '', status: '', before: '', after: '', body: '' });
+    renderArticles(); setDirty(true);
+    var last = $('articles').querySelectorAll('details'); last = last[last.length - 1];
+    var f = last && last.querySelector('input[data-wf=title]'); if (f) f.focus();
+  });
+  function cancelWel() { state.draft = { intro: cfg().intro, articles: cfg().articles }; mountIntroEditor(); renderArticles(); setDirty(false); }
+  function saveWel() {
+    var arts = state.draft.articles, i;
+    for (i = 0; i < arts.length; i++) {
+      if (!arts[i].title.trim() || !arts[i].date) return Promise.reject(new Error('Bienvenue : titre et date sont obligatoires pour chaque article.'));
+    }
+    var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; });
+    o.welcome = {
+      intro: state.draft.intro || '',
+      articles: arts.map(function (a) { return { title: a.title.trim(), date: a.date, endDate: a.endDate || '', status: a.status || '', before: (a.before || '').trim(), after: (a.after || '').trim(), body: a.body || '' }; })
+    };
+    return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; render(); }).then(function () { setDirty(false); $('saved').hidden = false; });
+  }
+  $('btn-cancel').addEventListener('click', cancelWel);
+  $('btn-save').addEventListener('click', function () { saveWel().catch(function () {}); });
+
+  window.WEL = {
+    setOptions: function (o) { state.opts = o || {}; render(); },
+    refresh: function () { render(); },
+    // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
+    openAdmin: function () { state.draft = { intro: cfg().intro, articles: cfg().articles }; $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false); },
+    closeAdmin: function () { $('view-admin').hidden = true; },
+    save: function () { return saveWel(); },
+    cancel: function () { cancelWel(); },
+    setOpts: function (o) { state.opts = o || {}; render(); }
+  };
+  render();
 })();
 </script>
 <script>
@@ -5707,6 +6006,14 @@
     vemi: { title: 'VEMI', dateLabel: 'Date', timeLabel: 'Heure', antenneLabel: 'Antenne médicale', capLabel: '', toggleLabel: 'Proposé ?', etatLabel: 'Etat créneau' },
     psy: { title: 'Tests psy', dateLabel: 'Date', timeLabel: '', antenneLabel: '', capLabel: 'Capacité', toggleLabel: 'Proposé ?', etatLabel: '' }
   };
+  // Heures possibles pour une réservation Tests psy (choix fermé, pas de saisie libre) : à ajuster ici si les horaires changent.
+  var PSY_HEURES = ['10:00', '11:00', '15:00'];
+  function psyHeureOptionsHtml(v) {
+    return '<option value=""' + (v ? '' : ' selected') + '>— Choisir —</option>' +
+      PSY_HEURES.map(function (h) { return '<option value="' + h + '"' + (h === v ? ' selected' : '') + '>' + h + '</option>'; }).join('') +
+      // Valeur existante hors liste (saisie avant l'introduction de ce choix fermé) : conservée telle quelle tant qu'elle n'est pas changée.
+      (v && PSY_HEURES.indexOf(v) === -1 ? '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>' : '');
+  }
   // Réservation, convocation, transmission au service : un modèle par type (VMP, VEMI, Tests psy), édités ici et repris tels quels
   // par la page Candidats pour ses blocs Tests psychométriques (psy) et VEMI (vemi).
   // Modèles : invitation à réserver et confirmation de réservation par type (VMP, VEMI, Tests psy) ; un seul modèle commun pour la
@@ -5798,7 +6105,8 @@
     opts: {}, draft: {}, tab: 'vmp', tables: [], data: { vmp: null, vemi: null, psy: null }, cand: null, ant: null,
     slots: { vmp: null, vemi: null, psy: null }, slotAdmin: null, // { tab, create, edit, confirmDelete, busy, error, msg }
     res: null, book: null, // réservistes (source pour « Réserver » côté VMP) ; book : { mode, tab, id, date, time, antenne, personId, query, warn, confirmDup, error, busy }
-    q: '', filter: 'action', sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false, confirmDelete: null
+    q: '', filter: 'action', sort: { col: '', dir: 1 }, view: [], msg: null, error: '', read: null, dup: null, busy: false, confirmDelete: null,
+    editCell: null // édition au clic de la colonne Heure (Tests psy) dans la liste : { id, value }
   };
   function $(id) { return document.getElementById('x-' + id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -6150,7 +6458,12 @@
     }).join('') + '</tr>';
     rows.innerHTML = list.map(function (r) {
       var dup = isDup(tab, r, groups);
-      return '<tr data-id="' + r.id + '"' + (dup ? ' class="x-dup"' : '') + '><td class="x-sticky x-actions">' + actionsHtml(tab, r, dup) + '</td>' + cols.map(function (c) { return '<td>' + cellHtml(c, r[c.id]) + '</td>'; }).join('') + '</tr>';
+      return '<tr data-id="' + r.id + '"' + (dup ? ' class="x-dup"' : '') + '><td class="x-sticky x-actions">' + actionsHtml(tab, r, dup) + '</td>' +
+        cols.map(function (c) {
+          // Tests psy : les créneaux n'ont pas d'heure fixe (contrairement à VMP/VEMI) ; l'heure de chaque réservation se renseigne au cas par cas, ici en un clic.
+          if (tab === 'psy' && hc && c.id === hc.id) return heureTd(r, hc);
+          return '<td>' + cellHtml(c, r[c.id]) + '</td>';
+        }).join('') + '</tr>';
     }).join('');
     if (state.error) { stateEl.hidden = false; stateEl.innerHTML = '<strong>Source inaccessible</strong>' + esc(state.error); }
     else if (!list.length) { stateEl.hidden = false; stateEl.innerHTML = d.rows.length ? '<strong>Aucun résultat</strong>Aucune réservation ne correspond à votre recherche.' : '<strong>Aucune réservation</strong>La table est vide.'; }
@@ -6196,6 +6509,35 @@
   }
   // Prévient la page Réservistes (fiche ouverte) qu'une réservation VMP a changé.
   function notifyChange() { if (window.RSV && typeof window.RSV.onChange === 'function') window.RSV.onChange(); }
+
+  /* ---------- Tests psy : édition au clic de l'heure d'une réservation (les créneaux n'ont pas d'heure fixe) ---------- */
+  function heureTd(row, timeCol) {
+    var ec = state.editCell;
+    if (ec && ec.id === row.id) return '<td class="is-editing"><select class="select" id="x-heure-input" style="max-width:7rem">' + psyHeureOptionsHtml(ec.value) + '</select></td>';
+    var v = row[timeCol.id], empty = v == null || v === '';
+    return '<td class="is-editable' + (empty ? ' is-empty' : '') + '" data-heureedit="' + row.id + '" tabindex="0" role="button" aria-label="Modifier l’heure" title="Cliquer pour modifier">' + (empty ? '<span class="x-off">—</span>' : esc(String(v))) + '</td>';
+  }
+  function startHeureEdit(id) {
+    var d = state.data.psy, timeCol = d && findCol(d.cols, 'Heure'), row = d && d.rows.filter(function (r) { return r.id === id; })[0];
+    if (!timeCol || !row) return;
+    state.editCell = { id: id, value: row[timeCol.id] || '' };
+    renderList();
+    var inp = $('heure-input'); if (inp) { inp.focus(); if (inp.select) inp.select(); }
+  }
+  function cancelHeureEdit() { if (!state.editCell) return; state.editCell = null; renderList(); }
+  function commitHeureEdit() {
+    var ec = state.editCell; if (!ec) return;
+    var inp = $('heure-input'), val = (inp ? inp.value : ec.value).trim(); // valeur lue dans le champ (pas dans l'état : pas de synchronisation à chaque frappe)
+    var d = state.data.psy, timeCol = d && findCol(d.cols, 'Heure');
+    state.editCell = null;
+    if (!timeCol) { renderList(); return; }
+    var row = d.rows.filter(function (r) { return r.id === ec.id; })[0];
+    if (!row || (row[timeCol.id] || '') === val) { renderList(); return; } // rien à enregistrer
+    row[timeCol.id] = val; renderList(); // affichage immédiat, l'enregistrement se fait en tâche de fond
+    var f = {}; f[timeCol.id] = val;
+    Promise.resolve(api.updateFields(d.table, ec.id, f)).then(function () { return load(); }).then(notifyChange)
+      .catch(function (e) { showMsg('error', 'Enregistrement de l’heure impossible : ' + ((e && e.message) || e) + '.'); return load(); });
+  }
   function send(tab, kind, rowId) {
     var d = state.data[tab], row = d && d.rows.filter(function (r) { return r.id === rowId; })[0]; if (!row) return;
     var spec = SPECS[tab], service = kind === 'service';
@@ -6308,6 +6650,7 @@
     }).then(function () { state.busy = false; });
   }
   $('rows').addEventListener('click', function (e) {
+    var hc2 = e.target.closest('[data-heureedit]'); if (hc2) { startHeureEdit(Number(hc2.getAttribute('data-heureedit'))); return; }
     var b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
     var id = Number(b.getAttribute('data-id')), act = b.getAttribute('data-act');
     if (act === 'dup') openDup(id);
@@ -6317,6 +6660,17 @@
     else if (act === 'delete-confirm') deleteRow(id);
     else send(state.tab, act === 'service' ? 'service' : 'convocation', id);
   });
+  // Édition au clic de l'heure (Tests psy) : Entrée valide, Échap annule, la sortie du champ valide aussi.
+  $('rows').addEventListener('keydown', function (e) {
+    var td = e.target.closest('td[data-heureedit]');
+    if (td && e.target === td && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startHeureEdit(Number(td.getAttribute('data-heureedit'))); return; }
+    if (e.target.id === 'x-heure-input') {
+      if (e.key === 'Enter') { e.preventDefault(); commitHeureEdit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancelHeureEdit(); }
+    }
+  });
+  $('rows').addEventListener('focusout', function (e) { if (e.target.id === 'x-heure-input') commitHeureEdit(); });
+  $('rows').addEventListener('change', function (e) { if (e.target.id === 'x-heure-input') commitHeureEdit(); }); // choix dans la liste : enregistre aussitôt
   $('dmodal').addEventListener('mousedown', function (e) { if (e.target === $('dmodal') && !(state.dup && state.dup.busy)) closeDup(); });
   $('dmodal-close').addEventListener('click', closeDup);
   $('dmodal-body').addEventListener('click', function (e) {
@@ -6843,9 +7197,10 @@
     renderBook(); showBookModal(); ensureSources().then(function () { if (state.book) renderBook(); });
   }
   function openBookEdit(id) {
-    var tab = state.tab, d = state.data[tab], spec = SPECS[tab], cs = CRENEAU_SPECS[tab]; if (!d) return;
+    var tab = state.tab, d = state.data[tab], spec = SPECS[tab]; if (!d) return;
     var row = d.rows.filter(function (r) { return r.id === id; })[0]; if (!row) return;
-    var dateCol = findCol(d.cols, 'Date'), timeCol = cs.timeLabel && findCol(d.cols, cs.timeLabel), antCol = spec.antenne && findCol(d.cols, spec.antenne);
+    // L'heure se lit dans la table des réservations elle-même (pas dans les créneaux : pour Tests psy, les créneaux n'ont pas d'heure fixe).
+    var dateCol = findCol(d.cols, 'Date'), timeCol = findCol(d.cols, 'Heure'), antCol = spec.antenne && findCol(d.cols, spec.antenne);
     var src = personSourceFor(tab), keyCol = findCol(d.cols, spec.key), pKeyCol = src && findCol(src.cols, spec.key);
     var kv = keyCol && row[keyCol.id] != null ? norm(String(row[keyCol.id])) : '';
     var personRow = (src && pKeyCol && kv) ? src.rows.filter(function (r) { return norm(String(r[pKeyCol.id] || '')) === kv; })[0] : null;
@@ -6916,6 +7271,9 @@
   function renderBook() {
     var bk = state.book; if (!bk) return;
     var tab = bk.tab, spec = SPECS[tab], cs = CRENEAU_SPECS[tab], s = state.slots[tab], src = personSourceFor(tab);
+    // L'heure de la réservation (colonne « Heure » de la table des réservations) est distincte de celle des créneaux proposés :
+    // pour Tests psy, les créneaux n'ont pas d'heure fixe, mais chaque réservation peut en recevoir une, au cas par cas.
+    var resD = state.data[tab], resTimeCol = resD && findCol(resD.cols, 'Heure');
     $('rmodal-title').textContent = (bk.mode === 'edit' ? 'Modifier la réservation · ' : 'Réserver · ') + spec.title;
     // Deux onglets (création uniquement, VMP et VEMI) : réserver un créneau, ou envoyer le message d'invitation à réserver.
     var hasTabs = bk.mode !== 'edit' && INVITE_TABS.indexOf(tab) !== -1, inviting = hasTabs && bk.view === 'invite';
@@ -6941,7 +7299,9 @@
     }
     if (!inviting) out += '<div class="cf-grid">' +
       '<div class="cf-field"><label for="x-bk-date">Date<span class="req" aria-hidden="true">*</span></label><input type="date" class="input" id="x-bk-date" value="' + esc(bk.date) + '"></div>' +
-      (cs.timeLabel ? '<div class="cf-field"><label for="x-bk-time">Heure<span class="req" aria-hidden="true">*</span></label><input type="text" class="input" id="x-bk-time" placeholder="HH:mm" value="' + esc(bk.time) + '"></div>' : '') +
+      (resTimeCol ? '<div class="cf-field"><label for="x-bk-time">Heure' + (cs.timeLabel ? '<span class="req" aria-hidden="true">*</span>' : '') + '</label>' +
+        (tab === 'psy' ? '<select class="select" id="x-bk-time">' + psyHeureOptionsHtml(bk.time) + '</select>' : '<input type="text" class="input" id="x-bk-time" placeholder="HH:mm" value="' + esc(bk.time) + '">') +
+        '</div>' : '') +
       (cs.antenneLabel ? '<div class="cf-field"><label for="x-bk-ant">Antenne médicale<span class="req" aria-hidden="true">*</span></label><select class="select" id="x-bk-ant">' + antenneOptionsHtml(bk.antenne) + '</select></div>' : '') +
       '</div></section>';
 
@@ -6984,7 +7344,7 @@
     if (!personRow) return fail('Sélection invalide.');
 
     var fields = {};
-    var dateCol = findCol(d.cols, 'Date'), timeCol = cs.timeLabel && findCol(d.cols, cs.timeLabel), antCol = spec.antenne && findCol(d.cols, spec.antenne);
+    var dateCol = findCol(d.cols, 'Date'), timeCol = findCol(d.cols, 'Heure'), antCol = spec.antenne && findCol(d.cols, spec.antenne);
     if (dateCol) fields[dateCol.id] = dv;
     if (timeCol) fields[timeCol.id] = bk.time.trim();
     if (antCol) fields[antCol.id] = bk.antenne;
@@ -7037,6 +7397,7 @@
   $('rmodal-body').addEventListener('change', function (e) {
     var bk = state.book; if (!bk) return;
     if (e.target.id === 'x-bk-ant') { bk.antenne = e.target.value; bk.error = ''; }
+    else if (e.target.id === 'x-bk-time') { bk.time = e.target.value; bk.error = ''; } // Tests psy : sélection dans la liste fermée (10:00, 11:00, 15:00)
     else if (e.target.id === 'x-bk-slot') {
       var s = state.slots[bk.tab], cs = CRENEAU_SPECS[bk.tab]; if (!s || !e.target.value) return;
       var row = s.rows.filter(function (r) { return String(r.id) === e.target.value; })[0]; if (!row) return;
@@ -7191,10 +7552,10 @@
 })();
 </script>
 <script>
-// Menu : quatre pages dans le même widget (trois dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
+// Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
-  var pages = { pmg: 'page-pmg', res: 'page-res', rsv: 'page-rsv', bo: 'page-bo' };
-  var titles = { pmg: 'Candidats', res: 'Réservistes RO1/RS/RC', rsv: 'Réservations', bo: 'Back office' };
+  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', res: 'page-res', rsv: 'page-rsv', bo: 'page-bo' };
+  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', res: 'Réservistes RO1/RS/RC', rsv: 'Réservations', bo: 'Back office' };
   function show(p) {
     window.__page = p;
     Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = k !== p; });
@@ -7212,8 +7573,8 @@
     e.preventDefault(); show(a.getAttribute('data-page'));
     try { var m = document.getElementById('modal-header-menu'); if (m && window.dsfr) window.dsfr(m).modal.conceal(); } catch (err) {} // referme le menu mobile
   });
-  var saved = 'pmg'; try { saved = localStorage.getItem('widgetPage') || 'pmg'; } catch (e) {}
-  show(pages[saved] ? saved : 'pmg');
+  var saved = 'welcome'; try { saved = localStorage.getItem('widgetPage') || 'welcome'; } catch (e) {}
+  show(pages[saved] ? saved : 'welcome');
   window.__showPage = show; // utilisé par le back office unifié
 })();
 </script>
@@ -7238,7 +7599,7 @@
   document.getElementById('page-rsv').insertAdjacentElement('afterend', pageBo);
 
   // Sources de données : un seul bloc, en tête, avec un récapitulatif par page (les éléments gardent leurs identifiants : chaque page les alimente comme avant).
-  var sources = document.createElement('details'); sources.className = 'bo-sources'; sources.id = 'bo-all-sources'; sources.open = true;
+  var sources = document.createElement('details'); sources.className = 'bo-sources'; sources.id = 'bo-all-sources'; // replié par défaut
   sources.innerHTML = '<summary>Sources de données du widget (lecture seule)</summary>';
   [['bo-sources', 'Candidats', 'recap-sum'], ['r-bo-sources', 'Réservistes RO1/RS/RC', 'r-recap-sum'], ['x-bo-sources', 'Réservations', 'x-recap-sum']].forEach(function (s) {
     var old = document.getElementById(s[0]); if (!old) return;
@@ -7255,6 +7616,9 @@
     old.parentNode.removeChild(old);
   });
   wrap.insertBefore(sources, pmgAdmin);
+  // Articles de la page Bienvenue (première page du widget) : juste après les sources, avant les réglages des autres pages.
+  var wAdmin = document.getElementById('w-view-admin');
+  if (wAdmin) wrap.insertBefore(wAdmin, pmgAdmin);
   // Réglages propres à chaque page : plus de sections « Back office · … », leurs blocs s'enchaînent dans le même flux.
   ['r-view-admin', 'x-view-admin'].forEach(function (id) { var el = document.getElementById(id); if (el) wrap.appendChild(el); }); // masqués jusqu'à openAdmin
   // Modèles de courriels : une seule section, commune aux trois pages (invitations, confirmations, antenne médicale…), en tête du back office.
@@ -7288,33 +7652,44 @@
   }
   stateEls.forEach(function (s) { if (s) new MutationObserver(syncState).observe(s, { attributes: true, attributeFilter: ['class'] }); });
   gbar.querySelector('#bo-g-save').addEventListener('click', function () {
-    var savers = [window.PMG && window.PMG.save, window.RES && window.RES.save, window.RSV && window.RSV.saveAdmin].filter(Boolean);
+    var savers = [window.WEL && window.WEL.save, window.PMG && window.PMG.save, window.RES && window.RES.save, window.RSV && window.RSV.saveAdmin].filter(Boolean);
     gErr.hidden = true; gSaved.hidden = true;
     savers.reduce(function (p, fn) { return p.then(function () { return fn(); }); }, Promise.resolve())
       .then(function () { gSaved.hidden = false; })
       .catch(function (e) { gErr.textContent = (e && e.message) || 'Enregistrement impossible.'; gErr.hidden = false; });
   });
   gbar.querySelector('#bo-g-cancel').addEventListener('click', function () {
-    [window.PMG && window.PMG.cancel, window.RES && window.RES.cancel, window.RSV && window.RSV.cancelAdmin].forEach(function (fn) { if (fn) fn(); });
+    [window.WEL && window.WEL.cancel, window.PMG && window.PMG.cancel, window.RES && window.RES.cancel, window.RSV && window.RSV.cancelAdmin].forEach(function (fn) { if (fn) fn(); });
     gErr.hidden = true; gSaved.hidden = true;
   });
   // Numérotation des étapes continue d'une page à l'autre.
   Array.prototype.slice.call(wrap.querySelectorAll('.badge-num')).forEach(function (b, i) { b.textContent = String(i + 1); });
 
-  var returnPage = 'pmg', hdrClicks = 0, hdrTimer;
+  var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
   document.querySelector('.fr-header').addEventListener('click', function (e) {
-    if (e.target.closest('.fr-header__tools')) return; // le bouton « Paramètres d'affichage » ne compte pas
+    // Ni le bouton « Paramètres d'affichage », ni le menu de navigation (burger + liens + fermeture) ne comptent comme un clic sur l'en-tête.
+    if (e.target.closest('.fr-header__tools') || e.target.closest('#modal-header-menu') || e.target.closest('#btn-header-menu')) return;
     clearTimeout(hdrTimer);
     hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
-    if (++hdrClicks < 5) return;
+    hdrClicks++;
+    if (hdrClicks === 1) {
+      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
+      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
+      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
     hdrClicks = 0;
     returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
     if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
     if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
     if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
     window.__showPage('bo');
   });
   document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
     if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
     if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
     window.__showPage(returnPage || 'pmg');
