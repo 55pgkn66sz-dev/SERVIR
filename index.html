@@ -110,7 +110,7 @@
   .wel-date { margin: 0 0 16px; }
   .wel-body p, .wel-intro p { margin: 0 0 1rem; }
   .wel-body p:last-child, .wel-intro p:last-child { margin-bottom: 0; }
-  .wel-body a, .wel-intro a { color: var(--blue); }
+  .wel-body a, .wel-intro a { color: inherit; }
   /* Le texte et le HTML des articles/de l'intro peuvent contenir des composants DSFR collés tels quels (bandeau, mise en avant…),
      dont les titres (souvent des <h2>/<h3>) doivent hériter leur couleur du composant (ex. bleu pour fr-notice--info) plutôt que
      de prendre la couleur générique des titres du widget (règle h1, h2 { color: var(--ink); } plus haut). */
@@ -1304,7 +1304,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.4</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -3431,7 +3431,8 @@
   $('tab-admin').addEventListener('click', function () { showView('admin'); });
 
   /* ---------- Événements du back office ---------- */
-  $('q').addEventListener('input', renderList);
+  var qTimer;
+  $('q').addEventListener('input', function () { clearTimeout(qTimer); qTimer = setTimeout(renderList, 200); });
   $('sort-name').addEventListener('click', function () { state.sortDir = -state.sortDir; renderList(); });
 
   $('f-table').addEventListener('change', function (e) {
@@ -5059,7 +5060,8 @@
       $s.hidden = false; $s.innerHTML = state.records.length ? '<strong>Aucun résultat</strong>Aucun réserviste ne correspond à votre recherche.' : '<strong>Aucun réserviste</strong>La table est vide.';
     } else { $s.hidden = true; }
   }
-  $('q').addEventListener('input', renderList);
+  var qTimer;
+  $('q').addEventListener('input', function () { clearTimeout(qTimer); qTimer = setTimeout(renderList, 200); });
   $('sort-name').addEventListener('click', function () { state.sortDir = -state.sortDir; renderList(); });
 
   /* ---------- Édition au clic d'un champ de la fiche ---------- */
@@ -6899,7 +6901,8 @@
     var k = b.getAttribute('data-tab'); showTab(k);
     if (k !== 'admin') $('tab-admin').hidden = true;
   });
-  $('q').addEventListener('input', renderList);
+  var qTimer;
+  $('q').addEventListener('input', function () { clearTimeout(qTimer); qTimer = setTimeout(renderList, 200); });
   $('flt-action').addEventListener('change', function (e) { state.filter = e.target.value; renderList(); });
   $('thead').addEventListener('click', function (e) {
     var b = e.target.closest('[data-sort]'); if (!b) return;
