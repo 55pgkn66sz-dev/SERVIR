@@ -140,6 +140,11 @@
   @media (min-width: 769px) { .wel-toc summary { cursor: default; pointer-events: none; } .wel-toc summary::marker, .wel-toc summary::-webkit-details-marker { display: none; } }
   @media (max-width: 768px) { .wel-layout { flex-direction: column; gap: 24px; } .wel-toc { position: static; width: 100%; order: -1; flex: none; margin-top: 0; } }
 
+  /* Point rouge clignotant dans le menu, à côté du nom d'une page, quand un compteur configuré pour elle est supérieur à 0. */
+  .wel-nav-dot { display: inline-block; width: 0.5rem; height: 0.5rem; margin-left: 0.4rem; border-radius: 50%; background: #ce0500; vertical-align: middle; animation: wel-blink 1.4s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .wel-nav-dot { animation: none; } }
+  @keyframes wel-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
   /* Éditeur Markdown (EasyMDE) des articles Bienvenue : repris dans les couleurs du widget (thème clair/sombre). */
   .w-md .EasyMDEContainer { margin-bottom: 1.25rem; }
   .w-md .CodeMirror, .w-md .editor-toolbar, .w-md .editor-preview, .w-md .editor-preview-side { background: var(--field); color: var(--text); border-color: var(--border-strong); }
@@ -4114,6 +4119,18 @@
   // avec l'icône DSFR associée, incluse automatiquement par fr-badge--{variante}) + texte libre avant/après la date
   // (ex. « À LA UNE · 29/09/2026 » ou « 29/09/2026 · NOUVEAUTÉ » — fr-badge met déjà le texte en gras et en majuscules).
   var STATUS_OPTS = [['', '— Aucun (gris)'], ['success', 'Succès'], ['warning', 'Avertissement'], ['error', 'Erreur'], ['info', 'Information'], ['new', 'Nouveauté']];
+  // Pages du widget pouvant recevoir le point rouge clignotant d'un compteur (mêmes clés que le script de navigation en fin de fichier).
+  var NAV_PAGE_OPTS = [
+    ['', '— Aucune —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['res', 'Réservistes RO1/RS/RC'], ['rsv', 'Réservations'],
+    ['rsv:vmp', 'Réservations · onglet VMP'], ['rsv:vemi', 'Réservations · onglet VEMI'], ['rsv:psy', 'Réservations · onglet Tests psy']
+  ];
+  // Élément DOM recevant le point pour chaque cible ci-dessus : les quatre pages du menu, plus les trois onglets internes de la page
+  // Réservations (id stables, toujours dans le DOM même si la page n'est pas affichée pour l'instant).
+  var DOT_TARGETS = {
+    welcome: '#header-navigation [data-page="welcome"]', pmg: '#header-navigation [data-page="pmg"]',
+    res: '#header-navigation [data-page="res"]', rsv: '#header-navigation [data-page="rsv"]',
+    'rsv:vmp': '#x-tab-vmp', 'rsv:vemi': '#x-tab-vemi', 'rsv:psy': '#x-tab-psy'
+  };
   function dateTagHtml(a) {
     if (!a.date) return '';
     var parts = [a.before, fmtArtDate(a.date), a.after].filter(function (s) { return s && String(s).trim(); }).map(esc).join(' · ');
@@ -4133,7 +4150,7 @@
     return {
       intro: (o && o.intro) || '',
       articles: arts ? arts.map(function (a) { return { title: a.title || '', date: a.date || '', endDate: a.endDate || '', status: a.status || '', before: a.before || '', after: a.after || '', body: a.body || '' }; }) : JSON.parse(JSON.stringify(DEFAULT_ARTICLES)),
-      counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '' }; })
+      counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '', page: c.page || '' }; })
     };
   }
   // Fin de publication (facultative) : un article dont la date de fin est dépassée n'est plus affiché sur la page (mais reste
@@ -4158,7 +4175,26 @@
       if (det && window.matchMedia('(max-width: 768px)').matches) det.open = false;
     });
   }
+  // Point rouge clignotant dans le menu : une page reçoit le point si l'un de ses compteurs (configurés avec cette page) est > 0.
+  function applyNavDots() {
+    var active = {};
+    cfg().counters.forEach(function (c) {
+      if (!c.page) return;
+      var n = state.counts[c.name];
+      if (typeof n === 'number' && n > 0) active[c.page] = true;
+    });
+    ['welcome', 'pmg', 'res', 'rsv'].forEach(function (p) {
+      var links = document.querySelectorAll('#header-navigation [data-page="' + p + '"]');
+      Array.prototype.forEach.call(links, function (a) {
+        var dot = a.querySelector('.wel-nav-dot');
+        if (active[p]) {
+          if (!dot) { dot = document.createElement('span'); dot.className = 'wel-nav-dot'; dot.setAttribute('aria-hidden', 'true'); a.appendChild(dot); }
+        } else if (dot) { dot.remove(); }
+      });
+    });
+  }
   function render() {
+    applyNavDots();
     var c = cfg(), arts = c.articles.filter(function (a) { return !isExpired(a); });
     if (window.tocbot) tocbot.destroy();
     // Bloc d'introduction : avant les articles, hors de la zone scrutée par le sommaire (jamais capté par tocbot).
@@ -4223,6 +4259,9 @@
         '</select></div>' +
         '<div class="cf-field"><label for="' + p + '-value">Valeur à compter<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-value" data-cf="value" data-i="' + i + '" value="' + esc(c.value) + '" placeholder="SRJ (ou true / false en mode exact)"></div>' +
         '</div>' +
+        '<div class="cf-field"><label for="' + p + '-page">Point rouge clignotant sur la page (si le compteur est supérieur à 0)</label><select class="select" id="' + p + '-page" data-cf="page" data-i="' + i + '">' +
+        NAV_PAGE_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === c.page ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+        '</select></div>' +
         '</div>';
     }).join('') : '<p class="hint">Aucun compteur pour le moment.</p>';
   }
@@ -4245,7 +4284,7 @@
     }
   });
   $('btn-counter-add').addEventListener('click', function () {
-    state.draft.counters.push({ name: '', table: '', column: '', mode: 'contains', value: '' });
+    state.draft.counters.push({ name: '', table: '', column: '', mode: 'contains', value: '', page: '' });
     renderCounters(); setDirty(true);
     var last = $('counters').querySelectorAll('.mail-block'); last = last[last.length - 1];
     var f = last && last.querySelector('[data-cf=name]'); if (f) f.focus();
@@ -4355,7 +4394,7 @@
     o.welcome = {
       intro: state.draft.intro || '',
       articles: arts.map(function (a) { return { title: a.title.trim(), date: a.date, endDate: a.endDate || '', status: a.status || '', before: (a.before || '').trim(), after: (a.after || '').trim(), body: a.body || '' }; }),
-      counters: cnt.map(function (c) { return { name: c.name.trim(), table: c.table.trim(), column: c.column.trim(), mode: c.mode || 'contains', value: c.value.trim() }; })
+      counters: cnt.map(function (c) { return { name: c.name.trim(), table: c.table.trim(), column: c.column.trim(), mode: c.mode || 'contains', value: c.value.trim(), page: c.page || '' }; })
     };
     return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return refreshCounters(); }).then(function () { render(); setDirty(false); $('saved').hidden = false; });
   }
