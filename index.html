@@ -109,6 +109,11 @@
   .wel-body p, .wel-intro p { margin: 0 0 1rem; }
   .wel-body p:last-child, .wel-intro p:last-child { margin-bottom: 0; }
   .wel-body a, .wel-intro a { color: var(--blue); }
+  /* Le texte et le HTML des articles/de l'intro peuvent contenir des composants DSFR collés tels quels (bandeau, mise en avant…),
+     dont les titres (souvent des <h2>/<h3>) doivent hériter leur couleur du composant (ex. bleu pour fr-notice--info) plutôt que
+     de prendre la couleur générique des titres du widget (règle h1, h2 { color: var(--ink); } plus haut). */
+  .wel-body h1, .wel-body h2, .wel-body h3, .wel-body h4, .wel-body h5, .wel-body h6,
+  .wel-intro h1, .wel-intro h2, .wel-intro h3, .wel-intro h4, .wel-intro h5, .wel-intro h6 { color: inherit; }
   .wel-intro { margin-bottom: 40px; }
   .wel-sep { border: 0; border-top: 1px solid var(--border-default-grey); margin: 32px 0; }
 
