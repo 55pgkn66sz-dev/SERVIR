@@ -1304,7 +1304,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.3</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -6411,7 +6411,9 @@
       { 'Doublon': true, 'NID': '1043310', 'Candidat': 'BERNARD Julien', 'Email': 'julien.bernard@example.fr', 'Créneau choisi': 'Mardi 14h00', 'Date': dd(2026, 10, 13), 'Heure': '14:00', 'Affectation': 'GD 38', 'Réservation faite le': dd(2026, 9, 24) + 25000, 'Convocation ?': false },
       { 'Doublon': true, 'NID': '1043310', 'Candidat': 'BERNARD Julien', 'Email': 'julien.bernard@example.fr', 'Créneau choisi': 'Mercredi 10h00', 'Date': dd(2026, 10, 14), 'Heure': '10:00', 'Affectation': 'GD 38', 'Réservation faite le': dd(2026, 9, 26) + 14000, 'Convocation ?': false }
     ]) },
-    Candidats_PMG: { labels: ['NID', 'Civilité', 'NOM', 'Prénom', 'Email', 'Affectation'], rows: demoRows([
+    // Colonnes « Date VEMI »/« Antenne VEMI »/« Date tests psy » incluses pour que le report automatique (réservation confirmée →
+    // fiche du candidat) soit aussi vérifiable en démo, comme sur la vraie table Candidats_PMG (page Candidats).
+    Candidats_PMG: { labels: ['NID', 'Civilité', 'NOM', 'Prénom', 'Email', 'Affectation', 'Date VEMI', 'Antenne VEMI', 'Date tests psy'], rows: demoRows([
       { 'NID': '1042871', 'Civilité': 'Mme', 'NOM': 'Martin', 'Prénom': 'Camille', 'Email': 'camille.martin@example.fr', 'Affectation': 'GD 74' },
       { 'NID': '1043544', 'Civilité': 'Mme', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Email': 'lea.dubois@example.fr', 'Affectation': 'GD 73' },
       { 'NID': '1044002', 'Civilité': 'M.', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Email': 'hugo.lambert@example.fr', 'Affectation': 'GD 74' }
@@ -6752,6 +6754,30 @@
   // Prévient la page Réservistes (fiche ouverte) qu'une réservation VMP a changé.
   function notifyChange() { if (window.RSV && typeof window.RSV.onChange === 'function') window.RSV.onChange(); }
 
+  // Réservation confirmée (convocation envoyée à la personne) : reporte la date (et l'antenne pour la VEMI) dans la rubrique
+  // correspondante de la fiche du candidat. Rien pour la VMP côté réserviste : seule « Exp. VMP » existe, une échéance calculée
+  // après le résultat médical (déjà gérée par la mise à jour groupée dédiée), pas la date du rendez-vous lui-même.
+  var REPORT_FIELDS = {
+    vemi: [['Date', 'Date VEMI'], [SPECS.vemi.antenne, 'Antenne VEMI']],
+    psy: [['Date', 'Date tests psy']]
+  };
+  function reportToPersonFiche(tab, row) {
+    var map = REPORT_FIELDS[tab]; if (!map) return Promise.resolve();
+    var d = state.data[tab], spec = SPECS[tab], src = personSourceFor(tab); if (!src) return Promise.resolve();
+    var keyCol = findCol(d.cols, spec.key), pKeyCol = findCol(src.cols, spec.key);
+    var kv = keyCol && row[keyCol.id] != null ? norm(String(row[keyCol.id])) : '';
+    var personRow = (pKeyCol && kv) ? src.rows.filter(function (r) { return norm(String(r[pKeyCol.id] || '')) === kv; })[0] : null;
+    if (!personRow) return Promise.resolve();
+    var fields = {}, any = false;
+    map.forEach(function (pair) {
+      var fromCol = findCol(d.cols, pair[0]), toCol = findCol(src.cols, pair[1]);
+      if (!fromCol || !toCol || toCol.formula) return;
+      var v = row[fromCol.id]; if (v == null || v === '') return;
+      fields[toCol.id] = v; any = true;
+    });
+    return any ? Promise.resolve(api.updateFields(src.table, personRow.id, fields)).catch(function () {}) : Promise.resolve();
+  }
+
   /* ---------- Tests psy : édition au clic de l'heure d'une réservation (les créneaux n'ont pas d'heure fixe) ---------- */
   function heureTd(row, timeCol) {
     var ec = state.editCell;
@@ -6807,6 +6833,8 @@
         .then(notifyChange); // met à jour le message affiché dans la fiche d'un réserviste
     } else showMsg('success', base);
     markSent(tab, kind, row);
+    // Réservation confirmée à la personne (pas la convocation à l'antenne) : reporte la date (et l'antenne pour la VEMI) dans sa fiche.
+    if (kind === 'convocation') reportToPersonFiche(tab, row);
   }
 
   /* ---------- Doublons : deux demandes, choix de celle à supprimer ---------- */
