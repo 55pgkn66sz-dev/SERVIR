@@ -119,28 +119,25 @@
   .wel-intro { margin-bottom: 40px; }
   .wel-sep { border: 0; border-top: 1px solid var(--border-default-grey); margin: 32px 0; }
 
-  /* Navigation rapide (sommaire) : généré par tocbot (toc-list/toc-link/is-active-link), collant à droite un peu plus bas que le haut
-     de la colonne principale ; repliable en haut de page sur petit écran. */
+  /* Navigation rapide (sommaire) : copiée du widget Markdown DSFR pris pour modèle (.toc-wrapper de son view-main.css) — filet
+     gauche fin et continu, liens sans fond ni carte, libellé discret en petites majuscules, plutôt que la carte DSFR essayée avant.
+     Générée par tocbot (toc-list/toc-link/is-active-link) ; repliable en haut de page sur petit écran. */
   .wel-layout { display: flex; align-items: flex-start; gap: 40px; }
   .wel-main { flex: 1 1 0; min-width: 0; }
-  .wel-toc { flex: 0 0 16.5rem; position: sticky; top: 32px; margin-top: 3.5rem; }
-  /* Carte inspirée du composant DSFR « Menu latéral » (fr-sidemenu) : titre séparé par un filet, liens pleine largeur avec fond
-     et barre d'accent au survol/actif, plutôt qu'une simple liste à filet gauche. */
-  .wel-toc-box { border: 1px solid var(--border-default-grey); border-radius: 0.5rem; background: var(--bg); overflow: hidden; }
-  .wel-toc summary { cursor: pointer; display: block; padding: 1rem 1.25rem; font-size: 1rem; font-weight: 700; color: var(--ink); box-shadow: inset 0 -1px 0 0 var(--border-default-grey); }
-  .wel-toc .wel-toc-list { padding: 0.5rem; }
+  .wel-toc { flex: 0 0 16rem; position: sticky; top: 32px; margin-top: 3.5rem; border-left: 1px solid var(--border-default-grey); }
+  .wel-toc summary { cursor: pointer; display: block; padding: 0 0 0 1rem; margin-bottom: 1rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .15em; color: var(--text-mention-grey); }
   .wel-toc .toc-list { list-style: none; margin: 0; padding: 0; }
-  .wel-toc .toc-list .toc-list { margin: 2px 0 6px 0.75rem; }
+  .wel-toc .toc-list .toc-list { margin-left: 1rem; }
   .wel-toc .toc-list-item { margin: 0; }
   .wel-toc .toc-link {
-    display: block; padding: 0.55rem 0.75rem; margin: 2px 0; border-radius: 0.35rem; border-left: 3px solid transparent;
-    color: var(--text-mention-grey); text-decoration: none; font-size: .9375rem; line-height: 1.35;
-    transition: background-color .15s ease, color .15s ease;
+    display: block; padding: .25rem 1rem; margin-left: -1px; border-left: 2px solid transparent; background: none;
+    color: var(--text-mention-grey); text-decoration: none; font-size: .85rem; line-height: 1.4;
+    transition: color .15s ease, background-color .15s ease;
   }
-  .wel-toc .toc-link:hover, .wel-toc .toc-link:focus-visible { background: var(--blue-tint); color: var(--ink); }
-  .wel-toc .toc-link.is-active-link { background: var(--blue-tint); border-left-color: var(--blue); color: var(--blue); font-weight: 700; }
+  .wel-toc .toc-link:hover, .wel-toc .toc-link:focus-visible { color: var(--blue); background: var(--blue-tint); }
+  .wel-toc .toc-link.is-active-link { color: var(--blue); font-weight: 600; border-left-color: var(--blue); }
   @media (min-width: 769px) { .wel-toc summary { cursor: default; pointer-events: none; } .wel-toc summary::marker, .wel-toc summary::-webkit-details-marker { display: none; } }
-  @media (max-width: 768px) { .wel-layout { flex-direction: column; gap: 24px; } .wel-toc { position: static; width: 100%; order: -1; flex: none; margin-top: 0; } }
+  @media (max-width: 768px) { .wel-layout { flex-direction: column; gap: 24px; } .wel-toc { position: static; width: 100%; order: -1; flex: none; margin-top: 0; border-left: 0; } }
 
   /* Point rouge clignotant dans le menu, à côté du nom d'une page, quand un compteur configuré pour elle est supérieur à 0. */
   .wel-nav-dot { display: inline-block; width: 0.5rem; height: 0.5rem; margin-left: 0.4rem; border-radius: 50%; background: #ce0500; vertical-align: middle; animation: wel-blink 1.4s ease-in-out infinite; }
@@ -1307,7 +1304,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.1</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -4234,7 +4231,7 @@
         (a.body ? '<div class="wel-body">' + mdToHtml(a.body) + '</div>' : '') +
         '</article>';
     }).join('<hr class="wel-sep">');
-    var toc = arts.length > 1 ? '<nav class="wel-toc" aria-label="Navigation rapide"><details class="wel-toc-box" open><summary>Navigation rapide</summary><div class="wel-toc-list"></div></details></nav>' : '';
+    var toc = arts.length > 1 ? '<nav class="wel-toc" aria-label="Navigation rapide"><details open><summary>Navigation rapide</summary><div class="wel-toc-list"></div></details></nav>' : '';
     $('list').innerHTML = introHtml + '<div class="wel-layout"><div class="wel-main">' + main + '</div>' + toc + '</div>';
     if (toc) { wireTocMobileCollapse(); if (window.tocbot) tocbot.init(TOC_OPTS); }
   }
