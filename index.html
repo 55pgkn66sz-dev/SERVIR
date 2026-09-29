@@ -1304,7 +1304,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.5</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.6</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -6970,6 +6970,16 @@
   function dateInputVal(v) { if (typeof v !== 'number') return ''; var d = new Date(v * 1000); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()); }
   function parseDateInput(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '').trim()); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : null; }
   function antenneNames() { var nc = state.ant && findCol(state.ant.cols, 'Nom'); return nc ? state.ant.rows.map(function (r) { return r[nc.id]; }).filter(Boolean) : []; }
+  // Résout la valeur d'une colonne « Antenne médicale » vers son nom : certaines tables de créneaux la stockent en référence
+  // (Ref:Antennes_medicales, id numérique) plutôt qu'en texte, contrairement à la table des réservations.
+  function antenneNameFromCol(col, v) {
+    if (v == null || v === '') return '';
+    if (/^Ref:/.test(col.type || '')) {
+      var nc = state.ant && findCol(state.ant.cols, 'Nom'), row = state.ant && state.ant.rows.filter(function (r) { return r.id === Number(v); })[0];
+      return (row && nc) ? (row[nc.id] || '') : '';
+    }
+    return v;
+  }
   function antenneOptionsHtml(value) {
     return '<option value=""></option>' + antenneNames().map(function (n) { return '<option value="' + esc(n) + '"' + (n === value ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
   }
@@ -7630,7 +7640,7 @@
     if (affD && affS) fields[affD.id] = personRow[affS.id];
     if (spec.email) {
       var emD = findCol(d.cols, spec.email), emS = findCol(src.cols, tab === 'vmp' ? 'Adresse email' : 'Email');
-      if (emD && emS) fields[emD.id] = personRow[emS.id];
+      if (emD && emS && !emD.formula) fields[emD.id] = personRow[emS.id];
     }
     if (bk.mode !== 'edit') { var madeCol = findCol(d.cols, 'Réservation faite le'); if (madeCol) fields[madeCol.id] = Math.floor(Date.now() / 1000); }
 
@@ -7677,7 +7687,7 @@
       var dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel), antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel);
       bk.date = dateCol ? dateInputVal(row[dateCol.id]) : bk.date;
       bk.time = timeCol ? (row[timeCol.id] || '') : bk.time;
-      bk.antenne = antCol ? (row[antCol.id] || '') : bk.antenne;
+      bk.antenne = antCol ? antenneNameFromCol(antCol, row[antCol.id]) : bk.antenne;
       bk.error = ''; renderBook();
     }
   });
