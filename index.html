@@ -627,6 +627,13 @@
     </section>
 
     <section class="step">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Compteurs (variables de comptage)</h2></div>
+      <p class="lead">Comptent des lignes dans une table Grist (ex. demandes non traitées) et s’insèrent dans le bloc d’introduction ou le texte d’un article sous la forme <code>{{nom}}</code>. Recalculés à l’ouverture de la page et toutes les 5 minutes.</p>
+      <div id="w-counters"></div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-btn-counter-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un compteur</button></div>
+    </section>
+
+    <section class="step">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Articles de la page Bienvenue</h2></div>
       <p class="lead">Affichés dans cet ordre sur la page Bienvenue (première page du widget). Titre et date sont obligatoires ; le texte se rédige en Markdown (le bouton <span class="fr-icon-eye-line" aria-hidden="true"></span> de l’éditeur en affiche l’aperçu) — le HTML est aussi accepté.</p>
       <div id="w-articles"></div>
@@ -4071,9 +4078,38 @@
   function fmtArtDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
   function todayISO() { return new Date().toISOString().slice(0, 10); }
   function saveOptions(o) { return IN_GRIST ? grist.setOptions(o) : Promise.resolve(); }
+  // Compteurs : nombre de lignes d'une table Grist dont une colonne contient/égale une valeur, insérable dans le Markdown sous la
+  // forme {{nom}} — même principe que les fonctions de comptage (fetchAndCountRows / fetchAndCountRowsExact) du widget Markdown
+  // DSFR pris pour modèle, généralisé ici pour que ce soit configurable en back office plutôt que codé en dur par table.
+  var COUNTER_REFRESH_MS = 5 * 60 * 1000;
+  function refreshCounters() {
+    if (!IN_GRIST || !window.grist || !grist.docApi) return Promise.resolve();
+    var list = cfg().counters.filter(function (c) { return c.name && c.table && c.column; });
+    if (!list.length) return Promise.resolve();
+    return Promise.all(list.map(function (c) {
+      return grist.docApi.fetchTable(c.table).then(function (table) {
+        var col = (table && table[c.column]) || [], n = 0, target = c.value;
+        if (c.mode === 'exact') {
+          if (target === 'true') target = true; else if (target === 'false') target = false;
+          else if (target !== '' && !isNaN(target)) target = Number(target);
+        }
+        col.forEach(function (v) {
+          if (c.mode === 'exact') { if (v === target) n++; }
+          else if (typeof v === 'string' && v.indexOf(target) !== -1) n++;
+        });
+        state.counts[c.name] = n;
+      }).catch(function (e) { console.error('[Bienvenue] compteur « ' + c.name + ' » :', e); });
+    })).then(function () { render(); });
+  }
+  // Remplace {{nom}} par la valeur du compteur correspondant (laissé tel quel si le compteur n'existe pas ou n'est pas encore chargé).
+  function applyCounters(text) {
+    return String(text || '').replace(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g, function (m, name) {
+      return Object.prototype.hasOwnProperty.call(state.counts, name) ? String(state.counts[name]) : m;
+    });
+  }
   // Texte et encadré des articles : rédigés en Markdown (éditeur WYSIWYG EasyMDE en back office), convertis en HTML à l'affichage.
   // Le HTML brut passe aussi tel quel (marked ne l'échappe pas) : compatible avec les articles écrits avant ce changement.
-  function mdToHtml(md) { return window.marked ? marked.parse(md || '') : esc(md || ''); }
+  function mdToHtml(md) { var text = applyCounters(md); return window.marked ? marked.parse(text) : esc(text); }
   // Tag de date : composant DSFR « Badge » (fr-badge), petite taille (fr-badge--sm) ; variante de couleur optionnelle (statut,
   // avec l'icône DSFR associée, incluse automatiquement par fr-badge--{variante}) + texte libre avant/après la date
   // (ex. « À LA UNE · 29/09/2026 » ou « 29/09/2026 · NOUVEAUTÉ » — fr-badge met déjà le texte en gras et en majuscules).
@@ -4091,12 +4127,13 @@
     body: 'Cette page s’affiche en premier. Ajoutez, modifiez ou réordonnez ses articles depuis le back office (cinq clics sur l’en-tête), en **Markdown**.'
   }];
 
-  var state = { opts: {}, draft: { intro: '', articles: [] } };
+  var state = { opts: {}, draft: { intro: '', articles: [], counters: [] }, counts: {}, lastCM: null };
   function cfg() {
     var o = state.opts.welcome, arts = o && Array.isArray(o.articles) ? o.articles : null;
     return {
       intro: (o && o.intro) || '',
-      articles: arts ? arts.map(function (a) { return { title: a.title || '', date: a.date || '', endDate: a.endDate || '', status: a.status || '', before: a.before || '', after: a.after || '', body: a.body || '' }; }) : JSON.parse(JSON.stringify(DEFAULT_ARTICLES))
+      articles: arts ? arts.map(function (a) { return { title: a.title || '', date: a.date || '', endDate: a.endDate || '', status: a.status || '', before: a.before || '', after: a.after || '', body: a.body || '' }; }) : JSON.parse(JSON.stringify(DEFAULT_ARTICLES)),
+      counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '' }; })
     };
   }
   // Fin de publication (facultative) : un article dont la date de fin est dépassée n'est plus affiché sur la page (mais reste
@@ -4161,8 +4198,58 @@
     });
     mde.codemirror.getWrapperElement().parentNode.classList.add('w-md');
     mde.codemirror.on('change', function () { state.draft.intro = mde.value(); setDirty(true); });
+    mde.codemirror.on('focus', function () { state.lastCM = mde.codemirror; }); // pour l'insertion des variables {{compteur}}
     state.introEditor = mde;
   }
+
+  /* ---------- Back office : compteurs (liste simple, pas d'éditeur Markdown) ---------- */
+  function renderCounters() {
+    var list = state.draft.counters;
+    $('counters').innerHTML = list.length ? list.map(function (c, i) {
+      var p = 'w-c-' + i;
+      return '<div class="mail-block" style="border:1px solid var(--border-default-grey);border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:1rem">' +
+        '<div class="mail-head"><span class="hint">Compteur ' + (i + 1) + ' sur ' + list.length + (c.name ? ' · <code>{{' + esc(c.name) + '}}</code>' : '') + '</span>' +
+        '<button type="button" class="btn secondary sm" data-cact="ins" data-i="' + i + '" title="Insérer dans le champ en cours d’édition" aria-label="Insérer cette variable">Insérer</button> ' +
+        '<button type="button" class="btn secondary sm" data-cact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer ce compteur"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="' + p + '-name">Nom de la variable<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-name" data-cf="name" data-i="' + i + '" value="' + esc(c.name) + '" placeholder="nombre_vmp_en_attente"></div>' +
+        '<div class="cf-field"><label for="' + p + '-table">Table Grist<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-table" data-cf="table" data-i="' + i + '" value="' + esc(c.table) + '" placeholder="Reservations_VMP"></div>' +
+        '<div class="cf-field"><label for="' + p + '-column">Colonne<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-column" data-cf="column" data-i="' + i + '" value="' + esc(c.column) + '" placeholder="Actions"></div>' +
+        '</div>' +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="' + p + '-mode">Mode</label><select class="select" id="' + p + '-mode" data-cf="mode" data-i="' + i + '">' +
+        '<option value="contains"' + (c.mode === 'contains' ? ' selected' : '') + '>Contient (texte)</option>' +
+        '<option value="exact"' + (c.mode === 'exact' ? ' selected' : '') + '>Égal à (exact)</option>' +
+        '</select></div>' +
+        '<div class="cf-field"><label for="' + p + '-value">Valeur à compter<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-value" data-cf="value" data-i="' + i + '" value="' + esc(c.value) + '" placeholder="SRJ (ou true / false en mode exact)"></div>' +
+        '</div>' +
+        '</div>';
+    }).join('') : '<p class="hint">Aucun compteur pour le moment.</p>';
+  }
+  function onCounterFieldChange(e) {
+    var f = e.target.getAttribute('data-cf'), i = Number(e.target.getAttribute('data-i'));
+    if (!f || !state.draft.counters[i]) return;
+    state.draft.counters[i][f] = e.target.value;
+    if (f === 'name') { var d = e.target.closest('.mail-block'); if (d) d.querySelector('.hint').innerHTML = 'Compteur ' + (i + 1) + ' sur ' + state.draft.counters.length + (e.target.value ? ' · <code>{{' + esc(e.target.value) + '}}</code>' : ''); }
+    setDirty(true);
+  }
+  $('counters').addEventListener('input', onCounterFieldChange);
+  $('counters').addEventListener('change', onCounterFieldChange); // <select> Mode
+  $('counters').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cact]'); if (!b) return;
+    var i = Number(b.getAttribute('data-i')), act = b.getAttribute('data-cact'), c = state.draft.counters[i];
+    if (act === 'del') { state.draft.counters.splice(i, 1); renderCounters(); setDirty(true); }
+    else if (act === 'ins' && c) {
+      if (!c.name) { b.closest('.mail-block').querySelector('[data-cf=name]').focus(); return; }
+      if (state.lastCM) { state.lastCM.replaceSelection('{{' + c.name + '}}'); state.lastCM.focus(); }
+    }
+  });
+  $('btn-counter-add').addEventListener('click', function () {
+    state.draft.counters.push({ name: '', table: '', column: '', mode: 'contains', value: '' });
+    renderCounters(); setDirty(true);
+    var last = $('counters').querySelectorAll('.mail-block'); last = last[last.length - 1];
+    var f = last && last.querySelector('[data-cf=name]'); if (f) f.focus();
+  });
 
   /* ---------- Back office : liste des articles, ajout/suppression/réordonnancement, un seul champ par ligne ---------- */
   // Texte et encadré : éditeur Markdown WYSIWYG (EasyMDE) ; les instances précédentes sont détruites avant de reconstruire la liste.
@@ -4188,6 +4275,7 @@
         state.draft.articles[i][f] = mde.value();
         setDirty(true);
       });
+      mde.codemirror.on('focus', function () { state.lastCM = mde.codemirror; }); // pour l'insertion des variables {{compteur}}
       state.editors.push(mde);
     });
   }
@@ -4218,7 +4306,7 @@
     }).join('') : '<p class="hint">Aucun article pour le moment.</p>';
     mountEditors();
   }
-  function renderAdminForm() { mountIntroEditor(); renderArticles(); }
+  function renderAdminForm() { mountIntroEditor(); renderCounters(); renderArticles(); }
   function setDirty(d) {
     $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
     $('bo-state').classList.toggle('is-dirty', d);
@@ -4250,18 +4338,26 @@
     var last = $('articles').querySelectorAll('details'); last = last[last.length - 1];
     var f = last && last.querySelector('input[data-wf=title]'); if (f) f.focus();
   });
-  function cancelWel() { state.draft = { intro: cfg().intro, articles: cfg().articles }; mountIntroEditor(); renderArticles(); setDirty(false); }
+  function cancelWel() { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; mountIntroEditor(); renderCounters(); renderArticles(); setDirty(false); }
   function saveWel() {
-    var arts = state.draft.articles, i;
+    var arts = state.draft.articles, cnt = state.draft.counters, i;
     for (i = 0; i < arts.length; i++) {
       if (!arts[i].title.trim() || !arts[i].date) return Promise.reject(new Error('Bienvenue : titre et date sont obligatoires pour chaque article.'));
+    }
+    var seen = {};
+    for (i = 0; i < cnt.length; i++) {
+      if (!cnt[i].name.trim() || !cnt[i].table.trim() || !cnt[i].column.trim() || !cnt[i].value.trim()) return Promise.reject(new Error('Bienvenue : nom, table, colonne et valeur sont obligatoires pour chaque compteur.'));
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(cnt[i].name.trim())) return Promise.reject(new Error('Bienvenue : le nom du compteur « ' + cnt[i].name + ' » doit être composé de lettres, chiffres et _ (comme une variable).'));
+      if (seen[cnt[i].name.trim()]) return Promise.reject(new Error('Bienvenue : le nom de compteur « ' + cnt[i].name + ' » est utilisé plusieurs fois.'));
+      seen[cnt[i].name.trim()] = true;
     }
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; });
     o.welcome = {
       intro: state.draft.intro || '',
-      articles: arts.map(function (a) { return { title: a.title.trim(), date: a.date, endDate: a.endDate || '', status: a.status || '', before: (a.before || '').trim(), after: (a.after || '').trim(), body: a.body || '' }; })
+      articles: arts.map(function (a) { return { title: a.title.trim(), date: a.date, endDate: a.endDate || '', status: a.status || '', before: (a.before || '').trim(), after: (a.after || '').trim(), body: a.body || '' }; }),
+      counters: cnt.map(function (c) { return { name: c.name.trim(), table: c.table.trim(), column: c.column.trim(), mode: c.mode || 'contains', value: c.value.trim() }; })
     };
-    return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; render(); }).then(function () { setDirty(false); $('saved').hidden = false; });
+    return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return refreshCounters(); }).then(function () { render(); setDirty(false); $('saved').hidden = false; });
   }
   $('btn-cancel').addEventListener('click', cancelWel);
   $('btn-save').addEventListener('click', function () { saveWel().catch(function () {}); });
@@ -4270,13 +4366,15 @@
     setOptions: function (o) { state.opts = o || {}; render(); },
     refresh: function () { render(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
-    openAdmin: function () { state.draft = { intro: cfg().intro, articles: cfg().articles }; $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false); },
+    openAdmin: function () { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false); },
     closeAdmin: function () { $('view-admin').hidden = true; },
     save: function () { return saveWel(); },
     cancel: function () { cancelWel(); },
     setOpts: function (o) { state.opts = o || {}; render(); }
   };
   render();
+  refreshCounters();
+  setInterval(refreshCounters, COUNTER_REFRESH_MS);
 })();
 </script>
 <script>
