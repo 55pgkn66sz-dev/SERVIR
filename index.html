@@ -13,6 +13,8 @@
 <script src="https://cdn.jsdelivr.net/npm/easymde@2.20.0/dist/easymde.min.js"></script>
 <!-- Navigation rapide de la page Bienvenue : sommaire généré par tocbot (comme dans le widget Markdown DSFR pris pour modèle). -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.32.2/tocbot.min.js"></script>
+<!-- Compteurs : {{nom}}, {{{nom}}} et {{#if nom}}…{{/if}} dans le Markdown des articles, comme dans le widget Markdown DSFR pris pour modèle. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/utility/icons/icons.min.css">
 <script type="module" src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.module.min.js"></script>
@@ -628,7 +630,10 @@
     <section class="step">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Bloc d’introduction (facultatif)</h2></div>
       <p class="lead">Affiché avant les articles, sur la page Bienvenue. En Markdown (ou en HTML) ; non repris dans le sommaire (navigation rapide).</p>
-      <textarea class="textarea tall" id="w-intro-md" spellcheck="true"></textarea>
+      <details class="mail-block" id="w-intro-details">
+        <summary>Texte du bloc d’introduction</summary>
+        <div class="mail-body"><textarea class="textarea tall" id="w-intro-md" spellcheck="true"></textarea></div>
+      </details>
     </section>
 
     <section class="step">
@@ -640,7 +645,7 @@
 
     <section class="step">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Articles de la page Bienvenue</h2></div>
-      <p class="lead">Affichés dans cet ordre sur la page Bienvenue (première page du widget). Titre et date sont obligatoires ; le texte se rédige en Markdown (le bouton <span class="fr-icon-eye-line" aria-hidden="true"></span> de l’éditeur en affiche l’aperçu) — le HTML est aussi accepté.</p>
+      <p class="lead">Affichés dans cet ordre sur la page Bienvenue (première page du widget). Titre et date sont obligatoires ; le texte se rédige en Markdown (le bouton <span class="fr-icon-eye-line" aria-hidden="true"></span> de l’éditeur en affiche l’aperçu) — le HTML est aussi accepté. L’article n’est diffusé qu’à partir de sa date (et jusqu’à sa fin de publication, si renseignée).</p>
       <div id="w-articles"></div>
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-btn-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un article</button></div>
     </section>
@@ -4106,11 +4111,20 @@
       }).catch(function (e) { console.error('[Bienvenue] compteur « ' + c.name + ' » :', e); });
     })).then(function () { render(); });
   }
-  // Remplace {{nom}} par la valeur du compteur correspondant (laissé tel quel si le compteur n'existe pas ou n'est pas encore chargé).
+  // Moteur Handlebars (comme le widget Markdown DSFR pris pour modèle) : {{nom}}, {{{nom}}} et {{#if nom}}…{{/if}} fonctionnent tels
+  // quels (un compteur non renseigné vaut 0, donc {{#if}} le traite comme faux). Un compteur non trouvé/pas encore chargé équivaut à
+  // une variable manquante : {{nom}} s'affiche vide plutôt que tel quel (comportement standard Handlebars).
+  var hbCache = {}; // un template compilé par texte source, pour éviter de recompiler à chaque frappe dans l'éditeur
   function applyCounters(text) {
-    return String(text || '').replace(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g, function (m, name) {
-      return Object.prototype.hasOwnProperty.call(state.counts, name) ? String(state.counts[name]) : m;
-    });
+    text = String(text || '');
+    if (!window.Handlebars) return text;
+    try {
+      var tpl = hbCache[text];
+      if (!tpl) { tpl = Handlebars.compile(text, { noEscape: true }); hbCache[text] = tpl; }
+      return tpl(state.counts);
+    } catch (e) {
+      return text; // Markdown/HTML ne contenant pas du Handlebars valide : laissé tel quel, pas d'erreur affichée
+    }
   }
   // Texte et encadré des articles : rédigés en Markdown (éditeur WYSIWYG EasyMDE en back office), convertis en HTML à l'affichage.
   // Le HTML brut passe aussi tel quel (marked ne l'échappe pas) : compatible avec les articles écrits avant ce changement.
@@ -4144,7 +4158,7 @@
     body: 'Cette page s’affiche en premier. Ajoutez, modifiez ou réordonnez ses articles depuis le back office (cinq clics sur l’en-tête), en **Markdown**.'
   }];
 
-  var state = { opts: {}, draft: { intro: '', articles: [], counters: [] }, counts: {}, lastCM: null };
+  var state = { opts: {}, draft: { intro: '', articles: [], counters: [] }, counts: {}, lastCM: null, openArticle: null, openCounter: null };
   function cfg() {
     var o = state.opts.welcome, arts = o && Array.isArray(o.articles) ? o.articles : null;
     return {
@@ -4154,8 +4168,10 @@
     };
   }
   // Fin de publication (facultative) : un article dont la date de fin est dépassée n'est plus affiché sur la page (mais reste
-  // visible et modifiable dans le back office, pour la prolonger ou la retirer).
+  // visible et modifiable dans le back office, pour la prolonger ou la retirer). La date (obligatoire) sert aussi de début de
+  // diffusion : un article daté dans le futur n'est pas encore affiché (même logique, symétrique).
   function isExpired(a) { return !!a.endDate && a.endDate < todayISO(); }
+  function isScheduled(a) { return !!a.date && a.date > todayISO(); }
 
   /* ---------- Affichage ---------- */
   // Navigation rapide (sommaire des titres), collante à droite un peu plus bas que le haut de la colonne principale, comme dans le
@@ -4183,19 +4199,19 @@
       var n = state.counts[c.name];
       if (typeof n === 'number' && n > 0) active[c.page] = true;
     });
-    ['welcome', 'pmg', 'res', 'rsv'].forEach(function (p) {
-      var links = document.querySelectorAll('#header-navigation [data-page="' + p + '"]');
-      Array.prototype.forEach.call(links, function (a) {
-        var dot = a.querySelector('.wel-nav-dot');
-        if (active[p]) {
-          if (!dot) { dot = document.createElement('span'); dot.className = 'wel-nav-dot'; dot.setAttribute('aria-hidden', 'true'); a.appendChild(dot); }
+    Object.keys(DOT_TARGETS).forEach(function (key) {
+      var els = document.querySelectorAll(DOT_TARGETS[key]);
+      Array.prototype.forEach.call(els, function (el) {
+        var dot = el.querySelector('.wel-nav-dot');
+        if (active[key]) {
+          if (!dot) { dot = document.createElement('span'); dot.className = 'wel-nav-dot'; dot.setAttribute('aria-hidden', 'true'); el.appendChild(dot); }
         } else if (dot) { dot.remove(); }
       });
     });
   }
   function render() {
     applyNavDots();
-    var c = cfg(), arts = c.articles.filter(function (a) { return !isExpired(a); });
+    var c = cfg(), arts = c.articles.filter(function (a) { return !isExpired(a) && !isScheduled(a); });
     if (window.tocbot) tocbot.destroy();
     // Bloc d'introduction : avant les articles, hors de la zone scrutée par le sommaire (jamais capté par tocbot).
     var introHtml = c.intro ? '<div class="wel-intro toc-ignore">' + mdToHtml(c.intro) + '</div>' : '';
@@ -4238,12 +4254,12 @@
     state.introEditor = mde;
   }
 
-  /* ---------- Back office : compteurs (liste simple, pas d'éditeur Markdown) ---------- */
+  /* ---------- Back office : compteurs (repliés par défaut, sauf celui en cours d'édition) ---------- */
   function renderCounters() {
     var list = state.draft.counters;
     $('counters').innerHTML = list.length ? list.map(function (c, i) {
-      var p = 'w-c-' + i;
-      return '<div class="mail-block" style="border:1px solid var(--border-default-grey);border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:1rem">' +
+      var p = 'w-c-' + i, isOpen = c === state.openCounter;
+      return '<details class="mail-block" data-i="' + i + '"' + (isOpen ? ' open' : '') + '><summary>' + esc(c.name || 'Nouveau compteur') + '</summary><div class="mail-body">' +
         '<div class="mail-head"><span class="hint">Compteur ' + (i + 1) + ' sur ' + list.length + (c.name ? ' · <code>{{' + esc(c.name) + '}}</code>' : '') + '</span>' +
         '<button type="button" class="btn secondary sm" data-cact="ins" data-i="' + i + '" title="Insérer dans le champ en cours d’édition" aria-label="Insérer cette variable">Insérer</button> ' +
         '<button type="button" class="btn secondary sm" data-cact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer ce compteur"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
@@ -4262,14 +4278,20 @@
         '<div class="cf-field"><label for="' + p + '-page">Point rouge clignotant sur la page (si le compteur est supérieur à 0)</label><select class="select" id="' + p + '-page" data-cf="page" data-i="' + i + '">' +
         NAV_PAGE_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === c.page ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
         '</select></div>' +
-        '</div>';
+        '</div></details>';
     }).join('') : '<p class="hint">Aucun compteur pour le moment.</p>';
   }
   function onCounterFieldChange(e) {
     var f = e.target.getAttribute('data-cf'), i = Number(e.target.getAttribute('data-i'));
     if (!f || !state.draft.counters[i]) return;
     state.draft.counters[i][f] = e.target.value;
-    if (f === 'name') { var d = e.target.closest('.mail-block'); if (d) d.querySelector('.hint').innerHTML = 'Compteur ' + (i + 1) + ' sur ' + state.draft.counters.length + (e.target.value ? ' · <code>{{' + esc(e.target.value) + '}}</code>' : ''); }
+    if (f === 'name') {
+      var d = e.target.closest('.mail-block');
+      if (d) {
+        d.querySelector('summary').textContent = e.target.value || 'Nouveau compteur';
+        d.querySelector('.hint').innerHTML = 'Compteur ' + (i + 1) + ' sur ' + state.draft.counters.length + (e.target.value ? ' · <code>{{' + esc(e.target.value) + '}}</code>' : '');
+      }
+    }
     setDirty(true);
   }
   $('counters').addEventListener('input', onCounterFieldChange);
@@ -4277,16 +4299,27 @@
   $('counters').addEventListener('click', function (e) {
     var b = e.target.closest('[data-cact]'); if (!b) return;
     var i = Number(b.getAttribute('data-i')), act = b.getAttribute('data-cact'), c = state.draft.counters[i];
-    if (act === 'del') { state.draft.counters.splice(i, 1); renderCounters(); setDirty(true); }
+    if (act === 'del') { if (state.draft.counters[i] === state.openCounter) state.openCounter = null; state.draft.counters.splice(i, 1); renderCounters(); setDirty(true); }
     else if (act === 'ins' && c) {
       if (!c.name) { b.closest('.mail-block').querySelector('[data-cf=name]').focus(); return; }
       if (state.lastCM) { state.lastCM.replaceSelection('{{' + c.name + '}}'); state.lastCM.focus(); }
     }
   });
+  // Repliés par défaut : un seul compteur ouvert à la fois (celui en cours d'édition) — le 'toggle' ne bulle pas, on capte donc en phase de capture.
+  $('counters').addEventListener('toggle', function (e) {
+    if (e.target.tagName !== 'DETAILS') return;
+    var i = Number(e.target.getAttribute('data-i'));
+    if (e.target.open) {
+      state.openCounter = state.draft.counters[i];
+      Array.prototype.forEach.call($('counters').querySelectorAll('details[open]'), function (d) { if (d !== e.target) d.open = false; });
+    } else if (state.draft.counters[i] === state.openCounter) { state.openCounter = null; }
+  }, true);
   $('btn-counter-add').addEventListener('click', function () {
-    state.draft.counters.push({ name: '', table: '', column: '', mode: 'contains', value: '', page: '' });
+    var c = { name: '', table: '', column: '', mode: 'contains', value: '', page: '' };
+    state.draft.counters.push(c);
+    state.openCounter = c;
     renderCounters(); setDirty(true);
-    var last = $('counters').querySelectorAll('.mail-block'); last = last[last.length - 1];
+    var last = $('counters').querySelectorAll('details'); last = last[last.length - 1];
     var f = last && last.querySelector('[data-cf=name]'); if (f) f.focus();
   });
 
@@ -4322,10 +4355,11 @@
     destroyEditors();
     var arts = state.draft.articles;
     $('articles').innerHTML = arts.length ? arts.map(function (a, i) {
-      var p = 'w-a-' + i;
-      var expired = isExpired(a);
-      return '<details class="mail-block" open><summary>' + esc(a.title || '(sans titre)') + '</summary><div class="mail-body">' +
-        '<div class="mail-head"><span class="hint">Article ' + (i + 1) + ' sur ' + arts.length + (expired ? ' · <span class="tag red">Expiré, non affiché</span>' : '') + '</span>' +
+      var p = 'w-a-' + i, isOpen = a === state.openArticle;
+      var expired = isExpired(a), scheduled = !expired && isScheduled(a);
+      var tag = expired ? ' · <span class="tag red">Expiré, non affiché</span>' : (scheduled ? ' · <span class="tag orange">Programmé, pas encore affiché</span>' : '');
+      return '<details class="mail-block" data-i="' + i + '"' + (isOpen ? ' open' : '') + '><summary>' + esc(a.title || '(sans titre)') + '</summary><div class="mail-body">' +
+        '<div class="mail-head"><span class="hint">Article ' + (i + 1) + ' sur ' + arts.length + tag + '</span>' +
         '<button type="button" class="btn secondary sm" data-wact="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Monter" aria-label="Monter cet article"><span class="fr-icon-arrow-up-line" aria-hidden="true"></span></button> ' +
         '<button type="button" class="btn secondary sm" data-wact="down" data-i="' + i + '"' + (i === arts.length - 1 ? ' disabled' : '') + ' title="Descendre" aria-label="Descendre cet article"><span class="fr-icon-arrow-down-line" aria-hidden="true"></span></button> ' +
         '<button type="button" class="btn secondary sm" data-wact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer cet article"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
@@ -4365,19 +4399,30 @@
   $('articles').addEventListener('click', function (e) {
     var b = e.target.closest('[data-wact]'); if (!b) return;
     var i = Number(b.getAttribute('data-i')), act = b.getAttribute('data-wact'), arts = state.draft.articles, t;
-    if (act === 'del') arts.splice(i, 1);
+    if (act === 'del') { if (arts[i] === state.openArticle) state.openArticle = null; arts.splice(i, 1); }
     else if (act === 'up' && i > 0) { t = arts[i - 1]; arts[i - 1] = arts[i]; arts[i] = t; }
     else if (act === 'down' && i < arts.length - 1) { t = arts[i + 1]; arts[i + 1] = arts[i]; arts[i] = t; }
     else return;
     renderArticles(); setDirty(true);
   });
+  // Repliés par défaut : un seul article ouvert à la fois (celui en cours d'édition) — le 'toggle' ne bulle pas, on capte donc en phase de capture.
+  $('articles').addEventListener('toggle', function (e) {
+    if (e.target.tagName !== 'DETAILS') return;
+    var i = Number(e.target.getAttribute('data-i'));
+    if (e.target.open) {
+      state.openArticle = state.draft.articles[i];
+      Array.prototype.forEach.call($('articles').querySelectorAll('details[open]'), function (d) { if (d !== e.target) d.open = false; });
+    } else if (state.draft.articles[i] === state.openArticle) { state.openArticle = null; }
+  }, true);
   $('btn-add').addEventListener('click', function () {
-    state.draft.articles.push({ title: 'Nouvel article', date: todayISO(), endDate: '', status: '', before: '', after: '', body: '' });
+    var a = { title: 'Nouvel article', date: todayISO(), endDate: '', status: '', before: '', after: '', body: '' };
+    state.draft.articles.unshift(a); // en tête de liste
+    state.openArticle = a;
     renderArticles(); setDirty(true);
-    var last = $('articles').querySelectorAll('details'); last = last[last.length - 1];
-    var f = last && last.querySelector('input[data-wf=title]'); if (f) f.focus();
+    var first = $('articles').querySelector('details');
+    var f = first && first.querySelector('input[data-wf=title]'); if (f) f.focus();
   });
-  function cancelWel() { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; mountIntroEditor(); renderCounters(); renderArticles(); setDirty(false); }
+  function cancelWel() { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; state.openArticle = null; state.openCounter = null; mountIntroEditor(); renderCounters(); renderArticles(); setDirty(false); }
   function saveWel() {
     var arts = state.draft.articles, cnt = state.draft.counters, i;
     for (i = 0; i < arts.length; i++) {
@@ -4405,7 +4450,7 @@
     setOptions: function (o) { state.opts = o || {}; render(); },
     refresh: function () { render(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
-    openAdmin: function () { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false); },
+    openAdmin: function () { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; state.openArticle = null; state.openCounter = null; $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false); },
     closeAdmin: function () { $('view-admin').hidden = true; },
     save: function () { return saveWel(); },
     cancel: function () { cancelWel(); },
