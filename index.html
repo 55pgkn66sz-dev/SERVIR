@@ -4115,12 +4115,19 @@
   // quels (un compteur non renseigné vaut 0, donc {{#if}} le traite comme faux). Un compteur non trouvé/pas encore chargé équivaut à
   // une variable manquante : {{nom}} s'affiche vide plutôt que tel quel (comportement standard Handlebars).
   var hbCache = {}; // un template compilé par texte source, pour éviter de recompiler à chaque frappe dans l'éditeur
+  // Tolère une accolade simple par erreur d'habitude (ex. « {#if nom} » recopié à la main) : seuls les mots-clés de bloc sont
+  // corrigés (pas les variables seules, pour ne pas toucher à du texte contenant accidentellement une accolade).
+  function fixSingleBraces(text) {
+    // (?<!\{) / (?!\}) : ne touche pas à { { déjà valide } } (une seule accolade de chaque côté, pas déjà doublée).
+    return text.replace(/(?<!\{)\{(#if\s+[^{}]+?|\/if|#unless\s+[^{}]+?|\/unless|#each\s+[^{}]+?|\/each|else)\}(?!\})/g, '{{$1}}');
+  }
   function applyCounters(text) {
     text = String(text || '');
     if (!window.Handlebars) return text;
     try {
-      var tpl = hbCache[text];
-      if (!tpl) { tpl = Handlebars.compile(text, { noEscape: true }); hbCache[text] = tpl; }
+      var src = fixSingleBraces(text);
+      var tpl = hbCache[src];
+      if (!tpl) { tpl = Handlebars.compile(src, { noEscape: true }); hbCache[src] = tpl; }
       return tpl(state.counts);
     } catch (e) {
       return text; // Markdown/HTML ne contenant pas du Handlebars valide : laissé tel quel, pas d'erreur affichée
@@ -4199,6 +4206,8 @@
       var n = state.counts[c.name];
       if (typeof n === 'number' && n > 0) active[c.page] = true;
     });
+    // Un point sur un onglet de Réservations (VMP/VEMI/psy) se répercute aussi sur le bouton « Réservations » du menu.
+    if (active['rsv:vmp'] || active['rsv:vemi'] || active['rsv:psy']) active.rsv = true;
     Object.keys(DOT_TARGETS).forEach(function (key) {
       var els = document.querySelectorAll(DOT_TARGETS[key]);
       Array.prototype.forEach.call(els, function (el) {
@@ -4261,8 +4270,9 @@
       var p = 'w-c-' + i, isOpen = c === state.openCounter;
       return '<details class="mail-block" data-i="' + i + '"' + (isOpen ? ' open' : '') + '><summary>' + esc(c.name || 'Nouveau compteur') + '</summary><div class="mail-body">' +
         '<div class="mail-head"><span class="hint">Compteur ' + (i + 1) + ' sur ' + list.length + (c.name ? ' · <code>{{' + esc(c.name) + '}}</code>' : '') + '</span>' +
-        '<button type="button" class="btn secondary sm" data-cact="ins" data-i="' + i + '" title="Insérer dans le champ en cours d’édition" aria-label="Insérer cette variable">Insérer</button> ' +
+        '<button type="button" class="btn secondary sm" data-cact="test" data-i="' + i + '" title="Tester ce compteur sur la table Grist" aria-label="Tester ce compteur">Tester le compteur</button> ' +
         '<button type="button" class="btn secondary sm" data-cact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer ce compteur"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
+        '<p class="hint" id="' + p + '-test" role="status" aria-live="polite" hidden></p>' +
         '<div class="cf-grid">' +
         '<div class="cf-field"><label for="' + p + '-name">Nom de la variable<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-name" data-cf="name" data-i="' + i + '" value="' + esc(c.name) + '" placeholder="nombre_vmp_en_attente"></div>' +
         '<div class="cf-field"><label for="' + p + '-table">Table Grist<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-table" data-cf="table" data-i="' + i + '" value="' + esc(c.table) + '" placeholder="Reservations_VMP"></div>' +
@@ -4285,24 +4295,48 @@
     var f = e.target.getAttribute('data-cf'), i = Number(e.target.getAttribute('data-i'));
     if (!f || !state.draft.counters[i]) return;
     state.draft.counters[i][f] = e.target.value;
+    if (f === 'table' || f === 'column' || f === 'mode' || f === 'value') { var t = document.getElementById('w-c-' + i + '-test'); if (t) t.hidden = true; } // résultat de test devenu obsolète
     if (f === 'name') {
       var d = e.target.closest('.mail-block');
       if (d) {
         d.querySelector('summary').textContent = e.target.value || 'Nouveau compteur';
-        d.querySelector('.hint').innerHTML = 'Compteur ' + (i + 1) + ' sur ' + state.draft.counters.length + (e.target.value ? ' · <code>{{' + esc(e.target.value) + '}}</code>' : '');
+        d.querySelector('.mail-head .hint').innerHTML = 'Compteur ' + (i + 1) + ' sur ' + state.draft.counters.length + (e.target.value ? ' · <code>{{' + esc(e.target.value) + '}}</code>' : '');
       }
     }
     setDirty(true);
   }
   $('counters').addEventListener('input', onCounterFieldChange);
   $('counters').addEventListener('change', onCounterFieldChange); // <select> Mode
+  // Compte sur la table Grist avec les réglages actuels du compteur (même si pas encore enregistrés), sans toucher aux compteurs
+  // affichés ailleurs (n'écrit pas dans state.counts) : un simple essai avant d'enregistrer.
+  function testCounterValue(c) {
+    return grist.docApi.fetchTable(c.table.trim()).then(function (table) {
+      var col = (table && table[c.column.trim()]) || [], n = 0, target = c.value.trim();
+      if (c.mode === 'exact') {
+        if (target === 'true') target = true; else if (target === 'false') target = false;
+        else if (target !== '' && !isNaN(target)) target = Number(target);
+      }
+      col.forEach(function (v) {
+        if (c.mode === 'exact') { if (v === target) n++; }
+        else if (typeof v === 'string' && v.indexOf(target) !== -1) n++;
+      });
+      return n;
+    });
+  }
+  function showCounterTest(i, type, text) {
+    var el = document.getElementById('w-c-' + i + '-test'); if (!el) return;
+    el.hidden = false; el.className = type === 'error' ? 'field-error' : 'hint'; el.textContent = text;
+  }
   $('counters').addEventListener('click', function (e) {
     var b = e.target.closest('[data-cact]'); if (!b) return;
     var i = Number(b.getAttribute('data-i')), act = b.getAttribute('data-cact'), c = state.draft.counters[i];
     if (act === 'del') { if (state.draft.counters[i] === state.openCounter) state.openCounter = null; state.draft.counters.splice(i, 1); renderCounters(); setDirty(true); }
-    else if (act === 'ins' && c) {
-      if (!c.name) { b.closest('.mail-block').querySelector('[data-cf=name]').focus(); return; }
-      if (state.lastCM) { state.lastCM.replaceSelection('{{' + c.name + '}}'); state.lastCM.focus(); }
+    else if (act === 'test' && c) {
+      if (!IN_GRIST || !window.grist || !grist.docApi) { showCounterTest(i, 'error', 'Test disponible uniquement avec le widget ouvert dans Grist.'); return; }
+      if (!c.table.trim() || !c.column.trim() || !c.value.trim()) { showCounterTest(i, 'error', 'Renseignez la table, la colonne et la valeur avant de tester.'); return; }
+      showCounterTest(i, 'busy', 'Test en cours…');
+      testCounterValue(c).then(function (n) { showCounterTest(i, 'ok', 'Résultat : ' + n + (n > 1 ? ' lignes trouvées.' : ' ligne trouvée.')); })
+        .catch(function (e2) { showCounterTest(i, 'error', 'Erreur : ' + ((e2 && e2.message) || e2)); });
     }
   });
   // Repliés par défaut : un seul compteur ouvert à la fois (celui en cours d'édition) — le 'toggle' ne bulle pas, on capte donc en phase de capture.
