@@ -784,9 +784,6 @@
         <div><label for="f-rejetcol">Lettres de rejet</label><select id="f-rejetcol" class="select"></select></div>
         <div><label for="f-esrcol">ESR</label><select id="f-esrcol" class="select"></select></div>
       </div>
-      <h3>Colonnes de la fiche</h3>
-      <p class="hint">Une colonne n’appartient qu’à un seul onglet.</p>
-      <div class="pick-grid" id="picks"></div>
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="btn-reset" type="button">Rétablir les valeurs par défaut</button></div>
     </details>
 
@@ -1304,7 +1301,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.6</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.0</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -1313,36 +1310,36 @@
   var DEFAULTS = { identity: 'Identite_complete', status: 'Etat_candidature' };
   var IN_GRIST = !!(window.grist && window.parent !== window);
 
-  // Onglets de la fiche et colonnes proposées par défaut (repérées par leur libellé Grist).
+  // Onglets de la fiche et colonnes affichées (fixes, repérées par leur libellé Grist ; non modifiable depuis le back office).
   var TAB_DEFS = [
     { key: 'info', title: 'Candidat', cardTitle: 'Informations sur le candidat',
-      defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt', 'Âge',
+      defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Lieu de naissance', 'Dpt',
                  'Numéro de téléphone', 'Email', 'Adresse', 'Code postal', 'Ville', 'Profession', 'Convention',
                  'Commentaires'] },
     { key: 'mil', title: 'Renseignements militaires', cardTitle: 'Renseignements militaires',
       defaults: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO', 'PMG', 'Etat candidature',
-                 'Grade', 'Corps', 'Affectation', 'CRT', 'Nigend', 'N° ESR', 'Date contrat', 'Date de début contrat'] },
+                 'Affectation', 'CRT', 'Date de fin contrat', 'Origine'] },
     { key: 'medico', title: 'Médico-statutaire', cardTitle: 'Situation médicale et statutaire',
       defaults: ['Date tests psy', 'Tests psy', 'Date VEMI', 'Antenne VEMI', 'VEMI', 'Validité VEMI'] },
     { key: 'docs', title: 'Documents', cardTitle: 'Documents du dossier',
-      defaults: ['Lettre intégration', 'Convocations', 'ESR',
-                 'Demande d\'admission', 'DIPC', 'RIB', 'Bulletin paie', 'CNI', 'JDC', 'B2', 'FPR-TAJ',
-                 'Avis impôts', 'Justif domicile', 'Attestation Sécu', 'Diplôme', 'Avis recruteur', 'PJ'] }
+      defaults: ['PJ', 'Bulletin paie', 'B2', 'CNI', 'JDC', 'Avis impôts',
+                 'Demande d\'admission', 'FPR-TAJ', 'Diplôme', 'Justif domicile', 'RIB',
+                 'Attestation Sécu', 'DIPC', 'Avis recruteur', 'EGS'] }
   ];
 
-  // Blocs par onglet : seules les colonnes de ces blocs (et cochées dans le back office) sont affichées dans la fiche.
+  // Blocs par onglet : seules les colonnes de ces blocs sont affichées dans la fiche (liste fixe, cf. TAB_DEFS ci-dessus).
   var TAB_GROUPS = {
     info: [
-      { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN', 'Âge'], ['Lieu de naissance', 'Dpt']] },
+      { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN'], ['Lieu de naissance', 'Dpt']] },
       { title: 'Coordonnées', rows: [['Numéro de téléphone', 'Email'], ['Adresse'], ['Code postal', 'Ville']] },
       { title: 'Renseignements professionnels', rows: [['Profession', 'Convention']] },
       { title: '', labels: ['Commentaires'] }
     ],
     mil: [
       // « N_Cand » : numéro CAND (GendForm).
-      { title: 'Identifiants', labels: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO'] },
+      { title: 'Identifiants', labels: ['NID', 'N° candidature', 'N_Cand', 'Dde BPRO', 'Origine'] },
       { title: 'Stage', mail: 'stage', rows: [['PMG', 'Etat candidature']] },
-      { title: 'Contrat', mail: 'contrat', rows: [['Grade', 'Corps'], ['Affectation', 'CRT'], ['Nigend', 'N° ESR'], ['Date contrat', 'Date de début contrat']] }
+      { title: 'Contrat', mail: 'contrat', rows: [['Affectation', 'CRT'], ['Date de fin contrat']] }
     ],
     medico: [
       { title: 'Tests psychométriques', mail: 'tests', labels: ['Date tests psy', 'Tests psy'] },
@@ -1351,9 +1348,9 @@
   };
   // Libellés affichés dans la fiche (le bloc donne le contexte), quand ils diffèrent de ceux de la table.
   var DISPLAY_LABELS = {
-    'nom': 'Nom', 'ddn': 'Date de naissance', 'dpt': 'Département de naissance', 'numero de telephone': 'Tél', 'email': 'Mail',
+    'nom': 'Nom', 'ddn': 'Date de naissance', 'dpt': 'Département de naissance', 'numero de telephone': 'Tél', 'email': 'Mail', 'code postal': 'CP',
     'n° candidature': 'Numéro de candidature', 'n_cand': 'Numéro CAND (GendForm)', 'n° cand': 'Numéro CAND (GendForm)', 'numero cand': 'Numéro CAND (GendForm)', 'dde bpro': 'Demande BPRO',
-    'etat candidature': 'État de la candidature', 'affectation': 'Groupement', 'pmg': 'PMG souhaitée', 'date contrat': 'Date du contrat', 'date de debut contrat': 'Entrée en vigueur du contrat', 'date tests psy': 'Date des tests', 'tests psy': 'Résultat', 'date vemi': 'Date de la VEMI',
+    'etat candidature': 'État de la candidature', 'affectation': 'Groupement', 'pmg': 'PMG souhaitée', 'date tests psy': 'Date des tests', 'tests psy': 'Résultat', 'date vemi': 'Date de la VEMI',
     'antenne vemi': 'Antenne médicale', 'vemi': 'Résultat', 'validite vemi': 'Date de validité'
   };
   function displayLabel(col) { return DISPLAY_LABELS[norm(col.label)] || DISPLAY_LABELS[norm(col.id)] || col.label; }
@@ -1664,17 +1661,11 @@
     for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
     return null;
   }
+  // Résout, pour une table donnée, les colonnes fixes de TAB_DEFS en ids réels de cette table.
   function defaultTabs(table) {
     var out = {};
     TAB_DEFS.forEach(function (t) {
       out[t.key] = t.defaults.map(function (lbl) { var c = findCol(table, lbl); return c ? c.id : null; }).filter(Boolean);
-    });
-    return out;
-  }
-  function normalizeTabs(table, tabs) {
-    var seen = {}, out = {};
-    TAB_DEFS.forEach(function (t) {
-      out[t.key] = (tabs && tabs[t.key] || []).filter(function (id) { if (seen[id] || !colMeta(table, id)) return false; seen[id] = true; return true; });
     });
     return out;
   }
@@ -1701,7 +1692,7 @@
       table: table,
       identity: ('identity' in state.opts) ? state.opts.identity : DEFAULTS.identity,
       status: state.opts.status || DEFAULTS.status,
-      tabs: state.opts.tabs ? normalizeTabs(table, state.opts.tabs) : defaultTabs(table),
+      tabs: defaultTabs(table),
       mail: mergeMail(state.opts.mail),
       emailCol: state.opts.emailCol || '',
       convCol: state.opts.convCol || '',
@@ -3208,21 +3199,6 @@
     }).join('');
   }
 
-  function renderPicks() {
-    var dr = state.draft, cols = state.colsByTable[dr.table] || [];
-    if (!dr.table || !cols.length) { $('picks').innerHTML = '<p class="stg-empty">Choisissez d’abord une table.</p>'; return; }
-    var owner = {};
-    TAB_DEFS.forEach(function (t) { (dr.tabs[t.key] || []).forEach(function (id) { owner[id] = t.key; }); });
-    $('picks').innerHTML = TAB_DEFS.map(function (t) {
-      var n = (dr.tabs[t.key] || []).length;
-      return '<div class="pick-col"><h3>' + esc(t.title) + '</h3><span class="hint">' + n + (n > 1 ? ' colonnes sélectionnées' : ' colonne sélectionnée') + '</span><div class="pick-list">' +
-        cols.map(function (c) {
-          var mine = owner[c.id] === t.key, other = owner[c.id] && !mine;
-          return '<label class="pick-row' + (other ? ' other' : '') + '"><span>' + esc(c.label) + '</span><input type="checkbox" data-tab="' + t.key + '" data-col="' + esc(c.id) + '"' + (mine ? ' checked' : '') + '></label>';
-        }).join('') + '</div></div>';
-    }).join('');
-  }
-
   function renderAdminForm() {
     var dr = state.draft;
     fillSelect($('f-table'), state.tables.map(function (t) { return { value: t, label: t }; }), dr.table, '— Choisir une table —');
@@ -3238,7 +3214,6 @@
     fillSelect($('f-lettercol'), attCols, dr.letterCol, '— Détection automatique —');
     fillSelect($('f-rejetcol'), attCols, dr.rejetCol, '— Détection automatique —');
     fillSelect($('f-esrcol'), attCols, dr.esrCol, '— Détection automatique —');
-    renderPicks();
     renderMailForms();
     renderImportSection();
   }
@@ -3437,29 +3412,18 @@
 
   $('f-table').addEventListener('change', function (e) {
     var t = e.target.value;
-    state.draft.table = t; state.draft.identity = ''; state.draft.status = ''; state.draft.tabs = { info: [], mil: [], medico: [], docs: [] };
+    state.draft.table = t; state.draft.identity = ''; state.draft.status = '';
     if (!t) { renderAdminForm(); return; }
     api.listColumns(t).then(function (cols) {
       state.colsByTable[t] = cols;
       var has = function (id) { return cols.some(function (c) { return c.id === id; }); };
       state.draft.identity = has(DEFAULTS.identity) ? DEFAULTS.identity : '';
       state.draft.status = has(DEFAULTS.status) ? DEFAULTS.status : '';
-      state.draft.tabs = defaultTabs(t);
       renderAdminForm();
     });
   });
   $('f-identity').addEventListener('change', function (e) { state.draft.identity = e.target.value; });
   $('f-status').addEventListener('change', function (e) { state.draft.status = e.target.value; $('e-status').hidden = true; });
-  $('picks').addEventListener('change', function (e) {
-    var cb = e.target; if (!cb.matches('input[data-col]')) return;
-    var tab = cb.getAttribute('data-tab'), id = cb.getAttribute('data-col'), tabs = state.draft.tabs;
-    TAB_DEFS.forEach(function (t) { tabs[t.key] = (tabs[t.key] || []).filter(function (x) { return x !== id; }); });
-    if (cb.checked) tabs[tab].push(id);
-    // conserve l'ordre de la table
-    var order = (state.colsByTable[state.draft.table] || []).map(function (c) { return c.id; });
-    TAB_DEFS.forEach(function (t) { tabs[t.key].sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); }); });
-    renderPicks();
-  });
 
   $('mail-forms').addEventListener('input', function (e) {
     var el = e.target, b = el.getAttribute && el.getAttribute('data-b'); if (!b) return;
@@ -3494,7 +3458,7 @@
     var dr = state.draft;
     $('e-status').hidden = !!dr.status;
     if (!dr.table || !dr.status) return Promise.reject(new Error('Candidats : sélectionnez la colonne « État de la candidature » (options avancées).'));
-    var o = { table: dr.table, identity: dr.identity || '', status: dr.status, tabs: normalizeTabs(dr.table, dr.tabs), mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
+    var o = { table: dr.table, identity: dr.identity || '', status: dr.status, mail: mergeMail(dr.mail), emailCol: dr.emailCol || '', cc: (dr.cc || '').trim(), replyTo: (dr.replyTo || '').trim(), convCol: dr.convCol || '', letterCol: dr.letterCol || '', rejetCol: dr.rejetCol || '', esrCol: dr.esrCol || '' };
     if (state.opts.sent) o.sent = state.opts.sent;         // conserve l'historique des actions effectuées
     if (state.opts.welcome) o.welcome = state.opts.welcome; // conserve la configuration de la page « Bienvenue »
     if (state.opts.r) o.r = state.opts.r;                  // conserve la configuration de la page « Réservistes »
@@ -3504,12 +3468,11 @@
   $('btn-save').addEventListener('click', function () { savePmg().catch(function () {}); });
   $('btn-reset').addEventListener('click', function () {
     var t = state.boundTable || '';
-    state.draft = { table: t, identity: DEFAULTS.identity, status: DEFAULTS.status, tabs: { info: [], mil: [], medico: [], docs: [] }, mail: mergeMail(null), emailCol: '', cc: '', replyTo: '', convCol: '', letterCol: '', rejetCol: '', esrCol: '' };
+    state.draft = { table: t, identity: DEFAULTS.identity, status: DEFAULTS.status, mail: mergeMail(null), emailCol: '', cc: '', replyTo: '', convCol: '', letterCol: '', rejetCol: '', esrCol: '' };
     $('saved').hidden = true;
     api.listColumns(t).then(function (cols) {
       state.colsByTable[t] = cols;
       if (!cols.some(function (c) { return c.id === DEFAULTS.identity; })) state.draft.identity = '';
-      state.draft.tabs = defaultTabs(t);
       renderAdminForm();
     });
   });
