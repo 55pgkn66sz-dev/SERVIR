@@ -1304,7 +1304,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.4</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.5</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -4490,7 +4490,7 @@
   $('btn-save').addEventListener('click', function () { saveWel().catch(function () {}); });
 
   window.WEL = {
-    setOptions: function (o) { state.opts = o || {}; render(); },
+    setOptions: function (o) { state.opts = o || {}; render(); refreshCounters(); },
     refresh: function () { render(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
     openAdmin: function () {
