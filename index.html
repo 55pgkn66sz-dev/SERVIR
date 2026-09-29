@@ -4114,7 +4114,6 @@
   // Moteur Handlebars (comme le widget Markdown DSFR pris pour modèle) : {{nom}}, {{{nom}}} et {{#if nom}}…{{/if}} fonctionnent tels
   // quels (un compteur non renseigné vaut 0, donc {{#if}} le traite comme faux). Un compteur non trouvé/pas encore chargé équivaut à
   // une variable manquante : {{nom}} s'affiche vide plutôt que tel quel (comportement standard Handlebars).
-  var hbCache = {}; // un template compilé par texte source, pour éviter de recompiler à chaque frappe dans l'éditeur
   // Tolère une accolade simple par erreur d'habitude (ex. « {#if nom} » recopié à la main) : seuls les mots-clés de bloc sont
   // corrigés (pas les variables seules, pour ne pas toucher à du texte contenant accidentellement une accolade).
   function fixSingleBraces(text) {
@@ -4125,10 +4124,7 @@
     text = String(text || '');
     if (!window.Handlebars) return text;
     try {
-      var src = fixSingleBraces(text);
-      var tpl = hbCache[src];
-      if (!tpl) { tpl = Handlebars.compile(src, { noEscape: true }); hbCache[src] = tpl; }
-      return tpl(state.counts);
+      return Handlebars.compile(fixSingleBraces(text), { noEscape: true })(state.counts);
     } catch (e) {
       return text; // Markdown/HTML ne contenant pas du Handlebars valide : laissé tel quel, pas d'erreur affichée
     }
@@ -4165,7 +4161,10 @@
     body: 'Cette page s’affiche en premier. Ajoutez, modifiez ou réordonnez ses articles depuis le back office (cinq clics sur l’en-tête), en **Markdown**.'
   }];
 
-  var state = { opts: {}, draft: { intro: '', articles: [], counters: [] }, counts: {}, lastCM: null, openArticle: null, openCounter: null };
+  var state = {
+    opts: {}, draft: { intro: '', articles: [], counters: [] }, counts: {}, lastCM: null,
+    openArticle: null, openCounter: null, introEditor: null, articleEditor: null // un seul éditeur Markdown monté à la fois
+  };
   function cfg() {
     var o = state.opts.welcome, arts = o && Array.isArray(o.articles) ? o.articles : null;
     return {
@@ -4262,6 +4261,11 @@
     mde.codemirror.on('focus', function () { state.lastCM = mde.codemirror; }); // pour l'insertion des variables {{compteur}}
     state.introEditor = mde;
   }
+  // Monté seulement à l'ouverture du bloc (repliés par défaut, potentiellement nombreux articles) : évite d'initialiser un éditeur
+  // (CodeMirror + barre d'outils) pour du contenu que l'utilisateur ne regarde pas forcément.
+  $('intro-details').addEventListener('toggle', function () {
+    if ($('intro-details').open) mountIntroEditor(); else destroyIntroEditor();
+  });
 
   /* ---------- Back office : compteurs (repliés par défaut, sauf celui en cours d'édition) ---------- */
   function renderCounters() {
@@ -4358,35 +4362,35 @@
   });
 
   /* ---------- Back office : liste des articles, ajout/suppression/réordonnancement, un seul champ par ligne ---------- */
-  // Texte et encadré : éditeur Markdown WYSIWYG (EasyMDE) ; les instances précédentes sont détruites avant de reconstruire la liste.
-  function destroyEditors() {
-    (state.editors || []).forEach(function (e) { try { e.toTextArea(); } catch (err) {} });
-    state.editors = [];
+  // Texte : éditeur Markdown WYSIWYG (EasyMDE). Un seul article ouvert à la fois (accordéon) : un seul éditeur monté à la fois,
+  // uniquement pour celui-là — pas un par article — pour rester fluide même avec beaucoup d'articles.
+  function destroyArticleEditor() {
+    if (!state.articleEditor) return;
+    try { state.articleEditor.toTextArea(); } catch (err) {}
+    state.articleEditor = null;
   }
-  function mountEditors() {
-    state.editors = [];
-    if (!window.EasyMDE) return; // hors ligne ou CDN inaccessible : les <textarea> restent utilisables tels quels
-    Array.prototype.forEach.call($('articles').querySelectorAll('textarea[data-wf]'), function (ta) {
-      var i = Number(ta.getAttribute('data-i')), f = ta.getAttribute('data-wf');
-      var mde = new EasyMDE({
-        element: ta, spellChecker: false, status: false, autoDownloadFontAwesome: true,
-        autoRefresh: { delay: 300 }, // la section peut encore être masquée à l'initialisation (ouverture du back office)
-        placeholder: 'Texte de l’article, en Markdown…',
-        previewRender: mdToHtml,
-        toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', '|', 'preview', 'guide']
-      });
-      mde.codemirror.getWrapperElement().parentNode.classList.add('w-md');
-      mde.codemirror.on('change', function () {
-        if (!state.draft.articles[i]) return;
-        state.draft.articles[i][f] = mde.value();
-        setDirty(true);
-      });
-      mde.codemirror.on('focus', function () { state.lastCM = mde.codemirror; }); // pour l'insertion des variables {{compteur}}
-      state.editors.push(mde);
+  function mountArticleEditor(i) {
+    destroyArticleEditor();
+    var ta = document.querySelector('#w-articles details[data-i="' + i + '"] textarea[data-wf=body]');
+    if (!ta || !window.EasyMDE) return;
+    var mde = new EasyMDE({
+      element: ta, spellChecker: false, status: false, autoDownloadFontAwesome: true,
+      autoRefresh: { delay: 300 }, // la section peut encore être masquée à l'initialisation (ouverture du back office)
+      placeholder: 'Texte de l’article, en Markdown…',
+      previewRender: mdToHtml,
+      toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', '|', 'preview', 'guide']
     });
+    mde.codemirror.getWrapperElement().parentNode.classList.add('w-md');
+    mde.codemirror.on('change', function () {
+      if (!state.draft.articles[i]) return;
+      state.draft.articles[i].body = mde.value();
+      setDirty(true);
+    });
+    mde.codemirror.on('focus', function () { state.lastCM = mde.codemirror; }); // pour l'insertion des variables {{compteur}}
+    state.articleEditor = mde;
   }
   function renderArticles() {
-    destroyEditors();
+    destroyArticleEditor(); // les nœuds DOM vont être remplacés
     var arts = state.draft.articles;
     $('articles').innerHTML = arts.length ? arts.map(function (a, i) {
       var p = 'w-a-' + i, isOpen = a === state.openArticle;
@@ -4411,9 +4415,10 @@
         '<label for="' + p + '-body">Texte, en Markdown (ou en HTML)</label><textarea class="textarea tall" id="' + p + '-body" data-wf="body" data-i="' + i + '" spellcheck="true">' + esc(a.body) + '</textarea>' +
         '</div></details>';
     }).join('') : '<p class="hint">Aucun article pour le moment.</p>';
-    mountEditors();
+    var openIdx = arts.indexOf(state.openArticle); // -1 si aucun (ou si l'article ouvert vient d'être supprimé)
+    if (openIdx !== -1) mountArticleEditor(openIdx);
   }
-  function renderAdminForm() { mountIntroEditor(); renderCounters(); renderArticles(); }
+  function renderAdminForm() { renderCounters(); renderArticles(); } // le bloc d'introduction se monte à l'ouverture de son détail
   function setDirty(d) {
     $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
     $('bo-state').classList.toggle('is-dirty', d);
@@ -4446,7 +4451,8 @@
     if (e.target.open) {
       state.openArticle = state.draft.articles[i];
       Array.prototype.forEach.call($('articles').querySelectorAll('details[open]'), function (d) { if (d !== e.target) d.open = false; });
-    } else if (state.draft.articles[i] === state.openArticle) { state.openArticle = null; }
+      mountArticleEditor(i);
+    } else if (state.draft.articles[i] === state.openArticle) { state.openArticle = null; destroyArticleEditor(); }
   }, true);
   $('btn-add').addEventListener('click', function () {
     var a = { title: 'Nouvel article', date: todayISO(), endDate: '', status: '', before: '', after: '', body: '' };
@@ -4456,7 +4462,12 @@
     var first = $('articles').querySelector('details');
     var f = first && first.querySelector('input[data-wf=title]'); if (f) f.focus();
   });
-  function cancelWel() { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; state.openArticle = null; state.openCounter = null; mountIntroEditor(); renderCounters(); renderArticles(); setDirty(false); }
+  function cancelWel() {
+    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters };
+    state.openArticle = null; state.openCounter = null;
+    $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut, y compris après Annuler
+    renderCounters(); renderArticles(); setDirty(false);
+  }
   function saveWel() {
     var arts = state.draft.articles, cnt = state.draft.counters, i;
     for (i = 0; i < arts.length; i++) {
@@ -4484,7 +4495,12 @@
     setOptions: function (o) { state.opts = o || {}; render(); },
     refresh: function () { render(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
-    openAdmin: function () { state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters }; state.openArticle = null; state.openCounter = null; $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false); },
+    openAdmin: function () {
+      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters };
+      state.openArticle = null; state.openCounter = null;
+      $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut
+      $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false);
+    },
     closeAdmin: function () { $('view-admin').hidden = true; },
     save: function () { return saveWel(); },
     cancel: function () { cancelWel(); },
