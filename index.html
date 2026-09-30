@@ -1301,7 +1301,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.2</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -2757,7 +2757,9 @@
     groups.forEach(function (g) {
       // g.rows : lignes explicites (ex. Nom et Prénom côte à côte) ; g.labels : répartition automatique.
       var rows = g.rows ? g.rows.map(resolve).filter(function (r) { return r.length; }) : packRows(resolve(g.labels));
-      if (rows.length) html += '<section class="detail-group">' + (g.title ? '<h3 class="detail-title">' + esc(g.title) + (g.mail && !opts.ro ? mailActionsHtml(g.mail, item, c) : '') + '</h3>' : '') + tableHtml(rows, g.title || 'Commentaires') + '</section>';
+      // Groupe « Contrat » : icône « Transformer en réserviste » (fiche modifiable uniquement).
+      var isContrat = tabDef.key === 'mil' && g.title === 'Contrat' && !opts.ro;
+      if (rows.length) html += '<section class="detail-group">' + (g.title ? '<h3 class="detail-title">' + esc(g.title) + (g.mail && !opts.ro ? mailActionsHtml(g.mail, item, c) : '') + (isContrat ? convertActionHtml() : '') + '</h3>' : '') + tableHtml(rows, g.title || 'Commentaires') + (isContrat && state.convert && state.convert.confirming ? convertConfirmHtml(item) : '') + '</section>';
     });
     return (!opts.ro && tabDef.key === 'mil' ? askHtml() : '') + (!opts.ro && (tabDef.key === 'medico' || tabDef.key === 'mil') ? mailMsgHtml() : '') + html;
   }
@@ -2986,9 +2988,56 @@
       .catch(function (err) { e.busy = false; e.confirm = false; e.msg = { type: 'error', text: 'Suppression impossible : ' + ((err && err.message) || err) + '.' }; renderModal(); });
   }
 
+  /* ----- Transformer un candidat en réserviste : crée la fiche réserviste correspondante puis supprime la candidature ----- */
+  var ICON_CONVERT = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 2.97-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8zm-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34A7.938 7.938 0 0 0 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91z"/></svg>';
+  // Correspondance des colonnes candidat -> réserviste (uniquement les champs ayant un équivalent de même sens ; les Choix aux options
+  // différentes entre les deux tables, les documents et les champs propres à la candidature ne sont pas repris).
+  var CONVERT_MAP = [
+    ['Civilité', 'Civilité'], ['NOM', 'NOM'], ['Prénom', 'Prénom'], ['DDN', 'DDN'],
+    ['Numéro de téléphone', 'Téléphone'], ['Email', 'Adresse email'], ['Adresse', 'Adresse'], ['Ville', 'Ville'],
+    ['NID', 'NID'], ['Affectation', 'Affectation'], ['Grade', 'Grade'], ['Corps', 'Corps'], ['Nigend', 'Nigend'],
+    ['N° ESR', 'N° ESR'], ['Date contrat', 'Date contrat'], ['Date de début contrat', 'Date de début contrat'],
+    ['Validité VEMI', 'Exp. VMP']
+  ];
+  function convertActionHtml() {
+    var busy = state.convert && state.convert.busy;
+    return '<span class="detail-actions"><button type="button" class="icon-btn" data-conv="ask" title="Transformer ce candidat en réserviste" aria-label="Transformer ce candidat en réserviste"' + (busy ? ' disabled' : '') + '>' + ICON_CONVERT + '</button></span>';
+  }
+  function convertConfirmHtml(item) {
+    var cv = state.convert;
+    return '<div class="doc-alert' + (cv.error ? ' error' : '') + '" role="alert"><p>' + (cv.error ? esc(cv.error) :
+      'Transformer ' + esc(item.id ? formatName(item.id) : 'ce candidat') + ' en réserviste ? Une nouvelle fiche réserviste est créée avec les informations correspondantes, puis la candidature est définitivement supprimée. Cette action est irréversible.') + '</p>' +
+      '<button type="button" class="btn danger sm" data-conv="confirm"' + (cv.busy ? ' disabled' : '') + '>' + (cv.busy ? 'Transformation…' : 'Confirmer la transformation') + '</button> ' +
+      '<button type="button" class="btn secondary sm" data-conv="cancel"' + (cv.busy ? ' disabled' : '') + '>Annuler</button></div>';
+  }
+  function convertToReserviste() {
+    var c = cfg(), cv = state.convert, item = state.view[state.modal.index]; if (!item || !cv || cv.busy) return;
+    if (!window.RES || !window.RES.table) { cv.error = 'Page Réservistes indisponible.'; renderModal(); return; }
+    var resTable = window.RES.table();
+    if (!resTable) { cv.error = 'Table des réservistes non configurée (back office).'; renderModal(); return; }
+    function raw(l) { var col = findCol(c.table, l); return col ? item.raw[col.id] : ''; }
+    var m = window.RES.match ? window.RES.match({ nid: raw('NID'), esr: raw('N° ESR'), nigend: raw('Nigend') }) : null;
+    if (m) { cv.error = 'Ce candidat correspond déjà à un réserviste existant (rapprochement par ' + m.by + ', ligne n° ' + m.id + '). Utilisez plutôt « Déjà ESR » pour ne pas créer de doublon.'; renderModal(); return; }
+    cv.busy = true; cv.error = null; renderModal();
+    Promise.resolve(state.colsByTable[resTable] || api.listColumns(resTable).then(function (cols) { state.colsByTable[resTable] = cols; return cols; }))
+      .then(function () {
+        var fields = {};
+        CONVERT_MAP.forEach(function (pair) {
+          var fromCol = findCol(c.table, pair[0]), toCol = findCol(resTable, pair[1]);
+          if (!fromCol || !toCol || toCol.formula) return;
+          var v = item.raw[fromCol.id]; if (v == null || v === '') return;
+          fields[toCol.id] = v;
+        });
+        return api.createRow(resTable, fields);
+      })
+      .then(function () { return api.deleteRow(c.table, item.raw.id); })
+      .then(function () { state.convert = null; if (window.RES && window.RES.refresh) window.RES.refresh(); closeModal(); })
+      .catch(function (err) { cv.busy = false; cv.error = 'Transformation impossible : ' + ((err && err.message) || err) + '.'; renderModal(); });
+  }
+
   function openModal(index, opener) {
     if (!state.view[index]) return;
-    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
+    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null; state.convert = null;
     if (!state.modal.tab) state.modal.tab = 'info';
     // Doublon = oui : les deux fiches s'ouvrent côte à côte.
     exitCompare();
@@ -3096,6 +3145,14 @@
         var pm = mb.getAttribute('data-mail').split(':');
         if (pm[1] === 'reservation') openBooking(pm[0]); else runMail(pm[0], pm[1]);
       }
+      return;
+    }
+    var cv = e.target.closest('[data-conv]');
+    if (cv) {
+      var cvAct = cv.getAttribute('data-conv');
+      if (cvAct === 'ask') { state.convert = { confirming: true, busy: false, error: null }; renderModal(); }
+      else if (cvAct === 'cancel') { state.convert = null; renderModal(); }
+      else if (cvAct === 'confirm') convertToReserviste();
       return;
     }
     var btn = e.target.closest('[data-act]');
@@ -4480,7 +4537,7 @@
   // Onglets de la fiche et colonnes proposées par défaut (repérées par leur libellé Grist).
   var TAB_DEFS = [
     { key: 'info', title: 'Réserviste', cardTitle: 'Informations sur le réserviste',
-      defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Age', 'Téléphone', 'Adresse email', 'Ville', 'Dpt'] },
+      defaults: ['Civilité', 'NOM', 'Prénom', 'DDN', 'Age', 'Téléphone', 'Adresse email', 'Adresse', 'Ville', 'Dpt'] },
     { key: 'mil', title: 'Renseignements militaires', cardTitle: 'Renseignements militaires',
       defaults: ['NID', 'Nigend', 'Grade', 'Type R', 'Affectation', 'Affectation précise', 'N° ESR', 'Date contrat', 'Date de début contrat', 'Exp. contrat'] },
     { key: 'hab', title: 'Médico-statutaire', cardTitle: 'Médico-statutaire',
@@ -4492,7 +4549,7 @@
   var TAB_GROUPS = {
     info: [
       { title: 'État civil', rows: [['Civilité'], ['NOM', 'Prénom'], ['DDN', 'Age']] },
-      { title: 'Coordonnées', rows: [['Téléphone', 'Adresse email'], ['Ville', 'Dpt']] }
+      { title: 'Coordonnées', rows: [['Téléphone', 'Adresse email'], ['Adresse'], ['Ville', 'Dpt']] }
     ],
     mil: [
       { title: 'Identifiants', rows: [['NID', 'Nigend']] },
@@ -4986,10 +5043,10 @@
     var t = joinTags(toList(r.tag).length ? tagsHtml(r.tag) : '', statusTagsHtml(r.raw, c));
     return t ? '<span class="tagrow">' + t + '</span>' : '';
   }
-  // Repère en bout de ligne : validité expirée (icône d'alerte du système de design).
+  // Repère en bout de ligne : validité expirée (badge d'erreur DSFR).
   function flagsHtml(raw, c) {
     var exp = expiredLabels(raw, c);
-    return exp.length ? '<span class="flags"><span class="flag flag-dup" role="img" aria-label="Validité expirée : ' + esc(exp.join(', ')) + '" title="Expiré : ' + esc(exp.join(', ')) + '"><span class="fr-icon-alarm-warning-line" aria-hidden="true"></span></span></span>' : '';
+    return exp.length ? '<span class="flags"><p class="fr-badge fr-badge--sm fr-badge--error" title="Expiré : ' + esc(exp.join(', ')) + '">NON EMPLOYABLE</p></span>' : '';
   }
 
   function renderList() {
@@ -5089,7 +5146,8 @@
     if (t === 'DateTime') return '<input type="datetime-local" class="input ' + cls + '"' + attr + ' value="' + esc(v) + '">';
     if (t === 'Numeric' || t === 'Int') return '<input type="text" inputmode="decimal" class="input ' + cls + '"' + attr + ' value="' + esc(v) + '">';
     if (typeof v === 'string' && (v.indexOf('\n') !== -1 || /commentaire/.test(norm(col.label)) || v.length > 80)) return '<textarea class="textarea ' + cls + '"' + attr + ' rows="4">' + esc(v) + '</textarea>';
-    return '<input type="text" class="input ' + cls + '"' + attr + ' value="' + esc(v) + '" autocomplete="off">';
+    var ph = normLoose(col.label) === 'n esr' ? ' placeholder="1234/GEND/RGIF/EM/DRJ/SGR"' : '';
+    return '<input type="text" class="input ' + cls + '"' + attr + ph + ' value="' + esc(v) + '" autocomplete="off">';
   }
   function editorHtml(col) {
     var e = state.edit;
@@ -5134,7 +5192,8 @@
       var col = colMeta(c.table, id); if (!col) return '';
       var f = fmtValue(col, item.raw[id]), editable = !ro && isEditableCol(col), editing = editable && state.edit && state.edit.colId === id;
       var extra = '';
-      if (!editing) {
+      // Pas de doublon avec le tag « Expiré » déjà affiché par fmtValue() pour cette même échéance.
+      if (!editing && !(isExpCol(col) && expiryState(item.raw[id]) === 'expired')) {
         var stateLbl = ECHEANCE_STATE_COL[normLoose(col.label)], sc = stateLbl && findCol(c.table, stateLbl), sv = sc && item.raw[sc.id];
         if (sv != null && sv !== '') extra = ' <span class="tag grey">' + esc(sv) + '</span>';
       }
@@ -6803,7 +6862,7 @@
   }
 
   /* ---------- Doublons : deux demandes, choix de celle à supprimer ---------- */
-  var DUP_COLS = ['Date', 'Heure', 'Antenne médicale', 'Créneau choisi', 'Créneau', 'Réservation faite le', 'Affectation'];
+  var DUP_COLS = ['Date', 'Heure', 'Antenne médicale', 'Créneau', 'Réservation faite le', 'Affectation'];
   function openDup(rowId) {
     var tab = state.tab, d = state.data[tab], row = d.rows.filter(function (r) { return r.id === rowId; })[0]; if (!row) return;
     state.dup = { tab: tab, key: keyOf(tab, row), rowId: rowId, confirm: null, sendMail: true, busy: false, error: '' };
