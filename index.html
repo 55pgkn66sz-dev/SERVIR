@@ -1301,7 +1301,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.6</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.9</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -7607,7 +7607,13 @@
     if (!inviting && s) {
       var sDateCol = findCol(s.cols, cs.dateLabel), sTimeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
         sAntCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), sCapCol = cs.capLabel && findCol(s.cols, cs.capLabel), sToggleCol = findCol(s.cols, cs.toggleLabel);
-      var opts = s.rows.filter(function (r) { return !sToggleCol || isYes(r[sToggleCol.id]); })
+      var sEtatCol = cs.etatLabel && findCol(s.cols, cs.etatLabel);
+      // Seuls les créneaux proposés et honorables sont listés (« Proposé ? » oui, état ni « non honoré » ni « non proposé »).
+      var opts = s.rows.filter(function (r) {
+        if (sToggleCol && !isYes(r[sToggleCol.id])) return false;
+        var et = sEtatCol ? norm(String(r[sEtatCol.id] == null ? '' : r[sEtatCol.id])) : '';
+        return !/non\s+(honore|propose)/.test(et);
+      })
         .sort(function (a, b) { var av = sDateCol ? (a[sDateCol.id] || 0) : 0, bv = sDateCol ? (b[sDateCol.id] || 0) : 0; if (av !== bv) return av - bv; return sTimeCol ? String(a[sTimeCol.id] || '').localeCompare(String(b[sTimeCol.id] || '')) : 0; })
         .map(function (r) {
           var full = sCapCol && slotBookedCount(tab, r, s) >= (r[sCapCol.id] || 0);
@@ -7688,8 +7694,19 @@
     }
     if (existing.length && bk.confirmDup) spec.dupFlags.forEach(function (l) { var c = findCol(d.cols, l); if (c) fields[c.id] = typeBase(c.type) === 'Bool' ? true : 'Oui'; });
 
+    // Les colonnes calculées (formules) ne sont pas modifiables : Grist les remplit lui-même.
+    d.cols.forEach(function (col) { if (col.formula && col.id in fields) delete fields[col.id]; });
+
     bk.busy = true; bk.error = ''; renderBook();
-    Promise.resolve(bk.mode === 'edit' ? api.updateFields(d.table, bk.id, fields) : api.createRow(d.table, fields)).then(function () {
+    // Filet de sécurité : si Grist signale encore une colonne formule (non détectée comme telle), on la retire et on réessaie.
+    function write() {
+      return Promise.resolve(bk.mode === 'edit' ? api.updateFields(d.table, bk.id, fields) : api.createRow(d.table, fields)).catch(function (err) {
+        var m = /formula column ([^\s.]+)/.exec((err && err.message) || '');
+        if (m && m[1] in fields) { delete fields[m[1]]; return write(); }
+        throw err;
+      });
+    }
+    write().then(function () {
       var wasEdit = bk.mode === 'edit'; closeBook(); showMsg('success', wasEdit ? 'Réservation modifiée.' : 'Réservation créée.');
       return load().then(notifyChange);
     }).catch(function (e) { bk.busy = false; bk.error = (bk.mode === 'edit' ? 'Enregistrement impossible : ' : 'Création impossible : ') + ((e && e.message) || e) + '.'; renderBook(); });
