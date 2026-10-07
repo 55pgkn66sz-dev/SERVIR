@@ -743,6 +743,7 @@
     <section class="step">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Articles de la page Bienvenue</h2></div>
       <p class="lead">Affichés dans cet ordre sur la page Bienvenue (première page du widget). Titre et date sont obligatoires ; le texte se rédige en Markdown (le bouton <span class="fr-icon-eye-line" aria-hidden="true"></span> de l’éditeur en affiche l’aperçu) — le HTML est aussi accepté. L’article n’est diffusé qu’à partir de sa date (et jusqu’à sa fin de publication, si renseignée).</p>
+      <p class="hint">Renvoi vers une page ou un onglet : <code>[texte du lien](#go:cible)</code>. Cibles : <code>pmg</code> (Candidats), <code>res</code> (Réservistes), <code>res-ren</code> (Renouvellements), <code>res-ave</code> (Avenants), <code>res-stat</code> (Statistiques), <code>rsv</code> (Réservations), <code>rsv:vmp</code>, <code>rsv:vemi</code>, <code>rsv:psy</code> (onglets de Réservations), <code>welcome</code> (Bienvenue). Valable aussi dans le bloc d’introduction, ou en HTML : <code>&lt;a href="#go:res-stat"&gt;…&lt;/a&gt;</code>.</p>
       <div id="w-articles"></div>
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-btn-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un article</button></div>
     </section>
@@ -1464,7 +1465,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.11</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.12</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -8788,6 +8789,20 @@
   var saved = 'welcome'; try { saved = localStorage.getItem('widgetPage') || 'welcome'; } catch (e) {}
   show(pages[saved] ? saved : 'welcome');
   window.__showPage = show; // utilisé par le back office unifié
+  // Renvois internes (articles, introduction, tout contenu rédigé en Markdown/HTML) : lien de la forme href="#go:cible", où cible est
+  // une page (welcome, pmg, res, res-ren, res-ave, res-stat, rsv) ou un onglet de la page Réservations (rsv:vmp, rsv:vemi, rsv:psy).
+  var GO_TABS = { 'rsv:vmp': 'x-tab-vmp', 'rsv:vemi': 'x-tab-vemi', 'rsv:psy': 'x-tab-psy' };
+  window.__go = function (target) {
+    var k = String(target || '').trim(), page = k.split(':')[0];
+    if (!pages[page] || page === 'bo') return false;
+    show(page);
+    var tab = GO_TABS[k] && document.getElementById(GO_TABS[k]); if (tab) tab.click();
+    return true;
+  };
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#go:"]'); if (!a) return;
+    e.preventDefault(); window.__go(a.getAttribute('href').slice(4));
+  });
 })();
 </script>
 <script>
