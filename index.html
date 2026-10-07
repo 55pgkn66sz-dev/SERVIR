@@ -241,6 +241,22 @@
   #flt-status-wrap { flex: 0 1 300px; min-width: 15rem; }
   #flt-pmg-wrap { flex: 0 1 200px; }
   .toolbar .count { margin-left: auto; }
+  #r-count { align-self: center; padding-top: 1.5rem; }
+  .toolbar-sub { align-items: center; padding-top: 12px; border-top: 1px solid var(--border-default-grey); }
+  .tb-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-left: auto; }
+  .qf { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .qf-title { margin-right: .25rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .qf-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .2rem .5rem .2rem .85rem; border: 1px solid var(--border-default-grey); border-radius: 1.5rem; background: transparent; color: var(--ink); font: inherit; font-size: .875rem; line-height: 1.5rem; cursor: pointer; }
+  .qf-btn::before { content: ''; width: .6rem; height: .6rem; margin-left: -.1rem; border-radius: 50%; background: var(--qf-c, var(--muted)); }
+  .qf-alert { --qf-c: #ce0500; }
+  .qf-warn { --qf-c: #d64d00; }
+  .qf-btn:hover { background: var(--row-hover); }
+  .qf-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .qf-btn[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 700; }
+  .qf-btn[aria-pressed="true"]::before { background: #fff; }
+  .qf-n { display: inline-block; min-width: 1.5rem; padding: 0 .45rem; border-radius: 1rem; background: var(--blue-tint); color: var(--blue); font-size: .75rem; font-weight: 700; line-height: 1.25rem; text-align: center; }
+  .qf-btn[aria-pressed="true"] .qf-n { background: #fff; }
+  .miss-line { margin-top: .15rem; font-size: .8125rem; color: var(--muted); }
   .ms { position: relative; }
   .ms-btn { text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .ms-panel {
@@ -920,9 +936,18 @@
       <button type="button" class="btn secondary" id="r-btn-filters">Filtre avancé</button>
       <button type="button" class="btn secondary" id="r-flt-reset" disabled>Réinitialiser les filtres</button>
       <div class="count" id="r-count" aria-live="polite"></div>
-      <button type="button" class="btn secondary" id="r-btn-bulk">Mettre à jour en bloc</button>
-      <button type="button" class="btn secondary" id="r-btn-export">Exporter (.csv)</button>
-      <button type="button" class="btn" id="r-btn-create">Créer un réserviste</button>
+    </div>
+    <div class="toolbar toolbar-sub">
+      <div class="qf" role="group" aria-label="Affichage rapide">
+        <span class="qf-title" aria-hidden="true">Affichage rapide</span>
+        <button type="button" class="qf-btn qf-alert" id="r-qf-nonemp" aria-pressed="false">Non employables <span class="qf-n" id="r-qf-nonemp-n"></span></button>
+        <button type="button" class="qf-btn qf-warn" id="r-qf-missing" aria-pressed="false">Données manquantes <span class="qf-n" id="r-qf-missing-n"></span></button>
+      </div>
+      <div class="tb-actions">
+        <button type="button" class="btn secondary" id="r-btn-bulk">Mettre à jour en bloc</button>
+        <button type="button" class="btn secondary" id="r-btn-export">Exporter (.csv)</button>
+        <button type="button" class="btn" id="r-btn-create">Créer un réserviste</button>
+      </div>
     </div>
 
     <div class="table-wrap">
@@ -1127,7 +1152,7 @@
       <div class="modal-header">
         <div style="min-width:0">
           <h2 class="modal-title" id="r-fmodal-title">Filtre avancé</h2>
-          <p class="modal-sub">Les critères se cumulent avec la recherche et les filtres Type R / Affectation. Cochez une valeur pour l’appliquer aussitôt.</p>
+          <p class="modal-sub">Les critères se cumulent avec la recherche et le filtre Affectation. Cochez une valeur pour l’appliquer aussitôt.</p>
         </div>
         <div class="modal-actions"><button class="round-btn" id="r-fmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
@@ -1439,7 +1464,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.5</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.11</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -5027,12 +5052,28 @@
   /* ---------- Liste : recherche, filtres ---------- */
   // a : colonne affichée en tags (Type R) ; b : Affectation ; tir/vmp/contrat : état de l'échéance ; grade, qual : Grade et Qualité judiciaire. Vide = tout afficher.
   var filters = { a: [], b: [], tir: [], vmp: [], contrat: [], grade: [], qual: [] };
-  var ADV_KEYS = ['tir', 'vmp', 'contrat', 'grade', 'qual'];
+  var ADV_KEYS = ['a', 'tir', 'vmp', 'contrat', 'grade', 'qual'];
   var filterSig = '';
   var MS = { a: { btn: 'flt-a-btn', panel: 'flt-a-panel', root: 'flt-a' }, b: { btn: 'flt-b-btn', panel: 'flt-b-panel', root: 'flt-b' } };
   function valuesOfCol(rec, col) { return col ? toList(rec.raw[col.id]) : []; }
   function advActive() { return ADV_KEYS.some(function (k) { return filters[k].length > 0; }); }
-  function filtersActive() { return filters.a.length > 0 || filters.b.length > 0 || advActive() || $('q').value.trim() !== ''; }
+  function filtersActive() { return filters.a.length > 0 || filters.b.length > 0 || advActive() || $('q').value.trim() !== '' || quick.nonemp || quick.missing; }
+  // Affichage rapide : réservistes non employables (échéance dépassée) ou dont des données sont manquantes.
+  // Données attendues : les colonnes ci-dessous (si elles existent dans la table) et toutes les dates d'expiration « Exp. … » (sauf PPE).
+  var quick = { nonemp: false, missing: false };
+  var MISSING_LABELS = ['Affectation', 'Grade', 'NID', 'Nigend', 'Civilité'];
+  function missingFields(raw, c) {
+    var cols = MISSING_LABELS.map(function (l) { return findCol(c.table, l); }).filter(Boolean);
+    (state.colsByTable[c.table] || []).filter(isExpCol).forEach(function (col) { if (cols.indexOf(col) === -1 && !/ppe/.test(norm(col.label + ' ' + displayLabel(col)))) cols.push(col); });
+    return cols.filter(function (col) { var v = raw[col.id]; return emptyVal(v) || (typeof v === 'string' && !v.trim()); }).map(function (col) { return displayLabel(col); });
+  }
+  function renderQuick(c) {
+    var nNon = 0, nMiss = 0;
+    state.records.forEach(function (r) { if (expiredLabels(r.raw, c).length) nNon++; if (missingFields(r.raw, c).length) nMiss++; });
+    $('qf-nonemp-n').textContent = nNon; $('qf-missing-n').textContent = nMiss;
+    $('qf-nonemp').setAttribute('aria-pressed', String(quick.nonemp)); $('qf-missing').setAttribute('aria-pressed', String(quick.missing));
+  }
+  ['nonemp', 'missing'].forEach(function (k) { $('qf-' + k).addEventListener('click', function () { quick[k] = !quick[k]; renderList(); }); });
 
   function renderFilters(c) {
     var ta = tagCol(c), cb = findCol(c.table, 'Affectation');
@@ -5052,7 +5093,7 @@
         return '<label class="ms-opt"><input type="checkbox" value="' + esc(v) + '"' + (filters.b.indexOf(v) !== -1 ? ' checked' : '') + '> <span>' + esc(v) + '</span></label>';
       }).join('') : '<p class="ms-empty">Aucune affectation.</p>';
     }
-    $('flt-a-wrap').hidden = !ta; $('flt-b-wrap').hidden = !cb;
+    $('flt-a-wrap').hidden = true; $('flt-b-wrap').hidden = !cb; // filtre Type R retiré de la barre d'outils (filters.a reste vide)
     if (ta) $('flt-a-label').textContent = displayLabel(ta);
     var isType = ta && norm(ta.label) === 'type r', na = filters.a.length, nb = filters.b.length;
     $('flt-a-btn').textContent = na === 0 ? (isType ? 'Tous les types' : 'Toutes les valeurs') : (na === 1 ? filters.a[0] : na + (isType ? ' types sélectionnés' : ' valeurs sélectionnées'));
@@ -5081,13 +5122,14 @@
     $(m.root).addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); closeMs(key, true); } });
   });
   $('flt-reset').addEventListener('click', function () {
-    filters.a = []; filters.b = []; ADV_KEYS.forEach(function (k) { filters[k] = []; }); $('q').value = ''; filterSig = '';
+    filters.a = []; filters.b = []; ADV_KEYS.forEach(function (k) { filters[k] = []; }); quick.nonemp = quick.missing = false; $('q').value = ''; filterSig = '';
     Object.keys(MS).forEach(function (k) { closeMs(k, false); }); renderList();
   });
   document.addEventListener('mousedown', function (e) { Object.keys(MS).forEach(function (k) { if (!e.target.closest('#r-' + MS[k].root)) closeMs(k, false); }); });
 
-  /* ---------- Filtre avancé (état Tir/VMP/Contrat, Grade, Qualité judiciaire) ---------- */
+  /* ---------- Filtre avancé (Type de contrat, état Tir/VMP/Contrat, Grade, Qualité judiciaire) ---------- */
   var ADV_GROUPS = [
+    { key: 'a', title: 'Type de contrat', kind: 'col', label: 'Type R' },
     { key: 'tir', title: 'État Tir', kind: 'state' },
     { key: 'vmp', title: 'État VMP', kind: 'state' },
     { key: 'contrat', title: 'État Contrat', kind: 'state' },
@@ -5202,13 +5244,15 @@
 
   function renderList() {
     var c = cfg(), q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [], sCols = terms.length ? searchColumns(c) : [];
-    renderFilters(c);
+    renderFilters(c); renderQuick(c);
     var ta = tagCol(c), cb = findCol(c.table, 'Affectation'), gradeCol = findCol(c.table, 'Grade'), qualCol = findCol(c.table, 'Qualité jud');
     var all = state.records.map(function (r) { return { raw: r.raw, id: r.identity == null ? '' : String(r.identity), tag: r.tag }; }).filter(function (r) { return r.id || toList(r.tag).length; });
     var list = all
       .filter(function (r) { return !terms.length || matchesSearch(searchHay(r, sCols), terms); })
       .filter(function (r) { return !filters.a.length || valuesOfCol(r, ta).some(function (v) { return filters.a.indexOf(v) !== -1; }); })
       .filter(function (r) { return !filters.b.length || valuesOfCol(r, cb).some(function (v) { return filters.b.indexOf(v) !== -1; }); })
+      .filter(function (r) { return !quick.nonemp || expiredLabels(r.raw, c).length > 0; })
+      .filter(function (r) { return !quick.missing || missingFields(r.raw, c).length > 0; })
       .filter(function (r) { return !filters.tir.length || filters.tir.indexOf(recStateOf(r, c, 'tir')) !== -1; })
       .filter(function (r) { return !filters.vmp.length || filters.vmp.indexOf(recStateOf(r, c, 'vmp')) !== -1; })
       .filter(function (r) { return !filters.contrat.length || filters.contrat.indexOf(recStateOf(r, c, 'contrat')) !== -1; })
@@ -5221,7 +5265,7 @@
     $('count').textContent = list.length + (list.length > 1 ? ' réservistes' : ' réserviste') + (list.length !== all.length ? ' sur ' + all.length : '');
     $('rows').innerHTML = list.map(function (r, i) {
       return '<tr class="row-open" tabindex="0" data-i="' + i + '" aria-label="Ouvrir la fiche de ' + esc(r.id ? formatName(r.id) : 'ce réserviste') + '"><td class="name"><div class="name-line"><span>' + (r.id ? esc(formatName(r.id)) : '—') + '</span>' +
-        rowTags(r, c) + '</div></td><td class="end">' + flagsHtml(r.raw, c) + '</td></tr>';
+        rowTags(r, c) + '</div>' + (quick.missing ? '<div class="miss-line">Manquant : ' + esc(missingFields(r.raw, c).join(', ')) + '</div>' : '') + '</td><td class="end">' + flagsHtml(r.raw, c) + '</td></tr>';
     }).join('');
 
     var $s = $('state');
@@ -6411,7 +6455,18 @@
 
   /* ---------- Pages « Renouvellements » et « Avenants » : suivi des demandes en vue tableau (lecture seule) ---------- */
   // « Avenants » : table « Modifications contrats » (mutations, suspensions, démissions) ; « Renouvellements » : table « Renouvellement contrats ».
-  var VIEWS = { ren: { req: 'ren', q: '', col: '', dir: -1 }, ave: { req: 'mut', q: '', col: '', dir: -1 } };
+  // show : colonnes utiles au suivi, dans l'ordre d'affichage ([libellé de la colonne, titre affiché]) ; la recherche porte sur toutes les colonnes de la table.
+  // Si aucune de ces colonnes n'existe dans la table, toutes sont affichées.
+  var VIEWS = {
+    ren: { req: 'ren', q: '', col: '', dir: -1, show: [['Etat demande', 'État'], ['Ref. Nigend', 'Réserviste'], ['Nigend'], ['Affectation demandée', 'Groupement demandé'], ['Date de début nouveau contrat', 'Début du nouveau contrat'], ['Date de fin nouveau contrat', 'Fin du nouveau contrat'], ['Avis SRJ'], ['Créé le', 'Demande du']] },
+    ave: { req: 'mut', q: '', col: '', dir: -1, show: [['Etat demande', 'État'], ['Type'], ['Ref. Nigend', 'Réserviste'], ['Nigend'], ['Affectation demandée', 'Groupement demandé'], ['CRT souhaitée', 'CRT souhaitée'], ['Date effet', 'Date d’effet'], ['Suspension jusqu\'au', 'Jusqu’au'], ['N° avenant'], ['Date avenant', 'Date de l’avenant'], ['Avis SRJ'], ['Créé le', 'Demande du']] }
+  };
+  function viewCols(V, all) {
+    var out = [], names = {};
+    (V.show || []).forEach(function (s) { var k = norm(s[0]), c = all.filter(function (x) { return norm(x.label) === k; })[0]; if (c && out.indexOf(c) === -1) { out.push(c); names[c.id] = s[1] || c.label; } });
+    if (!out.length) all.forEach(function (c) { out.push(c); names[c.id] = c.label; });
+    return { cols: out, names: names };
+  }
   var STATE_BADGE = { 'a traiter': 'warning', 'en cours': 'info', 'acceptee': 'success', 'refusee': 'error' };
   // Badge DSFR d'état d'une demande : variante selon l'état, badge neutre pour un état inconnu.
   function reqStateTagHtml(label, state) {
@@ -6436,21 +6491,22 @@
       return;
     }
     var ec = findCol(d.table, 'Etat demande'), cols = (state.colsByTable[d.table] || []).slice().sort(function (a, b) { return (b === ec) - (a === ec); });
+    var vc = viewCols(V, cols), shown = vc.cols; // colonnes affichées (cols : toutes, pour la recherche)
     var q = norm(V.q.trim()), terms = q ? q.split(/\s+/) : [];
     var list = d.rows.filter(function (r) {
       if (!terms.length) return true;
       var hay = norm(cols.map(function (c) { return r[c.id] == null ? '' : textOfValue(c, r[c.id]); }).join(' '));
       return terms.every(function (t) { return hay.indexOf(t) !== -1; });
     });
-    var sc = V.col && cols.filter(function (c) { return c.id === V.col; })[0];
+    var sc = V.col && shown.filter(function (c) { return c.id === V.col; })[0];
     function sortVal(r) { var v = sc ? r[sc.id] : r.id; return typeof v === 'number' ? v : norm(String(v == null ? '' : v)); }
     list.sort(function (a, b) { var x = sortVal(a), y = sortVal(b); return (x < y ? -1 : x > y ? 1 : 0) * V.dir; });
     cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '');
-    thead.innerHTML = '<tr>' + cols.map(function (c) {
+    thead.innerHTML = '<tr>' + shown.map(function (c) {
       var on = sc && sc.id === c.id;
-      return '<th scope="col"><button type="button" data-sort="' + esc(c.id) + '">' + esc(c.label) + (on ? ' <span class="arrow">' + (V.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</button></th>';
+      return '<th scope="col"><button type="button" data-sort="' + esc(c.id) + '">' + esc(vc.names[c.id]) + (on ? ' <span class="arrow">' + (V.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</button></th>';
     }).join('') + '</tr>';
-    rows.innerHTML = list.map(function (r) { return '<tr>' + cols.map(function (c) { return '<td>' + viewCellHtml(c, r[c.id], d) + '</td>'; }).join('') + '</tr>'; }).join('');
+    rows.innerHTML = list.map(function (r) { return '<tr>' + shown.map(function (c) { return '<td>' + viewCellHtml(c, r[c.id], d) + '</td>'; }).join('') + '</tr>'; }).join('');
     stEl.hidden = !!list.length; if (!list.length) stEl.innerHTML = d.rows.length ? '<strong>Aucun résultat</strong>Aucune demande ne correspond à votre recherche.' : '<strong>Aucune demande</strong>La table est vide.';
   }
   function refreshView(key) { return REQ[VIEWS[key].req].loadData().then(function () { renderView(key); }); }
