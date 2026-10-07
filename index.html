@@ -193,6 +193,12 @@
   .stat-bar { display: inline-block; width: calc(100% - 3.5rem); height: .6rem; border-radius: .3rem; background: var(--blue-tint); vertical-align: middle; overflow: hidden; }
   .stat-bar > span { display: block; height: 100%; background: var(--blue); }
   .stat-pct { display: inline-block; width: 3.2rem; text-align: right; font-size: .8125rem; color: var(--muted); }
+  .gchart { display: flex; align-items: flex-end; gap: .35rem; height: 7.5rem; padding-top: .25rem; border-bottom: 1px solid var(--border-default-grey); }
+  .gc { flex: 1 1 0; max-width: 3.5rem; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; padding-bottom: 1.5rem; }
+  .gc-bar { display: block; width: 65%; max-width: 1.9rem; background: var(--blue); border-radius: .2rem .2rem 0 0; }
+  .gc:hover .gc-bar, .gc:focus .gc-bar { filter: brightness(1.25); }
+  .gc-n { font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1rem; }
+  .gc-l { position: absolute; bottom: .15rem; font-size: .75rem; color: var(--muted); white-space: nowrap; }
   #menu-res .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem .75rem; font-weight: 700; text-decoration: none; background-image: none; color: var(--text-default-grey, var(--ink)); }
   #menu-res .nav-row:hover { background: var(--row-hover); }
   #menu-res .nav-row[aria-current="page"] { background: var(--blue-tint); color: var(--blue); box-shadow: inset 2px 0 0 var(--blue); }
@@ -595,7 +601,7 @@
           </div>
           <div class="fr-header__service">
             <p class="fr-header__service-title">Division réserves jeunesse</p>
-            <p class="fr-header__service-tagline">Suivi de l’Emploi, du Recrutement, des VMP et de l’Instruction dans la Réserve · SERVIR</p>
+            <p class="fr-header__service-tagline">Suivi de l’Emploi, du Recrutement, des Visites médicales et de l’Instruction dans la Réserve · SERVIR</p>
           </div>
         </div>
         <div class="fr-header__tools">
@@ -628,7 +634,7 @@
                   <div class="fr-col-12 fr-col-lg-5">
                     <div class="nav-lead">
                       <p class="nav-lead__title">Suivi de la population</p>
-                      <p class="nav-lead__text" id="nav-res-baseline">Suivre les réservistes de la RGIF</p>
+                      <p class="nav-lead__text" id="nav-res-baseline">Consulter mes administrés et initier des démarches</p>
                       <a class="fr-btn fr-btn--secondary" href="#" target="_self" data-page="res">Accéder</a>
                     </div>
                   </div>
@@ -1433,7 +1439,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.5</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -6453,15 +6459,55 @@
   function pct(n, total) { return total ? Math.round(n * 1000 / total) / 10 : 0; }
   function statTile(label, value, sub, alert) { return '<div class="stat-tile' + (alert ? ' is-alert' : '') + '"><p class="stat-num">' + esc(value) + '</p><p class="stat-lbl">' + esc(label) + '</p>' + (sub ? '<p class="stat-sub">' + esc(sub) + '</p>' : '') + '</div>'; }
   // Répartition d'une colonne (Choix ou texte) : une ligne par valeur, triée par effectif décroissant, avec barre proportionnelle.
-  function distData(title, c, label) {
+  function distData(title, c, label, map) {
     var col = findCol(c.table, label); if (!col) return null;
     var counts = {}, total = state.records.length;
-    state.records.forEach(function (r) { var v = r.raw[col.id], k = emptyVal(v) ? '' : String(textOfValue(col, v)); counts[k] = (counts[k] || 0) + 1; });
+    state.records.forEach(function (r) { var v = r.raw[col.id], k = emptyVal(v) ? '' : String(textOfValue(col, v)); if (map) k = map(k); counts[k] = (counts[k] || 0) + 1; });
     return { title: title, rows: Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (k) { return { label: k, count: counts[k], pct: pct(counts[k], total) }; }) };
   }
+  // Répartition par sexe : colonne « Sexe » si elle existe, sinon déduite de la civilité (M. → Hommes, Mme/Mlle → Femmes).
+  function sexDist(c) {
+    var lab = findCol(c.table, 'Sexe') ? 'Sexe' : 'Civilité';
+    return distData('Par sexe', c, lab, function (k) {
+      var n = norm(k).replace(/\./g, '');
+      if (n === 'm' || n === 'mr' || n === 'monsieur' || n === 'h' || n === 'homme' || n === 'masculin') return 'Hommes';
+      if (n === 'mme' || n === 'mlle' || n === 'madame' || n === 'mademoiselle' || n === 'f' || n === 'femme' || n === 'feminin') return 'Femmes';
+      return k;
+    });
+  }
   function frPct(p) { return String(p).replace('.', ',') + ' %'; }
+  // Grades : histogramme compact (une colonne par grade, du moins au plus élevé ; grades inconnus ensuite, « Non renseigné » en dernier).
+  var GRADE_ORDER = ['GAV', 'MDL', 'BRI', 'BC', 'MDC', 'ADJ', 'ADC', 'MAJ', 'SLT', 'LTN', 'CNE', 'CEN', 'CBA', 'LCL', 'COL'];
+  function gradeDist(c) {
+    var d = distData('Par grade', c, 'Grade'); if (!d) return null;
+    var rank = function (l) { if (!l) return 999; var i = GRADE_ORDER.indexOf(String(l).toUpperCase().replace(/\s+/g, '')); return i < 0 ? 500 : i; };
+    d.rows.sort(function (a, b) { return rank(a.label) - rank(b.label) || b.count - a.count; });
+    d.chart = true; return d;
+  }
+  function distChartLabel(d) { return d.rows.map(function (r) { return (r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')'; }).join(', '); }
+  // Histogramme en PNG (pour le PDF : html2canvas ne rend pas bien les barres imbriquées) ; l = largeur en px CSS, h = hauteur.
+  function distChartPng(d, W, H) {
+    var K = 3, cv = document.createElement('canvas'); cv.width = W * K; cv.height = H * K;
+    var g = cv.getContext('2d'); g.scale(K, K); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+    var n = d.rows.length, max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1, top = 16, bot = 18, plot = H - top - bot, slot = Math.min(56, (W - 8) / n), bw = Math.min(30, slot * .6), x0 = 4;
+    g.strokeStyle = '#ccc'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, top + plot + .5); g.lineTo(W, top + plot + .5); g.stroke();
+    g.textAlign = 'center';
+    d.rows.forEach(function (r, i) {
+      var cx = x0 + slot * i + slot / 2, bh = Math.max(2, Math.round(plot * r.count / max));
+      g.fillStyle = '#000091'; g.fillRect(cx - bw / 2, top + plot - bh, bw, bh);
+      g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'bottom'; g.fillText(String(r.count), cx, top + plot - bh - 2);
+      g.font = '10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(r.label || '—', cx, top + plot + 4);
+    });
+    return cv.toDataURL('image/png');
+  }
   function distCard(d) {
     if (!d) return '';
+    if (d.chart) {
+      var max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1;
+      return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="gchart" role="img" aria-label="' + esc(d.title + ' : ' + distChartLabel(d)) + '">' + d.rows.map(function (r) {
+        return '<div class="gc" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '"><span class="gc-n">' + r.count + '</span><span class="gc-bar" style="height:' + Math.max(3, Math.round(r.count / max * 100)) + '%"></span><span class="gc-l">' + (r.label ? esc(r.label) : '—') + '</span></div>';
+      }).join('') + '</div></section>';
+    }
     var rows = d.rows.map(function (r) {
       return '<tr><th scope="row">' + (r.label ? esc(r.label) : '<span class="is-empty">Non renseigné</span>') + '</th><td class="stat-n">' + r.count + '</td><td class="stat-bar-cell"><span class="stat-bar" aria-hidden="true"><span style="width:' + r.pct + '%"></span></span> <span class="stat-pct">' + frPct(r.pct) + '</span></td></tr>';
     }).join('');
@@ -6476,7 +6522,7 @@
     return {
       n: n, nonEmp: nonEmp, ren: openRequests('ren'), ave: openRequests('mut'),
       echCols: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) { return { id: col.id, label: displayLabel(col) }; }),
-      dists: [distData('Par type de réserviste', c, 'Type R'), distData('Par grade', c, 'Grade'), distData('Par affectation', c, 'Affectation')].filter(Boolean),
+      dists: [distData('Par type de réserviste', c, 'Type R'), gradeDist(c), sexDist(c), distData('Par affectation', c, 'Affectation')].filter(Boolean),
       ech: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) {
         var e = 0, s = 0, ok = 0, none = 0;
         recs.forEach(function (r) { var v = r.raw[col.id], st = expiryState(v); if (typeof v !== 'number') none++; else if (st === 'expired') e++; else if (st === 'soon') s++; else ok++; });
@@ -6608,6 +6654,7 @@
     var ind = [['Réservistes', S.n], ['Non employables (échéance dépassée)', S.nonEmp + ' (' + frPct(pct(S.nonEmp, S.n)) + ')'], ['Demandes de renouvellement en cours', S.ren == null ? '—' : S.ren], ['Demandes d’avenants en cours', S.ave == null ? '—' : S.ave]];
     out += h('Indicateurs') + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + ind.map(function (r, i) { return '<tr><td style="' + td + 'width:75%;">' + esc(r[0]) + '</td><td style="' + td + num + 'font-weight:bold;' + (i === 1 && S.nonEmp > 0 ? 'color:#ce0500;' : '') + '">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
     S.dists.forEach(function (d) {
+      if (d.chart) { out += h(d.title) + '<img alt="" src="' + distChartPng(d, 620, 110) + '" width="620" height="110" style="display:block;">'; return; }
       out += h(d.title) + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + d.rows.map(function (r) {
         return '<tr><td style="' + td + 'width:30%;">' + (r.label ? esc(r.label) : 'Non renseigné') + '</td><td style="' + td + num + 'width:8%;font-weight:bold;">' + r.count + '</td>' +
           '<td style="' + td + '"><table style="width:62%;border-collapse:collapse;display:inline-table;vertical-align:middle;"><tr><td style="padding:0;border:0;height:8px;width:' + r.pct + '%;background:#000091;"></td><td style="padding:0;border:0;height:8px;background:#e3e3fd;"></td></tr></table> <span style="' + S8 + 'color:#555;">' + frPct(r.pct) + '</span></td></tr>';
@@ -6912,11 +6959,11 @@
     var okSrc = !!ok && !!mt && !!((c.identity && colMeta(c.table, c.identity)) || (nom && pre));
     $('recap-sum').innerHTML = okSrc ? '<span class="tag green">Sources trouvées</span>' : '<span class="tag red">À vérifier</span>';
   }
-  // Baseline du menu déroulant : « Suivre les N réservistes de la RGIF » (N = nombre de lignes de la table des réservistes).
+  // Baseline du menu déroulant : « Consulter mes N administrés et initier des démarches » (N = nombre de lignes de la table des réservistes).
   function updateNavCount() {
     var el = document.getElementById('nav-res-baseline'); if (!el) return;
     var n = state.read && !state.read.error ? state.records.length : null;
-    el.textContent = n == null ? 'Suivre les réservistes de la RGIF' : 'Suivre ' + (n > 1 ? 'les ' + n + ' réservistes' : 'le ' + n + ' réserviste') + ' de la RGIF';
+    el.textContent = n == null ? 'Consulter mes administrés et initier des démarches' : 'Consulter ' + (n > 1 ? 'mes ' + n + ' administrés' : 'mon administré') + ' et initier des démarches';
   }
   function renderAll() {
     renderList(); renderAdminForm(); renderRecap(); updateNavCount(); renderStats();
