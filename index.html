@@ -187,6 +187,7 @@
   .stat-sub { margin: .25rem 0 0; font-size: .8125rem; color: var(--muted); }
   .stat-cards { display: grid; grid-auto-flow: dense; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; align-items: start; }
   .stat-card { position: relative; border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; }
+  .stat-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
   .stat-card.stat-wide { grid-column: 1 / -1; }
   .stat-card h2 { margin: 0 0 .75rem; }
   .stat-table { width: 100%; border-collapse: collapse; }
@@ -270,6 +271,16 @@
   th.v-actions, td.v-actions { width: 1%; white-space: nowrap; }
   td.v-actions .icon-btn { width: 2rem; height: 2rem; }
   .v-confirm { margin-right: .35rem; font-size: .8125rem; font-weight: 700; color: var(--text-default-error); }
+  /* Back office : rubriques (onglets) ; chaque bloc porte data-grp et seul le groupe choisi est affiché (les blocs restent à leur place dans le DOM). */
+  .bo-tabs { display: flex; flex-wrap: wrap; gap: .25rem; margin: 0 0 1.5rem; border-bottom: 1px solid var(--border-default-grey); position: sticky; top: 0; z-index: 5; background: var(--bg); }
+  .bo-tab { appearance: none; background: none; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; padding: .7rem 1rem; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; }
+  .bo-tab:hover { background: var(--row-hover); }
+  .bo-tab:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .bo-tab[aria-selected="true"] { border-bottom-color: var(--blue); color: var(--blue); }
+  #page-bo .badge-num { display: none; } /* les rubriques structurent déjà le back office : plus de numéros d'étape */
+  .bo-tab-hint { margin: -.75rem 0 1.25rem; color: var(--muted); font-size: .875rem; }
+  #page-bo[data-tab] [data-grp] { display: none; }
+  #page-bo[data-tab="accueil"] [data-grp="accueil"], #page-bo[data-tab="courriels"] [data-grp="courriels"], #page-bo[data-tab="documents"] [data-grp="documents"], #page-bo[data-tab="reglages"] [data-grp="reglages"] { display: block; }
   .miss-line { margin-top: .15rem; font-size: .8125rem; color: var(--muted); }
   .ms { position: relative; }
   .ms-btn { text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -1522,7 +1533,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.24</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.31</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -6769,12 +6780,12 @@
   function signKind(d, r) { var ec = findCol(d.table, 'Etat demande'); if (!ec) return ''; var n = norm(String(r[ec.id] == null ? '' : r[ec.id])); return /signature.*ro1/.test(n) ? 'ro1' : /signature.*drj/.test(n) ? 'drj' : ''; }
   function actionsCol(V, d) {
     return { title: 'Actions', cls: 'v-actions', cell: function (r) {
-      if (V.confirmId === r.id) return '<span class="v-confirm">Supprimer ?</span><button type="button" class="icon-btn danger" data-vact="del-ok" data-id="' + r.id + '" title="Confirmer la suppression" aria-label="Confirmer la suppression de cette demande"><span class="fr-icon-delete-fill" aria-hidden="true"></span></button>' +
+      if (V.confirmId === r.id) return '<span class="v-confirm">Supprimer ?</span><button type="button" class="icon-btn" data-vact="del-ok" data-id="' + r.id + '" title="Confirmer la suppression" aria-label="Confirmer la suppression de cette demande"><span class="fr-icon-delete-fill" aria-hidden="true"></span></button>' +
         '<button type="button" class="icon-btn" data-vact="del-no" data-id="' + r.id + '" title="Annuler" aria-label="Annuler la suppression"><span class="fr-icon-close-line" aria-hidden="true"></span></button>';
       return (signKind(d, r)
         ? '<button type="button" class="icon-btn" data-vact="sign" data-kind="' + signKind(d, r) + '" data-id="' + r.id + '" title="' + (signKind(d, r) === 'drj' ? 'Verser le document contre-signé' : 'Signer : générer le contrat, déposer le contrat signé') + '" aria-label="Signer la demande"><span class="fr-icon-pen-nib-line" aria-hidden="true"></span></button>'
         : '<button type="button" class="icon-btn" data-vact="edit" data-id="' + r.id + '" title="Modifier la demande" aria-label="Modifier la demande"><span class="fr-icon-edit-line" aria-hidden="true"></span></button>') +
-        '<button type="button" class="icon-btn danger" data-vact="del" data-id="' + r.id + '" title="Supprimer la demande" aria-label="Supprimer la demande"><span class="fr-icon-delete-line" aria-hidden="true"></span></button>';
+        '<button type="button" class="icon-btn" data-vact="del" data-id="' + r.id + '" title="Supprimer la demande" aria-label="Supprimer la demande"><span class="fr-icon-delete-line" aria-hidden="true"></span></button>';
     } };
   }
   // Renouvellements : actions (éditer, supprimer), réserviste, Nigend, affectation, dates du contrat (début → fin) et état de la demande.
@@ -6791,11 +6802,11 @@
     one('État de la demande', ec);
     return out;
   }
-  // Avenants : actions, réserviste, Nigend, affectation (groupement demandé), date d'effet et état de la demande.
+  // Avenants : actions, réserviste, Nigend, affectation (groupement demandé), type de demande, date d'effet et état de la demande.
   function aveCols(d, V) {
     var f = function (l) { return findCol(d.table, l); }, out = [actionsCol(V, d)];
     function one(title, col) { if (col) out.push({ title: title, sort: col, cell: function (r) { return viewCellHtml(col, r[col.id], d); } }); }
-    one('Réserviste', f('Ref. Nigend')); one('Nigend', f('Nigend')); one('Affectation', f('Affectation demandée')); one('Date d’effet', f('Date effet')); one('État de la demande', f('Etat demande'));
+    one('Réserviste', f('Ref. Nigend')); one('Nigend', f('Nigend')); one('Affectation', f('Affectation demandée')); one('Type de demande', f('Type')); one('Date d’effet', f('Date effet')); one('État de la demande', f('Etat demande'));
     return out;
   }
   function onRequestsChanged() { renderView('ren'); renderView('ave'); if (window.__page === 'res-stat') renderStats(); }
@@ -6898,8 +6909,8 @@
   // grades inconnus ensuite (bloc « Autres »), « Non renseigné » en dernier.
   var GRADE_BLOCKS = [
     { name: 'Militaires du rang', grades: ['GAV', 'GA1', 'GA2', 'BRI', 'BRC'] },
-    { name: 'Sous-officiers', grades: ['GND', 'MDC', 'ADJ', 'ADC', 'MAJ'] },
-    { name: 'Officiers', grades: ['ASP', 'SLT', 'LTN', 'CNE', 'CEN', 'LCL', 'COL'] }
+    { name: 'Sous-officiers', grades: ['GND', 'MDL', 'MDC', 'ADJ', 'ADC', 'MAJ'] },
+    { name: 'Officiers', grades: ['ASP', 'SLT', 'LTN', 'CNE', 'CEN', 'CDT', 'LCL', 'COL', 'AUM'] }
   ];
   function gradePos(label) { // [bloc, rang] ; bloc 3 : autres grades ; 4 : non renseigné
     if (!label) return [4, 0];
@@ -7058,7 +7069,14 @@
       (S.ave == null ? statTile('Demandes d’avenants en cours', '—', '') : statTileBtn('mut', 'Demandes d’avenants en cours', S.ave)) + '</div>';
     var detail = '';
     if (statReq) { var rd = reqStateDist(statReq, statReq === 'ren' ? 'Demandes de renouvellement en cours' : 'Demandes d’avenants en cours'); if (rd) detail = '<div id="stat-req-detail" style="margin:-.5rem 0 1.5rem">' + (rd.rows.length ? distCard(rd) : '<section class="stat-card"><h2 class="fr-h6">' + esc(rd.title) + '</h2><p class="stat-hint">Aucune demande en cours.</p></section>') + '</div>'; }
-    return tiles + detail + '<div class="stat-cards">' + S.dists.map(distCard).join('') + (S.ech.length ? echCardHtml(S) : '') + '</div>';
+    // « Par sexe » est empilé sous « Par type de réserviste » (même colonne).
+    var cards = [], di = 0;
+    while (di < S.dists.length) {
+      var dd = S.dists[di], nx = S.dists[di + 1];
+      if (dd.title === 'Par type de réserviste' && nx && nx.title === 'Par sexe') { cards.push('<div class="stat-col">' + distCard(dd) + distCard(nx) + '</div>'); di += 2; }
+      else { cards.push(distCard(dd)); di++; }
+    }
+    return tiles + detail + '<div class="stat-cards">' + cards.join('') + (S.ech.length ? echCardHtml(S) : '') + '</div>';
   }
   function renderStats() { var el = $('stats-body'); if (el) el.innerHTML = statsHtml(); }
   function refreshStats() { return loadRequestsData().then(renderStats); }
@@ -9330,8 +9348,48 @@
     [window.WEL && window.WEL.cancel, window.PMG && window.PMG.cancel, window.RES && window.RES.cancel, window.RSV && window.RSV.cancelAdmin].forEach(function (fn) { if (fn) fn(); });
     gErr.hidden = true; gSaved.hidden = true;
   });
-  // Numérotation des étapes continue d'une page à l'autre.
-  Array.prototype.slice.call(wrap.querySelectorAll('.badge-num')).forEach(function (b, i) { b.textContent = String(i + 1); });
+  // Rubriques : le back office est découpé en quatre onglets (Accueil, Courriels, Documents et contrats, Réglages avancés) au lieu d'une seule longue page.
+  // Les blocs restent dans leurs conteneurs d'origine (leurs écouteurs en dépendent) : data-grp les rattache à une rubrique, le CSS masque les autres.
+  function sumOf(d) { return d.querySelector(':scope > summary'); }
+  function setGrp(el, g) { if (el) el.setAttribute('data-grp', g); }
+  Array.prototype.forEach.call(wrap.querySelectorAll('#w-view-admin > section.step'), function (e) { setGrp(e, 'accueil'); });
+  setGrp(document.getElementById('bo-common-mail'), 'courriels');
+  Array.prototype.forEach.call(pmgAdmin.querySelectorAll(':scope > section.step'), function (e) {
+    var h = e.querySelector('h2'), t = h ? h.textContent : '';
+    if (/Envoi des courriels/.test(t)) { setGrp(e, 'courriels'); h.textContent = 'Envoi des courriels (réglages communs)'; }
+    else { setGrp(e, 'documents'); if (h) h.textContent = 'Candidats : lettres d’incorporation et de rejet, contrat ESR'; }
+  });
+  var common = document.querySelector('#bo-common-mail h2'); if (common) common.textContent = 'Modèles de courriels de réservation';
+  setGrp(sources, 'reglages');
+  Array.prototype.forEach.call(wrap.querySelectorAll('details.bo-advanced'), function (d) {
+    var sm = sumOf(d), t = sm ? sm.textContent : '';
+    if (/plan prévisionnel|contrats et courriels/.test(t)) { setGrp(d, 'documents'); return; }
+    setGrp(d, 'reglages');
+    if (sm) sm.textContent = t.replace(/^Options avancées · /, '').replace(/Réservistes RO1\/RS\/RC : source, colonnes de la fiche/, 'Réservistes · source et colonnes de la fiche').replace(/^Candidats : /, 'Candidats · ').replace(/^Réservations : tables/, 'Réservations · tables');
+  });
+  var TABS = [['accueil', 'Accueil', 'Introduction, compteurs et articles de la page Bienvenue.'], ['courriels', 'Courriels', 'Modèles et réglages des courriels préparés depuis les fiches et les réservations.'],
+    ['documents', 'Documents et contrats', 'Modèles HTML convertis en PDF : lettres, ESR, PPE, contrats et avenants.'], ['reglages', 'Réglages avancés', 'Sources de données et colonnes : à modifier seulement si une colonne est introuvable.']];
+  var tabsEl = document.createElement('div'); tabsEl.className = 'bo-tabs'; tabsEl.setAttribute('role', 'tablist'); tabsEl.setAttribute('aria-label', 'Rubriques du back office');
+  tabsEl.innerHTML = TABS.map(function (t) { return '<button type="button" class="bo-tab" role="tab" id="bo-tab-' + t[0] + '" data-botab="' + t[0] + '" aria-selected="false">' + t[1] + '</button>'; }).join('');
+  var tabHint = document.createElement('p'); tabHint.className = 'bo-tab-hint'; tabHint.id = 'bo-tab-hint';
+  head.insertAdjacentElement('afterend', tabsEl); tabsEl.insertAdjacentElement('afterend', tabHint);
+  function showBoTab(g, focus) {
+    if (!TABS.some(function (t) { return t[0] === g; })) g = 'accueil';
+    pageBo.setAttribute('data-tab', g);
+    Array.prototype.forEach.call(tabsEl.querySelectorAll('.bo-tab'), function (b) { var on = b.getAttribute('data-botab') === g; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+    tabHint.textContent = TABS.filter(function (t) { return t[0] === g; })[0][2];
+    // Numérotation des étapes : reprend à 1 dans chaque rubrique.
+    var n = 0; Array.prototype.forEach.call(wrap.querySelectorAll('[data-grp="' + g + '"] .badge-num'), function (b) { b.textContent = String(++n); });
+    Array.prototype.forEach.call(wrap.querySelectorAll('.CodeMirror'), function (c) { if (c.CodeMirror) c.CodeMirror.refresh(); }); // éditeurs Markdown montés pendant que leur bloc était masqué
+  }
+  tabsEl.addEventListener('click', function (e) { var b = e.target.closest('[data-botab]'); if (b) showBoTab(b.getAttribute('data-botab')); });
+  tabsEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var ids = TABS.map(function (t) { return t[0]; }), i = ids.indexOf(pageBo.getAttribute('data-tab')); e.preventDefault();
+    showBoTab(ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length], true);
+  });
+  window.__showBoTab = showBoTab;
+  showBoTab('accueil');
 
   var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
   document.querySelector('.fr-header').addEventListener('click', function (e) {
