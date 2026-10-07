@@ -1542,7 +1542,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.33</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.34</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -3787,7 +3787,7 @@
     { title: 'Renseignements professionnels', labels: ['Profession'] },
     { title: 'Commentaires', labels: ['Commentaires'] }
   ];
-  var CREATE_REQUIRED = ['NOM', 'Prénom', 'DDN', 'Email', 'N° candidature', 'Affectation'];
+  var CREATE_REQUIRED = ['NOM', 'Prénom', 'DDN', 'Email', 'N° candidature', 'Affectation', 'Origine'];
   state.create = null; // { values, error, warn, confirmDup, busy }
   state.bulk = null;   // { mode, psyResult, psyDate, vemiResult, vemiDate, vemiValidity, nigends, busy, error, warn, confirm, result }
   state.importState = { busy: false, msg: null }; // import de candidats en bloc depuis un .csv (back office)
@@ -9464,6 +9464,101 @@
   document.querySelector('.fr-header').addEventListener('click', function (e) {
     // Ni le bouton « Paramètres d'affichage », ni le menu de navigation (burger + liens + fermeture) ne comptent comme un clic sur l'en-tête.
     if (e.target.closest('.fr-header__tools') || e.target.closest('#modal-header-menu') || e.target.closest('#btn-header-menu')) return;
+    clearTimeout(hdrTimer);
+    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
+    hdrClicks++;
+    if (hdrClicks === 1) {
+      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
+      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
+      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+rnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+header-menu')) return;
+    clearTimeout(hdrTimer);
+    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
+    hdrClicks++;
+    if (hdrClicks === 1) {
+      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
+      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
+      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+w.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+sest('#btn-header-menu')) return;
     clearTimeout(hdrTimer);
     hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
     hdrClicks++;
