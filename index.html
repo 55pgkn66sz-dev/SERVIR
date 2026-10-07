@@ -200,6 +200,15 @@
   .stat-bar { display: inline-block; width: calc(100% - 3.5rem); height: .6rem; border-radius: .3rem; background: var(--blue-tint); vertical-align: middle; overflow: hidden; }
   .stat-bar > span { display: block; height: 100%; background: var(--blue); }
   .stat-pct { display: inline-block; width: 3.2rem; text-align: right; font-size: .8125rem; color: var(--muted); }
+  .pie-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+  .pie { flex: none; }
+  .pie path, .pie circle { stroke: var(--bg); stroke-width: 2; }
+  .pie path:hover, .pie circle:hover { filter: brightness(1.15); }
+  .pie-leg { flex: 1 1 11rem; margin: 0; padding: 0; list-style: none; }
+  .pie-leg li { display: grid; grid-template-columns: .75rem 1fr auto 3.2rem; align-items: center; gap: .5rem; padding: .2rem 0; font-size: .875rem; }
+  .pie-sw { width: .75rem; height: .75rem; border-radius: 2px; }
+  .pie-n { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pie-p { text-align: right; color: var(--muted); font-size: .8125rem; }
   .gchart { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem 1.5rem; }
   .gc-group { display: flex; flex-direction: column; min-width: min-content; }
   .gc-bars { display: flex; align-items: flex-end; gap: .35rem; height: 7.5rem; padding-top: .25rem; border-bottom: 1px solid var(--border-default-grey); }
@@ -1533,7 +1542,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.31</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.33</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -6905,6 +6914,26 @@
     });
   }
   function frPct(p) { return String(p).replace('.', ',') + ' %'; }
+  // Tranches d'âge : échelle ordonnée, donc histogramme (une colonne par tranche, toutes affichées même vides). Âge : colonne « Age », sinon calculé depuis la date de naissance.
+  var AGE_BANDS = [['-18', 0, 17], ['18-25', 18, 25], ['26-35', 26, 35], ['36-45', 36, 45], ['+45', 46, 200]];
+  function ageOf(raw, ac, dc) {
+    var v = ac ? raw[ac.id] : null; if (typeof v === 'number' && isFinite(v)) return Math.floor(v);
+    var b = dc ? raw[dc.id] : null; if (typeof b !== 'number') return null;
+    var t = new Date(b * 1000), n = new Date(), a = n.getUTCFullYear() - t.getUTCFullYear(), m = n.getUTCMonth() - t.getUTCMonth();
+    if (m < 0 || (m === 0 && n.getUTCDate() < t.getUTCDate())) a--;
+    return a;
+  }
+  function ageDist(c) {
+    var ac = findCol(c.table, 'Age'), dc = findCol(c.table, 'DDN'); if (!ac && !dc) return null;
+    var counts = AGE_BANDS.map(function () { return 0; }), none = 0, total = state.records.length;
+    state.records.forEach(function (r) {
+      var a = ageOf(r.raw, ac, dc); if (a == null || a < 0) { none++; return; }
+      for (var i = 0; i < AGE_BANDS.length; i++) if (a >= AGE_BANDS[i][1] && a <= AGE_BANDS[i][2]) { counts[i]++; return; }
+    });
+    var rows = AGE_BANDS.map(function (b, i) { return { label: b[0], count: counts[i], pct: pct(counts[i], total) }; });
+    if (none) rows.push({ label: '', count: none, pct: pct(none, total) });
+    return { title: 'Par tranche d’âge', rows: rows, pie: true };
+  }
   // Grades : histogramme compact, une colonne par grade présent, regroupées en trois blocs (militaires du rang, sous-officiers, officiers) ;
   // grades inconnus ensuite (bloc « Autres »), « Non renseigné » en dernier.
   var GRADE_BLOCKS = [
@@ -6939,7 +6968,7 @@
       var gw = Math.max(grp.rows.length * slot, d.groups ? g.measureText(grp.name).width + 8 : 0), x0 = x + (gw - grp.rows.length * slot) / 2;
       g.strokeStyle = '#ccc'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, top + plot + .5); g.lineTo(x + gw, top + plot + .5); g.stroke();
       grp.rows.forEach(function (r, i) {
-        var cx = x0 + slot * i + slot / 2, bh = Math.max(2, Math.round((plot - lab) * r.count / max));
+        var cx = x0 + slot * i + slot / 2, bh = r.count ? Math.max(2, Math.round((plot - lab) * r.count / max)) : 0;
         g.fillStyle = '#000091'; g.fillRect(cx - bw / 2, top + plot - lab - bh, bw, bh);
         g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'bottom'; g.fillText(String(r.count), cx, top + plot - lab - bh - 2);
         g.font = '10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(r.label || '—', cx, top + plot - lab + 4);
@@ -6949,14 +6978,53 @@
     });
     return cv.toDataURL('image/png');
   }
+  // Camembert (tranches d'âge) : rampe ordinale d'un seul bleu (clair → foncé, dans l'ordre des tranches), gris pour « non renseigné » ; effectifs et pourcentages dans la légende.
+  var PIE_COLORS = ['#8585f6', '#6a6af4', '#3f3fd6', '#1f1fb0', '#000091'], PIE_NONE = '#b5b4ac';
+  function pieColor(i, r) { return r.label === '' ? PIE_NONE : PIE_COLORS[i % PIE_COLORS.length]; }
+  function pieLabel(r) { return r.label ? r.label + ' ans' : 'Non renseigné'; }
+  function piePath(cx, cy, R, a0, a1) { // angles en radians depuis le haut, sens horaire
+    var x0 = cx + R * Math.sin(a0), y0 = cy - R * Math.cos(a0), x1 = cx + R * Math.sin(a1), y1 = cy - R * Math.cos(a1);
+    return 'M' + cx + ' ' + cy + ' L' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + R + ' ' + R + ' 0 ' + (a1 - a0 > Math.PI ? 1 : 0) + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' Z';
+  }
+  function pieCard(d) {
+    var total = d.rows.reduce(function (n, r) { return n + r.count; }, 0), a = 0, parts = '';
+    d.rows.forEach(function (r, i) {
+      if (!r.count) return;
+      var a1 = a + 2 * Math.PI * r.count / total, tip = '<title>' + esc(pieLabel(r) + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '</title>';
+      parts += r.count === total ? '<circle cx="60" cy="60" r="58" fill="' + pieColor(i, r) + '">' + tip + '</circle>' : '<path d="' + piePath(60, 60, 58, a, a1) + '" fill="' + pieColor(i, r) + '">' + tip + '</path>';
+      a = a1;
+    });
+    var label = d.title + ' : ' + d.rows.map(function (r) { return pieLabel(r) + ' ' + r.count + ' (' + frPct(r.pct) + ')'; }).join(', ');
+    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="pie-wrap"><svg class="pie" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="' + esc(label) + '">' + (total ? parts : '') + '</svg>' +
+      '<ul class="pie-leg">' + d.rows.map(function (r, i) { return '<li><span class="pie-sw" style="background:' + pieColor(i, r) + '" aria-hidden="true"></span><span class="pie-l">' + esc(pieLabel(r)) + '</span><span class="pie-n">' + r.count + '</span><span class="pie-p">' + frPct(r.pct) + '</span></li>'; }).join('') + '</ul></div></section>';
+  }
+  function distPiePng(d, W, H) { // même camembert en PNG pour le PDF
+    var K = 3, cv = document.createElement('canvas'); cv.width = W * K; cv.height = H * K;
+    var g = cv.getContext('2d'); g.scale(K, K); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+    var total = d.rows.reduce(function (n, r) { return n + r.count; }, 0), R = Math.min(60, H / 2 - 6), cx = R + 8, cy = H / 2, a = -Math.PI / 2;
+    d.rows.forEach(function (r, i) {
+      if (!r.count) return;
+      var a1 = a + 2 * Math.PI * r.count / total; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R, a, a1); g.closePath();
+      g.fillStyle = pieColor(i, r); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); a = a1;
+    });
+    var x = cx + R + 40, y0 = cy - d.rows.length * 9;
+    d.rows.forEach(function (r, i) {
+      var y = y0 + i * 18 + 9; g.fillStyle = pieColor(i, r); g.fillRect(x, y - 5, 10, 10);
+      g.fillStyle = '#000'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '11px Arial, Helvetica, sans-serif'; g.fillText(pieLabel(r), x + 18, y);
+      g.font = 'bold 11px Arial, Helvetica, sans-serif'; g.textAlign = 'right'; g.fillText(String(r.count), x + 140, y);
+      g.font = '11px Arial, Helvetica, sans-serif'; g.fillStyle = '#555'; g.fillText(frPct(r.pct), x + 190, y);
+    });
+    return cv.toDataURL('image/png');
+  }
   function distCard(d) {
     if (!d) return '';
+    if (d.pie) return pieCard(d);
     if (d.chart) {
       var max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1;
       function col(r) {
-        return '<div class="gc" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '"><span class="gc-n">' + r.count + '</span><span class="gc-bar" style="height:' + Math.max(3, Math.round(r.count / max * 100)) + '%"></span><span class="gc-l">' + (r.label ? esc(r.label) : '—') + '</span></div>';
+        return '<div class="gc" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '"><span class="gc-n">' + r.count + '</span><span class="gc-bar" style="height:' + (r.count ? Math.max(3, Math.round(r.count / max * 100)) : 0) + '%"></span><span class="gc-l">' + (r.label ? esc(r.label) : '—') + '</span></div>';
       }
-      return '<section class="stat-card stat-wide"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="gchart" role="img" aria-label="' + esc(d.title + ' : ' + distChartLabel(d)) + '">' +
+      return '<section class="stat-card' + (d.groups ? ' stat-wide' : '') + '"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="gchart" role="img" aria-label="' + esc(d.title + ' : ' + distChartLabel(d)) + '">' +
         (d.groups || [{ name: '', rows: d.rows }]).map(function (grp) { return '<div class="gc-group"><div class="gc-bars">' + grp.rows.map(col).join('') + '</div>' + (grp.name ? '<div class="gc-blk">' + esc(grp.name) + '</div>' : '') + '</div>'; }).join('') + '</div></section>';
     }
     var rows = d.rows.map(function (r) {
@@ -6973,7 +7041,7 @@
     return {
       n: n, nonEmp: nonEmp, ren: openRequests('ren'), ave: openRequests('mut'),
       echCols: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) { return { id: col.id, label: displayLabel(col) }; }),
-      dists: [distData('Par affectation', c, 'Affectation'), distData('Par type de réserviste', c, 'Type R'), sexDist(c), gradeDist(c)].filter(Boolean), // grade (histogramme pleine largeur) en dernier
+      dists: [distData('Par affectation', c, 'Affectation'), distData('Par type de réserviste', c, 'Type R'), sexDist(c), ageDist(c), gradeDist(c)].filter(Boolean), // grade (histogramme pleine largeur) en dernier
       ech: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) {
         var e = 0, s = 0, ok = 0, none = 0;
         recs.forEach(function (r) { var v = r.raw[col.id], st = expiryState(v); if (typeof v !== 'number') none++; else if (st === 'expired') e++; else if (st === 'soon') s++; else ok++; });
@@ -7127,6 +7195,7 @@
     var ind = [['Réservistes', S.n], ['Non employables (échéance dépassée)', S.nonEmp + ' (' + frPct(pct(S.nonEmp, S.n)) + ')'], ['Demandes de renouvellement en cours', S.ren == null ? '—' : S.ren], ['Demandes d’avenants en cours', S.ave == null ? '—' : S.ave]];
     out += h('Indicateurs') + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + ind.map(function (r, i) { return '<tr><td style="' + td + 'width:75%;">' + esc(r[0]) + '</td><td style="' + td + num + 'font-weight:bold;' + (i === 1 && S.nonEmp > 0 ? 'color:#ce0500;' : '') + '">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
     S.dists.forEach(function (d) {
+      if (d.pie) { out += h(d.title) + '<img alt="" src="' + distPiePng(d, 620, 130) + '" width="620" height="130" style="display:block;">'; return; }
       if (d.chart) { out += h(d.title) + '<img alt="" src="' + distChartPng(d, 620, 134) + '" width="620" height="134" style="display:block;">'; return; }
       out += h(d.title) + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + d.rows.map(function (r) {
         return '<tr><td style="' + td + 'width:30%;">' + (r.label ? esc(r.label) : 'Non renseigné') + '</td><td style="' + td + num + 'width:8%;font-weight:bold;">' + r.count + '</td>' +
