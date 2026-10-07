@@ -143,6 +143,61 @@
   .wel-nav-dot { display: inline-block; width: 0.5rem; height: 0.5rem; margin-left: 0.4rem; border-radius: 50%; background: #ce0500; vertical-align: middle; animation: wel-blink 1.4s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) { .wel-nav-dot { animation: none; } }
   @keyframes wel-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  /* Méga menu « Réservistes » : bloc de présentation à gauche, liste de pages en lignes à flèche à droite. */
+  #menu-res .nav-lead { padding: 1rem 0 1.5rem; }
+  #menu-res .nav-lead__title { margin: 0 0 1rem; font-size: 2rem; line-height: 2.5rem; font-weight: 700; color: var(--text-title-grey, var(--ink)); }
+  #menu-res .nav-lead__text { margin: 0 0 1.5rem; font-size: 1.125rem; line-height: 1.75rem; color: var(--text-default-grey, var(--ink)); }
+  #menu-res .nav-rows { list-style: none; margin: 1rem 0 0; padding: 0; border-top: 1px solid var(--border-default-grey); }
+  #menu-res .nav-rows li { margin: 0; padding: 0; border-bottom: 1px solid var(--border-default-grey); }
+  /* Page « Statistiques » des réservistes. */
+  .stat-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-bottom: .75rem; }
+  .stat-card-head h2 { margin: 0; flex: 1 1 auto; }
+  .stat-seg { display: inline-flex; gap: .5rem; }
+  .stat-hint { margin: 0 0 .75rem; font-size: .8125rem; color: var(--muted); }
+  .stat-legend { list-style: none; margin: 0 0 .75rem; padding: 0; }
+  .stat-legend li { display: inline-block; margin: 0 1rem .25rem 0; }
+  /* Matrice affectation × échéance : cellules = barres empilées 100 % (écart de 2 px entre segments, bouts arrondis 4 px). */
+  .mx { position: relative; min-width: 34rem; }
+  .mx-row { display: grid; grid-template-columns: minmax(6rem, 11rem) repeat(var(--mx-cols), minmax(5.5rem, 1fr)); gap: .5rem; align-items: center; padding: .35rem 0; border-top: 1px solid var(--border-default-grey); }
+  .mx-head { border-top: 0; align-items: end; }
+  .mx-col { font-size: .75rem; font-weight: 700; color: var(--muted); line-height: 1.2; }
+  .mx-lbl { font-weight: 600; overflow-wrap: anywhere; }
+  .mx-n { font-weight: 400; font-size: .75rem; color: var(--muted); }
+  .mx-all .mx-lbl { color: var(--blue); }
+  .mx-all { background: var(--blue-tint); border-radius: .25rem; padding-left: .5rem; padding-right: .5rem; margin-left: -.5rem; margin-right: -.5rem; border-top: 0; }
+  .mx-cell { display: block; padding: .15rem 0; border-radius: .25rem; cursor: default; }
+  .mx-cell:hover, .mx-cell:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .mx-bar { display: flex; gap: 2px; height: 1.375rem; }
+  .mx-seg { min-width: 4px; display: block; text-align: center; font-size: .75rem; line-height: 1.375rem; font-weight: 600; }
+  .mx-seg:first-child { border-radius: 4px 0 0 4px; } .mx-seg:last-child { border-radius: 0 4px 4px 0; } .mx-seg:only-child { border-radius: 4px; }
+  .mx-tip { position: absolute; z-index: 5; background: var(--background-overlap-grey, #fff); color: var(--ink); border: 1px solid var(--border-default-grey); border-radius: .375rem; padding: .5rem .75rem; box-shadow: 0 4px 16px rgba(0,0,0,.25); font-size: .8125rem; pointer-events: none; white-space: nowrap; }
+  .mx-tip-h { font-weight: 700; margin-bottom: .25rem; }
+  .mx-sw { display: inline-block; width: 12px; height: 4px; border-radius: 2px; margin-right: .5rem; vertical-align: middle; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin: 1rem 0 1.5rem; }
+  .stat-tile { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; }
+  .stat-num { margin: 0; font-size: 2.25rem; line-height: 2.5rem; font-weight: 700; color: var(--blue); }
+  .stat-tile.is-alert .stat-num { color: #ce0500; }
+  .stat-lbl { margin: .25rem 0 0; font-weight: 700; }
+  .stat-sub { margin: .25rem 0 0; font-size: .8125rem; color: var(--muted); }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; align-items: start; }
+  .stat-card { position: relative; border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; }
+  .stat-card.stat-wide { grid-column: 1 / -1; }
+  .stat-card h2 { margin: 0 0 .75rem; }
+  .stat-table { width: 100%; border-collapse: collapse; }
+  .stat-table th, .stat-table td { padding: .4rem .5rem; text-align: left; font-weight: 400; border-bottom: 1px solid var(--border-default-grey); vertical-align: middle; }
+  .stat-table tbody th { font-weight: 600; }
+  .stat-table thead th { font-weight: 700; font-size: .8125rem; }
+  .stat-table .stat-n { text-align: right; font-variant-numeric: tabular-nums; width: 1%; white-space: nowrap; }
+  .stat-table .stat-n.is-bad { color: #ce0500; font-weight: 700; }
+  .stat-bar-cell { width: 55%; white-space: nowrap; }
+  .stat-bar { display: inline-block; width: calc(100% - 3.5rem); height: .6rem; border-radius: .3rem; background: var(--blue-tint); vertical-align: middle; overflow: hidden; }
+  .stat-bar > span { display: block; height: 100%; background: var(--blue); }
+  .stat-pct { display: inline-block; width: 3.2rem; text-align: right; font-size: .8125rem; color: var(--muted); }
+  #menu-res .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem .75rem; font-weight: 700; text-decoration: none; background-image: none; color: var(--text-default-grey, var(--ink)); }
+  #menu-res .nav-row:hover { background: var(--row-hover); }
+  #menu-res .nav-row[aria-current="page"] { background: var(--blue-tint); color: var(--blue); box-shadow: inset 2px 0 0 var(--blue); }
+  #menu-res .nav-row [class^="fr-icon-"] { flex: none; color: var(--blue); }
+  @media (min-width: 62em) { #menu-res .nav-lead { padding: 2rem 0 1.5rem; } #menu-res .nav-rows { margin-top: 2rem; } }
 
   /* Éditeur Markdown (EasyMDE) des articles Bienvenue : repris dans les couleurs du widget (thème clair/sombre). */
   .w-md .EasyMDEContainer { margin-bottom: 1.25rem; }
@@ -564,7 +619,30 @@
         <ul class="fr-nav__list">
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" aria-current="page" data-page="welcome">Bienvenue</a></li>
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="pmg">Candidats</a></li>
-          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="res">Réservistes RO1/RS/RC</a></li>
+          <li class="fr-nav__item">
+            <button class="fr-nav__btn" aria-expanded="false" aria-controls="menu-res" type="button">Réservistes RO1/RS/RC</button>
+            <div class="fr-collapse fr-mega-menu" id="menu-res">
+              <div class="fr-container fr-container--fluid fr-container-lg">
+                <button class="fr-btn--close fr-btn" aria-controls="menu-res" type="button" title="Fermer">Fermer</button>
+                <div class="fr-grid-row fr-grid-row-lg--gutters">
+                  <div class="fr-col-12 fr-col-lg-5">
+                    <div class="nav-lead">
+                      <p class="nav-lead__title">Suivi de la population</p>
+                      <p class="nav-lead__text" id="nav-res-baseline">Suivre les réservistes de la RGIF</p>
+                      <a class="fr-btn fr-btn--secondary" href="#" target="_self" data-page="res">Accéder</a>
+                    </div>
+                  </div>
+                  <div class="fr-col-12 fr-col-lg-7">
+                    <ul class="nav-rows">
+                      <li><a class="nav-row" href="#" target="_self" data-page="res-ren">Demandes de renouvellement de contrat<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="res-ave">Demandes d’avenants de contrat<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="res-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="rsv">Réservations</a></li>
         </ul>
       </nav>
@@ -892,6 +970,15 @@
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="r-btn-reset" type="button">Rétablir les valeurs par défaut</button></div>
     </details>
 
+    <details class="bo-advanced">
+      <summary>Réservistes · modèle du plan prévisionnel d’emploi (PPE)</summary>
+      <p class="hint">Modèle HTML converti en PDF (A4), utilisé par l’icône « Générer un PPE » de la fiche du réserviste (groupe Contrat). Styles en ligne uniquement ; images uniquement en base64 (data:). Variables : <code>{{IDENTITE}}</code>, <code>{{DATE_DEBUT}}</code>, <code>{{DATE_FIN}}</code> (début + 1 an − 1 jour), <code>{{DATE_DU_JOUR}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code>, <code>{{N_ESR}}</code>… (ou le libellé de n’importe quelle colonne de la table).</p>
+      <div class="mail-tpl-head"><label for="r-f-ppe">Modèle du PPE (HTML)</label><button type="button" class="btn secondary sm" id="r-ppe-preview-btn">Aperçu</button></div>
+      <textarea id="r-f-ppe" class="textarea tall mono" spellcheck="false"></textarea>
+      <iframe id="r-ppe-preview" class="tpl-preview" sandbox="" hidden title="Aperçu du modèle de PPE"></iframe>
+      <div class="actions" style="margin-top:12px"><button class="btn secondary sm" id="r-ppe-reset" type="button">Rétablir le modèle par défaut</button></div>
+    </details>
+
     <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
       <span class="bo-bar__state" id="r-bo-state" aria-live="polite">Configuration à jour</span>
       <span class="bo-bar__saved" id="r-saved" role="status" hidden>✔ Configuration enregistrée</span>
@@ -1046,6 +1133,51 @@
 
 
 <!-- ===== Page 3 : Réservations ===== -->
+<!-- Suivi des demandes de contrat (vue tableau, lecture seule) : renouvellements, puis avenants (mutations, suspensions, démissions). -->
+<div id="page-res-ren" hidden>
+<div class="wrap fr-container">
+  <h1 class="fr-sr-only">Renouvellements de contrats</h1>
+  <div class="toolbar">
+    <div class="tb-field tb-search">
+      <label for="r-v-ren-q">Rechercher une demande de renouvellement</label>
+      <input id="r-v-ren-q" class="input" type="search" placeholder="Nom, Nigend, état, affectation…" autocomplete="off">
+    </div>
+    <div class="count" id="r-v-ren-count" aria-live="polite"></div>
+  </div>
+  <div class="table-wrap">
+    <table><thead id="r-v-ren-thead"></thead><tbody id="r-v-ren-rows"></tbody></table>
+    <div id="r-v-ren-state" class="state" hidden></div>
+  </div>
+</div>
+</div>
+<div id="page-res-ave" hidden>
+<div class="wrap fr-container">
+  <h1 class="fr-sr-only">Avenants</h1>
+  <div class="toolbar">
+    <div class="tb-field tb-search">
+      <label for="r-v-ave-q">Rechercher une demande d’avenant</label>
+      <input id="r-v-ave-q" class="input" type="search" placeholder="Nom, Nigend, type, état…" autocomplete="off">
+    </div>
+    <div class="count" id="r-v-ave-count" aria-live="polite"></div>
+  </div>
+  <div class="table-wrap">
+    <table><thead id="r-v-ave-thead"></thead><tbody id="r-v-ave-rows"></tbody></table>
+    <div id="r-v-ave-state" class="state" hidden></div>
+  </div>
+</div>
+</div>
+
+<div id="page-res-stat" hidden>
+<div class="wrap fr-container">
+  <div class="toolbar">
+    <h1 class="fr-h4" style="margin:0;flex:1 1 auto">Statistiques des réservistes</h1>
+    <span class="hint" id="r-stats-msg" role="status"></span>
+    <button type="button" class="btn secondary" id="r-stats-pdf">Extraire en PDF</button>
+  </div>
+  <div id="r-stats-body"></div>
+</div>
+</div>
+
 <div id="page-rsv" hidden>
 <div class="wrap fr-container">
   <div class="tabs" id="x-tabs" role="tablist" aria-label="Types de réservation">
@@ -1301,7 +1433,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.9</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.1</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -4163,7 +4295,7 @@
   // Réservations (id stables, toujours dans le DOM même si la page n'est pas affichée pour l'instant).
   var DOT_TARGETS = {
     welcome: '#header-navigation [data-page="welcome"]', pmg: '#header-navigation [data-page="pmg"]',
-    res: '#header-navigation [data-page="res"]', rsv: '#header-navigation [data-page="rsv"]',
+    res: '#header-navigation [data-page="res"], #header-navigation [aria-controls="menu-res"]', rsv: '#header-navigation [data-page="rsv"]',
     'rsv:vmp': '#x-tab-vmp', 'rsv:vemi': '#x-tab-vemi', 'rsv:psy': '#x-tab-psy'
   };
   function dateTagHtml(a) {
@@ -4585,6 +4717,8 @@
     opts: {}, draft: {}, tables: [], colsByTable: {}, boundTable: null,
     records: [], view: [], read: null, sortDir: 1,
     modal: { index: -1, tab: 'info', opener: null, rowId: null },
+    docs: { busy: false, msg: null, confirm: null, ask: null }, att: {}, attLoading: false, // onglet Documents
+    ppe: null, // génération du plan prévisionnel d'emploi : { start, busy, error }
     edit: null, create: null, bulk: null
   };
 
@@ -4611,7 +4745,7 @@
     ['Grade', 'Choice'], ['Corps', 'Text'], ['Civilité', 'Choice'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Nigend', 'Text'], ['Type R', 'Choice'], ['Affectation', 'Choice'], ['NID', 'Text'], ['DDN', 'Date'], ['Age', 'Int'],
     ['Ville', 'Text'], ['Dpt', 'Text'], ['Affectation précise', 'Text'], ['Adresse email', 'Text'], ['Téléphone', 'Text'], ['Mouvement', 'Choice'], ['Exp. contrat', 'Date'], ['Exp. VMP', 'Date'],
     ['Exp. tir PA', 'Date'], ['Exp. tir HK', 'Date'], ['Qualité jud', 'Choice'], ['N° ESR', 'Text'], ['Date contrat', 'Date'], ['Date de début contrat', 'Date'],
-    ['Etat CIAPT', 'Choice'], ['Etat VMP', 'Choice'], ['Etat contrat', 'Choice'],
+    ['Etat CIAPT', 'Choice'], ['Etat VMP', 'Choice'], ['Etat contrat', 'Choice'], ['Adresse', 'Text'], ['PJ', 'Attachments'], ['Nom PJ', 'Text'],
     ['Créé le', 'DateTime:Europe/Paris'], ['Créé par', 'Text'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ];
   var DEMO_CHOICES = {
@@ -4619,7 +4753,7 @@
     'Mouvement': ['Arrivée', 'Mutation', 'Départ'], 'Qualité jud': ['OPJ', 'APJ', 'APJA']
   };
   var DEMO_ROWS_BY_LABEL = [
-    { 'Grade': 'MDC', 'Corps': 'Gendarmerie départementale', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Etat CIAPT': 'Apte', 'Etat VMP': 'Apte avec réserve', 'Etat contrat': 'En cours', 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
+    { 'Grade': 'MDC', 'Corps': 'Gendarmerie départementale', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Etat CIAPT': 'Apte', 'Etat VMP': 'Apte avec réserve', 'Etat contrat': 'En cours', 'Adresse': '12 rue des Alpes', 'PJ': ['L', 60, 61], 'Nom PJ': 'Fiche de poste, Attestation de formation', 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
     { 'Grade': 'GAV', 'Civilité': 'Mme', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Nigend': '2019-1120', 'Type R': 'RS', 'Affectation': 'GD 38', 'NID': '1020871', 'DDN': d(1996, 11, 2), 'Age': 29, 'Ville': 'Grenoble', 'Dpt': '38', 'Adresse email': 'camille.perrin@example.fr', 'Téléphone': '755667788', 'Mouvement': 'Mutation', 'Exp. contrat': d(2026, 8, 31), 'Exp. VMP': d(2026, 5, 15), 'Exp. tir PA': d(2026, 10, 12), 'Exp. tir HK': d(2026, 10, 12), 'Qualité jud': 'APJ', 'N° ESR': 'ESR-2023-207', 'Date contrat': d(2023, 8, 20), 'Date de début contrat': d(2023, 9, 1) },
     { 'Grade': 'BRI', 'Civilité': 'M.', 'NOM': 'Garnier', 'Prénom': 'Lucas', 'Nigend': '2022-0555', 'Type R': 'RC', 'Affectation': 'GD 73', 'NID': '1031420', 'DDN': d(2000, 1, 25), 'Age': 26, 'Ville': 'Chambéry', 'Dpt': '73', 'Adresse email': 'lucas.garnier@example.fr', 'Téléphone': '06 98 76 54 32', 'Exp. contrat': d(2028, 2, 28), 'Exp. VMP': d(2027, 6, 30), 'Exp. tir PA': d(2027, 4, 5), 'Exp. tir HK': d(2027, 4, 5), 'N° ESR': 'ESR-2022-310', 'Date contrat': d(2022, 2, 10), 'Date de début contrat': d(2022, 3, 1) },
     { 'Grade': 'ADJ', 'Civilité': 'Mme', 'NOM': 'Robin', 'Prénom': 'Sophie', 'Nigend': '2008-0210', 'Type R': 'RO1', 'Affectation': 'GD 01', 'NID': '1000456', 'DDN': d(1978, 7, 14), 'Age': 48, 'Ville': 'Bourg-en-Bresse', 'Dpt': '01', 'Adresse email': 'sophie.robin@example.fr', 'Téléphone': '06 44 55 66 77', 'Exp. contrat': d(2029, 12, 31), 'Exp. VMP': d(2027, 2, 1), 'Exp. tir PA': d(2027, 2, 1), 'Exp. tir HK': d(2027, 2, 1), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2019-012', 'Date contrat': d(2019, 12, 1), 'Date de début contrat': d(2020, 1, 1) },
@@ -4650,7 +4784,7 @@
     return { id: makeId(c[0]), label: c[0], type: c[1], formula: !!c[2], choices: ch[c[0]] || null, choiceOptions: c[0] === 'Etat demande' ? DEMO_RENEW_OPTIONS : null };
   }), rows: [] };
   var DEMO_EXTRA = {}; DEMO_EXTRA[DEMO_RENEW_TABLE] = DEMO_RENEW; DEMO_EXTRA[DEMO_MUT_TABLE] = DEMO_MUT;
-  var demoAttSeq = 0;
+  var demoAttSeq = 100, DEMO_ATT = { 60: { name: 'Fiche_de_poste.pdf', size: 142000 }, 61: { name: 'Attestation_formation.pdf', size: 96000 } };
 
   /* ---------- Accès aux données ---------- */
   var tokenCache = null;
@@ -4694,6 +4828,14 @@
         return tokenCache;
       });
     },
+    attachmentsMeta: function () {
+      return grist.docApi.fetchTable('_grist_Attachments').then(function (t) {
+        var out = {};
+        for (var i = 0; i < t.id.length; i++) out[t.id[i]] = { name: t.fileName[i], size: t.fileSize[i] };
+        return out;
+      });
+    },
+    attachmentUrl: function (id) { return api.getToken().then(function (t) { return t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token); }); },
     uploadAttachment: function (file) {
       return api.getToken().then(function (t) {
         var fd = new FormData(); fd.append('upload', file, file.name);
@@ -4710,7 +4852,9 @@
     listColumns: function (t) { return Promise.resolve(t === 'Reservistes_RO1_RS_RC' ? DEMO.cols : DEMO_EXTRA[t] ? DEMO_EXTRA[t].cols : [{ id: 'Nom', label: 'Nom', type: 'Text' }]); },
     fetchRows: function (t) { return Promise.resolve(t === 'Reservistes_RO1_RS_RC' ? DEMO.rows : DEMO_EXTRA[t] ? DEMO_EXTRA[t].rows : []); },
     saveOptions: function () { return Promise.resolve(); },
-    uploadAttachment: function (file) { return Promise.resolve(++demoAttSeq); },
+    attachmentsMeta: function () { return Promise.resolve(JSON.parse(JSON.stringify(DEMO_ATT))); },
+    attachmentUrl: function () { return Promise.resolve('#'); },
+    uploadAttachment: function (file) { var id = ++demoAttSeq; DEMO_ATT[id] = { name: file.name, size: file.size }; return Promise.resolve(id); },
     updateFields: function (table, rowId, fields) {
       DEMO.rows.forEach(function (r) { if (r.id === rowId) Object.keys(fields).forEach(function (k) { r[k] = fields[k]; }); });
       return Promise.resolve();
@@ -4771,7 +4915,8 @@
       table: table,
       identity: ('identity' in o) ? o.identity : DEFAULTS.identity,
       tag: DEFAULTS.tag, // colonne « Type R » : fixe, pas de choix en back office
-      tabs: o.tabs ? normalizeTabs(table, o.tabs) : defaultTabs(table)
+      tabs: o.tabs ? normalizeTabs(table, o.tabs) : defaultTabs(table),
+      ppeTpl: typeof o.ppeTpl === 'string' ? o.ppeTpl : '' // modèle HTML du PPE (vide : modèle par défaut)
     };
   }
   function tagCol(c) { return colMeta(c.table, c.tag) || findCol(c.table, c.tag); }
@@ -4865,7 +5010,7 @@
       state.records = r[2].map(function (row) { return { raw: row, identity: identityOf(row, c), tag: tc ? row[tc.id] : null }; });
       state.read = { table: c.table, at: new Date(), total: r[2].length, error: null };
       renderAll();
-      loadRequestsData(); // demandes existantes (renouvellement, mutation) : couleur des icônes de la fiche
+      loadRequestsData().then(function () { renderView('ren'); renderView('ave'); renderStats(); }); // demandes existantes (renouvellement, mutation) : icônes et tag de la fiche, pages de suivi
     }).catch(function (e) {
       if (seq !== loadSeq) return;
       state.records = []; state.read = { table: c.table, at: new Date(), total: 0, error: (e && e.message) || String(e) };
@@ -5186,6 +5331,7 @@
   var ECHEANCE_STATE_COL = { 'exp vmp': 'Etat VMP', 'exp tir pa': 'Etat CIAPT', 'exp tir hk': 'Etat CIAPT', 'exp contrat': 'Etat contrat' };
   function normLoose(s) { return norm(s).replace(/[^a-z0-9]+/g, ' ').trim(); } // insensible à la ponctuation (« Exp. VMP » ~ « exp vmp »)
   function panelHtml(tabDef, item, c, ro) {
+    if (tabDef.key === 'docs') return docsHtml(item, c, ro);
     var ids = c.tabs[tabDef.key] || [];
     if (!ids.length) return '<p class="stg-empty">Aucune colonne configurée pour cet onglet.</p>';
     function cell(id, span) {
@@ -5215,12 +5361,20 @@
       var rows = g.rows.map(resolve).filter(function (r) { return r.length; });
       // Groupe « Contrat » : icônes « Demander le renouvellement » et « Demander une mutation » (fiche modifiable uniquement).
       // Si une demande existe, l'icône prend la couleur de l'étiquette de son « Etat demande ».
-      var renew = '';
-      if (!ro && tabDef.key === 'mil' && g.title === 'Contrat') {
+      var renew = '', reqTag = '';
+      if (tabDef.key === 'mil' && g.title === 'Contrat') {
         // Dès qu'une demande existe, son icône prend la couleur de l'étiquette de son état ; les icônes des autres demandes sont inopérantes.
         var reqs = [['ren', 'Demander le renouvellement du contrat', ICON_RENEW, 'renouvellement'], ['mut', 'Demander une mutation', ICON_MUTATION, 'mutation'], ['sus', 'Suspendre le contrat', ICON_SUSPEND, 'suspension']];
         var sts = {}, active = [];
         reqs.forEach(function (b) { sts[b[0]] = REQ[b[0]].status(item, c); if (sts[b[0]]) active.push(b[3]); });
+        // Tag à côté du titre : type et état de la demande en cours.
+        reqs.some(function (b) {
+          var rs = sts[b[0]]; if (!rs) return false;
+          reqTag = ' ' + reqStateTagHtml(b[3].charAt(0).toUpperCase() + b[3].slice(1) + (rs.state ? ' · ' + rs.state : ''), rs.state);
+          return true;
+        });
+      }
+      if (!ro && tabDef.key === 'mil' && g.title === 'Contrat') {
         renew = '<span class="detail-actions">' + reqs.map(function (b) {
           var rs = sts[b[0]], off = !rs && active.length > 0;
           var rt = b[1] + (rs ? ' — demande existante' + (rs.state ? ' (état : ' + rs.state + ')' : '') : '') + (off ? ' (indisponible : demande de ' + active.join(' / ') + ' existante)' : '');
@@ -5228,9 +5382,25 @@
         }).join('') + '</span>';
       }
       if (!ro && tabDef.key === 'hab' && g.title === 'VMP') renew = vmpActionsHtml(item, c);
-      if (rows.length) html += '<section class="detail-group"><h3 class="detail-title">' + esc(g.title) + renew + '</h3>' + tableHtml(rows, g.title) + '</section>';
+      if (rows.length) html += '<section class="detail-group"><h3 class="detail-title">' + esc(g.title) + reqTag + renew + '</h3>' + tableHtml(rows, g.title) + '</section>';
     });
+    if (tabDef.key === 'mil') html += ppeCardHtml(item, c, ro);
     return html || '<p class="stg-empty">Aucune colonne configurée pour cet onglet.</p>';
+  }
+  // Carte « Plan prévisionnel d'emploi » : fin du dernier PPE généré, retrouvée dans les noms des documents (« PPE du jj/mm/aaaa au jj/mm/aaaa »).
+  function lastPpeEnd(item, c) {
+    var best = null;
+    nomPjList(item, c).forEach(function (n) {
+      var m = /^PPE du \d{2}\/\d{2}\/\d{4} au (\d{2})\/(\d{2})\/(\d{4})/.exec(n); if (!m) return;
+      var sec = Date.UTC(+m[3], +m[2] - 1, +m[1]) / 1000; if (best == null || sec > best) best = sec;
+    });
+    return best;
+  }
+  function ppeCardHtml(item, c, ro) {
+    var end = lastPpeEnd(item, c), val = '<span class="is-empty">Aucun PPE généré</span>';
+    if (end != null) val = esc(fmtDate(end)) + (expiryState(end) === 'expired' ? ' <span class="fr-tag fr-tag--sm tag-c-red">Expiré</span>' : '');
+    return '<section class="detail-group"><h3 class="detail-title">Plan prévisionnel d’emploi' + (ro ? '' : ppeBtnHtml()) + '</h3><div class="table-wrap"><table class="detail-table"><caption class="fr-sr-only">Plan prévisionnel d’emploi</caption><tbody>' +
+      '<tr><th scope="row">Fin du dernier PPE</th><td colspan="3"' + (end == null ? ' class="is-empty"' : '') + '>' + val + '</td></tr></tbody></table></div>' + (!ro && state.ppe ? ppeBoxHtml() : '') + '</section>';
   }
   // Groupe « VMP » : réserver un créneau VMP (modale de la page Réservations) puis confirmer la réservation au réserviste et à l'antenne médicale.
   var ICON_MAIL = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h9v-2H4V8l8 5 8-5v5h2V6c0-1.1-.9-2-2-2zm-8 7L4 6h16l-8 5zm7 4l4 4-4 4v-3h-4v-2h4v-3z"/></svg>';
@@ -5248,6 +5418,251 @@
       btn('service', ICON_SERVICE, 'Confirmer la réservation VMP à l’antenne médicale', info ? info.serviceWhy : noRes, info && info.serviceDone, !info || !!info.serviceWhy) + '</span>';
   }
 
+  /* ---------- Onglet Documents : pièces jointes (colonne « PJ »), nom à afficher dans « Nom PJ » ---------- */
+  var ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+  var ICON_DELETE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+  // Colonne des documents : « PJ », à défaut la première colonne de type Pièces jointes de la table.
+  function pjCol(c) {
+    var p = findCol(c.table, 'PJ'); if (p && typeBase(p.type) === 'Attachments') return p;
+    return (state.colsByTable[c.table] || []).filter(function (x) { return typeBase(x.type) === 'Attachments'; })[0] || null;
+  }
+  function nomPjCol(c) { var n = findCol(c.table, 'Nom PJ'); return n && !n.formula ? n : null; }
+  function attIds(item, colId) { return toList(item.raw[colId]).map(Number); }
+  // « Nom PJ » (texte, noms séparés par des virgules) : un nom par pièce jointe de « PJ », dans le même ordre.
+  function nomPjList(item, c) { var col = nomPjCol(c); return col ? String(item.raw[col.id] || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean) : []; }
+  function setNomPjList(item, c, list) {
+    var col = nomPjCol(c); if (!col) return Promise.resolve();
+    var f = {}; f[col.id] = list.join(', '); return api.updateFields(c.table, item.raw.id, f);
+  }
+  function baseFileName(name) { return String(name || '').replace(/\.[A-Za-z0-9]{1,6}$/, ''); }
+  function ensureAttachments(missing) {
+    if (state.attLoading) return;
+    state.attLoading = true;
+    function fill() { missing.forEach(function (id) { if (!state.att[id]) state.att[id] = { name: 'Fichier n° ' + id, size: 0, missing: true }; }); }
+    api.attachmentsMeta().then(function (map) { Object.keys(map).forEach(function (k) { state.att[k] = map[k]; }); fill(); }).catch(fill)
+      .then(function () { state.attLoading = false; if (!$('modal').hidden) renderModal(); });
+  }
+  function docsHtml(item, c, ro) {
+    var d = state.docs, col = pjCol(c), out = '';
+    if (d.msg && !ro) out += '<div class="doc-alert ' + d.msg.type + '" role="' + (d.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(d.msg.text) + '</p></div>';
+    if (!col) return out + '<p class="stg-empty">Aucune colonne de type « Pièces jointes » (« PJ ») dans la table des réservistes.</p>';
+    var names = nomPjList(item, c), showNom = !!nomPjCol(c), missing = [];
+    var ids = attIds(item, col.id); ids.forEach(function (id) { if (!state.att[id]) missing.push(id); });
+    if (missing.length) ensureAttachments(missing);
+    var rows = ids.map(function (id, i) {
+      var meta = state.att[id] || { name: 'Chargement…', size: 0 }, confirming = d.confirm === id;
+      var actions = confirming
+        ? '<span class="doc-confirm">Supprimer ce document ?</span> <button type="button" class="btn danger sm" data-dact="confirm">Supprimer</button> <button type="button" class="btn secondary sm" data-dact="cancel">Annuler</button>'
+        : '<button type="button" class="icon-btn" data-dact="edit" title="Remplacer le fichier" aria-label="Remplacer ' + esc(meta.name) + '"' + (d.busy ? ' disabled' : '') + '>' + ICON_EDIT + '</button>' +
+          '<button type="button" class="icon-btn danger" data-dact="delete" title="Supprimer" aria-label="Supprimer ' + esc(meta.name) + '"' + (d.busy ? ' disabled' : '') + '>' + ICON_DELETE + '</button>';
+      return '<tr data-att="' + id + '"><td class="name"><a href="#" data-dl="' + id + '" target="_blank" rel="noopener">' + esc(meta.name) + '</a>' + (meta.size ? ' <span class="doc-size">' + fmtSize(meta.size) + '</span>' : '') + '</td>' +
+        (showNom ? '<td>' + (names[i] ? esc(names[i]) : '<span class="is-empty">—</span>') + '</td>' : '') +
+        (ro ? '' : '<td class="doc-actions">' + actions + '</td>') + '</tr>';
+    }).join('');
+    if (!rows) rows = '<tr><td colspan="' + (1 + (showNom ? 1 : 0) + (ro ? 0 : 1)) + '" class="is-empty">Aucun document déposé.</td></tr>';
+    out += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Documents du réserviste</caption><thead><tr><th scope="col">Document</th>' +
+      (showNom ? '<th scope="col">Nom à afficher</th>' : '') + (ro ? '' : '<th scope="col" class="doc-actions"><span class="fr-sr-only">Actions</span></th>') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    if (!ro) {
+      if (d.ask) out += askPjHtml(d.ask);
+      else out += '<span class="hint">Le nom à afficher de chaque document est demandé à l’ajout.</span>' +
+        '<div class="doc-drop' + (d.busy ? ' is-busy' : '') + '" id="r-doc-drop" role="button" tabindex="0" aria-label="Déposer un document : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (d.busy ? 'true' : 'false') + '">' +
+        ICON_UPLOAD + '<p><strong>' + (d.busy ? 'Envoi en cours…' : 'Glissez-déposez un fichier ici') + '</strong>' + (d.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
+    }
+    return out;
+  }
+  function askPjHtml(a) {
+    return '<div class="ask" role="group" aria-label="Nom à afficher"><p class="hint">Indiquez le nom à afficher ' + (a.items.length > 1 ? 'pour chaque document.' : 'pour ce document.') + '<span class="req" aria-hidden="true">*</span></p>' +
+      a.items.map(function (it, i) {
+        return '<div class="pjask-row"><label for="r-pjask-' + i + '">' + esc(it.file.name) + '</label>' +
+          '<input id="r-pjask-' + i + '" class="input" type="text" autocomplete="off" data-pjidx="' + i + '" value="' + esc(it.name) + '"' + (it.error ? ' aria-invalid="true"' : '') + '>' +
+          (it.error ? '<p class="ed-error" role="alert">' + esc(it.error) + '</p>' : '') + '</div>';
+      }).join('') +
+      '<div class="ed-actions"><button type="button" class="btn sm" data-pjask-act="ok"' + (a.busy ? ' disabled' : '') + '>' + (a.busy ? 'Envoi…' : 'Ajouter') + '</button>' +
+      '<button type="button" class="btn secondary sm" data-pjask-act="cancel"' + (a.busy ? ' disabled' : '') + '>Annuler</button></div></div>';
+  }
+  function hydrateDownloads() {
+    Array.prototype.forEach.call($('modal-panels').querySelectorAll('a[data-dl]'), function (a) {
+      api.attachmentUrl(a.getAttribute('data-dl')).then(function (u) { if (u && u !== '#') a.href = u; }).catch(function () {});
+    });
+  }
+  function pickFiles(multiple, cb) {
+    var i = document.createElement('input'); i.type = 'file'; i.multiple = !!multiple;
+    i.onchange = function () { if (i.files && i.files.length) cb(Array.prototype.slice.call(i.files)); };
+    i.click();
+  }
+  // Exécute une opération sur les pièces jointes du réserviste affiché, puis recharge les données.
+  function docOp(successText, fn) {
+    var d = state.docs, item = state.view[state.modal.index]; if (!item || d.busy) return Promise.resolve();
+    d.busy = true; d.msg = null; d.confirm = null; renderModal();
+    return fn(item, cfg()).then(function () { d.msg = { type: 'success', text: successText }; })
+      .catch(function (e) { d.msg = { type: 'error', text: 'Opération impossible : ' + ((e && e.message) || e) + '.' }; })
+      .then(function () { d.busy = false; return load(); })
+      .then(function () { if (!$('modal').hidden) renderModal(); });
+  }
+  function saveAttachments(item, c, colId, list) { var f = {}; f[colId] = ['L'].concat(list); return api.updateFields(c.table, item.raw.id, f); }
+  // Dépôt : le nom à afficher de chaque fichier est toujours demandé (proposé : nom du fichier sans extension).
+  function queueUpload(files) {
+    state.docs.ask = { items: files.map(function (f) { return { file: f, name: baseFileName(f.name), error: '' }; }), busy: false };
+    renderModal();
+  }
+  function confirmPjAsk() {
+    var a = state.docs.ask; if (!a || a.busy) return;
+    var bad = false;
+    a.items.forEach(function (it) { if (it.name.trim()) it.error = ''; else { it.error = 'Indiquez le nom à afficher.'; bad = true; } });
+    if (bad) { renderModal(); return; }
+    var items = a.items.map(function (it) { return { file: it.file, name: it.name.trim().replace(/,/g, ' ') }; });
+    state.docs.ask = null;
+    uploadFiles(items);
+  }
+  function uploadFiles(items) {
+    return docOp(items.length > 1 ? items.length + ' documents ajoutés.' : 'Document ajouté.', function (item, c) {
+      var col = pjCol(c); if (!col) return Promise.reject(new Error('aucune colonne « Pièces jointes »'));
+      return items.reduce(function (p, it) { return p.then(function (acc) { return api.uploadAttachment(it.file).then(function (id) { return acc.concat(id); }); }); }, Promise.resolve([]))
+        .then(function (added) {
+          var names = nomPjList(item, c), cur = attIds(item, col.id);
+          while (names.length < cur.length) names.push(''); // garde l'alignement nom / pièce
+          return saveAttachments(item, c, col.id, cur.concat(added)).then(function () { return setNomPjList(item, c, names.concat(items.map(function (it) { return it.name; }))); });
+        });
+    });
+  }
+  function storeCopyFile(item, c, file, name) { // pièce générée (ex. PPE) : rangée dans les documents avec son nom à afficher
+    var col = pjCol(c); if (!col) return Promise.resolve({ stored: false, why: 'aucune colonne « Pièces jointes » dans la table des réservistes' });
+    return api.uploadAttachment(file).then(function (id) {
+      var names = nomPjList(item, c), cur = attIds(item, col.id);
+      while (names.length < cur.length) names.push('');
+      return saveAttachments(item, c, col.id, cur.concat(id)).then(function () { return setNomPjList(item, c, names.concat(name)); });
+    }).then(function () { return { stored: true }; }, function (e) { return { stored: false, why: (e && e.message) || String(e) }; });
+  }
+  function replaceFile(file, oldId) {
+    docOp('Document remplacé.', function (item, c) {
+      var col = pjCol(c);
+      return api.uploadAttachment(file).then(function (id) { return saveAttachments(item, c, col.id, attIds(item, col.id).map(function (x) { return x === oldId ? id : x; })); });
+    });
+  }
+  function deleteFile(id) {
+    docOp('Document supprimé.', function (item, c) {
+      var col = pjCol(c), cur = attIds(item, col.id), idx = cur.indexOf(id);
+      return saveAttachments(item, c, col.id, cur.filter(function (x) { return x !== id; })).then(function () {
+        var names = nomPjList(item, c); if (idx === -1 || idx >= names.length) return null;
+        names.splice(idx, 1); return setNomPjList(item, c, names);
+      });
+    });
+  }
+  /* ---------- Plan prévisionnel d'emploi (PPE) : PDF généré depuis un modèle HTML (back office), copie rangée dans Documents ---------- */
+  var ICON_PPE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M17 10H7v2h10v-2zm2-7h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zm-5-5H7v2h7v-2z"/></svg>';
+  function ppeRow(label, value) { return '    <tr><th style="text-align: left; width: 35%; padding: 6px 10px; background: #f3f3fd; border: 1px solid #ddd;">' + label + '</th><td style="padding: 6px 10px; border: 1px solid #ddd;">' + value + '</td></tr>\n'; }
+  var DEFAULT_PPE = '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
+    '  <div style="border-bottom: 3px solid #000091; padding-bottom: 12px; margin-bottom: 32px;">\n    <div style="font-weight: bold; color: #000091;">MINISTÈRE DE L’INTÉRIEUR</div>\n    <div>Division réserves jeunesse</div>\n  </div>\n' +
+    '  <h1 style="font-size: 22px; margin: 0 0 24px;">Plan prévisionnel d’emploi</h1>\n' +
+    '  <p>Période d’emploi : du <strong>{{DATE_DEBUT}}</strong> au <strong>{{DATE_FIN}}</strong>.</p>\n' +
+    '  <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">\n' +
+    ppeRow('Réserviste', '{{IDENTITE}}') + ppeRow('Grade', '{{GRADE}}') + ppeRow('Nigend', '{{NIGEND}}') + ppeRow('Affectation', '{{AFFECTATION}}') + ppeRow('N° ESR', '{{N_ESR}}') +
+    '  </table>\n  <p style="margin-top: 32px;">Fait le {{DATE_DU_JOUR}}<br>Division réserves jeunesse</p>\n</div>';
+  // Variables {{…}} du modèle : alias → libellé de colonne (toute autre colonne reste utilisable par son libellé ou son identifiant).
+  var PPE_ALIASES = { CIVILITE: 'Civilité', NOM: 'NOM', PRENOM: 'Prénom', NIGEND: 'Nigend', NID: 'NID', GRADE: 'Grade', CORPS: 'Corps', TYPE_R: 'Type R', AFFECTATION: 'Affectation', GROUPEMENT: 'Affectation', AFFECTATION_PRECISE: 'Affectation précise',
+    DDN: 'DDN', EMAIL: 'Adresse email', TELEPHONE: 'Téléphone', ADRESSE: 'Adresse', VILLE: 'Ville', N_ESR: 'N° ESR', DATE_CONTRAT: 'Date contrat', DEBUT_CONTRAT: 'Date de début contrat', EXP_CONTRAT: 'Exp. contrat' };
+  function todayFr() { return fmtDate(todaySec()); }
+  function fillTemplate(text, item, c, extra) { // modèle HTML : les valeurs insérées sont échappées ; une variable inconnue est laissée telle quelle
+    return String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
+      var key = name.toUpperCase().replace(/\s+/g, '_');
+      if (key === 'IDENTITE') return esc(formatName(identityOf(item.raw, c)));
+      if (key === 'DATE_DU_JOUR') return esc(todayFr());
+      if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return esc(extra[key]);
+      var alias = PPE_ALIASES[key], col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
+      if (alias) return col ? esc(textOfValue(col, item.raw[col.id])) : '';
+      return col ? esc(textOfValue(col, item.raw[col.id])) : whole;
+    });
+  }
+  // Nettoie le HTML d'un modèle : ni script, ni gestionnaire d'événement, ni ressource externe (seules les images data: sont admises).
+  function sanitizeHtml(html) {
+    var doc = new DOMParser().parseFromString('<div id="root">' + html + '</div>', 'text/html'), root = doc.getElementById('root');
+    Array.prototype.forEach.call(root.querySelectorAll('script,style,iframe,object,embed,link,meta,base,form,input,button,textarea,select,audio,video'), function (n) { n.parentNode.removeChild(n); });
+    Array.prototype.forEach.call(root.querySelectorAll('*'), function (el) {
+      Array.prototype.slice.call(el.attributes).forEach(function (a) {
+        var n = a.name.toLowerCase(), v = String(a.value).trim().toLowerCase();
+        if (n.indexOf('on') === 0 || ((n === 'href' || n === 'xlink:href') && v.indexOf('javascript:') === 0) || (n === 'src' && v.indexOf('data:image/') !== 0)) el.removeAttribute(a.name);
+      });
+    });
+    return root.innerHTML;
+  }
+  function safeFileName(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'document'; }
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+  // Conversion HTML → PDF A4 : le modèle est rendu hors écran puis paginé par jsPDF (via html2canvas).
+  // opts.margin : marges [haut, droite, bas, gauche] en points (défaut 36) ; opts.decorate(doc, nbPages) : ajoute du texte sur chaque page (pied de page).
+  function buildPdfFromHtml(html, opts) {
+    opts = opts || {};
+    var mg = opts.margin || [36, 36, 36, 36], widthPt = 595.28 - mg[1] - mg[3], widthPx = Math.round(widthPt * 96 / 72);
+    return new Promise(function (resolve, reject) {
+      if (!(window.jspdf && window.jspdf.jsPDF)) return reject(new Error('la bibliothèque de génération de PDF n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
+      if (!window.html2canvas) return reject(new Error('la bibliothèque de conversion HTML n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
+      var wrap = document.createElement('div'), holder = document.createElement('div');
+      wrap.setAttribute('aria-hidden', 'true');
+      wrap.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;z-index:-1;pointer-events:none;';
+      holder.style.cssText = 'position:absolute;left:0;top:0;width:' + widthPx + 'px;background:#fff;color:#161616;';
+      holder.innerHTML = sanitizeHtml(html);
+      wrap.appendChild(holder); document.body.appendChild(wrap);
+      // opts.breakBefore : élément (data-pdf-break) à repousser en début de page suivante, s'il n'y tient pas
+      var brk = opts.breakBefore && holder.querySelector('[data-pdf-break]');
+      if (brk) { var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72, top = brk.getBoundingClientRect().top - holder.getBoundingClientRect().top, rest = top % pageH; if (rest > 1) brk.style.marginTop = Math.ceil(pageH - rest) + 'px'; }
+      var finished = false, timer = setTimeout(function () { end(new Error('délai dépassé')); }, 40000);
+      function end(err, ab) {
+        if (finished) return; finished = true; clearTimeout(timer);
+        if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        return err ? reject(err) : resolve(ab);
+      }
+      try {
+        var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+        doc.html(holder, {
+          margin: mg, autoPaging: 'text', width: widthPt, windowWidth: widthPx,
+          html2canvas: { backgroundColor: '#ffffff', logging: false, useCORS: false },
+          callback: function (d) { try { if (opts.decorate) opts.decorate(d, d.getNumberOfPages()); end(null, d.output('arraybuffer')); } catch (e) { end(e); } }
+        });
+      } catch (e) { end(e); }
+    });
+  }
+  // Dates du PPE : début au choix, fin = début + 1 an − 1 jour.
+  function isoToSec(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : null; }
+  function secToIso(sec) { var d = new Date(sec * 1000); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()); }
+  function ppeEndSec(startSec) { var d = new Date(startSec * 1000); return Date.UTC(d.getUTCFullYear() + 1, d.getUTCMonth(), d.getUTCDate() - 1) / 1000; }
+  function ppeBtnHtml() { return '<span class="detail-actions"><button type="button" class="icon-btn" data-ppe="ask" title="Générer un plan prévisionnel d’emploi (PPE)" aria-label="Générer un plan prévisionnel d’emploi (PPE)"' + (state.ppe && state.ppe.busy ? ' disabled' : '') + '>' + ICON_PPE + '</button></span>'; }
+  function ppeBoxHtml() {
+    var P = state.ppe, s = isoToSec(P.start);
+    return '<div class="ask" role="group" aria-label="Plan prévisionnel d’emploi"><p class="hint">Plan prévisionnel d’emploi : choisissez la date de début ; la fin est fixée à un an plus tard, moins un jour.</p>' +
+      '<div class="pjask-row"><label for="r-ppe-start">Date de début<span class="req" aria-hidden="true">*</span></label><input id="r-ppe-start" class="input" type="date" value="' + esc(P.start) + '"></div>' +
+      '<p class="hint">Fin : <strong id="r-ppe-end">' + (s != null ? fmtDate(ppeEndSec(s)) : '—') + '</strong></p>' +
+      (P.error ? '<p class="ed-error" role="alert">' + esc(P.error) + '</p>' : '') +
+      '<div class="ed-actions"><button type="button" class="btn sm" data-ppe="gen"' + (P.busy ? ' disabled' : '') + '>' + (P.busy ? 'Génération…' : 'Générer le PPE') + '</button>' +
+      '<button type="button" class="btn secondary sm" data-ppe="cancel"' + (P.busy ? ' disabled' : '') + '>Annuler</button></div></div>';
+  }
+  function genPpe() {
+    var P = state.ppe, item = state.view[state.modal.index], c = cfg(); if (!P || P.busy || !item) return;
+    var s = isoToSec(P.start); if (s == null) { P.error = 'Indiquez la date de début.'; renderModal(); return; }
+    var e = ppeEndSec(s), label = 'PPE du ' + fmtDate(s) + ' au ' + fmtDate(e);
+    P.busy = true; P.error = null; renderModal();
+    buildPdfFromHtml(fillTemplate(c.ppeTpl || DEFAULT_PPE, item, c, { DATE_DEBUT: fmtDate(s), DATE_FIN: fmtDate(e) })).then(function (ab) {
+      var name = 'PPE_' + safeFileName(item.id || 'reserviste') + '_' + secToIso(s) + '.pdf', blob = new Blob([ab], { type: 'application/pdf' });
+      downloadBlob(blob, name);
+      return storeCopyFile(item, c, new File([blob], name, { type: 'application/pdf' }), label);
+    }).then(function (r) {
+      state.ppe = null;
+      state.vmpMsg = { type: r.stored ? 'success' : 'warning', text: r.stored ? label + ' généré et téléchargé ; une copie est rangée dans Documents.' : label + ' généré et téléchargé, mais la copie dans Documents a échoué : ' + r.why + '.' };
+      return load();
+    }).then(function () { if (!$('modal').hidden) renderModal(); })
+      .catch(function (err) { P.busy = false; P.error = 'Génération impossible : ' + ((err && err.message) || err) + '.'; renderModal(); });
+  }
+  // Onglets de la fiche : colonnes configurées + « Documents » (toujours proposé si la table a une colonne de pièces jointes).
+  var DOCS_TAB ={ key: 'docs', title: 'Documents', cardTitle: 'Documents du réserviste' };
+  function modalTabs(c) {
+    var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
+    if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
+    return pjCol(c) ? tabs.concat(DOCS_TAB) : tabs;
+  }
+
   function renderModal() {
     var m = state.modal, item = state.view[m.index]; if (!item) return;
     var c = cfg();
@@ -5256,8 +5671,7 @@
     var subTxt = [gr && item.raw[gr.id], af && item.raw[af.id]].filter(Boolean).join(' · ');
     sub.hidden = !subTxt; sub.textContent = subTxt;
     $('modal-tags').innerHTML = joinTags(toList(item.tag).length ? tagsHtml(item.tag) : '', statusTagsHtml(item.raw, c));
-    var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
-    if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
+    var tabs = modalTabs(c);
     if (!tabs.some(function (t) { return t.key === m.tab; })) m.tab = tabs[0].key;
     $('modal-tabs').innerHTML = tabs.map(function (t) {
       return '<button type="button" class="stg-tab" role="tab" id="r-mt-' + t.key + '" data-tab="' + t.key + '" aria-selected="' + (t.key === m.tab) + '" aria-controls="r-mp-' + t.key + '">' + esc(t.title) + '</button>';
@@ -5274,10 +5688,11 @@
     $('modal-foot').innerHTML = parts.join(' · '); $('modal-foot').hidden = !parts.length;
     $('modal-prev').disabled = m.index <= 0; $('modal-next').disabled = m.index >= state.view.length - 1;
     if (state.edit) focusEditor();
+    hydrateDownloads();
   }
   function openModal(index, opener) {
     if (!state.view[index]) return;
-    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.edit = null; state.vmpMsg = null; state.vmpLive = false;
+    state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.edit = null; state.vmpMsg = null; state.vmpLive = false; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.ppe = null;
     if (!state.modal.tab) state.modal.tab = 'info';
     renderModal();
     if (window.RSV && window.RSV.refresh) window.RSV.refresh().then(function () { if (!$('modal').hidden && !state.edit) renderModal(); }); // réservations VMP à jour
@@ -5305,8 +5720,7 @@
   function ficheRes(rowId, tabKey) {
     var rec = state.records.filter(function (x) { return x.raw.id === rowId; })[0]; if (!rec) return null;
     var c = cfg(), item = { raw: rec.raw, id: rec.identity == null ? '' : String(rec.identity), tag: rec.tag };
-    var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
-    if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
+    var tabs = modalTabs(c);
     var active = tabs.some(function (t) { return t.key === tabKey; }) ? tabKey : tabs[0].key, panels = {};
     tabs.forEach(function (t) { panels[t.key] = panelHtml(t, item, c, true); });
     var gr = findCol(c.table, 'Grade'), af = findCol(c.table, 'Affectation');
@@ -5324,7 +5738,7 @@
   }
   function stepModal(delta) {
     var i = state.modal.index + delta; if (i < 0 || i >= state.view.length) return;
-    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.edit = null; state.vmpMsg = null; state.vmpLive = false;
+    state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.edit = null; state.vmpMsg = null; state.vmpLive = false; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.ppe = null;
     renderModal(); var dlg = $('modal').querySelector('.modal-dialog'); if (dlg) dlg.scrollIntoView({ block: 'nearest' });
   }
   $('rows').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) openModal(+tr.getAttribute('data-i'), tr); });
@@ -5338,11 +5752,61 @@
   $('modal-next').addEventListener('click', function () { stepModal(1); });
   $('modal-tabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-tab]'); if (!b) return;
-    state.modal.tab = b.getAttribute('data-tab'); state.edit = null; renderModal();
+    state.modal.tab = b.getAttribute('data-tab'); state.edit = null; state.docs.ask = null; state.docs.confirm = null; renderModal();
     var nb = $('mt-' + state.modal.tab); if (nb) nb.focus();
   });
   // Édition au clic : un clic (ou Entrée) ouvre l'éditeur ; Entrée enregistre, Échap annule.
   var panels = $('modal-panels');
+  // Onglet Documents : actions par ligne, nom à afficher, zone de dépôt (clic ou glisser-déposer).
+  panels.addEventListener('click', function (e) {
+    var pp = e.target.closest('[data-ppe]');
+    if (pp) {
+      var pa = pp.getAttribute('data-ppe');
+      if (pa === 'ask') { state.ppe = { start: secToIso(todaySec()), busy: false, error: null }; renderModal(); }
+      else if (pa === 'cancel') { state.ppe = null; renderModal(); }
+      else if (pa === 'gen') genPpe();
+      return;
+    }
+    var d = state.docs, da = e.target.closest('[data-dact]');
+    if (da) {
+      var tr = da.closest('tr'), id = Number(tr.getAttribute('data-att')), a = da.getAttribute('data-dact');
+      if (a === 'edit') pickFiles(false, function (files) { replaceFile(files[0], id); });
+      else if (a === 'delete') { d.confirm = id; renderModal(); }
+      else if (a === 'cancel') { d.confirm = null; renderModal(); }
+      else if (a === 'confirm') deleteFile(id);
+      return;
+    }
+    var al = e.target.closest('a[data-dl]'); if (al) { if (!al.getAttribute('href') || al.getAttribute('href') === '#') e.preventDefault(); return; }
+    var pjb = e.target.closest('[data-pjask-act]');
+    if (pjb) { if (pjb.getAttribute('data-pjask-act') === 'ok') confirmPjAsk(); else { d.ask = null; renderModal(); } return; }
+    if (e.target.closest('#r-doc-drop') && !d.busy && !d.ask) pickFiles(true, queueUpload);
+  });
+  panels.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'r-doc-drop' && !state.docs.busy) { e.preventDefault(); pickFiles(true, queueUpload); }
+    if (e.target.closest('.pjask-row')) {
+      if (e.key === 'Enter') { e.preventDefault(); confirmPjAsk(); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); state.docs.ask = null; renderModal(); }
+    }
+  });
+  panels.addEventListener('input', function (e) {
+    if (e.target.id === 'r-ppe-start' && state.ppe) { // la date de fin se met à jour sans redessiner le formulaire
+      state.ppe.start = e.target.value; state.ppe.error = null;
+      var s = isoToSec(e.target.value); $('ppe-end').textContent = s != null ? fmtDate(ppeEndSec(s)) : '—';
+      return;
+    }
+    var idx = e.target.getAttribute && e.target.getAttribute('data-pjidx');
+    if (idx == null || !state.docs.ask) return;
+    var it = state.docs.ask.items[+idx]; if (it) { it.name = e.target.value; it.error = ''; }
+  });
+  ['dragenter', 'dragover'].forEach(function (t) { panels.addEventListener(t, function (e) { var z = e.target.closest('#r-doc-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } }); });
+  panels.addEventListener('dragleave', function (e) { var z = e.target.closest('#r-doc-drop'); if (z) z.classList.remove('is-over'); });
+  panels.addEventListener('drop', function (e) {
+    var z = e.target.closest('#r-doc-drop'); if (!z) return;
+    e.preventDefault(); z.classList.remove('is-over');
+    if (state.docs.busy || state.docs.ask || !e.dataTransfer || !e.dataTransfer.files.length) return;
+    queueUpload(Array.prototype.slice.call(e.dataTransfer.files));
+  });
+  ['dragover', 'drop'].forEach(function (t) { $('modal').addEventListener(t, function (e) { if (!e.target.closest('#r-doc-drop')) e.preventDefault(); }); }); // pas d'ouverture d'un fichier lâché à côté
   panels.addEventListener('click', function (e) {
     var act = e.target.closest('[data-ed-act]');
     if (act) { if (act.getAttribute('data-ed-act') === 'save') saveEdit(); else cancelEdit(); return; }
@@ -5873,7 +6337,7 @@
       if (e.relatedTarget && td && td.contains(e.relatedTarget)) return;
       commit();
     });
-    return { open: open, status: status, loadData: loadData };
+    return { open: open, status: status, loadData: loadData, data: function () { return data; } };
   }
 
   // Renouvellement de contrat (table « Renouvellement contrats »). Tous les champs sont obligatoires, sauf les pièces jointes.
@@ -5938,6 +6402,281 @@
     ]
   });
   function loadRequestsData() { return Promise.all(Object.keys(REQ).map(function (k) { return REQ[k].loadData(); })); }
+
+  /* ---------- Pages « Renouvellements » et « Avenants » : suivi des demandes en vue tableau (lecture seule) ---------- */
+  // « Avenants » : table « Modifications contrats » (mutations, suspensions, démissions) ; « Renouvellements » : table « Renouvellement contrats ».
+  var VIEWS = { ren: { req: 'ren', q: '', col: '', dir: -1 }, ave: { req: 'mut', q: '', col: '', dir: -1 } };
+  var STATE_BADGE = { 'a traiter': 'warning', 'en cours': 'info', 'acceptee': 'success', 'refusee': 'error' };
+  // Badge DSFR d'état d'une demande : variante selon l'état, badge neutre pour un état inconnu.
+  function reqStateTagHtml(label, state) {
+    var v = STATE_BADGE[norm(state || '')];
+    return '<span class="fr-badge fr-badge--sm' + (v ? ' fr-badge--' + v : '') + '">' + esc(label) + '</span>';
+  }
+  function viewCellHtml(col, v, d) {
+    if (typeBase(col.type) === 'Ref') {
+      if (!v) return '<span class="is-empty">—</span>';
+      var rec = state.records.filter(function (r) { return r.raw.id === v; })[0];
+      return rec ? esc(formatName(String(rec.identity == null ? '' : rec.identity))) : esc(String(v));
+    }
+    if (norm(col.label) === 'etat demande' && v) return reqStateTagHtml(String(v), v);
+    return fmtValue(col, v).html;
+  }
+  function renderView(key) {
+    var V = VIEWS[key], d = REQ[V.req].data(), P = 'v-' + key + '-', noun = key === 'ren' ? 'renouvellement' : 'avenant';
+    var thead = $(P + 'thead'), rows = $(P + 'rows'), stEl = $(P + 'state'), cnt = $(P + 'count');
+    if (!d) {
+      thead.innerHTML = ''; rows.innerHTML = ''; cnt.textContent = '';
+      stEl.hidden = false; stEl.innerHTML = '<strong>Table introuvable</strong>La table des demandes de ' + noun + ' n’a pas été détectée dans ce document.';
+      return;
+    }
+    var ec = findCol(d.table, 'Etat demande'), cols = (state.colsByTable[d.table] || []).slice().sort(function (a, b) { return (b === ec) - (a === ec); });
+    var q = norm(V.q.trim()), terms = q ? q.split(/\s+/) : [];
+    var list = d.rows.filter(function (r) {
+      if (!terms.length) return true;
+      var hay = norm(cols.map(function (c) { return r[c.id] == null ? '' : textOfValue(c, r[c.id]); }).join(' '));
+      return terms.every(function (t) { return hay.indexOf(t) !== -1; });
+    });
+    var sc = V.col && cols.filter(function (c) { return c.id === V.col; })[0];
+    function sortVal(r) { var v = sc ? r[sc.id] : r.id; return typeof v === 'number' ? v : norm(String(v == null ? '' : v)); }
+    list.sort(function (a, b) { var x = sortVal(a), y = sortVal(b); return (x < y ? -1 : x > y ? 1 : 0) * V.dir; });
+    cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '');
+    thead.innerHTML = '<tr>' + cols.map(function (c) {
+      var on = sc && sc.id === c.id;
+      return '<th scope="col"><button type="button" data-sort="' + esc(c.id) + '">' + esc(c.label) + (on ? ' <span class="arrow">' + (V.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</button></th>';
+    }).join('') + '</tr>';
+    rows.innerHTML = list.map(function (r) { return '<tr>' + cols.map(function (c) { return '<td>' + viewCellHtml(c, r[c.id], d) + '</td>'; }).join('') + '</tr>'; }).join('');
+    stEl.hidden = !!list.length; if (!list.length) stEl.innerHTML = d.rows.length ? '<strong>Aucun résultat</strong>Aucune demande ne correspond à votre recherche.' : '<strong>Aucune demande</strong>La table est vide.';
+  }
+  function refreshView(key) { return REQ[VIEWS[key].req].loadData().then(function () { renderView(key); }); }
+
+  /* ---------- Page « Statistiques » : effectifs, répartitions, échéances et demandes en cours ---------- */
+  function pct(n, total) { return total ? Math.round(n * 1000 / total) / 10 : 0; }
+  function statTile(label, value, sub, alert) { return '<div class="stat-tile' + (alert ? ' is-alert' : '') + '"><p class="stat-num">' + esc(value) + '</p><p class="stat-lbl">' + esc(label) + '</p>' + (sub ? '<p class="stat-sub">' + esc(sub) + '</p>' : '') + '</div>'; }
+  // Répartition d'une colonne (Choix ou texte) : une ligne par valeur, triée par effectif décroissant, avec barre proportionnelle.
+  function distData(title, c, label) {
+    var col = findCol(c.table, label); if (!col) return null;
+    var counts = {}, total = state.records.length;
+    state.records.forEach(function (r) { var v = r.raw[col.id], k = emptyVal(v) ? '' : String(textOfValue(col, v)); counts[k] = (counts[k] || 0) + 1; });
+    return { title: title, rows: Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).map(function (k) { return { label: k, count: counts[k], pct: pct(counts[k], total) }; }) };
+  }
+  function frPct(p) { return String(p).replace('.', ',') + ' %'; }
+  function distCard(d) {
+    if (!d) return '';
+    var rows = d.rows.map(function (r) {
+      return '<tr><th scope="row">' + (r.label ? esc(r.label) : '<span class="is-empty">Non renseigné</span>') + '</th><td class="stat-n">' + r.count + '</td><td class="stat-bar-cell"><span class="stat-bar" aria-hidden="true"><span style="width:' + r.pct + '%"></span></span> <span class="stat-pct">' + frPct(r.pct) + '</span></td></tr>';
+    }).join('');
+    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><table class="stat-table"><caption class="fr-sr-only">' + esc(d.title) + '</caption><tbody>' + rows + '</tbody></table></section>';
+  }
+  // Données des statistiques (écran et PDF).
+  function statsData() {
+    var c = cfg(), recs = state.records, n = recs.length;
+    if (state.read && state.read.error) return { error: state.read.error };
+    if (!n) return { empty: true };
+    var nonEmp = 0; recs.forEach(function (r) { if (expiredLabels(r.raw, c).length) nonEmp++; });
+    return {
+      n: n, nonEmp: nonEmp, ren: openRequests('ren'), ave: openRequests('mut'),
+      echCols: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) { return { id: col.id, label: displayLabel(col) }; }),
+      dists: [distData('Par type de réserviste', c, 'Type R'), distData('Par grade', c, 'Grade'), distData('Par affectation', c, 'Affectation')].filter(Boolean),
+      ech: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) {
+        var e = 0, s = 0, ok = 0, none = 0;
+        recs.forEach(function (r) { var v = r.raw[col.id], st = expiryState(v); if (typeof v !== 'number') none++; else if (st === 'expired') e++; else if (st === 'soon') s++; else ok++; });
+        return { label: displayLabel(col), e: e, s: s, ok: ok, none: none };
+      })
+    };
+  }
+  function openRequests(key) { var d = REQ[key].data(); if (!d) return null; var ec = findCol(d.table, 'Etat demande'); return d.rows.filter(function (r) { var v = ec ? norm(String(r[ec.id] || '')) : ''; return v !== 'acceptee' && v !== 'refusee'; }).length; }
+  // Échéances : vue « Tableau » ou « Graphique ». Le graphique est une matrice affectation × échéance : chaque cellule est une barre
+  // empilée à 100 % de l'état des réservistes concernés (expirée, < 60 jours, à jour, non renseignée), les affectations les plus touchées en tête.
+  var statEch = { view: 'table' };
+  var ECH_STATES = [['expired', 'Expirées', '#d03b3b', '#fff'], ['soon', '< ' + SOON_DAYS + ' jours', '#fab219', '#0b0b0b'], ['ok', 'À jour', '#0ca30c', '#fff'], ['none', 'Non renseignées', '#b5b4ac', '#0b0b0b']];
+  function echState(col, r) { var v = r.raw[col.id]; return typeof v !== 'number' ? 'none' : (expiryState(v) || 'ok'); }
+  function echMatrix() {
+    var c = cfg(), cols = (state.colsByTable[c.table] || []).filter(isExpCol), ac = findCol(c.table, 'Affectation'), groups = {};
+    var blank = function () { return { expired: 0, soon: 0, ok: 0, none: 0 }; };
+    var all = { label: 'RGIF', total: 0, bad: 0, cells: {}, isAll: true };
+    cols.forEach(function (col) { all.cells[col.id] = blank(); });
+    state.records.forEach(function (r) {
+      var k = ac && !emptyVal(r.raw[ac.id]) ? String(textOfValue(ac, r.raw[ac.id])) : '';
+      var g = groups[k] || (groups[k] = { label: k, total: 0, bad: 0, cells: {} });
+      g.total++; all.total++;
+      cols.forEach(function (col) {
+        var s = echState(col, r), cell = g.cells[col.id] || (g.cells[col.id] = blank());
+        cell[s]++; all.cells[col.id][s]++; if (s === 'expired') { g.bad++; all.bad++; }
+      });
+    });
+    var rows = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.bad - a.bad || b.total - a.total; });
+    return { cols: cols.map(function (x) { return { id: x.id, label: displayLabel(x) }; }), rows: [all].concat(rows) };
+  }
+  function cellTip(g, col, cell) { // texte de l'infobulle (une ligne par état), repris en étiquette d'accessibilité
+    return (g.label || 'Non renseigné') + ' · ' + col.label + '|' + ECH_STATES.filter(function (s) { return cell[s[0]]; }).map(function (s) { return s[1] + ' : ' + cell[s[0]]; }).join('|');
+  }
+  function echLegendHtml(pdf) {
+    return '<ul' + (pdf ? ' style="list-style:none;margin:0 0 8px;padding:0;"' : ' class="stat-legend"') + '>' + ECH_STATES.map(function (s) {
+      return '<li style="display:inline-block;margin:0 14px 4px 0;' + (pdf ? 'font-size:11px;' : '') + '"><span style="display:inline-block;width:12px;height:8px;border-radius:4px;background:' + s[2] + ';margin-right:6px;"></span>' + esc(s[1]) + '</li>';
+    }).join('') + '</ul>';
+  }
+  function echMatrixHtml(M, pdf) {
+    if (!M.cols.length || !M.rows.length) return '<p class="is-empty">Aucune donnée.</p>';
+    var H = pdf ? 18 : 22;
+    function cellBar(g, col) {
+      var cell = g.cells[col.id], n = g.total, tip = cellTip(g, col, cell);
+      var segs = ECH_STATES.map(function (s) {
+        var v = cell[s[0]]; if (!v) return '';
+        var w = v / n * 100;
+        // étiquette dans le segment seulement s'il est assez large ; sinon l'infobulle (et le tableau) portent la valeur
+        var lbl = w >= 24 ? v : '';
+        return pdf
+          ? '<span style="display:inline-block;width:' + w + '%;height:' + H + 'px;background:' + s[2] + ';color:' + s[3] + ';border-right:2px solid #fff;box-sizing:border-box;font-size:10px;line-height:' + H + 'px;text-align:center;vertical-align:top;">' + lbl + '</span>'
+          : '<span class="mx-seg" style="flex:' + v + ' 1 0;background:' + s[2] + ';color:' + s[3] + ';">' + lbl + '</span>';
+      }).join('');
+      return pdf ? '<td style="padding:3px 6px;border:0;font-size:0;">' + segs + '</td>'
+        : '<div class="mx-cell" role="img" tabindex="0" data-tip="' + esc(tip) + '" aria-label="' + esc(tip.replace(/\|/g, ', ')) + '"><span class="mx-bar">' + segs + '</span></div>';
+    }
+    var lead = function (g) { return (g.label ? esc(g.label) : (pdf ? 'Non renseigné' : '<span class="is-empty">Non renseigné</span>')) + (pdf ? ' <span style="color:#666;font-size:10px;">(' + g.total + ')</span>' : ' <span class="mx-n">(' + g.total + ')</span>'); };
+    if (pdf) {
+      return echLegendHtml(true) + '<table style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr><th style="width:20%;"></th>' + M.cols.map(function (x) { return '<th style="text-align:left;font-size:10px;padding:3px 6px;border:0;color:#444;">' + esc(x.label) + '</th>'; }).join('') + '</tr>' +
+        M.rows.map(function (g) { return '<tr><td style="padding:3px 6px 3px 0;border:0;border-top:1px solid #ddd;font-weight:bold;font-size:11px;' + (g.isAll ? 'color:#000091;' : '') + '">' + lead(g) + '</td>' + M.cols.map(function (x) { return cellBar(g, x); }).join('') + '</tr>'; }).join('') + '</table>';
+    }
+    return echLegendHtml(false) + '<div class="table-wrap"><div class="mx" style="--mx-cols:' + M.cols.length + ';">' +
+      '<div class="mx-row mx-head"><span></span>' + M.cols.map(function (x) { return '<span class="mx-col">' + esc(x.label) + '</span>'; }).join('') + '</div>' +
+      M.rows.map(function (g) { return '<div class="mx-row' + (g.isAll ? ' mx-all' : '') + '"><span class="mx-lbl">' + lead(g) + '</span>' + M.cols.map(function (x) { return cellBar(g, x); }).join('') + '</div>'; }).join('') +
+      '</div></div><div class="mx-tip" id="r-mx-tip" role="status" hidden></div>';
+  }
+  function echCardHtml(S) {
+    var isChart = statEch.view === 'chart';
+    var table = '<div class="table-wrap"><table class="stat-table"><caption class="fr-sr-only">Échéances par type</caption><thead><tr><th scope="col">Échéance</th><th scope="col" class="stat-n">Expirées</th><th scope="col" class="stat-n">&lt; ' + SOON_DAYS + ' jours</th><th scope="col" class="stat-n">À jour</th><th scope="col" class="stat-n">Non renseignées</th></tr></thead><tbody>' +
+      S.ech.map(function (r) { return '<tr><th scope="row">' + esc(r.label) + '</th><td class="stat-n' + (r.e ? ' is-bad' : '') + '">' + r.e + '</td><td class="stat-n">' + r.s + '</td><td class="stat-n">' + r.ok + '</td><td class="stat-n">' + r.none + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    return '<section class="stat-card stat-wide"><div class="stat-card-head"><h2 class="fr-h6">Échéances</h2><div class="stat-seg" role="group" aria-label="Affichage des échéances">' +
+      '<button type="button" class="btn sm' + (isChart ? ' secondary' : '') + '" data-statview="table" aria-pressed="' + !isChart + '">Tableau</button>' +
+      '<button type="button" class="btn sm' + (isChart ? '' : ' secondary') + '" data-statview="chart" aria-pressed="' + isChart + '">Graphique</button></div></div>' +
+      (isChart ? '<p class="stat-hint">État des réservistes par affectation et par échéance (barre = 100 % des réservistes de l’affectation) ; les affectations les plus touchées par des échéances dépassées sont en tête.</p>' + echMatrixHtml(echMatrix(), false) : table) + '</section>';
+  }
+  function statsHtml() {
+    var S = statsData();
+    if (S.error) return '<div class="state"><strong>Source inaccessible</strong>' + esc(S.error) + '</div>';
+    if (S.empty) return '<div class="state"><strong>Aucun réserviste</strong>La table est vide.</div>';
+    var tiles = '<div class="stat-grid">' + statTile('Réservistes', S.n, '') + statTile('Non employables', S.nonEmp, frPct(pct(S.nonEmp, S.n)) + ' de l’effectif (échéance dépassée)', S.nonEmp > 0) +
+      statTile('Demandes de renouvellement en cours', S.ren == null ? '—' : S.ren, '') + statTile('Demandes d’avenants en cours', S.ave == null ? '—' : S.ave, '') + '</div>';
+    return tiles + '<div class="stat-cards">' + S.dists.map(distCard).join('') + (S.ech.length ? echCardHtml(S) : '') + '</div>';
+  }
+  function renderStats() { var el = $('stats-body'); if (el) el.innerHTML = statsHtml(); }
+  function refreshStats() { return loadRequestsData().then(renderStats); }
+
+  // Export PDF A4 des statistiques, mis en page selon la charte graphique de l'État (modèle « Note ») : marges de 17 mm, bloc-marque en haut à gauche,
+  // zone direction en haut à droite (Arial gras 12 pt), date (Arial 8 pt), titre « NOTE » (Arial gras 12 pt), objet (Arial gras 10 pt),
+  // corps en Arial 10 pt, pied de page en Arial 7 pt. Le convertisseur est celui du PPE (HTML à styles en ligne).
+  var CHARTE_MM = 17, PX_MM = 96 / 25.4;
+  function mmPx(n) { return Math.round(n * PX_MM) + 'px'; }
+  // Bloc-marque : repris de celui de l'en-tête de la page (drapeau + « Ministère de l'intérieur » + devise), en version claire pour le papier.
+  var blocPng = null;
+  function blocMarquePng() {
+    var l = document.querySelector('.fr-header .fr-logo');
+    if (!l) return Promise.resolve(null);
+    var bi = getComputedStyle(l, '::before').backgroundImage, ai = getComputedStyle(l, '::after').backgroundImage;
+    function svgInner(bg) { var m = /url\("data:image\/svg\+xml;charset=utf8,([^"]*)"\)/.exec(bg); if (!m) return null; var x = decodeURIComponent(m[1]); return x.slice(x.indexOf('>') + 1, x.lastIndexOf('</svg>')); }
+    var fi = svgInner(bi), di = svgInner(ai); if (fi == null || di == null) return Promise.resolve(null);
+    function svgImg(svg, w, h) { return new Promise(function (res) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = function () { res(null); }; im.width = w; im.height = h; im.src = 'data:image/svg+xml;charset=utf8,' + encodeURIComponent(svg); }); }
+    // drapeau 33 × 12 px : bleu / rouge, puis la Marianne (blanc) ; devise 96,6 × 26,5 px : fond du dessin repris en noir sur fond blanc
+    var flag = "<svg xmlns='http://www.w3.org/2000/svg' width='33' height='12' viewBox='0 0 33 12'><rect width='16.5' height='12' fill='#000091'/><rect x='16.5' width='16.5' height='12' fill='#e1000f'/><svg x='0' y='-0.75' width='33' height='13.5' viewBox='0 0 44 18'>" + fi + '</svg></svg>';
+    var devise = "<svg xmlns='http://www.w3.org/2000/svg' width='96.6' height='26.5' viewBox='0 0 96.6 26.5'><svg x='-31.5' y='-18.5' width='63' height='45' viewBox='0 0 252 180'>" + di.replace(/#fff\b/gi, '#000') + '</svg></svg>';
+    // L'ensemble est composé dans un canevas (x4) puis converti en PNG : html2canvas ne sait pas dessiner les SVG imbriqués.
+    return Promise.all([svgImg(flag, 33 * 4, 12 * 4), svgImg(devise, 96.6 * 4, 26.5 * 4)]).then(function (im) {
+      if (!im[0] || !im[1]) return null;
+      var K = 4, W = 121, H = 12 + 4 + 28 + 4 + 27, c = document.createElement('canvas'); c.width = W * K; c.height = H * K;
+      var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(im[0], 0, 0, 33 * K, 12 * K);
+      g.fillStyle = '#000'; g.textBaseline = 'top'; g.font = '700 ' + (12.6 * K) + 'px Marianne, Arial, Helvetica, sans-serif';
+      g.fillText('MINISTÈRE', 0, 16 * K); g.fillText('DE L’INTÉRIEUR', 0, 29 * K);
+      g.drawImage(im[1], 0, 48 * K, 96.6 * K, 26.5 * K);
+      return { src: c.toDataURL('image/png'), w: W, h: H };
+    }).catch(function () { return null; });
+  }
+  function statsPdfHtml(S) {
+    var F = 'font-family:Arial,Helvetica,sans-serif;', B10 = F + 'font-size:13.33px;line-height:1.4;', S8 = F + 'font-size:10.67px;line-height:1.3;';
+    var td = 'padding:3px 6px;border-top:0;border-bottom:1px solid #ddd;', num = 'text-align:right;white-space:nowrap;';
+    var h = function (t) { return '<div style="' + F + 'font-weight:bold;font-size:13.33px;margin:16px 0 4px;">' + esc(t) + '</div>'; };
+    var date = fmtDate(todaySec());
+    var out = '<div style="' + B10 + 'color:#000;position:relative;">' +
+      // zone bloc-marque (gauche) et zone direction (droite, jusqu'à 3 lignes) ; la date vient 43 mm sous la marge haute
+      '<table style="width:100%;border-collapse:collapse;"><tr><td style="padding:0;border:0;vertical-align:top;height:' + mmPx(43) + ';">' + (blocPng ? '<img alt="" src="' + blocPng.src + '" width="' + blocPng.w + '" height="' + blocPng.h + '">' : '<div style="' + F + 'font-weight:bold;font-size:13px;text-transform:uppercase;line-height:1.1;">Ministère<br>de l’intérieur</div>') + '</td>' +
+      '<td style="padding:' + mmPx(6.5) + ' 0 0 0;border:0;vertical-align:top;text-align:right;' + F + 'font-weight:bold;font-size:16px;line-height:1.25;">Division réserves jeunesse</td></tr></table>' +
+      '<div style="text-align:right;' + S8 + '">Le ' + esc(date) + '</div>' +
+      '<div style="text-align:center;' + F + 'font-weight:bold;font-size:16px;margin-top:' + mmPx(14) + ';">NOTE</div>' +
+      '<div style="' + F + 'font-weight:bold;font-size:13.33px;margin-top:' + mmPx(12) + ';">Objet : Statistiques des réservistes (situation au ' + esc(date) + ')</div>' +
+      '<div style="height:' + mmPx(10) + ';"></div>';
+    // indicateurs
+    var ind = [['Réservistes', S.n], ['Non employables (échéance dépassée)', S.nonEmp + ' (' + frPct(pct(S.nonEmp, S.n)) + ')'], ['Demandes de renouvellement en cours', S.ren == null ? '—' : S.ren], ['Demandes d’avenants en cours', S.ave == null ? '—' : S.ave]];
+    out += h('Indicateurs') + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + ind.map(function (r, i) { return '<tr><td style="' + td + 'width:75%;">' + esc(r[0]) + '</td><td style="' + td + num + 'font-weight:bold;' + (i === 1 && S.nonEmp > 0 ? 'color:#ce0500;' : '') + '">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
+    S.dists.forEach(function (d) {
+      out += h(d.title) + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + d.rows.map(function (r) {
+        return '<tr><td style="' + td + 'width:30%;">' + (r.label ? esc(r.label) : 'Non renseigné') + '</td><td style="' + td + num + 'width:8%;font-weight:bold;">' + r.count + '</td>' +
+          '<td style="' + td + '"><table style="width:62%;border-collapse:collapse;display:inline-table;vertical-align:middle;"><tr><td style="padding:0;border:0;height:8px;width:' + r.pct + '%;background:#000091;"></td><td style="padding:0;border:0;height:8px;background:#e3e3fd;"></td></tr></table> <span style="' + S8 + 'color:#555;">' + frPct(r.pct) + '</span></td></tr>';
+      }).join('') + '</table>';
+    });
+    if (S.ech.length && statEch.view === 'chart') { // graphique : même matrice qu'à l'écran
+      out += '<div data-pdf-break="1" style="height:1px;"></div>' + h('Échéances par état et par affectation') + '<div style="' + S8 + 'color:#555;margin-bottom:6px;">Barre = 100 % des réservistes de l’affectation ; affectations les plus touchées en tête.</div>' + echMatrixHtml(echMatrix(), true);
+    } else if (S.ech.length) {
+      var th = 'text-align:left;padding:3px 6px;border-top:0;border-bottom:1px solid #999;font-weight:bold;';
+      out += h('Échéances') + '<table style="width:100%;border-collapse:collapse;' + B10 + '"><tr><td style="' + th + '">Échéance</td><td style="' + th + num + '">Expirées</td><td style="' + th + num + '">&lt; ' + SOON_DAYS + ' jours</td><td style="' + th + num + '">À jour</td><td style="' + th + num + '">Non renseignées</td></tr>' +
+        S.ech.map(function (r) { return '<tr><td style="' + td + '">' + esc(r.label) + '</td><td style="' + td + num + (r.e ? 'color:#ce0500;font-weight:bold;' : '') + '">' + r.e + '</td><td style="' + td + num + '">' + r.s + '</td><td style="' + td + num + '">' + r.ok + '</td><td style="' + td + num + '">' + r.none + '</td></tr>'; }).join('') + '</table>';
+    }
+    return out + '</div>';
+  }
+  function exportStatsPdf() {
+    var btn = $('stats-pdf'), msg = $('stats-msg'), S = statsData(), m = CHARTE_MM * 72 / 25.4;
+    if (S.error || S.empty) { msg.textContent = 'Aucune donnée à exporter.'; return; }
+    btn.disabled = true; btn.textContent = 'Génération…'; msg.textContent = '';
+    blocMarquePng().then(function (png) { blocPng = png; return buildPdfFromHtml(statsPdfHtml(S), {
+      margin: [m, m, m, m], breakBefore: true,
+      decorate: function (doc, pages) { // pied de page (Arial 7 pt) et pagination sur chaque page
+        for (var i = 1; i <= pages; i++) {
+          doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(90);
+          var y = 297 - CHARTE_MM + 2;
+          doc.text('Ministère de l\'intérieur - Division réserves jeunesse', m, y * 72 / 25.4);
+          doc.text('Page ' + i + ' / ' + pages, 595.28 - m, y * 72 / 25.4, { align: 'right' });
+        }
+      }
+    }); }).then(function (ab) {
+      downloadBlob(new Blob([ab], { type: 'application/pdf' }), 'statistiques_reservistes_' + secToIso(todaySec()) + '.pdf');
+      msg.textContent = 'PDF généré.';
+    }).catch(function (e) { msg.textContent = 'Génération impossible : ' + ((e && e.message) || e) + '.'; })
+      .then(function () { btn.disabled = false; btn.textContent = 'Extraire en PDF'; });
+  }
+  $('stats-pdf').addEventListener('click', exportStatsPdf);
+  $('stats-body').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-statview]'); if (!b) return;
+    statEch.view = b.getAttribute('data-statview'); renderStats();
+  });
+  // Infobulle des cellules de la matrice : au survol et au focus clavier (le texte vient des données : textContent uniquement).
+  function showMxTip(cell) {
+    var tip = $('mx-tip'); if (!tip || !cell) return;
+    var parts = cell.getAttribute('data-tip').split('|'); tip.textContent = '';
+    var h = document.createElement('div'); h.className = 'mx-tip-h'; h.textContent = parts[0]; tip.appendChild(h);
+    parts.slice(1).forEach(function (p) {
+      var i = p.lastIndexOf(' : '), st = ECH_STATES.filter(function (s) { return s[1] === p.slice(0, i); })[0], row = document.createElement('div'), sw = document.createElement('span'), v = document.createElement('strong'), l = document.createElement('span');
+      sw.className = 'mx-sw'; sw.style.background = st ? st[2] : '#929292'; v.textContent = p.slice(i + 3); l.textContent = ' ' + p.slice(0, i);
+      row.appendChild(sw); row.appendChild(v); row.appendChild(l); tip.appendChild(row);
+    });
+    tip.hidden = false;
+    var r = cell.getBoundingClientRect(), host = tip.offsetParent ? tip.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+    tip.style.left = Math.max(4, Math.min(r.left - host.left, (tip.offsetParent ? tip.offsetParent.clientWidth : window.innerWidth) - tip.offsetWidth - 4)) + 'px';
+    tip.style.top = (r.bottom - host.top + 6) + 'px';
+  }
+  function hideMxTip() { var tip = $('mx-tip'); if (tip) tip.hidden = true; }
+  $('stats-body').addEventListener('pointerover', function (e) { var c = e.target.closest('.mx-cell'); if (c) showMxTip(c); });
+  $('stats-body').addEventListener('pointerout', function (e) { if (e.target.closest('.mx-cell')) hideMxTip(); });
+  $('stats-body').addEventListener('focusin', function (e) { var c = e.target.closest('.mx-cell'); if (c) showMxTip(c); });
+  $('stats-body').addEventListener('focusout', function (e) { if (e.target.closest('.mx-cell')) hideMxTip(); });
+  Object.keys(VIEWS).forEach(function (key) {
+    var timer;
+    $('v-' + key + '-q').addEventListener('input', function (e) { var val = e.target.value; clearTimeout(timer); timer = setTimeout(function () { VIEWS[key].q = val; renderView(key); }, 200); });
+    $('v-' + key + '-thead').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-sort]'); if (!b) return;
+      var V = VIEWS[key], id = b.getAttribute('data-sort');
+      if (V.col === id) V.dir = -V.dir; else { V.col = id; V.dir = 1; }
+      renderView(key);
+    });
+  });
   $('modal-panels').addEventListener('click', function (e) { var b = e.target.closest('[data-req]'); if (b && REQ[b.getAttribute('data-req')]) REQ[b.getAttribute('data-req')].open(); });
   // Réservation VMP : réserver (modale de la page Réservations) puis confirmer au réserviste / à l'antenne médicale.
   $('modal-panels').addEventListener('click', function (e) {
@@ -6134,7 +6873,22 @@
     var cols = (state.colsByTable[dr.table] || []).map(function (c) { return { value: c.id, label: colLabel(c) }; });
     fillSelect($('f-identity'), cols, dr.identity, '— Composer à partir de NOM et Prénom —');
     renderPicks();
+    $('f-ppe').value = dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : DEFAULT_PPE;
+    if (!$('ppe-preview').hidden) refreshPpePreview();
   }
+  // Aperçu du modèle de PPE (premier réserviste de la table, période d'exemple commençant aujourd'hui).
+  function refreshPpePreview() {
+    var frame = $('ppe-preview'), c = cfg(), rec = state.records[0];
+    var tpl = state.draft && state.draft.ppeTpl && state.draft.ppeTpl.trim() ? state.draft.ppeTpl : DEFAULT_PPE;
+    var s = todaySec(), inner = rec ? sanitizeHtml(fillTemplate(tpl, { raw: rec.raw, id: rec.identity == null ? '' : String(rec.identity) }, c, { DATE_DEBUT: fmtDate(s), DATE_FIN: fmtDate(ppeEndSec(s)) })) : '<p>Aucun réserviste dans la table : aperçu indisponible.</p>';
+    frame.srcdoc = '<!doctype html><html><body style="margin:0;background:#fff"><div style="width:698px;margin:0 auto;padding:12px;color:#161616">' + inner + '</div></body></html>';
+  }
+  $('f-ppe').addEventListener('input', function (e) { state.draft.ppeTpl = e.target.value; if (!$('ppe-preview').hidden) refreshPpePreview(); });
+  $('ppe-preview-btn').addEventListener('click', function () {
+    var f = $('ppe-preview'); f.hidden = !f.hidden; $('ppe-preview-btn').textContent = f.hidden ? 'Aperçu' : 'Masquer l’aperçu';
+    if (!f.hidden) refreshPpePreview();
+  });
+  $('ppe-reset').addEventListener('click', function () { state.draft.ppeTpl = ''; $('f-ppe').value = DEFAULT_PPE; if (!$('ppe-preview').hidden) refreshPpePreview(); });
   function renderRecap() {
     var c = cfg(), rd = state.read, ok = rd && !rd.error, call = $('recap-callout');
     if (rd && rd.error) { call.hidden = false; call.style.borderLeftColor = '#ce0500'; call.innerHTML = '<p class="t">Source inaccessible</p><p>' + esc(rd.error) + '</p>'; }
@@ -6158,8 +6912,14 @@
     var okSrc = !!ok && !!mt && !!((c.identity && colMeta(c.table, c.identity)) || (nom && pre));
     $('recap-sum').innerHTML = okSrc ? '<span class="tag green">Sources trouvées</span>' : '<span class="tag red">À vérifier</span>';
   }
+  // Baseline du menu déroulant : « Suivre les N réservistes de la RGIF » (N = nombre de lignes de la table des réservistes).
+  function updateNavCount() {
+    var el = document.getElementById('nav-res-baseline'); if (!el) return;
+    var n = state.read && !state.read.error ? state.records.length : null;
+    el.textContent = n == null ? 'Suivre les réservistes de la RGIF' : 'Suivre ' + (n > 1 ? 'les ' + n + ' réservistes' : 'le ' + n + ' réserviste') + ' de la RGIF';
+  }
   function renderAll() {
-    renderList(); renderAdminForm(); renderRecap();
+    renderList(); renderAdminForm(); renderRecap(); updateNavCount(); renderStats();
     if (!$('modal').hidden) {
       if (state.modal.rowId != null) state.view.forEach(function (v, i) { if (v.raw.id === state.modal.rowId) state.modal.index = i; });
       if (state.view[state.modal.index]) renderModal(); else closeModal();
@@ -6196,7 +6956,7 @@
   function saveRes() {
     var dr = state.draft;
     if (!dr.table) return Promise.reject(new Error('Réservistes : sélectionnez la table des réservistes (options avancées).'));
-    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs) };
+    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '' };
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.r = mine; // conserve la configuration de la première page
     return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
@@ -6219,7 +6979,7 @@
   }
   $('view-admin').addEventListener('input', function () { setDirty(true); });
   $('view-admin').addEventListener('change', function () { setDirty(true); });
-  $('view-admin').addEventListener('click', function (e) { if (e.target.closest('#r-btn-reset')) setDirty(true); });
+  $('view-admin').addEventListener('click', function (e) { if (e.target.closest('#r-btn-reset, #r-ppe-reset')) setDirty(true); });
   function cancelRes() {
     state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false);
   }
@@ -6230,6 +6990,8 @@
   window.RES = {
     setOptions: function (o) { state.opts = o || {}; if (window.__page === 'res' || state.records.length === 0) load(); },
     refresh: function () { return load(); },
+    refreshStats: refreshStats, // page « Statistiques »
+    refreshView: refreshView, // pages « Renouvellements » / « Avenants » (key : 'ren' ou 'ave')
     table: function () { return cfg().table; }, // table des réservistes (utilisée par la page Réservations pour « Réserver »)
     match: matchRes,
     fiche: ficheRes,
@@ -7890,24 +8652,35 @@
 <script>
 // Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
-  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', res: 'page-res', rsv: 'page-rsv', bo: 'page-bo' };
-  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', res: 'Réservistes RO1/RS/RC', rsv: 'Réservations', bo: 'Back office' };
+  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', rsv: 'page-rsv', bo: 'page-bo' };
+  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', rsv: 'Réservations', bo: 'Back office' };
   function show(p) {
     window.__page = p;
     Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = k !== p; });
     Array.prototype.forEach.call(document.querySelectorAll('#header-navigation [data-page]'), function (a) {
       if (a.getAttribute('data-page') === p) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
+    // Menu déroulant : son bouton est marqué « courant » quand la page affichée est l'un de ses sous-menus.
+    Array.prototype.forEach.call(document.querySelectorAll('#header-navigation .fr-nav__btn'), function (btn) {
+      var sub = document.getElementById(btn.getAttribute('aria-controls'));
+      if (sub && sub.querySelector('[data-page="' + p + '"]')) btn.setAttribute('aria-current', 'true'); else btn.removeAttribute('aria-current');
+    });
     document.title = titles[p];
     if (p !== 'bo') { try { localStorage.setItem('widgetPage', p); } catch (e) {} } // le back office n'est jamais la page retrouvée à la réouverture
     if (p === 'res' && window.RES) window.RES.refresh();
+    if ((p === 'res-ren' || p === 'res-ave') && window.RES) window.RES.refreshView(p === 'res-ren' ? 'ren' : 'ave');
+    if (p === 'res-stat' && window.RES) window.RES.refreshStats();
     if (p === 'rsv' && window.RSV) window.RSV.refresh();
     window.scrollTo(0, 0);
   }
   document.addEventListener('click', function (e) {
     var a = e.target.closest('#header-navigation [data-page]'); if (!a) return;
     e.preventDefault(); show(a.getAttribute('data-page'));
-    try { var m = document.getElementById('modal-header-menu'); if (m && window.dsfr) window.dsfr(m).modal.conceal(); } catch (err) {} // referme le menu mobile
+    try { // referme le menu déroulant (nouvel essai si DSFR était encore en train de l'ouvrir)
+      var sub = a.closest('.fr-collapse');
+      if (sub && window.dsfr) { window.dsfr(sub).collapse.conceal(); setTimeout(function () { if (sub.classList.contains('fr-collapse--expanded')) window.dsfr(sub).collapse.conceal(); }, 450); }
+    } catch (err) {}
+    try { var m =document.getElementById('modal-header-menu'); if (m && window.dsfr) window.dsfr(m).modal.conceal(); } catch (err) {} // referme le menu mobile
   });
   var saved = 'welcome'; try { saved = localStorage.getItem('widgetPage') || 'welcome'; } catch (e) {}
   show(pages[saved] ? saved : 'welcome');
