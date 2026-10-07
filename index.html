@@ -176,10 +176,16 @@
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin: 1rem 0 1.5rem; }
   .stat-tile { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; }
   .stat-num { margin: 0; font-size: 2.25rem; line-height: 2.5rem; font-weight: 700; color: var(--blue); }
+  .stat-tile--btn { display: flex; flex-direction: column; justify-content: flex-start; box-sizing: border-box; width: 100%; text-align: left; font: inherit; color: inherit; background: transparent; cursor: pointer; }
+  .stat-tile--btn > span { display: block; }
+  .stat-tile--btn .stat-num { margin: 0; }
+  .stat-tile--btn:hover { background: var(--row-hover); }
+  .stat-tile--btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .stat-tile--btn[aria-expanded="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
   .stat-tile.is-alert .stat-num { color: #ce0500; }
   .stat-lbl { margin: .25rem 0 0; font-weight: 700; }
   .stat-sub { margin: .25rem 0 0; font-size: .8125rem; color: var(--muted); }
-  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; align-items: start; }
+  .stat-cards { display: grid; grid-auto-flow: dense; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; align-items: start; }
   .stat-card { position: relative; border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; }
   .stat-card.stat-wide { grid-column: 1 / -1; }
   .stat-card h2 { margin: 0 0 .75rem; }
@@ -193,8 +199,11 @@
   .stat-bar { display: inline-block; width: calc(100% - 3.5rem); height: .6rem; border-radius: .3rem; background: var(--blue-tint); vertical-align: middle; overflow: hidden; }
   .stat-bar > span { display: block; height: 100%; background: var(--blue); }
   .stat-pct { display: inline-block; width: 3.2rem; text-align: right; font-size: .8125rem; color: var(--muted); }
-  .gchart { display: flex; align-items: flex-end; gap: .35rem; height: 7.5rem; padding-top: .25rem; border-bottom: 1px solid var(--border-default-grey); }
-  .gc { flex: 1 1 0; max-width: 3.5rem; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; padding-bottom: 1.5rem; }
+  .gchart { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem 1.5rem; }
+  .gc-group { display: flex; flex-direction: column; min-width: min-content; }
+  .gc-bars { display: flex; align-items: flex-end; gap: .35rem; height: 7.5rem; padding-top: .25rem; border-bottom: 1px solid var(--border-default-grey); }
+  .gc-blk { margin-top: .35rem; text-align: center; font-size: .75rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .gc { flex: 1 1 0; width: 2.75rem; max-width: 4.5rem; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; padding-bottom: 1.5rem; }
   .gc-bar { display: block; width: 65%; max-width: 1.9rem; background: var(--blue); border-radius: .2rem .2rem 0 0; }
   .gc:hover .gc-bar, .gc:focus .gc-bar { filter: brightness(1.25); }
   .gc-n { font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1rem; }
@@ -256,6 +265,11 @@
   .qf-btn[aria-pressed="true"]::before { background: #fff; }
   .qf-n { display: inline-block; min-width: 1.5rem; padding: 0 .45rem; border-radius: 1rem; background: var(--blue-tint); color: var(--blue); font-size: .75rem; font-weight: 700; line-height: 1.25rem; text-align: center; }
   .qf-btn[aria-pressed="true"] .qf-n { background: #fff; }
+  .modal-column.has-side { width: min(84rem, 100%); display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+  .modal-column.has-side > .modal-dialog { flex: 1 1 0; min-width: min(28rem, 100%); }
+  th.v-actions, td.v-actions { width: 1%; white-space: nowrap; }
+  td.v-actions .icon-btn { width: 2rem; height: 2rem; }
+  .v-confirm { margin-right: .35rem; font-size: .8125rem; font-weight: 700; color: var(--text-default-error); }
   .miss-line { margin-top: .15rem; font-size: .8125rem; color: var(--muted); }
   .ms { position: relative; }
   .ms-btn { text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -1011,6 +1025,26 @@
       <div class="actions" style="margin-top:12px"><button class="btn secondary sm" id="r-ppe-reset" type="button">Rétablir le modèle par défaut</button></div>
     </details>
 
+    <details class="bo-advanced">
+      <summary>Réservistes · modèles des contrats et courriels (renouvellements, avenants)</summary>
+      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, ou toute colonne de la demande ou du réserviste par son libellé.</p>
+      <h3>Renouvellement de contrat</h3>
+      <label for="r-f-ctr-ren-html">Contrat (HTML)</label>
+      <textarea id="r-f-ctr-ren-html" class="textarea tall mono" spellcheck="false" data-ctr="ren.html"></textarea>
+      <label for="r-f-ctr-ren-subject" style="margin-top:12px">Courriel : objet</label>
+      <input id="r-f-ctr-ren-subject" class="input" type="text" data-ctr="ren.subject">
+      <label for="r-f-ctr-ren-body" style="margin-top:12px">Courriel : message</label>
+      <textarea id="r-f-ctr-ren-body" class="textarea mono" rows="7" spellcheck="false" data-ctr="ren.body"></textarea>
+      <h3 style="margin-top:24px">Avenant</h3>
+      <label for="r-f-ctr-ave-html">Avenant (HTML)</label>
+      <textarea id="r-f-ctr-ave-html" class="textarea tall mono" spellcheck="false" data-ctr="ave.html"></textarea>
+      <label for="r-f-ctr-ave-subject" style="margin-top:12px">Courriel : objet</label>
+      <input id="r-f-ctr-ave-subject" class="input" type="text" data-ctr="ave.subject">
+      <label for="r-f-ctr-ave-body" style="margin-top:12px">Courriel : message</label>
+      <textarea id="r-f-ctr-ave-body" class="textarea mono" rows="7" spellcheck="false" data-ctr="ave.body"></textarea>
+      <div class="actions" style="margin-top:12px"><button class="btn secondary sm" id="r-ctr-reset" type="button">Rétablir les modèles par défaut</button></div>
+    </details>
+
     <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
       <span class="bo-bar__state" id="r-bo-state" aria-live="polite">Configuration à jour</span>
       <span class="bo-bar__saved" id="r-saved" role="status" hidden>✔ Configuration enregistrée</span>
@@ -1174,6 +1208,14 @@
       <label for="r-v-ren-q">Rechercher une demande de renouvellement</label>
       <input id="r-v-ren-q" class="input" type="search" placeholder="Nom, Nigend, état, affectation…" autocomplete="off">
     </div>
+    <div class="tb-field" id="r-v-ren-fst-wrap">
+      <label id="r-v-ren-fst-label" for="r-v-ren-fst-btn">État de la demande</label>
+      <div class="ms" id="r-v-ren-fst">
+        <button type="button" class="select ms-btn" id="r-v-ren-fst-btn" aria-haspopup="true" aria-expanded="false" aria-controls="r-v-ren-fst-panel">Tous les états</button>
+        <div class="ms-panel" id="r-v-ren-fst-panel" role="group" aria-labelledby="r-v-ren-fst-label" hidden></div>
+      </div>
+    </div>
+    <button type="button" class="btn secondary" id="r-v-ren-freset" disabled>Réinitialiser les filtres</button>
     <div class="count" id="r-v-ren-count" aria-live="polite"></div>
   </div>
   <div class="table-wrap">
@@ -1190,6 +1232,21 @@
       <label for="r-v-ave-q">Rechercher une demande d’avenant</label>
       <input id="r-v-ave-q" class="input" type="search" placeholder="Nom, Nigend, type, état…" autocomplete="off">
     </div>
+    <div class="tb-field" id="r-v-ave-fty-wrap">
+      <label id="r-v-ave-fty-label" for="r-v-ave-fty-btn">Type de demande</label>
+      <div class="ms" id="r-v-ave-fty">
+        <button type="button" class="select ms-btn" id="r-v-ave-fty-btn" aria-haspopup="true" aria-expanded="false" aria-controls="r-v-ave-fty-panel">Tous les types</button>
+        <div class="ms-panel" id="r-v-ave-fty-panel" role="group" aria-labelledby="r-v-ave-fty-label" hidden></div>
+      </div>
+    </div>
+    <div class="tb-field" id="r-v-ave-fst-wrap">
+      <label id="r-v-ave-fst-label" for="r-v-ave-fst-btn">État de la demande</label>
+      <div class="ms" id="r-v-ave-fst">
+        <button type="button" class="select ms-btn" id="r-v-ave-fst-btn" aria-haspopup="true" aria-expanded="false" aria-controls="r-v-ave-fst-panel">Tous les états</button>
+        <div class="ms-panel" id="r-v-ave-fst-panel" role="group" aria-labelledby="r-v-ave-fst-label" hidden></div>
+      </div>
+    </div>
+    <button type="button" class="btn secondary" id="r-v-ave-freset" disabled>Réinitialiser les filtres</button>
     <div class="count" id="r-v-ave-count" aria-live="polite"></div>
   </div>
   <div class="table-wrap">
@@ -1465,7 +1522,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.12</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.24</span></p>
   <a class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
 </footer>
 
@@ -1596,7 +1653,7 @@
         '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
         rowHtml('Réserviste', '<strong>{{IDENTITE}}</strong>') + rowHtml('Date de naissance', '{{DDN}}') + rowHtml('NID', '{{NID}}') + rowHtml('Nigend', '{{NIGEND}}') +
         rowHtml('Grade', '{{GRADE}}') + rowHtml('Corps', '{{CORPS}}') + rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('CRT', '{{CRT}}') +
-        rowHtml('N° ESR', '{{N_ESR}}') + rowHtml('Date du contrat', '{{DATE_CONTRAT}}') + rowHtml('Entrée en vigueur du contrat', '<strong>{{DEBUT_CONTRAT}}</strong>') +
+        rowHtml('Nature du contrat', '{{TYPE_CONTRAT}}') + rowHtml('N° ESR', '{{N_ESR}}') + rowHtml('Date du contrat', '{{DATE_CONTRAT}}') + rowHtml('Entrée en vigueur du contrat', '<strong>{{DEBUT_CONTRAT}}</strong>') +
         '  </table>\n' +
         '  <p>{{CIVILITE}} {{NOM}} s’engage à servir dans la réserve à compter du {{DEBUT_CONTRAT}}.</p>\n' +
         '  <table style="width: 100%; margin-top: 48px;">\n    <tr><td style="width: 50%;">Le réserviste<br><br><br></td><td>Pour le commandement<br><br><br></td></tr>\n  </table>\n' + SIGN_HTML)
@@ -2130,6 +2187,10 @@
       var key = name.toUpperCase().replace(/\s+/g, '_');
       if (key === 'IDENTITE') return out(formatName(identityOf(item.raw, c)));
       if (key === 'DATE_DU_JOUR') return out(todayFr());
+      // Nature du contrat : généré depuis la page Candidats, c'est un contrat initial.
+      if (key === 'TYPE_CONTRAT') return out('INITIAL');
+      if (key === 'INITIAL') return out('X');
+      if (key === 'RENOUVELLEMENT') return '';
       if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return out(extra[key]); // ex. {{N_CHRONO}}
       var alias = MAIL_ALIASES[key];
       var col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
@@ -3446,7 +3507,7 @@
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre (HTML)', 'textarea tall']] },
     rejet: { title: 'Lettre de rejet', hint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre de rejet (HTML)', 'textarea tall']] },
-    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT,
+    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « X » ici et {{RENOUVELLEMENT}} reste vide.',
       fields: [['template', 'Modèle de l’ESR (HTML)', 'textarea tall']] }
   };
   function kindBlockHtml(bKey, kind) {
@@ -4235,7 +4296,7 @@
   function cancelPmg() { state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false); }
   $('btn-cancel').addEventListener('click', cancelPmg);
   // Variables : un clic insère la variable dans le champ de modèle actif.
-  var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO'];
+  var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO', 'TYPE_CONTRAT', 'INITIAL', 'RENOUVELLEMENT'];
   $('bo-vars').innerHTML = BO_VARS.map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
   var boLastField = null;
   $('mail-forms').addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) boLastField = e.target; });
@@ -4795,26 +4856,32 @@
   DEMO.rows = DEMO_ROWS_BY_LABEL.map(function (r, i) { var o = { id: i + 1 }; Object.keys(r).forEach(function (k) { o[makeId(k)] = r[k]; }); return o; });
   // Table « Renouvellement contrats » (structure réelle : colonnes [libellé, type, formule ?]).
   var DEMO_RENEW_TABLE = 'Renouvellement_contrats';
-  var DEMO_RENEW_CHOICES = { 'Etat demande': ['À traiter', 'En cours', 'Acceptée', 'Refusée'], 'Affectation demandée': DEMO_CHOICES['Affectation'], 'CRT': ['Auvergne-Rhône-Alpes', 'Île-de-France', 'Occitanie'] };
-  var DEMO_RENEW_OPTIONS = { 'À traiter': { fillColor: '#FFB020', textColor: '#000000' }, 'En cours': { fillColor: '#2F80ED', textColor: '#FFFFFF' }, 'Acceptée': { fillColor: '#27AE60', textColor: '#FFFFFF' }, 'Refusée': { fillColor: '#EB5757', textColor: '#FFFFFF' } };
+  var DEMO_RENEW_CHOICES = { 'Etat demande': ['À traiter', 'En cours', 'À la signature RO1', 'À la signature DRJ', 'Demande finalisée', 'Rejet DRJ', 'Acceptée', 'Refusée'], 'Affectation demandée': DEMO_CHOICES['Affectation'], 'CRT': ['Auvergne-Rhône-Alpes', 'Île-de-France', 'Occitanie'] };
+  var DEMO_RENEW_OPTIONS = { 'À traiter': { fillColor: '#FFB020', textColor: '#000000' }, 'En cours': { fillColor: '#2F80ED', textColor: '#FFFFFF' }, 'À la signature RO1': { fillColor: '#8E44AD', textColor: '#FFFFFF' }, 'À la signature DRJ': { fillColor: '#6A3FC8', textColor: '#FFFFFF' }, 'Demande finalisée': { fillColor: '#1F8D49', textColor: '#FFFFFF' }, 'Rejet DRJ': { fillColor: '#C9191E', textColor: '#FFFFFF' }, 'Acceptée': { fillColor: '#27AE60', textColor: '#FFFFFF' }, 'Refusée': { fillColor: '#EB5757', textColor: '#FFFFFF' } };
   var DEMO_RENEW = { cols: [
     ['Etat demande', 'Choice'], ['Nigend', 'Text', true], ['Réf. Nigend', 'Ref:Reservistes_RO1_RS_RC'], ['Réf. Nigend_Grade', 'Any', true], ['Corps', 'Text'], ['Réf. Nigend_NOM', 'Any', true], ['Réf. Nigend_Prénom', 'Any', true],
     ['Affectation demandée', 'Choice'], ['CRT', 'Choice'], ['Date de début nouveau contrat', 'Date'], ['Date de fin nouveau contrat', 'Date', true], ['Email', 'Text'], ['Numéro de téléphone', 'Text'],
     ['Adresse', 'Text'], ['CP', 'Text'], ['Ville', 'Text'], ['Profession', 'Text'], ['Avis SRJ', 'Text'], ['B2', 'Attachments'], ['TAJ', 'Attachments'], ['Demande', 'Attachments'],
-    ['N° ESR', 'Text', true], ['Date contrat', 'Date', true], ['Contrat signé RO', 'Attachments'], ['Créé le', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
+    ['N° ESR', 'Text', true], ['Date contrat', 'Date', true], ['Contrat signé RO', 'Attachments'], ['Contrat signé DRJ', 'Attachments'], ['Créé le', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ].map(function (c) { return { id: makeId(c[0]), label: c[0], type: c[1], formula: !!c[2], choices: DEMO_RENEW_CHOICES[c[0]] || null, choiceOptions: c[0] === 'Etat demande' ? DEMO_RENEW_OPTIONS : null }; }),
-    rows: [{ id: 1, Etat_demande: 'En cours', Nigend: '2019-1120', Ref_Nigend: 2, Affectation_demandee: 'GD 38' }] }; // demande existante pour Camille Perrin
+    rows: [{ id: 1, Etat_demande: 'En cours', Nigend: '2019-1120', Ref_Nigend: 2, Affectation_demandee: 'GD 38' },
+      { id: 4, Etat_demande: 'Rejet DRJ', Nigend: '2024-0999', Ref_Nigend: 5, Affectation_demandee: 'GD 74' },
+      { id: 3, Etat_demande: 'À la signature DRJ', Nigend: '2008-0210', Ref_Nigend: 4, Affectation_demandee: 'GD 01', Date_de_debut_nouveau_contrat: d(2026, 11, 1), Date_de_fin_nouveau_contrat: d(2027, 10, 31) },
+      { id: 2, Etat_demande: 'À la signature RO1', Nigend: '2022-0555', Ref_Nigend: 3, Affectation_demandee: 'GD 74', Date_de_debut_nouveau_contrat: d(2026, 12, 1) }] }; // demande existante pour Camille Perrin
   // Table « Modifications contrats » (structure réelle).
   var DEMO_MUT_TABLE = 'Modifications_contrats';
   var DEMO_MUT = { cols: [
     ['Etat demande', 'Choice'], ['Nigend', 'Text', true], ['Ref. Nigend', 'Ref:Reservistes_RO1_RS_RC'], ['Grade', 'Any', true], ['NOM', 'Any', true], ['Prénom', 'Any', true], ['Identité complète', 'Any', true],
     ['Type', 'Choice'], ['N° ESR origine', 'Text', true], ['Date contrat origine', 'Date', true], ['FA origine', 'Text', true], ['Date historique FA', 'Date', true],
     ['Affectation demandée', 'Choice'], ['CRT souhaitée', 'Choice'], ['Date effet', 'Date'], ['Suspension jusqu\'au', 'Date'], ['Demande', 'Attachments'],
-    ['N° avenant', 'Text'], ['Date avenant', 'Date'], ['Avis SRJ', 'Text'], ['Créé le', 'DateTime:Europe/Paris'], ['Créé par', 'Text'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
+    ['N° avenant', 'Text'], ['Date avenant', 'Date'], ['Avis SRJ', 'Text'], ['Contrat signé RO', 'Attachments'], ['Contrat signé DRJ', 'Attachments'], ['Créé le', 'DateTime:Europe/Paris'], ['Créé par', 'Text'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ].map(function (c) {
     var ch = { 'Etat demande': DEMO_RENEW_CHOICES['Etat demande'], 'Type': ['Mutation interne RGIF', 'Mutation externe RGIF', 'Suspension'], 'Affectation demandée': DEMO_CHOICES['Affectation'], 'CRT souhaitée': DEMO_RENEW_CHOICES['CRT'] };
     return { id: makeId(c[0]), label: c[0], type: c[1], formula: !!c[2], choices: ch[c[0]] || null, choiceOptions: c[0] === 'Etat demande' ? DEMO_RENEW_OPTIONS : null };
-  }), rows: [] };
+  }), rows: [
+    { id: 1, Etat_demande: 'À la signature RO1', Ref_Nigend: 3, Nigend: '2022-0555', Type: 'Mutation interne RGIF', Affectation_demandee: 'GD 74', CRT_souhaitee: 'Auvergne-Rhône-Alpes', Date_effet: d(2026, 11, 1) },
+    { id: 2, Etat_demande: 'En cours', Ref_Nigend: 2, Nigend: '2019-1120', Type: 'Suspension', Date_effet: d(2026, 10, 15), Suspension_jusqu_au: d(2027, 1, 15) }
+  ] };
   var DEMO_EXTRA = {}; DEMO_EXTRA[DEMO_RENEW_TABLE] = DEMO_RENEW; DEMO_EXTRA[DEMO_MUT_TABLE] = DEMO_MUT;
   var demoAttSeq = 100, DEMO_ATT = { 60: { name: 'Fiche_de_poste.pdf', size: 142000 }, 61: { name: 'Attestation_formation.pdf', size: 96000 } };
 
@@ -4878,6 +4945,7 @@
       });
     },
     updateFields: function (table, rowId, fields) { return grist.getTable(table).update({ id: rowId, fields: fields }); },
+    deleteRow: function (table, rowId) { return grist.getTable(table).destroy(rowId); },
     createRow: function (table, fields) { return grist.getTable(table).create({ fields: fields }).then(function (r) { return newRowId(r); }); }
   } : {
     listTables: function () { return Promise.resolve(['Reservistes_RO1_RS_RC', 'Candidats_PMG', DEMO_RENEW_TABLE, DEMO_MUT_TABLE]); },
@@ -4888,7 +4956,11 @@
     attachmentUrl: function () { return Promise.resolve('#'); },
     uploadAttachment: function (file) { var id = ++demoAttSeq; DEMO_ATT[id] = { name: file.name, size: file.size }; return Promise.resolve(id); },
     updateFields: function (table, rowId, fields) {
-      DEMO.rows.forEach(function (r) { if (r.id === rowId) Object.keys(fields).forEach(function (k) { r[k] = fields[k]; }); });
+      (DEMO_EXTRA[table] ? DEMO_EXTRA[table].rows : DEMO.rows).forEach(function (r) { if (r.id === rowId) Object.keys(fields).forEach(function (k) { r[k] = fields[k]; }); });
+      return Promise.resolve();
+    },
+    deleteRow: function (table, rowId) {
+      if (DEMO_EXTRA[table]) DEMO_EXTRA[table].rows = DEMO_EXTRA[table].rows.filter(function (r) { return r.id !== rowId; });
       return Promise.resolve();
     },
     createRow: function (table, fields) {
@@ -4948,9 +5020,37 @@
       identity: ('identity' in o) ? o.identity : DEFAULTS.identity,
       tag: DEFAULTS.tag, // colonne « Type R » : fixe, pas de choix en back office
       tabs: o.tabs ? normalizeTabs(table, o.tabs) : defaultTabs(table),
-      ppeTpl: typeof o.ppeTpl === 'string' ? o.ppeTpl : '' // modèle HTML du PPE (vide : modèle par défaut)
+      ppeTpl: typeof o.ppeTpl === 'string' ? o.ppeTpl : '', // modèle HTML du PPE (vide : modèle par défaut)
+      ctrTpl: normCtr(o.ctrTpl) // modèles des contrats et courriels (renouvellements, avenants)
     };
   }
+  /* ---------- Contrats des demandes (renouvellements, avenants) : modèles par défaut, modifiables en back office ---------- */
+  function ctrBlock(title, rows) {
+    return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
+      '  <div style="border-bottom: 3px solid #000091; padding-bottom: 12px; margin-bottom: 32px;">\n    <div style="font-weight: bold; color: #000091;">MINISTÈRE DE L’INTÉRIEUR</div>\n    <div>Division réserves jeunesse</div>\n  </div>\n' +
+      '  <h1 style="font-size: 22px; margin: 0 0 24px;">' + title + '</h1>\n' +
+      '  <p>Entre le ministère de l’intérieur (Division réserves jeunesse) et <strong>{{IDENTITE}}</strong>, grade {{GRADE}}, Nigend {{NIGEND}}.</p>\n' +
+      '  <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">\n' + rows + '  </table>\n' +
+      '  <p style="margin-top: 32px;">Fait le {{DATE_DU_JOUR}}</p>\n' +
+      '  <table style="width: 100%; margin-top: 40px;"><tr><td style="width: 50%; vertical-align: top;">Le réserviste<br><br><br><br></td><td style="vertical-align: top;">Pour le ministère de l’intérieur<br><br><br><br></td></tr></table>\n</div>';
+  }
+  var DEFAULT_CTR = {
+    ren: {
+      html: ctrBlock('Contrat d’engagement dans la réserve — renouvellement', ppeRow('Nature du contrat', '{{TYPE_CONTRAT}}') + ppeRow('Groupement', '{{AFFECTATION_DEMANDEE}}') + ppeRow('Début du nouveau contrat', '{{DATE_DEBUT}}') + ppeRow('Fin du nouveau contrat', '{{DATE_FIN}}')),
+      subject: 'Renouvellement de votre contrat de réserviste',
+      body: 'Bonjour {{CIVILITE}} {{NOM}},\n\nVeuillez trouver ci-joint votre contrat de réserviste renouvelé, pour la période du {{DATE_DEBUT}} au {{DATE_FIN}}.\nMerci de le signer et de nous le retourner.\n\nCordialement,\nDivision réserves jeunesse'
+    },
+    ave: {
+      html: ctrBlock('Avenant au contrat d’engagement dans la réserve', ppeRow('Objet', '{{TYPE_DEMANDE}}') + ppeRow('Groupement demandé', '{{AFFECTATION_DEMANDEE}}') + ppeRow('Date d’effet', '{{DATE_EFFET}}') + ppeRow('Jusqu’au (suspension)', '{{JUSQUAU}}')),
+      subject: 'Avenant à votre contrat de réserviste',
+      body: 'Bonjour {{CIVILITE}} {{NOM}},\n\nVeuillez trouver ci-joint l’avenant à votre contrat de réserviste ({{TYPE_DEMANDE}}), à effet du {{DATE_EFFET}}.\nMerci de le signer et de nous le retourner.\n\nCordialement,\nDivision réserves jeunesse'
+    }
+  };
+  function normCtr(v) { // { ren: { html, subject, body }, ave: { … } } : chaînes (vides : modèle par défaut)
+    var out = {}; ['ren', 'ave'].forEach(function (k) { var x = v && v[k] || {}; out[k] = { html: typeof x.html === 'string' ? x.html : '', subject: typeof x.subject === 'string' ? x.subject : '', body: typeof x.body === 'string' ? x.body : '' }; });
+    return out;
+  }
+  function ctrOf(kind) { var o = normCtr(cfg().ctrTpl)[kind], d = DEFAULT_CTR[kind]; return { html: o.html.trim() ? o.html : d.html, subject: o.subject.trim() ? o.subject : d.subject, body: o.body.trim() ? o.body : d.body }; }
   function tagCol(c) { return colMeta(c.table, c.tag) || findCol(c.table, c.tag); }
   // Identité : colonne choisie, sinon NOM + Prénom (nom de famille en majuscules).
   function identityOf(row, c) {
@@ -5060,12 +5160,12 @@
   function advActive() { return ADV_KEYS.some(function (k) { return filters[k].length > 0; }); }
   function filtersActive() { return filters.a.length > 0 || filters.b.length > 0 || advActive() || $('q').value.trim() !== '' || quick.nonemp || quick.missing; }
   // Affichage rapide : réservistes non employables (échéance dépassée) ou dont des données sont manquantes.
-  // Données attendues : les colonnes ci-dessous (si elles existent dans la table) et toutes les dates d'expiration « Exp. … » (sauf PPE).
+  // Données attendues : les colonnes ci-dessous (si elles existent dans la table) et toutes les dates d'expiration « Exp. … » (sauf PPE et tir HK, facultatives).
   var quick = { nonemp: false, missing: false };
   var MISSING_LABELS = ['Affectation', 'Grade', 'NID', 'Nigend', 'Civilité'];
   function missingFields(raw, c) {
     var cols = MISSING_LABELS.map(function (l) { return findCol(c.table, l); }).filter(Boolean);
-    (state.colsByTable[c.table] || []).filter(isExpCol).forEach(function (col) { if (cols.indexOf(col) === -1 && !/ppe/.test(norm(col.label + ' ' + displayLabel(col)))) cols.push(col); });
+    (state.colsByTable[c.table] || []).filter(isExpCol).forEach(function (col) { if (cols.indexOf(col) === -1 && !/\bppe\b|\bhk\b/.test(norm(col.label + ' ' + displayLabel(col)))) cols.push(col); });
     return cols.filter(function (col) { var v = raw[col.id]; return emptyVal(v) || (typeof v === 'string' && !v.trim()); }).map(function (col) { return displayLabel(col); });
   }
   function renderQuick(c) {
@@ -5613,15 +5713,16 @@
   var PPE_ALIASES = { CIVILITE: 'Civilité', NOM: 'NOM', PRENOM: 'Prénom', NIGEND: 'Nigend', NID: 'NID', GRADE: 'Grade', CORPS: 'Corps', TYPE_R: 'Type R', AFFECTATION: 'Affectation', GROUPEMENT: 'Affectation', AFFECTATION_PRECISE: 'Affectation précise',
     DDN: 'DDN', EMAIL: 'Adresse email', TELEPHONE: 'Téléphone', ADRESSE: 'Adresse', VILLE: 'Ville', N_ESR: 'N° ESR', DATE_CONTRAT: 'Date contrat', DEBUT_CONTRAT: 'Date de début contrat', EXP_CONTRAT: 'Exp. contrat' };
   function todayFr() { return fmtDate(todaySec()); }
-  function fillTemplate(text, item, c, extra) { // modèle HTML : les valeurs insérées sont échappées ; une variable inconnue est laissée telle quelle
+  function fillTemplate(text, item, c, extra, plain) { // modèle HTML : les valeurs insérées sont échappées ; une variable inconnue est laissée telle quelle
+    var E = plain ? function (x) { return String(x == null ? '' : x); } : esc;
     return String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
       var key = name.toUpperCase().replace(/\s+/g, '_');
-      if (key === 'IDENTITE') return esc(formatName(identityOf(item.raw, c)));
-      if (key === 'DATE_DU_JOUR') return esc(todayFr());
-      if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return esc(extra[key]);
+      if (key === 'IDENTITE') return E(formatName(identityOf(item.raw, c)));
+      if (key === 'DATE_DU_JOUR') return E(todayFr());
+      if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return E(extra[key]);
       var alias = PPE_ALIASES[key], col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
-      if (alias) return col ? esc(textOfValue(col, item.raw[col.id])) : '';
-      return col ? esc(textOfValue(col, item.raw[col.id])) : whole;
+      if (alias) return col ? E(textOfValue(col, item.raw[col.id])) : '';
+      return col ? E(textOfValue(col, item.raw[col.id])) : whole;
     });
   }
   // Nettoie le HTML d'un modèle : ni script, ni gestionnaire d'événement, ni ressource externe (seules les images data: sont admises).
@@ -6163,10 +6264,11 @@
     }
     function tdHtml(R, o, span) {
       var v = R.values[o.key] || '', lbl = label(o), attrs = ' data-rkey="' + esc(o.key) + '"' + (span ? ' colspan="' + span + '"' : '');
+      if (R.signMode) return '<td' + attrs + '>' + (String(v).trim() ? display(o, v, false) : '<span class="is-empty">—</span>') + '</td>'; // demande à la signature : champs en lecture seule
       if (R.editing === o.key) return '<td' + attrs + ' class="is-editing">' + control(R, o, v, K.id + '-' + o.key.replace(/[^A-Za-z0-9_]/g, '_'), ' data-rf="' + esc(o.key) + '"') + '</td>';
       return '<td' + attrs + ' class="is-editable' + (String(v).trim() ? '' : ' is-empty') + '" data-redit="' + esc(o.key) + '" tabindex="0" role="button" aria-label="Modifier ' + esc(lbl) + '" title="Cliquer pour modifier">' + display(o, v, isOptional(R, o)) + '</td>';
     }
-    function thHtml(R, o) { return '<th scope="row">' + esc(label(o)) + (isOptional(R, o) ? '' : '<span class="req" aria-hidden="true">*</span>') + '</th>'; }
+    function thHtml(R, o) { return '<th scope="row">' + esc(label(o)) + (isOptional(R, o) || R.editRow ? '' : '<span class="req" aria-hidden="true">*</span>') + '</th>'; }
     function refreshCell(key) {
       var R = st, td = M('-body').querySelector('[data-rkey="' + key.replace(/"/g, '\\"') + '"]'); if (!R || !td) return;
       var o = defs(R).filter(function (x) { return x.key === key; })[0]; if (!o) return;
@@ -6187,30 +6289,38 @@
     }
     function render() {
       var R = st; if (!R) return;
+      renderSide();
       var c = cfg(), body = M('-body'), item = R.item, ng = findCol(c.table, 'Nigend');
+      var ttl = M('-title'); if (ttl) { if (K.titleNew == null) K.titleNew = ttl.textContent; ttl.textContent = R.editRow ? (R.signMode ? (R.signKind === 'drj' ? 'Finaliser la demande' : 'Signer la demande') : 'Modifier la demande') : K.titleNew; }
       M('-sub').textContent = [item.id ? formatName(item.id) : 'Réserviste', (ng && item.raw[ng.id]) || ''].filter(Boolean).join(' · ');
       if (R.done) { body.innerHTML = '<div class="doc-alert success" role="status"><p>' + esc(R.done) + '</p></div><div class="cf-actions"><button type="button" class="btn" data-ract="close">Fermer</button></div>'; return; }
       if (!R.ready) { body.innerHTML = '<p class="hint">Chargement…</p>'; return; }
       if (R.loadError) { body.innerHTML = '<div class="doc-alert error" role="alert"><p>' + esc(R.loadError) + '</p></div><div class="cf-actions"><button type="button" class="btn secondary" data-ract="close">Fermer</button></div>'; return; }
       var ds = defs(R), miss = missingCols(R), html = '';
-      if (K.tabs) html += '<div class="tabs" role="tablist" aria-label="Type de demande" style="margin-bottom:20px">' + K.tabs.map(function (t) {
+      if (K.tabs && !R.editRow) html += '<div class="tabs" role="tablist" aria-label="Type de demande" style="margin-bottom:20px">' + K.tabs.map(function (t) {
         return '<button type="button" class="tab" role="tab" data-rtab="' + t.key + '" aria-selected="' + (R.mode === t.key) + '">' + esc(t.title) + '</button>';
       }).join('') + '</div>';
       if (miss.length) html += '<div class="doc-alert error" role="alert"><p>Colonne' + (miss.length > 1 ? 's' : '') + ' introuvable' + (miss.length > 1 ? 's' : '') + ' dans la table « ' + esc(R.table) + ' » : ' + esc(miss.join(', ')) + '. La demande ne peut pas être envoyée tant que ' + (miss.length > 1 ? 'ces colonnes ne sont pas créées' : 'cette colonne n’est pas créée') + '.</p></div>';
       if (R.error) html += '<div class="doc-alert error" role="alert"><p>' + esc(R.error) + '</p></div>';
       if (R.warn) html += '<div class="cf-warn" role="alert"><p>' + esc(R.warn) + '</p></div>';
-      html += '<p class="hint">Cliquez sur une valeur pour la modifier : tous les champs sont obligatoires.' + (K.hint ? ' ' + esc(K.hint) : '') + '</p>';
+      if (R.editRow) {
+        var ecl = findCol(R.table, 'Etat demande'), eopts = ecl && ecl.choices ? ecl.choices.slice() : [];
+        if (R.etat && eopts.indexOf(R.etat) === -1) eopts.push(R.etat);
+        if (ecl) html += '<div class="cf-field" style="margin-bottom:1rem"><label for="r-' + K.id + '-etat">État de la demande</label><select class="select" id="r-' + K.id + '-etat" data-retat>' +
+          '<option value=""></option>' + eopts.map(function (x) { return '<option value="' + esc(x) + '"' + (x === R.etat ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
+      }
+      html += '<p class="hint">Cliquez sur une valeur pour la modifier' + (R.signMode ? ' : cette demande est à la signature (' + (R.signKind === 'drj' ? 'DRJ' : 'RO1') + '), seul son état est modifiable.' : R.editRow ? '. Les champs laissés vides ne sont pas modifiés.' : ' : tous les champs sont obligatoires.') + (K.hint ? ' ' + esc(K.hint) : '') + '</p>';
       K.sections.forEach(function (s) {
         var rows = s.rows.map(function (row) { return row.map(function (f) { return ds.filter(function (o) { return o.def === f; })[0]; }).filter(Boolean); }).filter(function (r) { return r.length; });
         if (!rows.length) return;
         html += '<section class="detail-group"><h3 class="detail-title">' + esc(s.title) + '</h3>' + (s.reminder ? s.reminder(item, c) : '') + '<div class="table-wrap"><table class="detail-table"><caption class="fr-sr-only">' + esc(s.title) + '</caption><tbody>' +
           rows.map(function (r) { return '<tr>' + (r.length === 1 ? thHtml(R, r[0]) + tdHtml(R, r[0], 3) : thHtml(R, r[0]) + tdHtml(R, r[0]) + thHtml(R, r[1]) + tdHtml(R, r[1])) + '</tr>'; }).join('') + '</tbody></table></div></section>';
       });
-      var att = attachCols(R);
+      var att = R.signMode ? [] : attachCols(R);
       if (att.length) {
         html += '<section class="cf-section"><h3>Pièces jointes</h3>' + att.map(function (col) {
           var files = R.files[col.id] || [], lbl = (K.attachDisplay && K.attachDisplay[col.label]) || displayLabel(col);
-          return '<div class="cf-field" style="margin-bottom:1rem"><label>' + esc(lbl) + (K.attachRequired ? '<span class="req" aria-hidden="true">*</span>' : '') + '</label>' +
+          return '<div class="cf-field" style="margin-bottom:1rem"><label>' + esc(lbl) + (K.attachRequired && !R.editRow ? '<span class="req" aria-hidden="true">*</span>' : '') + '</label>' +
             '<div class="doc-drop" data-rdrop="' + esc(col.id) + '" role="button" tabindex="0" style="padding:0.9rem" aria-label="Ajouter des fichiers (' + esc(lbl) + ') : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD +
             '<p><strong>Glissez-déposez des fichiers ici</strong><br>ou cliquez pour parcourir vos fichiers</p></div>' +
             (files.length ? '<ul style="list-style:none;margin:0.5rem 0 0;padding:0">' + files.map(function (f, i) {
@@ -6219,13 +6329,170 @@
             }).join('') + '</ul>' : '') + '</div>';
         }).join('') + '</section>';
       }
-      html += '<div class="cf-actions"><button type="button" class="btn" data-ract="submit"' + (R.busy || miss.length ? ' disabled' : '') + '>' + (R.busy ? 'Envoi…' : (R.confirmDup ? 'Envoyer quand même' : 'Envoyer la demande')) + '</button>' +
+      html += '<div class="cf-actions"><button type="button" class="btn" data-ract="submit"' + (R.busy || miss.length ? ' disabled' : '') + '>' + (R.busy ? (R.editRow ? 'Enregistrement…' : 'Envoi…') : (R.confirmDup ? 'Envoyer quand même' : R.editRow ? 'Enregistrer' : 'Envoyer la demande')) + '</button>' +
         '<button type="button" class="btn secondary" data-ract="close"' + (R.busy ? ' disabled' : '') + '>Annuler</button></div>';
       body.innerHTML = html;
     }
-    function open() {
-      var item = state.view[state.modal.index], c = cfg(); if (!item) return;
-      var R = st = { rowId: item.raw.id, item: item, table: table(), mode: K.tabs ? K.tabs[0].key : '', ready: false, loadError: '', rows: [], values: {}, files: {}, editing: null, error: '', warn: '', confirmDup: false, busy: false, done: '' };
+    function open() { openWith(state.view[state.modal.index], null); }
+    /* ----- Demande à la signature : second panneau (à droite) : générer le contrat, déposer le contrat signé ----- */
+    function signedCol(R) { var col = findCol(R.table, 'Contrat signé RO') || findCol(R.table, 'Contrat_signe_RO'); return col && !col.formula && typeBase(col.type) === 'Attachments' ? col : null; }
+    function reqVars(R) { // variables {{…}} issues de la demande (colonnes de la table, puis alias)
+      var out = {}, row = R.editRow || {}, cols = state.colsByTable[R.table] || [];
+      function val(col) { var t = typeBase(col.type), v = row[col.id]; if (t === 'Attachments' || t === 'Ref') return ''; if (t === 'Date') return typeof v === 'number' ? fmtDate(v) : ''; var x = textOfValue(col, v); return x == null ? '' : String(x); }
+      cols.forEach(function (col) { out[makeId(col.label).toUpperCase()] = val(col); });
+      var al = { DATE_DEBUT: 'Date de début nouveau contrat', DATE_FIN: 'Date de fin nouveau contrat', DATE_EFFET: 'Date effet', JUSQUAU: 'Suspension jusqu\'au', TYPE_DEMANDE: 'Type', AFFECTATION_DEMANDEE: 'Affectation demandée', CRT_SOUHAITEE: 'CRT souhaitée' };
+      Object.keys(al).forEach(function (k) { var col = findCol(R.table, al[k]); out[k] = col ? val(col) : (out[k] || ''); });
+      if (!out.TYPE_DEMANDE && K.id === 'ren') out.TYPE_DEMANDE = 'Renouvellement';
+      // Nature du contrat : renouvellement (page « Renouvellements ») ou avenant ; jamais initial ici.
+      out.TYPE_CONTRAT = K.id === 'ren' ? 'RENOUVELLEMENT' : 'AVENANT'; out.INITIAL = ''; out.RENOUVELLEMENT = K.id === 'ren' ? 'X' : '';
+      return out;
+    }
+    function sideAlert(m) { return m ? '<div class="doc-alert ' + m.type + '" role="' + (m.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(m.text) + '</p></div>' : ''; }
+    function counterCol(R) { // colonne du document contre-signé (DRJ), facultative
+      var names = ['Contrat contre-signé', 'Contrat contresigné', 'Contrat signé DRJ', 'Contrat final'];
+      for (var i = 0; i < names.length; i++) { var col = findCol(R.table, names[i]); if (col && !col.formula && typeBase(col.type) === 'Attachments') return col; }
+      return null;
+    }
+    function finalLabel(R) { var ec = findCol(R.table, 'Etat demande'), ch = ec && ec.choices || []; return ch.filter(function (x) { return norm(x) === 'demande finalisee'; })[0] || 'Demande finalisée'; }
+    function drjHtml(R) {
+      var S = R.side, cc = counterCol(R), ids = cc ? existingIds(R, cc) : [], busy = S.busy ? ' disabled' : '';
+      var h = '<div class="modal-header"><div style="min-width:0"><h2 class="modal-title">Verser document contre-signé</h2><p class="modal-sub">Demande à la signature DRJ</p></div></div>';
+      h += '<section class="cf-section"><p class="hint">Au versement, la demande passe à « ' + esc(finalLabel(R)) + ' », le document est ajouté aux Documents de la fiche du réserviste et les informations du contrat sont mises à jour (Renseignements militaires).</p>' + sideAlert(S.msg);
+      if (S.final) h += '<p class="hint">Demande finalisée.</p>';
+      else h += '<div class="doc-drop" data-sdrop="1" role="button" tabindex="0" style="padding:0.9rem" aria-label="Verser le document contre-signé : glisser-déposer ou cliquer pour parcourir"' + busy + '>' + ICON_UPLOAD_SIDE +
+        '<p><strong>' + (S.busy === 'fin' ? 'Versement en cours…' : 'Glissez-déposez le document contre-signé ici') + '</strong><br>ou cliquez pour parcourir vos fichiers</p></div>';
+      if (ids.length) h += '<ul style="list-style:none;margin:0.75rem 0 0;padding:0">' + ids.map(function (id) { var m = R.att[id]; return '<li>' + esc(m ? m.name : 'Fichier n° ' + id) + (m && m.size ? ' <span class="hint">(' + fmtSize(m.size) + ')</span>' : '') + '</li>'; }).join('') + '</ul>';
+      return h + '</section>';
+    }
+    // Informations du contrat reportées sur la fiche du réserviste (Renseignements militaires) à la finalisation d'une demande.
+    function contractUpdates(R, c) {
+      var out = {}, names = [], row = R.editRow || {}, rv = reqVars(R);
+      function set(label, val) {
+        var col = findCol(c.table, label); if (!col || col.formula || !isEditableCol(col) || val == null || val === '') return;
+        var p = parseEdit(col, val); if (p.error) return; out[col.id] = p.value; names.push(displayLabel(col));
+      }
+      if (K.id === 'ren') { // renouvellement : dates du nouveau contrat (fin = début + 1 an − 1 jour si elle n'est pas renseignée)
+        var dc = findCol(R.table, 'Date de début nouveau contrat'), fc = findCol(R.table, 'Date de fin nouveau contrat');
+        var ds = dc && typeof row[dc.id] === 'number' ? row[dc.id] : null, de = fc && typeof row[fc.id] === 'number' ? row[fc.id] : (ds != null ? ppeEndSec(ds) : null);
+        if (ds != null) set('Date de début contrat', secToIso(ds));
+        if (de != null) set('Exp. contrat', secToIso(de));
+        set('Date contrat', secToIso(todaySec()));
+      } else if (R.mode === 'interne' || R.mode === 'externe') { // mutation : nouvelle affectation
+        set('Affectation', rv.AFFECTATION_DEMANDEE); set('CRT', rv.CRT_SOUHAITEE);
+      }
+      return { fields: out, names: names };
+    }
+    function depositFinal(R, list) {
+      var S = R.side, c = cfg(), item = R.item, cc = counterCol(R), ec = findCol(R.table, 'Etat demande'), files = Array.prototype.slice.call(list || []);
+      if (S.busy || S.final || !files.length) return;
+      var ids = [], notes = [], today = fmtDate(todaySec()), base = (K.id === 'ren' ? 'Contrat de renouvellement' : 'Avenant') + ' contre-signé du ' + today;
+      S.busy = 'fin'; S.msg = null; renderSide();
+      Promise.resolve().then(function () { // 1. pièce(s) jointe(s) de la demande (si la table a une colonne dédiée)
+        if (!cc) return;
+        return files.reduce(function (p, f) { return p.then(function () { return api.uploadAttachment(f).then(function (id) { ids.push(id); }); }); }, Promise.resolve());
+      }).then(function () { // 2. état de la demande
+        var fields = {}, lab = finalLabel(R);
+        if (cc) fields[cc.id] = ['L'].concat(existingIds(R, cc), ids);
+        if (ec && !ec.formula) fields[ec.id] = lab;
+        return Object.keys(fields).length ? api.updateFields(R.table, R.editRow.id, fields).then(function () { R.etat = lab; notes.push('état de la demande : « ' + lab + ' »'); }) : null;
+      }).then(function () { // 3. Documents de la fiche du réserviste
+        return files.reduce(function (p, f, i) {
+          return p.then(function () { return storeCopyFile(item, c, f, files.length > 1 ? base + ' (' + (i + 1) + ')' : base).then(function (r) { if (r.stored) notes.push('document ajouté aux Documents' + (files.length > 1 ? ' (' + (i + 1) + '/' + files.length + ')' : '')); else notes.push('ATTENTION : document non ajouté aux Documents (' + r.why + ')'); }); });
+        }, Promise.resolve());
+      }).then(function () { // 4. informations du contrat (Renseignements militaires)
+        var u = contractUpdates(R, c); if (!u.names.length) { notes.push('aucune information de contrat à mettre à jour'); return; }
+        return api.updateFields(c.table, item.raw.id, u.fields).then(function () { Object.keys(u.fields).forEach(function (k) { item.raw[k] = u.fields[k]; }); notes.push('fiche mise à jour (' + u.names.join(', ') + ')'); })
+          .catch(function (e) { notes.push('ATTENTION : fiche du réserviste non mise à jour (' + ((e && e.message) || e) + ')'); });
+      }).then(function () { return loadData(); }).then(function () {
+        var nr = data && data.rows.filter(function (r) { return r.id === R.editRow.id; })[0]; if (nr) R.editRow = nr;
+        return Promise.resolve(api.attachmentsMeta()).then(function (m) { R.att = m; }).catch(function () {});
+      }).then(function () {
+        S.final = true; var bad = notes.some(function (n) { return /^ATTENTION/.test(n); });
+        S.msg = { type: bad ? 'error' : 'success', text: 'Document contre-signé versé : ' + notes.join(' ; ') + '.' };
+        onRequestsChanged(); load();
+      }).catch(function (e) { S.msg = { type: 'error', text: 'Versement impossible : ' + ((e && e.message) || e) + '.' }; })
+        .then(function () { S.busy = false; if (st === R) render(); });
+    }
+    function depositAny(R, list) { if (R.signKind === 'drj') depositFinal(R, list); else depositSigned(R, list); }
+    function sideHtml(R) {
+      if (R.signKind === 'drj') return drjHtml(R);
+      var S = R.side, sc = signedCol(R), ids = sc ? existingIds(R, sc) : [], busy = S.busy ? ' disabled' : '';
+      var h = '<div class="modal-header"><div style="min-width:0"><h2 class="modal-title">Contrat</h2><p class="modal-sub">Génération et dépôt du contrat signé</p></div></div>';
+      h += '<section class="cf-section"><h3>Générer le contrat</h3>' + (S.msg && S.msg.zone === 'gen' ? sideAlert(S.msg) : '') +
+        '<div class="cf-actions" style="flex-wrap:wrap"><button type="button" class="btn" data-sact="gen"' + busy + '>' + (S.busy === 'gen' ? 'Génération…' : 'Générer le contrat') + '</button>' +
+        '<button type="button" class="btn secondary" data-sact="genmail"' + busy + '>' + (S.busy === 'genmail' ? 'Génération…' : 'Générer le contrat et l’envoyer par courriel') + '</button></div></section>';
+      h += '<section class="cf-section"><h3>Déposer le contrat signé</h3>' + (S.msg && S.msg.zone === 'dep' ? sideAlert(S.msg) : '');
+      if (!sc) h += '<p class="hint">Colonne « Contrat signé RO » introuvable (ou non modifiable) dans la table « ' + esc(R.table) + ' ».</p>';
+      else {
+        h += '<div class="doc-drop" data-sdrop="1" role="button" tabindex="0" style="padding:0.9rem" aria-label="Déposer le contrat signé : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD_SIDE +
+          '<p><strong>' + (S.busy === 'dep' ? 'Dépôt en cours…' : 'Glissez-déposez le contrat signé ici') + '</strong><br>ou cliquez pour parcourir vos fichiers</p></div>';
+        h += ids.length ? '<ul style="list-style:none;margin:0.75rem 0 0;padding:0">' + ids.map(function (id) { var m = R.att[id]; return '<li>' + esc(m ? m.name : 'Fichier n° ' + id) + (m && m.size ? ' <span class="hint">(' + fmtSize(m.size) + ')</span>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="hint" style="margin-top:0.75rem">Aucun contrat signé déposé.</p>';
+      }
+      return h + '</section>';
+    }
+    var ICON_UPLOAD_SIDE = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>';
+    function renderSide() {
+      var R = st, col = M('').querySelector('.modal-column'), el = M('-side');
+      if (!col) return;
+      if (!R || !R.signMode || !R.ready || R.loadError || R.done) { if (el) el.remove(); col.classList.remove('has-side'); return; }
+      if (!el) {
+        el = document.createElement('div'); el.id = M('').id + '-side'; el.className = 'modal-dialog'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Contrat'); col.appendChild(el);
+        el.addEventListener('click', function (e) {
+          var R2 = st; if (!R2 || R2.side.busy) return;
+          var a = e.target.closest('[data-sact]'); if (a) { genContract(R2, a.getAttribute('data-sact') === 'genmail'); return; }
+          if (e.target.closest('[data-sdrop]')) pickSigned(R2);
+        });
+        el.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('[data-sdrop]')) { e.preventDefault(); if (st && !st.side.busy) pickSigned(st); } });
+        ['dragenter', 'dragover'].forEach(function (t) { el.addEventListener(t, function (e) { e.preventDefault(); var z = e.target.closest('[data-sdrop]'); if (z) z.classList.add('is-over'); }); });
+        el.addEventListener('dragleave', function (e) { var z = e.target.closest('[data-sdrop]'); if (z) z.classList.remove('is-over'); });
+        el.addEventListener('drop', function (e) { e.preventDefault(); var z = e.target.closest('[data-sdrop]'); if (!z) return; z.classList.remove('is-over'); if (st && !st.side.busy && e.dataTransfer && e.dataTransfer.files.length) depositAny(st, e.dataTransfer.files); });
+      }
+      col.classList.add('has-side'); el.innerHTML = sideHtml(R);
+    }
+    function pickSigned(R) { var i = document.createElement('input'); i.type = 'file'; i.multiple = true; i.onchange = function () { depositAny(R, i.files); }; i.click(); }
+    function genContract(R, send) {
+      var S = R.side, c = cfg(), t = ctrOf(K.id === 'ren' ? 'ren' : 'ave'), item = R.item, to = null;
+      if (send) { var ev = resValue(item, c, ['Adresse email', 'Email', 'Mail']); to = ev && String(ev.value).trim(); if (!to) { S.msg = { zone: 'gen', type: 'error', text: 'Adresse e-mail du réserviste introuvable : le courriel ne peut pas être préparé.' }; renderSide(); return; } }
+      S.busy = send ? 'genmail' : 'gen'; S.msg = null; renderSide();
+      var extra = reqVars(R);
+      buildPdfFromHtml(fillTemplate(t.html, item, c, extra)).then(function (ab) {
+        var name = 'Contrat_' + safeFileName(item.id || 'reserviste') + '_' + secToIso(todaySec()) + '.pdf';
+        downloadBlob(new Blob([ab], { type: 'application/pdf' }), name);
+        var msg = 'Contrat généré et téléchargé (' + name + ').';
+        if (send) {
+          var a = document.createElement('a'); a.href = 'mailto:' + to + '?subject=' + encodeURIComponent(fillTemplate(t.subject, item, c, extra, true)) + '&body=' + encodeURIComponent(fillTemplate(t.body, item, c, extra, true).replace(/\r?\n/g, '\r\n'));
+          a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          msg += ' La messagerie s’ouvre sur le courriel à ' + to + ' : joignez le PDF téléchargé avant l’envoi.';
+        }
+        S.msg = { zone: 'gen', type: 'success', text: msg };
+      }).catch(function (e) { S.msg = { zone: 'gen', type: 'error', text: 'Génération impossible : ' + ((e && e.message) || e) + '.' }; })
+        .then(function () { S.busy = false; if (st === R) renderSide(); });
+    }
+    function depositSigned(R, list) {
+      var S = R.side, sc = signedCol(R); if (!sc || S.busy || !list || !list.length) return;
+      var files = Array.prototype.slice.call(list), ids = [];
+      S.busy = 'dep'; S.msg = null; renderSide();
+      files.reduce(function (p, f) { return p.then(function () { return api.uploadAttachment(f).then(function (id) { ids.push(id); }); }); }, Promise.resolve()).then(function () {
+        var fields = {}; fields[sc.id] = ['L'].concat(existingIds(R, sc), ids); return api.updateFields(R.table, R.editRow.id, fields);
+      }).then(function () { return loadData(); }).then(function () {
+        var nr = data && data.rows.filter(function (r) { return r.id === R.editRow.id; })[0]; if (nr) R.editRow = nr;
+        return Promise.resolve(api.attachmentsMeta()).then(function (m) { R.att = m; }).catch(function () {});
+      }).then(function () { S.msg = { zone: 'dep', type: 'success', text: (files.length > 1 ? files.length + ' fichiers déposés' : 'Contrat signé déposé') + '.' }; onRequestsChanged(); })
+        .catch(function (e) { S.msg = { zone: 'dep', type: 'error', text: 'Dépôt impossible : ' + ((e && e.message) || e) + '.' }; })
+        .then(function () { S.busy = false; if (st === R) renderSide(); });
+    }
+    // row : demande existante à modifier (page de suivi) ; null : nouvelle demande pour ce réserviste (fiche du réserviste).
+    // Onglet (type de demande) d'une demande existante, d'après la colonne « Type » ; premier onglet par défaut.
+    function modeOf(row) {
+      if (!K.tabs) return '';
+      var tc = row && data && findCol(data.table, 'Type'), tv = tc && row[tc.id], hit = tv != null && K.fixed && K.tabs.filter(function (t) { return K.fixed(t.key).Type === String(tv); })[0];
+      return (hit || K.tabs[0]).key;
+    }
+    function existingIds(R, col) { var v = R.editRow && R.editRow[col.id]; return Array.isArray(v) && v[0] === 'L' ? v.slice(1) : []; }
+    function rowInitial(row, o) { var v = row[o.col.id]; return emptyVal(v) ? '' : editInitial(o.col, v); }
+    function openWith(item, row, sign) {
+      var c = cfg(); if (!item) return;
+      var R = st = { editRow: row || null, signMode: !!(row && sign), signKind: row && sign ? String(sign) : '', side: { busy: false, msg: null }, att: {}, etat: '', rowId: item.raw.id, item: item, table: table(), mode: K.tabs ? modeOf(row) : '', ready: false, loadError: '', rows: [], values: {}, files: {}, editing: null, error: '', warn: '', confirmDup: false, busy: false, done: '' };
       render();
       var ov = M(''); ov.hidden = false; document.body.style.overflow = 'hidden';
       requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); M('-close').focus(); }); });
@@ -6233,8 +6500,10 @@
       Promise.all([api.listColumns(R.table), api.fetchRows(R.table)]).then(function (r) {
         if (st !== R) return;
         state.colsByTable[R.table] = r[0]; R.rows = r[1];
-        defs(R).forEach(function (o) { R.values[o.key] = initial(item, c, o); });
+        defs(R).forEach(function (o) { R.values[o.key] = R.editRow && o.target === 'rq' ? rowInitial(R.editRow, o) : initial(item, c, o); });
+        if (R.editRow) { var ecol = findCol(R.table, 'Etat demande'); R.etat = ecol && R.editRow[ecol.id] != null ? String(R.editRow[ecol.id]) : ''; }
         R.ready = true; render();
+        if (R.signMode) api.attachmentsMeta().then(function (m) { if (st === R) { R.att = m; renderSide(); } }).catch(function () {});
       }).catch(function (e) {
         if (st !== R) return;
         R.ready = true; R.loadError = 'Lecture de la table « ' + R.table + ' » impossible : ' + ((e && e.message) || e) + '.'; render();
@@ -6252,18 +6521,26 @@
     function submit() {
       var R = st, c = cfg(); if (!R || R.busy || !R.ready || R.loadError) return;
       commit(); // éditeur encore ouvert
+      if (R.signMode) { // demande à la signature : seul l'état est enregistré
+        var esc2 = findCol(R.table, 'Etat demande'), f2 = {}; if (esc2 && !esc2.formula) f2[esc2.id] = R.etat;
+        R.busy = true; render();
+        Promise.resolve(esc2 && !esc2.formula ? api.updateFields(R.table, R.editRow.id, f2) : null).then(function () {
+          R.busy = false; R.done = 'L’état de la demande a été mis à jour.'; render(); loadData().then(onRequestsChanged);
+        }).catch(function (e) { R.busy = false; R.error = 'Enregistrement impossible : ' + ((e && e.message) || e) + '.'; render(); });
+        return;
+      }
       if (missingCols(R).length) { render(); return; }
       var fields = {}, resFields = {}, missing = [], ds = defs(R);
       for (var i = 0; i < ds.length; i++) {
         var o = ds[i], v = R.values[o.key];
-        if (emptyVal(v) || !String(v).trim()) { if (!isOptional(R, o)) missing.push(label(o)); continue; } // tous les champs sont obligatoires, sauf ceux facultatifs dans ce mode
+        if (emptyVal(v) || !String(v).trim()) { if (!isOptional(R, o) && !R.editRow) missing.push(label(o)); continue; } // tous les champs sont obligatoires, sauf ceux facultatifs dans ce mode
         var p = parseEdit(o.col, v);
         if (p.error) { R.error = label(o) + ' : ' + p.error; R.warn = ''; render(); return; }
         if (o.def.label === 'Email' && !validEmail(String(v).trim())) { R.error = label(o) + ' : adresse e-mail invalide.'; R.warn = ''; render(); return; }
         (o.target === 'res' ? resFields : fields)[o.col.id] = p.value;
       }
       var att = attachCols(R);
-      if (K.attachRequired) att.forEach(function (col) { if (!(R.files[col.id] || []).length) missing.push((K.attachDisplay && K.attachDisplay[col.label]) || displayLabel(col)); });
+      if (K.attachRequired && !R.editRow) att.forEach(function (col) { if (!(R.files[col.id] || []).length && !existingIds(R, col).length) missing.push((K.attachDisplay && K.attachDisplay[col.label]) || displayLabel(col)); });
       if (missing.length) { R.error = 'Tous les champs sont obligatoires. À renseigner : ' + missing.join(', ') + '.'; R.warn = ''; render(); return; }
       R.error = '';
       var fx = fixedFor(R); // valeurs imposées (ex. Type de la demande)
@@ -6272,14 +6549,15 @@
       Object.keys(resFields).forEach(function (id) { if (String(R.item.raw[id] == null ? '' : R.item.raw[id]) === String(resFields[id])) delete resFields[id]; });
       // Lien avec le réserviste : référence (« Réf. Nigend ») et Nigend si la colonne n'est pas une formule.
       var refCol = findCol(R.table, 'Réf. Nigend'), ngCol = findCol(R.table, 'Nigend'), ngSrc = findCol(c.table, 'Nigend');
-      if (refCol && !refCol.formula) fields[refCol.id] = R.rowId;
-      if (ngCol && !ngCol.formula && ngSrc && !emptyVal(R.item.raw[ngSrc.id])) fields[ngCol.id] = R.item.raw[ngSrc.id];
+      if (!R.editRow && refCol && !refCol.formula) fields[refCol.id] = R.rowId;
+      if (!R.editRow && ngCol && !ngCol.formula && ngSrc && !emptyVal(R.item.raw[ngSrc.id])) fields[ngCol.id] = R.item.raw[ngSrc.id];
+      var etCol = R.editRow && findCol(R.table, 'Etat demande'); if (etCol && !etCol.formula) fields[etCol.id] = R.etat;
       // Demande déjà existante pour ce réserviste : confirmation demandée.
       var etatCol = findCol(R.table, 'Etat demande');
       var dups = R.rows.filter(function (r) {
         return typeOk(r, R.table) && ((refCol && r[refCol.id] === R.rowId) || (ngCol && ngSrc && !emptyVal(R.item.raw[ngSrc.id]) && norm(String(r[ngCol.id] || '')) === norm(String(R.item.raw[ngSrc.id]))));
       });
-      if (dups.length && !R.confirmDup) {
+      if (!R.editRow && dups.length && !R.confirmDup) {
         R.warn = 'Une demande existe déjà pour ce réserviste' + (etatCol && dups[dups.length - 1][etatCol.id] ? ' (état : ' + dups[dups.length - 1][etatCol.id] + ')' : '') + '. Vérifiez avant d’en envoyer une nouvelle.';
         R.confirmDup = true; render(); return;
       }
@@ -6289,18 +6567,18 @@
         return p.then(function () {
           var files = R.files[col.id] || []; if (!files.length) return;
           return files.reduce(function (pp, f) { return pp.then(function (acc) { return api.uploadAttachment(f).then(function (id) { nFiles++; return acc.concat(id); }); }); }, Promise.resolve([]))
-            .then(function (ids) { fields[col.id] = ['L'].concat(ids); });
+            .then(function (ids) { fields[col.id] = ['L'].concat(existingIds(R, col), ids); });
         });
       }, Promise.resolve()).then(function () {
-        return api.createRow(R.table, fields);
+        return R.editRow ? api.updateFields(R.table, R.editRow.id, fields) : api.createRow(R.table, fields);
       }).then(function () {
-        var msg = K.doneMsg(R.table, nFiles, R.mode);
+        var msg = R.editRow ? 'La demande a été mise à jour.' : K.doneMsg(R.table, nFiles, R.mode);
         if (!Object.keys(resFields).length) return msg;
         return api.updateFields(c.table, R.rowId, resFields).then(function () { return msg + ' Le grade a été mis à jour sur la fiche du réserviste.'; })
           .catch(function (e) { return msg + ' Attention : la fiche du réserviste n’a pas pu être mise à jour (' + ((e && e.message) || e) + ').'; });
       }).then(function (msg) {
         R.busy = false; R.done = msg; render();
-        loadData(); // l'icône de la fiche prend la couleur de l'état de la nouvelle demande
+        loadData().then(onRequestsChanged); // l'icône de la fiche prend la couleur de l'état de la nouvelle demande ; pages de suivi actualisées
         if (Object.keys(resFields).length) load(); // fiche du réserviste actualisée
       }).catch(function (e) { R.busy = false; R.error = 'Envoi impossible : ' + ((e && e.message) || e) + '.'; render(); });
     }
@@ -6388,7 +6666,10 @@
       if (e.relatedTarget && td && td.contains(e.relatedTarget)) return;
       commit();
     });
-    return { open: open, status: status, loadData: loadData, data: function () { return data; } };
+    function remove(rowId) { var t = data && data.table; if (!t) return Promise.reject(new Error('table introuvable')); return Promise.resolve(api.deleteRow(t, rowId)).then(loadData); }
+    M('-body').addEventListener('change', function (e) { if (st && e.target.matches('[data-retat]')) st.etat = e.target.value; });
+    function owns(row) { return !!data && typeOk(row, data.table); } // la demande relève-t-elle de ce type (colonne « Type ») ?
+    return { owns: owns, open: open, openWith: openWith, remove: remove, status: status, loadData: loadData, data: function () { return data; } };
   }
 
   // Renouvellement de contrat (table « Renouvellement contrats »). Tous les champs sont obligatoires, sauf les pièces jointes.
@@ -6459,8 +6740,8 @@
   // show : colonnes utiles au suivi, dans l'ordre d'affichage ([libellé de la colonne, titre affiché]) ; la recherche porte sur toutes les colonnes de la table.
   // Si aucune de ces colonnes n'existe dans la table, toutes sont affichées.
   var VIEWS = {
-    ren: { req: 'ren', q: '', col: '', dir: -1, show: [['Etat demande', 'État'], ['Ref. Nigend', 'Réserviste'], ['Nigend'], ['Affectation demandée', 'Groupement demandé'], ['Date de début nouveau contrat', 'Début du nouveau contrat'], ['Date de fin nouveau contrat', 'Fin du nouveau contrat'], ['Avis SRJ'], ['Créé le', 'Demande du']] },
-    ave: { req: 'mut', q: '', col: '', dir: -1, show: [['Etat demande', 'État'], ['Type'], ['Ref. Nigend', 'Réserviste'], ['Nigend'], ['Affectation demandée', 'Groupement demandé'], ['CRT souhaitée', 'CRT souhaitée'], ['Date effet', 'Date d’effet'], ['Suspension jusqu\'au', 'Jusqu’au'], ['N° avenant'], ['Date avenant', 'Date de l’avenant'], ['Avis SRJ'], ['Créé le', 'Demande du']] }
+    ren: { req: 'ren', q: '', col: '', dir: -1, st: null, ty: [], custom: renCols, confirmId: null, show: [['Etat demande', 'État'], ['Ref. Nigend', 'Réserviste'], ['Nigend'], ['Affectation demandée', 'Groupement demandé'], ['Date de début nouveau contrat', 'Début du nouveau contrat'], ['Date de fin nouveau contrat', 'Fin du nouveau contrat'], ['Avis SRJ'], ['Créé le', 'Demande du']] },
+    ave: { req: 'mut', q: '', col: '', dir: -1, st: null, ty: [], custom: aveCols, confirmId: null, show: [['Etat demande', 'État'], ['Type'], ['Ref. Nigend', 'Réserviste'], ['Nigend'], ['Affectation demandée', 'Groupement demandé'], ['CRT souhaitée', 'CRT souhaitée'], ['Date effet', 'Date d’effet'], ['Suspension jusqu\'au', 'Jusqu’au'], ['N° avenant'], ['Date avenant', 'Date de l’avenant'], ['Avis SRJ'], ['Créé le', 'Demande du']] }
   };
   function viewCols(V, all) {
     var out = [], names = {};
@@ -6468,7 +6749,7 @@
     if (!out.length) all.forEach(function (c) { out.push(c); names[c.id] = c.label; });
     return { cols: out, names: names };
   }
-  var STATE_BADGE = { 'a traiter': 'warning', 'en cours': 'info', 'acceptee': 'success', 'refusee': 'error' };
+  var STATE_BADGE = { 'a traiter': 'warning', 'en cours': 'info', 'a la signature ro1': 'new', 'a la signature drj': 'new', 'demande finalisee': 'success', 'rejet drj': 'error', 'acceptee': 'success', 'refusee': 'error' };
   // Badge DSFR d'état d'une demande : variante selon l'état, badge neutre pour un état inconnu.
   function reqStateTagHtml(label, state) {
     var v = STATE_BADGE[norm(state || '')];
@@ -6483,6 +6764,74 @@
     if (norm(col.label) === 'etat demande' && v) return reqStateTagHtml(String(v), v);
     return fmtValue(col, v).html;
   }
+  // Colonne d'actions des pages de suivi : modifier, supprimer (avec confirmation sur la ligne).
+  // Demande à la signature : 'ro1' (générer le contrat, déposer le contrat signé) ou 'drj' (verser le document contre-signé) ; '' sinon.
+  function signKind(d, r) { var ec = findCol(d.table, 'Etat demande'); if (!ec) return ''; var n = norm(String(r[ec.id] == null ? '' : r[ec.id])); return /signature.*ro1/.test(n) ? 'ro1' : /signature.*drj/.test(n) ? 'drj' : ''; }
+  function actionsCol(V, d) {
+    return { title: 'Actions', cls: 'v-actions', cell: function (r) {
+      if (V.confirmId === r.id) return '<span class="v-confirm">Supprimer ?</span><button type="button" class="icon-btn danger" data-vact="del-ok" data-id="' + r.id + '" title="Confirmer la suppression" aria-label="Confirmer la suppression de cette demande"><span class="fr-icon-delete-fill" aria-hidden="true"></span></button>' +
+        '<button type="button" class="icon-btn" data-vact="del-no" data-id="' + r.id + '" title="Annuler" aria-label="Annuler la suppression"><span class="fr-icon-close-line" aria-hidden="true"></span></button>';
+      return (signKind(d, r)
+        ? '<button type="button" class="icon-btn" data-vact="sign" data-kind="' + signKind(d, r) + '" data-id="' + r.id + '" title="' + (signKind(d, r) === 'drj' ? 'Verser le document contre-signé' : 'Signer : générer le contrat, déposer le contrat signé') + '" aria-label="Signer la demande"><span class="fr-icon-pen-nib-line" aria-hidden="true"></span></button>'
+        : '<button type="button" class="icon-btn" data-vact="edit" data-id="' + r.id + '" title="Modifier la demande" aria-label="Modifier la demande"><span class="fr-icon-edit-line" aria-hidden="true"></span></button>') +
+        '<button type="button" class="icon-btn danger" data-vact="del" data-id="' + r.id + '" title="Supprimer la demande" aria-label="Supprimer la demande"><span class="fr-icon-delete-line" aria-hidden="true"></span></button>';
+    } };
+  }
+  // Renouvellements : actions (éditer, supprimer), réserviste, Nigend, affectation, dates du contrat (début → fin) et état de la demande.
+  function renCols(d, V) {
+    var f = function (l) { return findCol(d.table, l); }, rf = f('Ref. Nigend'), ng = f('Nigend'), af = f('Affectation demandée'), ds = f('Date de début nouveau contrat'), de = f('Date de fin nouveau contrat'), ec = f('Etat demande');
+    var out = [actionsCol(V, d)];
+    function one(title, col) { if (col) out.push({ title: title, sort: col, cell: function (r) { return viewCellHtml(col, r[col.id], d); } }); }
+    one('Réserviste', rf); one('Nigend', ng); one('Affectation', af);
+    if (ds || de) out.push({ title: 'Date de contrat', sort: ds || de, cell: function (r) {
+      var a = ds ? fmtValue(ds, r[ds.id]) : { empty: true }, b = de ? fmtValue(de, r[de.id]) : { empty: true };
+      if (a.empty && b.empty) return '<span class="is-empty">—</span>';
+      return (a.empty ? '—' : a.html) + ' <span aria-hidden="true">→</span><span class="fr-sr-only"> au </span> ' + (b.empty ? '—' : b.html);
+    } });
+    one('État de la demande', ec);
+    return out;
+  }
+  // Avenants : actions, réserviste, Nigend, affectation (groupement demandé), date d'effet et état de la demande.
+  function aveCols(d, V) {
+    var f = function (l) { return findCol(d.table, l); }, out = [actionsCol(V, d)];
+    function one(title, col) { if (col) out.push({ title: title, sort: col, cell: function (r) { return viewCellHtml(col, r[col.id], d); } }); }
+    one('Réserviste', f('Ref. Nigend')); one('Nigend', f('Nigend')); one('Affectation', f('Affectation demandée')); one('Date d’effet', f('Date effet')); one('État de la demande', f('Etat demande'));
+    return out;
+  }
+  function onRequestsChanged() { renderView('ren'); renderView('ave'); if (window.__page === 'res-stat') renderStats(); }
+  function renRecord(row, req) { // réserviste concerné par une demande (référence, sinon Nigend)
+    var d = (req || REQ.ren).data(), rf = d && findCol(d.table, 'Ref. Nigend'), ng = d && findCol(d.table, 'Nigend'), c = cfg(), ngSrc = findCol(c.table, 'Nigend');
+    var rec = state.records.filter(function (r) { return rf && row[rf.id] && r.raw.id === row[rf.id]; })[0] ||
+      state.records.filter(function (r) { return ng && ngSrc && !emptyVal(row[ng.id]) && norm(String(r.raw[ngSrc.id] || '')) === norm(String(row[ng.id])); })[0];
+    return rec ? { id: rec.identity == null ? '' : String(rec.identity), raw: rec.raw } : { id: '', raw: {} };
+  }
+  // Filtres des pages de suivi : type de demande (avenants) et état. Par défaut (V.st === null), les demandes « Rejet DRJ » et « Demande finalisée » sont masquées ;
+  // le filtre reste visible : sa sélection est affichée, et « Réinitialiser les filtres » revient à ce réglage.
+  var HIDDEN_BY_DEFAULT = ['rejet drj', 'demande finalisee'];
+  function viewOptions(d, col) { // valeurs proposées : celles de la colonne (dans l'ordre de ses choix), puis celles présentes dans les demandes
+    if (!col) return [];
+    var seen = {}, out = [];
+    (col.choices || []).forEach(function (v) { if (!seen[v]) { seen[v] = true; out.push(v); } });
+    d.rows.forEach(function (r) { var v = r[col.id] == null ? '' : String(r[col.id]); if (!seen[v]) { seen[v] = true; out.push(v); } });
+    return out;
+  }
+  function viewSelection(V, opts) { return V.st === null ? opts.filter(function (v) { return HIDDEN_BY_DEFAULT.indexOf(norm(v)) === -1; }) : V.st; }
+  function viewFiltersDefault(V) { return V.st === null && !V.ty.length && !V.q.trim(); }
+  function renderViewFilters(key, d, ec, tc) {
+    var V = VIEWS[key], P = 'v-' + key + '-f';
+    function fill(name, opts, sel, allTxt, oneTxt, manyTxt, badge) {
+      var wrap = $(P + name + '-wrap'); if (!wrap) return;
+      wrap.hidden = !opts.length;
+      $(P + name + '-panel').innerHTML = opts.map(function (v) {
+        return '<label class="ms-opt"><input type="checkbox" data-vf="' + name + '" value="' + esc(v) + '"' + (sel.indexOf(v) !== -1 ? ' checked' : '') + '> ' + (badge && v ? reqStateTagHtml(v, v) : '<span>' + (v ? esc(v) : 'Non renseigné') + '</span>') + '</label>';
+      }).join('');
+      $(P + name + '-btn').textContent = (name === 'ty' ? !sel.length : sel.length === opts.length) ? allTxt : (sel.length === 1 ? (sel[0] || 'Non renseigné') : sel.length ? sel.length + ' ' + manyTxt : 'Aucun');
+    }
+    var os = viewOptions(d, ec), ot = key === 'ave' ? viewOptions(d, tc) : [];
+    fill('st', os, viewSelection(V, os), 'Tous les états', '', 'états sélectionnés', true);
+    if (key === 'ave') fill('ty', ot, V.ty, 'Tous les types', '', 'types sélectionnés', false);
+    $('v-' + key + '-freset').disabled = viewFiltersDefault(V);
+  }
   function renderView(key) {
     var V = VIEWS[key], d = REQ[V.req].data(), P = 'v-' + key + '-', noun = key === 'ren' ? 'renouvellement' : 'avenant';
     var thead = $(P + 'thead'), rows = $(P + 'rows'), stEl = $(P + 'state'), cnt = $(P + 'count');
@@ -6493,27 +6842,39 @@
     }
     var ec = findCol(d.table, 'Etat demande'), cols = (state.colsByTable[d.table] || []).slice().sort(function (a, b) { return (b === ec) - (a === ec); });
     var vc = viewCols(V, cols), shown = vc.cols; // colonnes affichées (cols : toutes, pour la recherche)
+    // Descripteurs de colonnes : { title, sort (colonne de tri), cls, cell(r) } ; mise en page propre à la vue (V.custom) ou une colonne par champ.
+    var dcols = V.custom ? V.custom(d, V) : shown.map(function (c) { return { title: vc.names[c.id], sort: c, cell: function (r) { return viewCellHtml(c, r[c.id], d); } }; });
     var q = norm(V.q.trim()), terms = q ? q.split(/\s+/) : [];
+    var tcol = findCol(d.table, 'Type'), selSt = ec ? viewSelection(V, viewOptions(d, ec)) : null;
+    renderViewFilters(key, d, ec, tcol);
     var list = d.rows.filter(function (r) {
+      if (selSt && selSt.indexOf(r[ec.id] == null ? '' : String(r[ec.id])) === -1) return false;
+      if (key === 'ave' && V.ty.length && tcol && V.ty.indexOf(r[tcol.id] == null ? '' : String(r[tcol.id])) === -1) return false;
       if (!terms.length) return true;
       var hay = norm(cols.map(function (c) { return r[c.id] == null ? '' : textOfValue(c, r[c.id]); }).join(' '));
       return terms.every(function (t) { return hay.indexOf(t) !== -1; });
     });
-    var sc = V.col && shown.filter(function (c) { return c.id === V.col; })[0];
+    var sc = V.col && cols.filter(function (c) { return c.id === V.col; })[0];
     function sortVal(r) { var v = sc ? r[sc.id] : r.id; return typeof v === 'number' ? v : norm(String(v == null ? '' : v)); }
     list.sort(function (a, b) { var x = sortVal(a), y = sortVal(b); return (x < y ? -1 : x > y ? 1 : 0) * V.dir; });
     cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '');
-    thead.innerHTML = '<tr>' + shown.map(function (c) {
-      var on = sc && sc.id === c.id;
-      return '<th scope="col"><button type="button" data-sort="' + esc(c.id) + '">' + esc(vc.names[c.id]) + (on ? ' <span class="arrow">' + (V.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</button></th>';
+    thead.innerHTML = '<tr>' + dcols.map(function (c) {
+      if (!c.sort) return '<th scope="col" class="v-actions">' + esc(c.title) + '</th>';
+      var on = sc && sc.id === c.sort.id;
+      return '<th scope="col"><button type="button" data-sort="' + esc(c.sort.id) + '">' + esc(c.title) + (on ? ' <span class="arrow">' + (V.dir === 1 ? '▲' : '▼') + '</span>' : '') + '</button></th>';
     }).join('') + '</tr>';
-    rows.innerHTML = list.map(function (r) { return '<tr>' + shown.map(function (c) { return '<td>' + viewCellHtml(c, r[c.id], d) + '</td>'; }).join('') + '</tr>'; }).join('');
+    rows.innerHTML = list.map(function (r) { return '<tr>' + dcols.map(function (c) { return '<td' + (c.cls ? ' class="' + c.cls + '"' : '') + '>' + c.cell(r) + '</td>'; }).join('') + '</tr>'; }).join('');
     stEl.hidden = !!list.length; if (!list.length) stEl.innerHTML = d.rows.length ? '<strong>Aucun résultat</strong>Aucune demande ne correspond à votre recherche.' : '<strong>Aucune demande</strong>La table est vide.';
   }
   function refreshView(key) { return REQ[VIEWS[key].req].loadData().then(function () { renderView(key); }); }
 
   /* ---------- Page « Statistiques » : effectifs, répartitions, échéances et demandes en cours ---------- */
   function pct(n, total) { return total ? Math.round(n * 1000 / total) / 10 : 0; }
+  var statReq = null; // tuile de demandes dépliée : 'ren', 'mut' ou null
+  function statTileBtn(key, label, value) {
+    var open = statReq === key;
+    return '<button type="button" class="stat-tile stat-tile--btn" data-reqstat="' + key + '" aria-expanded="' + open + '" aria-controls="stat-req-detail"><span class="stat-num">' + esc(value) + '</span><span class="stat-lbl">' + esc(label) + '</span><span class="stat-sub">' + (open ? 'Masquer le détail par état' : 'Voir le détail par état') + '</span></button>';
+  }
   function statTile(label, value, sub, alert) { return '<div class="stat-tile' + (alert ? ' is-alert' : '') + '"><p class="stat-num">' + esc(value) + '</p><p class="stat-lbl">' + esc(label) + '</p>' + (sub ? '<p class="stat-sub">' + esc(sub) + '</p>' : '') + '</div>'; }
   // Répartition d'une colonne (Choix ou texte) : une ligne par valeur, triée par effectif décroissant, avec barre proportionnelle.
   function distData(title, c, label, map) {
@@ -6533,27 +6894,47 @@
     });
   }
   function frPct(p) { return String(p).replace('.', ',') + ' %'; }
-  // Grades : histogramme compact (une colonne par grade, du moins au plus élevé ; grades inconnus ensuite, « Non renseigné » en dernier).
-  var GRADE_ORDER = ['GAV', 'MDL', 'BRI', 'BC', 'MDC', 'ADJ', 'ADC', 'MAJ', 'SLT', 'LTN', 'CNE', 'CEN', 'CBA', 'LCL', 'COL'];
+  // Grades : histogramme compact, une colonne par grade présent, regroupées en trois blocs (militaires du rang, sous-officiers, officiers) ;
+  // grades inconnus ensuite (bloc « Autres »), « Non renseigné » en dernier.
+  var GRADE_BLOCKS = [
+    { name: 'Militaires du rang', grades: ['GAV', 'GA1', 'GA2', 'BRI', 'BRC'] },
+    { name: 'Sous-officiers', grades: ['GND', 'MDC', 'ADJ', 'ADC', 'MAJ'] },
+    { name: 'Officiers', grades: ['ASP', 'SLT', 'LTN', 'CNE', 'CEN', 'LCL', 'COL'] }
+  ];
+  function gradePos(label) { // [bloc, rang] ; bloc 3 : autres grades ; 4 : non renseigné
+    if (!label) return [4, 0];
+    var g = String(label).toUpperCase().replace(/\s+/g, '');
+    for (var b = 0; b < GRADE_BLOCKS.length; b++) { var i = GRADE_BLOCKS[b].grades.indexOf(g); if (i !== -1) return [b, i]; }
+    return [3, 0];
+  }
   function gradeDist(c) {
     var d = distData('Par grade', c, 'Grade'); if (!d) return null;
-    var rank = function (l) { if (!l) return 999; var i = GRADE_ORDER.indexOf(String(l).toUpperCase().replace(/\s+/g, '')); return i < 0 ? 500 : i; };
-    d.rows.sort(function (a, b) { return rank(a.label) - rank(b.label) || b.count - a.count; });
+    d.rows.forEach(function (r) { r.pos = gradePos(r.label); });
+    d.rows.sort(function (a, b) { return a.pos[0] - b.pos[0] || a.pos[1] - b.pos[1] || b.count - a.count; });
+    var names = GRADE_BLOCKS.map(function (b) { return b.name; }).concat(['Autres grades', '']);
+    d.groups = []; d.rows.forEach(function (r) { var g = d.groups[d.groups.length - 1]; if (!g || g.b !== r.pos[0]) { g = { b: r.pos[0], name: names[r.pos[0]], rows: [] }; d.groups.push(g); } g.rows.push(r); });
     d.chart = true; return d;
   }
   function distChartLabel(d) { return d.rows.map(function (r) { return (r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')'; }).join(', '); }
-  // Histogramme en PNG (pour le PDF : html2canvas ne rend pas bien les barres imbriquées) ; l = largeur en px CSS, h = hauteur.
+  // Histogramme en PNG (pour le PDF : html2canvas ne rend pas bien les barres imbriquées) ; W = largeur en px CSS, H = hauteur.
   function distChartPng(d, W, H) {
     var K = 3, cv = document.createElement('canvas'); cv.width = W * K; cv.height = H * K;
     var g = cv.getContext('2d'); g.scale(K, K); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-    var n = d.rows.length, max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1, top = 16, bot = 18, plot = H - top - bot, slot = Math.min(56, (W - 8) / n), bw = Math.min(30, slot * .6), x0 = 4;
-    g.strokeStyle = '#ccc'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, top + plot + .5); g.lineTo(W, top + plot + .5); g.stroke();
+    var groups = d.groups || [{ name: '', rows: d.rows }], n = d.rows.length, gap = 16, max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1;
+    var top = 16, lab = 18, cap = d.groups ? 20 : 0, plot = H - top - lab - cap, slot = Math.min(56, (W - 8 - gap * (groups.length - 1)) / n), bw = Math.min(30, slot * .6), x = 4;
+    g.font = '10.5px Arial, Helvetica, sans-serif';
     g.textAlign = 'center';
-    d.rows.forEach(function (r, i) {
-      var cx = x0 + slot * i + slot / 2, bh = Math.max(2, Math.round(plot * r.count / max));
-      g.fillStyle = '#000091'; g.fillRect(cx - bw / 2, top + plot - bh, bw, bh);
-      g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'bottom'; g.fillText(String(r.count), cx, top + plot - bh - 2);
-      g.font = '10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(r.label || '—', cx, top + plot + 4);
+    groups.forEach(function (grp) {
+      var gw = Math.max(grp.rows.length * slot, d.groups ? g.measureText(grp.name).width + 8 : 0), x0 = x + (gw - grp.rows.length * slot) / 2;
+      g.strokeStyle = '#ccc'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, top + plot + .5); g.lineTo(x + gw, top + plot + .5); g.stroke();
+      grp.rows.forEach(function (r, i) {
+        var cx = x0 + slot * i + slot / 2, bh = Math.max(2, Math.round((plot - lab) * r.count / max));
+        g.fillStyle = '#000091'; g.fillRect(cx - bw / 2, top + plot - lab - bh, bw, bh);
+        g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'bottom'; g.fillText(String(r.count), cx, top + plot - lab - bh - 2);
+        g.font = '10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(r.label || '—', cx, top + plot - lab + 4);
+      });
+      if (d.groups && grp.name) { g.fillStyle = '#555'; g.font = '10px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(grp.name, x + gw / 2, top + plot + 6); }
+      x += gw + gap;
     });
     return cv.toDataURL('image/png');
   }
@@ -6561,14 +6942,16 @@
     if (!d) return '';
     if (d.chart) {
       var max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1;
-      return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="gchart" role="img" aria-label="' + esc(d.title + ' : ' + distChartLabel(d)) + '">' + d.rows.map(function (r) {
+      function col(r) {
         return '<div class="gc" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '"><span class="gc-n">' + r.count + '</span><span class="gc-bar" style="height:' + Math.max(3, Math.round(r.count / max * 100)) + '%"></span><span class="gc-l">' + (r.label ? esc(r.label) : '—') + '</span></div>';
-      }).join('') + '</div></section>';
+      }
+      return '<section class="stat-card stat-wide"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="gchart" role="img" aria-label="' + esc(d.title + ' : ' + distChartLabel(d)) + '">' +
+        (d.groups || [{ name: '', rows: d.rows }]).map(function (grp) { return '<div class="gc-group"><div class="gc-bars">' + grp.rows.map(col).join('') + '</div>' + (grp.name ? '<div class="gc-blk">' + esc(grp.name) + '</div>' : '') + '</div>'; }).join('') + '</div></section>';
     }
     var rows = d.rows.map(function (r) {
       return '<tr><th scope="row">' + (r.label ? esc(r.label) : '<span class="is-empty">Non renseigné</span>') + '</th><td class="stat-n">' + r.count + '</td><td class="stat-bar-cell"><span class="stat-bar" aria-hidden="true"><span style="width:' + r.pct + '%"></span></span> <span class="stat-pct">' + frPct(r.pct) + '</span></td></tr>';
     }).join('');
-    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><table class="stat-table"><caption class="fr-sr-only">' + esc(d.title) + '</caption><tbody>' + rows + '</tbody></table></section>';
+    return '<section class="stat-card' + (d.wide ? ' stat-wide' : '') + '"><h2 class="fr-h6">' + esc(d.title) + '</h2><table class="stat-table"><caption class="fr-sr-only">' + esc(d.title) + '</caption><tbody>' + rows + '</tbody></table></section>';
   }
   // Données des statistiques (écran et PDF).
   function statsData() {
@@ -6579,7 +6962,7 @@
     return {
       n: n, nonEmp: nonEmp, ren: openRequests('ren'), ave: openRequests('mut'),
       echCols: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) { return { id: col.id, label: displayLabel(col) }; }),
-      dists: [distData('Par type de réserviste', c, 'Type R'), gradeDist(c), sexDist(c), distData('Par affectation', c, 'Affectation')].filter(Boolean),
+      dists: [distData('Par affectation', c, 'Affectation'), distData('Par type de réserviste', c, 'Type R'), sexDist(c), gradeDist(c)].filter(Boolean), // grade (histogramme pleine largeur) en dernier
       ech: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) {
         var e = 0, s = 0, ok = 0, none = 0;
         recs.forEach(function (r) { var v = r.raw[col.id], st = expiryState(v); if (typeof v !== 'number') none++; else if (st === 'expired') e++; else if (st === 'soon') s++; else ok++; });
@@ -6587,7 +6970,19 @@
       })
     };
   }
-  function openRequests(key) { var d = REQ[key].data(); if (!d) return null; var ec = findCol(d.table, 'Etat demande'); return d.rows.filter(function (r) { var v = ec ? norm(String(r[ec.id] || '')) : ''; return v !== 'acceptee' && v !== 'refusee'; }).length; }
+  // Demandes « en cours » : toutes celles dont l'état n'est pas clos (acceptée, refusée, demande finalisée, rejet DRJ).
+  var CLOSED_STATES = ['acceptee', 'refusee', 'demande finalisee', 'rejet drj'];
+  function openRows(key) { var d = REQ[key].data(); if (!d) return null; var ec = findCol(d.table, 'Etat demande'); return { d: d, ec: ec, rows: d.rows.filter(function (r) { var v = ec ? norm(String(r[ec.id] || '')) : ''; return CLOSED_STATES.indexOf(v) === -1; }) }; }
+  function openRequests(key) { var o = openRows(key); return o ? o.rows.length : null; }
+  // Détail des demandes en cours par état (ordre des choix de la colonne, puis valeurs inattendues) : même présentation que les répartitions.
+  function reqStateDist(key, title) {
+    var o = openRows(key); if (!o) return null;
+    var counts = {}, order = [];
+    ((o.ec && o.ec.choices) || []).forEach(function (v) { order.push(v); });
+    o.rows.forEach(function (r) { var v = o.ec && r[o.ec.id] != null ? String(r[o.ec.id]) : ''; counts[v] = (counts[v] || 0) + 1; if (order.indexOf(v) === -1) order.push(v); });
+    var total = o.rows.length;
+    return { title: title + ' : détail par état (' + total + ')', wide: true, rows: order.filter(function (v) { return counts[v]; }).map(function (v) { return { label: v, count: counts[v], pct: pct(counts[v], total) }; }) };
+  }
   // Échéances : vue « Tableau » ou « Graphique ». Le graphique est une matrice affectation × échéance : chaque cellule est une barre
   // empilée à 100 % de l'état des réservistes concernés (expirée, < 60 jours, à jour, non renseignée), les affectations les plus touchées en tête.
   var statEch = { view: 'table' };
@@ -6659,8 +7054,11 @@
     if (S.error) return '<div class="state"><strong>Source inaccessible</strong>' + esc(S.error) + '</div>';
     if (S.empty) return '<div class="state"><strong>Aucun réserviste</strong>La table est vide.</div>';
     var tiles = '<div class="stat-grid">' + statTile('Réservistes', S.n, '') + statTile('Non employables', S.nonEmp, frPct(pct(S.nonEmp, S.n)) + ' de l’effectif (échéance dépassée)', S.nonEmp > 0) +
-      statTile('Demandes de renouvellement en cours', S.ren == null ? '—' : S.ren, '') + statTile('Demandes d’avenants en cours', S.ave == null ? '—' : S.ave, '') + '</div>';
-    return tiles + '<div class="stat-cards">' + S.dists.map(distCard).join('') + (S.ech.length ? echCardHtml(S) : '') + '</div>';
+      (S.ren == null ? statTile('Demandes de renouvellement en cours', '—', '') : statTileBtn('ren', 'Demandes de renouvellement en cours', S.ren)) +
+      (S.ave == null ? statTile('Demandes d’avenants en cours', '—', '') : statTileBtn('mut', 'Demandes d’avenants en cours', S.ave)) + '</div>';
+    var detail = '';
+    if (statReq) { var rd = reqStateDist(statReq, statReq === 'ren' ? 'Demandes de renouvellement en cours' : 'Demandes d’avenants en cours'); if (rd) detail = '<div id="stat-req-detail" style="margin:-.5rem 0 1.5rem">' + (rd.rows.length ? distCard(rd) : '<section class="stat-card"><h2 class="fr-h6">' + esc(rd.title) + '</h2><p class="stat-hint">Aucune demande en cours.</p></section>') + '</div>'; }
+    return tiles + detail + '<div class="stat-cards">' + S.dists.map(distCard).join('') + (S.ech.length ? echCardHtml(S) : '') + '</div>';
   }
   function renderStats() { var el = $('stats-body'); if (el) el.innerHTML = statsHtml(); }
   function refreshStats() { return loadRequestsData().then(renderStats); }
@@ -6711,7 +7109,7 @@
     var ind = [['Réservistes', S.n], ['Non employables (échéance dépassée)', S.nonEmp + ' (' + frPct(pct(S.nonEmp, S.n)) + ')'], ['Demandes de renouvellement en cours', S.ren == null ? '—' : S.ren], ['Demandes d’avenants en cours', S.ave == null ? '—' : S.ave]];
     out += h('Indicateurs') + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + ind.map(function (r, i) { return '<tr><td style="' + td + 'width:75%;">' + esc(r[0]) + '</td><td style="' + td + num + 'font-weight:bold;' + (i === 1 && S.nonEmp > 0 ? 'color:#ce0500;' : '') + '">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
     S.dists.forEach(function (d) {
-      if (d.chart) { out += h(d.title) + '<img alt="" src="' + distChartPng(d, 620, 110) + '" width="620" height="110" style="display:block;">'; return; }
+      if (d.chart) { out += h(d.title) + '<img alt="" src="' + distChartPng(d, 620, 134) + '" width="620" height="134" style="display:block;">'; return; }
       out += h(d.title) + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + d.rows.map(function (r) {
         return '<tr><td style="' + td + 'width:30%;">' + (r.label ? esc(r.label) : 'Non renseigné') + '</td><td style="' + td + num + 'width:8%;font-weight:bold;">' + r.count + '</td>' +
           '<td style="' + td + '"><table style="width:62%;border-collapse:collapse;display:inline-table;vertical-align:middle;"><tr><td style="padding:0;border:0;height:8px;width:' + r.pct + '%;background:#000091;"></td><td style="padding:0;border:0;height:8px;background:#e3e3fd;"></td></tr></table> <span style="' + S8 + 'color:#555;">' + frPct(r.pct) + '</span></td></tr>';
@@ -6731,7 +7129,7 @@
     if (S.error || S.empty) { msg.textContent = 'Aucune donnée à exporter.'; return; }
     btn.disabled = true; btn.textContent = 'Génération…'; msg.textContent = '';
     blocMarquePng().then(function (png) { blocPng = png; return buildPdfFromHtml(statsPdfHtml(S), {
-      margin: [m, m, m, m], breakBefore: true,
+      margin: [m, m, m + 14, m], breakBefore: true, // marge basse élargie : le pied de page (7 pt) reste dégagé du contenu
       decorate: function (doc, pages) { // pied de page (Arial 7 pt) et pagination sur chaque page
         for (var i = 1; i <= pages; i++) {
           doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(90);
@@ -6748,6 +7146,8 @@
   }
   $('stats-pdf').addEventListener('click', exportStatsPdf);
   $('stats-body').addEventListener('click', function (e) {
+    var rq = e.target.closest('[data-reqstat]');
+    if (rq) { var k = rq.getAttribute('data-reqstat'); statReq = statReq === k ? null : k; renderStats(); var nb = $('stats-body').querySelector('[data-reqstat="' + k + '"]'); if (nb) nb.focus(); return; }
     var b = e.target.closest('[data-statview]'); if (!b) return;
     statEch.view = b.getAttribute('data-statview'); renderStats();
   });
@@ -6780,6 +7180,40 @@
       if (V.col === id) V.dir = -V.dir; else { V.col = id; V.dir = 1; }
       renderView(key);
     });
+  });
+  ['ren', 'ave'].forEach(function (key) {
+    var V = VIEWS[key];
+    ['st', 'ty'].forEach(function (name) {
+      var btn = $('v-' + key + '-f' + name + '-btn'), panel = $('v-' + key + '-f' + name + '-panel'); if (!btn) return;
+      btn.addEventListener('click', function () { var open = panel.hidden; ['st', 'ty'].forEach(function (n) { var pn = $('v-' + key + '-f' + n + '-panel'), b = $('v-' + key + '-f' + n + '-btn'); if (pn && n !== name) { pn.hidden = true; b.setAttribute('aria-expanded', 'false'); } }); panel.hidden = !open; btn.setAttribute('aria-expanded', String(open)); });
+      panel.addEventListener('change', function (e) {
+        var cb = e.target; if (!cb.matches('input[data-vf]')) return;
+        var d = REQ[V.req].data(), ec = d && findCol(d.table, 'Etat demande'), list;
+        if (name === 'st') { if (V.st === null) V.st = viewSelection(V, viewOptions(d, ec)).slice(); list = V.st; }
+        else list = V.ty; // type : aucune case cochée = tous les types
+        var i = list.indexOf(cb.value); if (cb.checked && i === -1) list.push(cb.value); else if (!cb.checked && i !== -1) list.splice(i, 1);
+        renderView(key);
+      });
+      panel.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.focus(); } });
+    });
+    $('v-' + key + '-freset').addEventListener('click', function () { V.st = null; V.ty = []; V.q = ''; $('v-' + key + '-q').value = ''; renderView(key); });
+    $('v-' + key + '-rows').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-vact]'); if (!b) return;
+      var V = VIEWS[key], act = b.getAttribute('data-vact'), id = +b.getAttribute('data-id'), base = REQ[V.req], d = base.data(); if (!d) return;
+      var row = d.rows.filter(function (r) { return r.id === id; })[0]; if (!row) return;
+      var req = key === 'ave' && !base.owns(row) ? REQ.sus : base; // « Avenants » : mutations (REQ.mut) ou suspensions/démissions (REQ.sus), même table
+      if (act === 'edit' || act === 'sign') { V.confirmId = null; (req.owns(row) ? req : base).openWith(renRecord(row, base), row, act === 'sign' ? (b.getAttribute('data-kind') || 'ro1') : ''); return; }
+      if (act === 'del') { V.confirmId = id; renderView(key); return; }
+      if (act === 'del-no') { V.confirmId = null; renderView(key); return; }
+      if (act === 'del-ok') {
+        b.disabled = true;
+        base.remove(id).then(function () { V.confirmId = null; onRequestsChanged(); })
+          .catch(function (err) { V.confirmId = null; renderView(key); var st = $('v-' + key + '-state'); st.hidden = false; st.innerHTML = '<strong>Suppression impossible</strong>' + esc((err && err.message) || String(err)); });
+      }
+    });
+  });
+  document.addEventListener('mousedown', function (e) {
+    ['ren', 'ave'].forEach(function (key) { ['st', 'ty'].forEach(function (n) { var pn = $('v-' + key + '-f' + n + '-panel'); if (pn && !pn.hidden && !e.target.closest('#r-v-' + key + '-f' + n)) { pn.hidden = true; $('v-' + key + '-f' + n + '-btn').setAttribute('aria-expanded', 'false'); } }); });
   });
   $('modal-panels').addEventListener('click', function (e) { var b = e.target.closest('[data-req]'); if (b && REQ[b.getAttribute('data-req')]) REQ[b.getAttribute('data-req')].open(); });
   // Réservation VMP : réserver (modale de la page Réservations) puis confirmer au réserviste / à l'antenne médicale.
@@ -6979,7 +7413,14 @@
     renderPicks();
     $('f-ppe').value = dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : DEFAULT_PPE;
     if (!$('ppe-preview').hidden) refreshPpePreview();
+    var ct = normCtr(dr.ctrTpl);
+    Array.prototype.forEach.call($('view-admin').querySelectorAll('[data-ctr]'), function (el) { var k = el.getAttribute('data-ctr').split('.'); el.value = ct[k[0]][k[1]].trim() ? ct[k[0]][k[1]] : DEFAULT_CTR[k[0]][k[1]]; });
   }
+  $('view-admin').addEventListener('input', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-ctr'); if (!k) return; k = k.split('.');
+    state.draft.ctrTpl = normCtr(state.draft.ctrTpl); state.draft.ctrTpl[k[0]][k[1]] = e.target.value;
+  });
+  $('ctr-reset').addEventListener('click', function () { state.draft.ctrTpl = normCtr(null); renderAdminForm(); });
   // Aperçu du modèle de PPE (premier réserviste de la table, période d'exemple commençant aujourd'hui).
   function refreshPpePreview() {
     var frame = $('ppe-preview'), c = cfg(), rec = state.records[0];
@@ -7060,7 +7501,7 @@
   function saveRes() {
     var dr = state.draft;
     if (!dr.table) return Promise.reject(new Error('Réservistes : sélectionnez la table des réservistes (options avancées).'));
-    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '' };
+    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '', ctrTpl: normCtr(dr.ctrTpl) };
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.r = mine; // conserve la configuration de la première page
     return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
@@ -7083,7 +7524,7 @@
   }
   $('view-admin').addEventListener('input', function () { setDirty(true); });
   $('view-admin').addEventListener('change', function () { setDirty(true); });
-  $('view-admin').addEventListener('click', function (e) { if (e.target.closest('#r-btn-reset, #r-ppe-reset')) setDirty(true); });
+  $('view-admin').addEventListener('click', function (e) { if (e.target.closest('#r-btn-reset, #r-ppe-reset, #r-ctr-reset')) setDirty(true); });
   function cancelRes() {
     state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false);
   }
