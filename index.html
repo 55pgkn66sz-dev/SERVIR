@@ -11101,3 +11101,40 @@
 </script>
 </body>
 </html>
+RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
+.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+</body>
+</html>
