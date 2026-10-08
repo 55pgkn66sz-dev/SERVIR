@@ -337,6 +337,44 @@
   .et-n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   .et-row .et-p { text-align: right; }
   @media (max-width: 560px) { .et-row { grid-template-columns: 1fr 2rem 3.4rem; } .et-track { grid-column: 1 / -1; order: 5; } }
+  /* Tutoriel : visite guidée (projecteur sur l'élément + carte explicative) */
+  .tuto-root[hidden] { display: none; }
+  .tuto-shade { position: fixed; inset: 0; z-index: 1290; background: rgba(15, 15, 40, .62); }
+  .tuto-hole { position: fixed; z-index: 1291; border-radius: .6rem; box-shadow: 0 0 0 9999px rgba(15, 15, 40, .62), 0 0 0 3px #fff, 0 0 0 6px var(--blue); pointer-events: none; transition: left .35s ease, top .35s ease, width .35s ease, height .35s ease; }
+  .tuto-card { position: fixed; z-index: 1300; width: min(24rem, calc(100vw - 1.5rem)); max-height: calc(100vh - 1.5rem); overflow: auto; padding: 1.25rem 1.35rem 1.1rem; border-radius: .9rem; background: var(--bg); color: var(--ink); box-shadow: 0 18px 44px rgba(10, 10, 40, .45); animation: tuto-in .3s cubic-bezier(.2, .9, .3, 1.2) both; transition: left .35s ease, top .35s ease; }
+  .tuto-card:focus { outline: none; }
+  @keyframes tuto-in { from { opacity: 0; transform: translateY(.6rem) scale(.97); } to { opacity: 1; transform: none; } }
+  .tuto-step { margin: 0 0 .35rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); }
+  .badge-live { display: inline-block; margin-left: .4rem; padding: 0 .5rem; font-size: .75rem; font-weight: 700; color: var(--text-default-success); background: var(--background-contrast-success); border-radius: 4px; }
+  .tuto-title { margin: 0 0 .6rem; font-size: 1.3rem; line-height: 1.7rem; font-weight: 800; }
+  .tuto-body { font-size: .9375rem; line-height: 1.55rem; }
+  .tuto-body p { margin: 0 0 .5rem; }
+  .tuto-body ul { margin: 0 0 .5rem; padding-left: 1.15rem; }
+  .tuto-body li { margin: .15rem 0; }
+  .tuto-dots { display: flex; flex-wrap: wrap; gap: .3rem; margin: .9rem 0 .8rem; }
+  .tuto-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--blue-tint); border: 0; padding: 0; cursor: pointer; transition: background .2s, transform .2s; }
+  .tuto-dot.is-on { background: var(--blue); transform: scale(1.35); }
+  .tuto-dot.is-done { background: color-mix(in srgb, var(--blue) 45%, transparent); }
+  .tuto-actions { display: flex; align-items: center; gap: .5rem; }
+  .tuto-skip { margin-right: auto; padding: .35rem 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: .8125rem; text-decoration: underline; cursor: pointer; }
+  .tuto-skip:hover { color: var(--ink); }
+  .tuto-btn { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem 1rem; border: 1px solid var(--blue); border-radius: .25rem; font: inherit; font-size: .9375rem; font-weight: 500; cursor: pointer; }
+  .tuto-btn--prev { background: transparent; color: var(--blue); }
+  .tuto-btn--prev:hover { background: var(--blue-tint); }
+  .tuto-btn--next { background: var(--blue); color: #fff; }
+  .tuto-btn--next:hover { filter: brightness(1.15); }
+  .tuto-btn:focus-visible, .tuto-dot:focus-visible, .tuto-skip:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  #btn-tuto.tuto-pulse { animation: tuto-pulse 1.8s ease-out infinite; }
+  @keyframes tuto-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 55%, transparent); } 70% { box-shadow: 0 0 0 .6rem transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+  @media (prefers-reduced-motion: reduce) { .tuto-card { animation: none; } #btn-tuto.tuto-pulse { animation: none; } .tuto-hole, .tuto-card { transition: none; } }
+  @media (max-width: 640px) { .tuto-card { left: .75rem !important; right: .75rem; top: auto !important; bottom: .75rem; width: auto; } }
+  .hd-faq-intro { margin: 0 0 1rem; }
+  .hd-faq-h { margin: 1rem 0 .4rem; font-size: .8125rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+  .hd-faq-list { margin: 0 0 .5rem; padding: 0; list-style: none; border-top: 1px solid var(--border-default-grey); }
+  .hd-faq-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; padding: .7rem .25rem; border: 0; border-bottom: 1px solid var(--border-default-grey); background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+  .hd-faq-item:hover { background: var(--row-hover); color: var(--blue); }
+  .hd-faq-item:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .faq-item.is-hit { box-shadow: 0 0 0 3px var(--blue); transition: box-shadow .4s; }
   .stat-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
   .stat-card.stat-wide { grid-column: 1 / -1; }
   .stat-card h2 { margin: 0 0 .75rem; }
@@ -439,7 +477,7 @@
   #page-bo .badge-num { display: none; } /* les rubriques structurent déjà le back office : plus de numéros d'étape */
   .bo-tab-hint { margin: -.75rem 0 1.25rem; color: var(--muted); font-size: .875rem; }
   #page-bo[data-tab] [data-grp] { display: none; }
-  #page-bo[data-tab="faq"] [data-grp="faq"], #page-bo[data-tab="accueil"] [data-grp="accueil"], #page-bo[data-tab="courriels"] [data-grp="courriels"], #page-bo[data-tab="documents"] [data-grp="documents"], #page-bo[data-tab="reglages"] [data-grp="reglages"] { display: block; }
+  #page-bo[data-tab="faq"] [data-grp="faq"], #page-bo[data-tab="tuto"] [data-grp="tuto"], #page-bo[data-tab="accueil"] [data-grp="accueil"], #page-bo[data-tab="courriels"] [data-grp="courriels"], #page-bo[data-tab="documents"] [data-grp="documents"], #page-bo[data-tab="reglages"] [data-grp="reglages"] { display: block; }
   .miss-line { margin-top: .15rem; font-size: .8125rem; color: var(--muted); }
   .ms { position: relative; }
   .ms-btn { text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -778,7 +816,7 @@
     gap: 0.75rem;
   }
   .widget-footer__credit { margin: 0; font-size: 0.8em; color: var(--text-mention-grey); }
-  .widget-footer a.fr-link { font-size: 0.8em; }
+  .widget-footer a.fr-link, .widget-footer button.fr-link { font-size: 0.8em; }
 
   @media (max-width: 640px) {
     .fields, .actions, .callout, .meta, .lead, .alert, h3, .indent { margin-left: 0; }
@@ -807,6 +845,9 @@
         <div class="fr-header__tools">
           <div class="fr-header__tools-links">
             <ul class="fr-btns-group">
+              <li>
+                <button type="button" class="fr-btn fr-icon-question-line" id="btn-tuto" data-tuto="open" title="Tutoriel : découvrir les principales fonctionnalités">Tutoriel</button>
+              </li>
               <li>
                 <button class="fr-btn fr-icon-theme-fill" aria-controls="fr-theme-modal" data-fr-opened="false" title="Paramètres d’affichage">Paramètres d’affichage</button>
               </li>
@@ -964,6 +1005,20 @@
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-faq-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter une question</button> <button class="btn secondary sm" id="w-faq-reset" type="button">Rétablir les questions par défaut</button></div>
     </section>
 
+    <section class="step" data-grp="documents">
+      <div class="head"><h2>Signataires des contrats</h2></div>
+      <p class="lead" style="margin-left:0">Un signataire par défaut, les autres programmés par dates. À la génération d’un contrat (ESR, renouvellement, avenant), c’est le signataire en vigueur à la date du jour qui est utilisé : un signataire programmé dont la période contient cette date l’emporte sur le signataire par défaut (si plusieurs périodes se recoupent, la priorité va au suppléant, puis au délégataire, puis aux autres signataires programmés, le plus récent l’emportant à égalité ; à défaut, le signataire par défaut). Dans le contrat, la signature s’affiche ainsi : le <strong>NOM</strong> en gras et en majuscules, puis la fonction à la ligne (retours à la ligne respectés). Variable à insérer dans les modèles : <code>{{SIGNATAIRE_BLOC}}</code> ; <code>{{SIGNATAIRE}}</code> (nom en majuscules) et <code>{{SIGNATAIRE_QUALITE}}</code> (fonction) sont aussi disponibles séparément.</p>
+      <div id="w-sign-admin"></div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-sign-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un signataire</button></div>
+    </section>
+
+    <section class="step" data-grp="tuto">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Étapes du tutoriel</h2></div>
+      <p class="lead">Visite guidée lancée par le bouton « Tutoriel » de l’en-tête. Chaque étape ouvre éventuellement une page, met un élément en lumière et l’explique (texte en Markdown). « ▶ Aperçu » montre l’étape avec vos modifications non enregistrées. Un élément introuvable à l’écran (menu replié, page vide…) donne une carte centrée.</p>
+      <div id="w-tuto-admin"></div>
+      <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-tuto-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter une étape</button> <button class="btn secondary sm" id="w-tuto-reset" type="button">Rétablir le tutoriel par défaut</button></div>
+    </section>
+
     <div class="bo-bar" role="region" aria-label="Enregistrement de la configuration">
       <span class="bo-bar__state" id="w-bo-state" aria-live="polite">Configuration à jour</span>
       <span class="bo-bar__saved" id="w-saved" role="status" hidden>✔ Configuration enregistrée</span>
@@ -1038,7 +1093,7 @@
       <div class="modal-header">
         <div style="min-width:0">
           <h2 class="modal-title" id="w-hdmodal-title">Contacter l’équipe projet</h2>
-          <p class="modal-sub">Votre message est transmis à l’équipe projet.</p>
+          <p class="modal-sub">Signaler un problème, soumettre une idée, proposer une amélioration…</p>
         </div>
         <div class="modal-actions"><button class="round-btn" id="w-hdmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
@@ -1300,7 +1355,7 @@
 
     <details class="bo-advanced">
       <summary>Réservistes · modèles des contrats et courriels (renouvellements, avenants)</summary>
-      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, ou toute colonne de la demande ou du réserviste par son libellé.</p>
+      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, <code>{{SIGNATAIRE_BLOC}}</code> (signature : nom en gras et majuscules, puis fonction), <code>{{SIGNATAIRE}}</code> et <code>{{SIGNATAIRE_QUALITE}}</code> (signataire en vigueur, voir « Signataires des contrats »), ou toute colonne de la demande ou du réserviste par son libellé.</p>
       <h3>Renouvellement de contrat</h3>
       <label for="r-f-ctr-ren-html">Contrat (HTML)</label>
       <textarea id="r-f-ctr-ren-html" class="textarea tall mono" spellcheck="false" data-ctr="ren.html"></textarea>
@@ -1806,8 +1861,8 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.77</span></p>
-  <a id="footer-contact" class="fr-link fr-icon-external-link-line fr-link--icon-right" href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" target="_blank" rel="noopener external" title="Contacter l'équipe projet - ouvre une nouvelle fenêtre">Contacter l'équipe projet</a>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.92</span></p>
+  <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
 <script>
@@ -1940,7 +1995,7 @@
         rowHtml('Nature du contrat', '{{TYPE_CONTRAT}}') + rowHtml('N° ESR', '{{N_ESR}}') + rowHtml('Date du contrat', '{{DATE_CONTRAT}}') + rowHtml('Entrée en vigueur du contrat', '<strong>{{DEBUT_CONTRAT}}</strong>') +
         '  </table>\n' +
         '  <p>{{CIVILITE}} {{NOM}} s’engage à servir dans la réserve à compter du {{DEBUT_CONTRAT}}.</p>\n' +
-        '  <table style="width: 100%; margin-top: 48px;">\n    <tr><td style="width: 50%;">Le réserviste<br><br><br></td><td>Pour le commandement<br><br><br></td></tr>\n  </table>\n' + SIGN_HTML)
+        '  <table style="width: 100%; margin-top: 48px;">\n    <tr><td style="width: 50%;">Le réserviste<br><br><br></td><td>Pour le commandement<br><br><br><br>{{SIGNATAIRE_BLOC}}</td></tr>\n  </table>\n' + SIGN_HTML)
     }
   };
   // Variables {{…}} : alias → libellé de colonne (toute autre colonne reste utilisable par son libellé ou son identifiant).
@@ -2469,6 +2524,21 @@
     if (Array.isArray(v)) return toList(v).join(', ');
     return String(v);
   }
+  // Signataire en vigueur (gestionnaire de signataires du back office) pour les variables {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}.
+  function signerOf() { return window.WEL && window.WEL.signataire ? window.WEL.signataire() : { nom: '', qualite: '' }; }
+  // Rendu de la signature : nom en majuscules (en gras dans {{SIGNATAIRE_BLOC}}), puis la fonction en respectant ses retours à la ligne (<br> en HTML).
+  function signerText(key, html) {
+    var g = signerOf(), nom = g.nom.toUpperCase(), q = g.qualite, e = function (t) { return html ? esc(t).replace(/\r?\n/g, '<br>') : t; };
+    if (key === 'SIGNATAIRE') return e(nom);
+    if (key === 'SIGNATAIRE_QUALITE') return e(q);
+    var blk = function (n, f) { return html ? (n ? '<strong>' + esc(n) + '</strong>' : '') + (n && f ? '<br>' : '') + e(f) : [n, f].filter(Boolean).join('\n'); };
+    // chaîne : [délégant, « Par délégation », ] [suppléé, « Par suppléance », ] signataire (la délégation s'applique au suppléé s'il y en a un)
+    var parts = [], sep = html ? '<br>' : '\n';
+    if (g.deleg && g.dnom) parts.push(blk(g.dnom.toUpperCase(), g.dqualite), 'Par délégation');
+    if (g.suppl && g.snom) parts.push(blk(g.snom.toUpperCase(), g.squalite), 'Par suppléance');
+    parts.push(blk(nom, q));
+    return parts.join(sep);
+  }
   // Remplace {{VARIABLE}} (alias, libellé ou identifiant de colonne) ; une variable inconnue est laissée telle quelle.
   // asHtml : modèle HTML (les valeurs insérées sont échappées, pour qu'une donnée ne puisse pas casser la mise en page).
   function fillTemplate(text, item, c, asHtml, extra) {
@@ -2477,6 +2547,7 @@
       var key = name.toUpperCase().replace(/\s+/g, '_');
       if (key === 'IDENTITE') return out(formatName(identityOf(item.raw, c)));
       if (key === 'DATE_DU_JOUR') return out(todayFr());
+      if (key === 'SIGNATAIRE' || key === 'SIGNATAIRE_QUALITE' || key === 'SIGNATAIRE_BLOC') return signerText(key, asHtml);
       // Nature du contrat : généré depuis la page Candidats, c'est un contrat initial.
       if (key === 'TYPE_CONTRAT') return out('INITIAL');
       if (key === 'INITIAL') return out('X');
@@ -3799,7 +3870,7 @@
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre (HTML)', 'textarea tall']] },
     rejet: { title: 'Lettre de rejet', hint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre de rejet (HTML)', 'textarea tall']] },
-    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « X » ici et {{RENOUVELLEMENT}} reste vide.',
+    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{SIGNATAIRE_BLOC}} : signature du signataire en vigueur (nom en gras et majuscules, puis sa fonction ; rubrique « Signataires des contrats »), ou séparément {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}. Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « X » ici et {{RENOUVELLEMENT}} reste vide.',
       fields: [['template', 'Modèle de l’ESR (HTML)', 'textarea tall']] }
   };
   function kindBlockHtml(bKey, kind) {
@@ -4588,7 +4659,7 @@
   function cancelPmg() { state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false); }
   $('btn-cancel').addEventListener('click', cancelPmg);
   // Variables : un clic insère la variable dans le champ de modèle actif.
-  var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO', 'TYPE_CONTRAT', 'INITIAL', 'RENOUVELLEMENT'];
+  var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO', 'TYPE_CONTRAT', 'INITIAL', 'RENOUVELLEMENT', 'SIGNATAIRE_BLOC', 'SIGNATAIRE', 'SIGNATAIRE_QUALITE'];
   $('bo-vars').innerHTML = BO_VARS.map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
   var boLastField = null;
   $('mail-forms').addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) boLastField = e.target; });
@@ -4700,7 +4771,7 @@
   var DEFAULT_FAQ = [
     { q: "Qu'est-ce que SERVIR ?", a: "**SERVIR** est le nom de l'outil : **S**uivi de l'**E**mploi, du **R**ecrutement, des **V**MP et de l'**I**nstruction dans la **R**éserve.\n\nIl rassemble en une seule page, organisée en onglets :\n\n- le suivi des **candidats** à une PMG ou à l'acculturation ([Candidats](#go:pmg)) ;\n- le suivi des **réservistes** opérationnels, spécialistes et citoyens ([Réservistes](#go:res)), avec les demandes de [renouvellement](#go:res-ren) et d'[avenant](#go:res-ave) ;\n- la validation des **rendez-vous** VMP, VEMI et tests psychométriques ([Réservations](#go:rsv)) ;\n- les [statistiques](#go:res-stat) de la population.\n\nChaque personne a une **fiche en fenêtre (modale)** : les informations y sont regroupées par onglets (identité, renseignements militaires, médico-statutaire, qualifications, documents), sans avoir à naviguer entre des colonnes." },
     { q: "Que signifie le badge « NON EMPLOYABLE » ?", a: "Le badge rouge **NON EMPLOYABLE** apparaît sur un réserviste dont **au moins une échéance est dépassée** : contrat, visite médicale (VMP), tir PA ou tir HK. La fiche indique laquelle au survol du badge.\n\nSur la page [Réservistes](#go:res), deux filtres rapides sont proposés sous la barre de recherche :\n\n- **Non employables** : affiche d'un clic tous les réservistes concernés.\n- **Données manquantes** : affiche ceux dont une information essentielle est vide (affectation, grade, NID, Nigend, civilité ou une date d'expiration). Chaque ligne précise alors ce qui manque. Les dates d'expiration du tir HK et du PPE ne sont pas comptées.\n\nChaque filtre affiche le nombre de réservistes concernés ; on peut les combiner entre eux, avec la recherche et avec les autres filtres." },
-    { q: "Que signifient les étiquettes Tir, VMP et Contrat ?", a: "Le suivi des échéances est **visuel** : chaque étiquette résume l'état des dates du réserviste par une couleur.\n\n- **Rouge** : échéance dépassée.\n- **Orange** : échéance dans moins de 60 jours.\n- **Vert** : à jour.\n- **Gris** : date non renseignée.\n\nPour le **Tir**, c'est le pire des deux états (PA et HK) qui est affiché. Le détail (états et dates) se lit en passant la souris sur l'étiquette, et dans les onglets « Médico-statutaire » et « Qualifications » de la fiche." },
+    { q: "Que signifient les étiquettes Tir, VMP et Contrat ?", a: "Le suivi des échéances est **visuel** : chaque étiquette résume l'état des dates du réserviste par une couleur.\n\n- **Rouge** : échéance dépassée.\n- **Orange** : échéance dans moins de 60 jours.\n- **Vert** : à jour.\n- **Gris** : date non renseignée.\n\nLe tag **Tir** ne tient compte que de l'échéance du **tir PA** (le tir HK s'affiche dans la fiche mais n'influence pas le tag). Le détail (états et dates) se lit en passant la souris sur l'étiquette, et dans les onglets « Médico-statutaire » et « Qualifications » de la fiche." },
     { q: "Comment inscrire un ou plusieurs candidats ?", a: "Sur la page [Candidats](#go:pmg), bouton **Créer une candidature**, pour une PMG ou une acculturation. Seules quelques informations initiales sont nécessaires : les champs marqués d'un astérisque (nom, prénom, date de naissance, mail, numéro de candidature, groupement et **origine**, par exemple CIV, AM ou VCA). Tout le reste se complète ensuite **sur la fiche du candidat**.\n\nLa fenêtre propose deux onglets :\n\n- **Un candidat** : remplissez le formulaire.\n- **Plusieurs candidats (.csv)** : téléchargez d'abord le **modèle .csv**, complétez-le puis importez-le. Les dates s'écrivent JJ/MM/AAAA, la ligne d'exemple du modèle n'est pas importée, et les lignes en erreur sont listées avec leur numéro sans bloquer les autres.\n\nCôté pièces, celles versées dans l'onglet **Documents** sont automatiquement rattachées à la bonne rubrique lorsqu'elles sont nommées selon la nomenclature habituelle. Le widget signale aussi un **doublon** si la personne est déjà inscrite (voir la question suivante)." },
     { q: "Que faire en cas de doublon ou de candidat « Déjà ESR » ?", a: "**Doublon** : les deux fiches s'ouvrent **côte à côte**, les différences surlignées. Pour chaque champ, vous choisissez l'information à conserver (« Reprendre cette valeur »), puis la fiche à garder (la plus récente ou la plus ancienne) :\n\n1. **Synchroniser les informations** : les champs vides de la fiche conservée sont complétés et les pièces jointes regroupées.\n2. **Supprimer la fiche en trop**, directement et avec confirmation.\n\n**Déjà ESR** : le candidat est déjà réserviste. Son rapprochement se fait par NID, à défaut par numéro d'ESR, puis par Nigend, et la fiche du réserviste s'affiche à côté (sans être modifiée). Si aucun réserviste ne correspond, le message indique ce qui a été cherché. Vous choisissez ensuite de **supprimer** ou de **conserver** la candidature." },
     { q: "Comment transformer un candidat en réserviste ?", a: "Dans la fiche du candidat, onglet **Renseignements militaires**, cliquez sur l'icône de transformation placée à côté de **Contrat**.\n\n- Le candidat est **ajouté à la table des réservistes** : les champs qui ont un équivalent (identité, coordonnées, affectation, profession…) sont repris.\n- Sa **candidature est supprimée** de la table des candidats.\n\nVérifiez ensuite la fiche du réserviste : les informations propres aux réservistes (grade, Nigend, échéances…) sont à compléter." },
@@ -4718,9 +4789,29 @@
     { q: "Pourquoi un champ n'est-il pas modifiable au clic ?", a: "Les champs **calculés par une formule dans Grist** ne peuvent pas être écrits par le widget : une infobulle sur la cellule l'indique. Pour la rendre modifiable, convertissez la colonne en colonne de données dans Grist (en gardant, si besoin, une formule déclenchée à la création).\n\nCertains types de colonnes (références, pièces jointes) ne sont pas non plus modifiables au clic : les pièces jointes se gèrent dans l'onglet Documents." },
     { q: "Je n'ai pas trouvé ma réponse : comment contacter l'équipe projet ?", a: "Sous chaque réponse, répondez **Non** à « Cette réponse vous a-t-elle aidé ? » puis cliquez sur **Contacter l'équipe projet**. Le lien du même nom, en bas de page, ouvre la même fenêtre.\n\nIndiquez votre **Nigend**, ce que vous souhaitez (question, anomalie, amélioration…) et votre message : le **module** concerné est prérempli (la question de la FAQ ou la page affichée). Votre demande est transmise directement à l'équipe projet." }
   ];
+  // Tutoriel (visite guidée) : étapes par défaut, modifiables en back office (rubrique « Tutoriel »). Texte en Markdown ; page : clé de page à ouvrir ; target : sélecteur CSS de l'élément mis en lumière.
+  var DEFAULT_TUTO = [
+    { icon: "👋", title: "Bienvenue sur SERVIR", page: "welcome", target: "#btn-tuto", body: "**SERVIR** : Suivi de l’Emploi, du Recrutement, des Visites médicales et de l’Instruction dans la Réserve.\n\nEn quelques étapes, découvrez les principales fonctionnalités. Vous pouvez quitter à tout moment (Échap) et relancer cette visite avec ce bouton." },
+    { icon: "🧭", title: "Le menu principal", page: "", target: "#header-navigation", body: "Toutes les pages sont accessibles depuis ce menu :\n\n- **Bienvenue** : les actualités du service ;\n- **Candidats** et **Réservistes** : menus déroulants avec leurs pages liées ;\n- **Réservations** et **FAQ**." },
+    { icon: "🪖", title: "Candidats : inscrire", page: "pmg", target: "#btn-create", body: "Inscrivez un candidat à une **PMG** ou à l’**acculturation** : seules quelques informations sont nécessaires (dont l’origine), le reste se complète ensuite sur la fiche.\n\nPour plusieurs candidats à la fois, importez un fichier **.csv** à partir du modèle fourni." },
+    { icon: "📄", title: "La fiche du candidat", page: "pmg", target: "#rows tr", body: "Cliquez sur une ligne pour ouvrir la **fiche** : les informations sont regroupées en onglets (candidat, renseignements militaires, médico-statutaire, documents).\n\n- Cliquez sur une valeur pour la **modifier** ;\n- déposez les pièces dans l’onglet **Documents** (glisser-déposer) ;\n- en cas de **doublon**, les deux fiches s’ouvrent côte à côte pour les fusionner." },
+    { icon: "🫡", title: "Réservistes : suivre la population", page: "res", target: ".qf", body: "Le badge rouge **NON EMPLOYABLE** signale une échéance dépassée.\n\nCes **filtres rapides** affichent d’un clic les réservistes non employables ou ceux dont des informations majeures manquent. Vous pouvez aussi mettre à jour plusieurs fiches à la fois avec « Mettre à jour en bloc »." },
+    { icon: "📝", title: "Démarches sur le contrat", page: "res", target: "#r-rows tr", body: "Depuis la fiche d’un réserviste, groupe **Contrat** : demandes de renouvellement, de mutation ou de suspension, avec des champs **pré-remplis**.\n\nLeur suivi se fait dans les pages **Renouvellements** et **Avenants** du menu Réservistes, jusqu’à la signature du contrat et sa finalisation." },
+    { icon: "⏱️", title: "« Dix-moi tout ! » : 10 minutes chrono", page: "res", target: "", body: "Dans le menu Réservistes, le bouton **Dix-moi tout !** lance une session de 10 minutes : une fiche aux informations majeures manquantes s’ouvre, puis une autre…\n\nChaque champ complété fait avancer le score. Un jeu pour mettre les données à jour !" },
+    { icon: "📅", title: "Réservations", page: "rsv", target: "#x-tabs", body: "Les rendez-vous **VMP**, **VEMI** et **tests psychométriques** sont réunis ici, un onglet chacun.\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic." },
+    { icon: "📊", title: "Statistiques", page: "res-stat", target: "#r-stats-pdf", body: "Les statistiques de la population se mettent à jour **en temps réel** : répartitions, échéances, demandes en cours. Les candidats ont aussi leur page (menu Candidats).\n\nUne réunion avec le commandement ? **Extraire en PDF** produit une note à la charte graphique de l’État." },
+    { icon: "🔎", title: "Rechercher, filtrer, exporter", page: "res", target: "#r-q", body: "Sur chaque page, le champ de **recherche** et les **filtres** (rapides ou avancés) réduisent la liste.\n\nLe bouton **Exporter (.csv)** exporte la vue affichée, avec les colonnes de votre choix." },
+    { icon: "❓", title: "FAQ et aide", page: "faq", target: "#w-faq-q", body: "La **FAQ** répond aux questions fréquentes.\n\nVous n’avez pas trouvé votre réponse ? Répondez « Non » sous la question : vous pourrez contacter l’équipe projet directement." },
+    { icon: "🎨", title: "Affichage", page: "", target: ".fr-header__tools button[aria-controls=\"fr-theme-modal\"]", body: "Choisissez le thème **clair**, **sombre** ou celui de votre système avec « Paramètres d’affichage »." },
+    { icon: "🎉", title: "C’est tout !", page: "welcome", target: "#btn-tuto", body: "Vous connaissez l’essentiel. Bonne découverte !\n\nCe tutoriel reste disponible à tout moment avec le bouton **Tutoriel**." }
+  ];
+  var TUTO_PAGES = [['', '— Page courante —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes'], ['res-ren', 'Renouvellements'], ['res-ave', 'Avenants'], ['res-stat', 'Réservistes · Statistiques'], ['rsv', 'Réservations'], ['faq', 'FAQ']];
+  var TUTO_TARGETS = [['', 'Aucun (carte centrée)'], ['#btn-tuto', 'Bouton Tutoriel'], ['#header-navigation', 'Menu principal'], ['#btn-create', 'Candidats : Créer une candidature'], ['#rows tr', 'Candidats : première ligne de la liste'],
+    ['.qf', 'Réservistes : filtres rapides'], ['#r-q', 'Réservistes : recherche'], ['#r-rows tr', 'Réservistes : première ligne de la liste'], ['#r-btn-bulk', 'Réservistes : Mettre à jour en bloc'], ['#r-btn-export', 'Réservistes : Exporter (.csv)'],
+    ['#x-tabs', 'Réservations : onglets'], ['#r-stats-pdf', 'Statistiques : Extraire en PDF'], ['#w-faq-q', 'FAQ : recherche'], ['.fr-header__tools button[aria-controls="fr-theme-modal"]', 'En-tête : Paramètres d’affichage']];
   var state = {
-    opts: {}, draft: { intro: '', articles: [], counters: [], faq: [] }, counts: {}, lastCM: null,
-    openArticle: null, openCounter: null, openFaq: null, introEditor: null, articleEditor: null // un seul éditeur Markdown monté à la fois
+    opts: {}, draft: { intro: '', articles: [], counters: [], faq: [], tuto: [], sign: [] }, counts: {}, lastCM: null,
+    openArticle: null, openCounter: null, openFaq: null, openTuto: null, openSign: null, introEditor: null, articleEditor: null // un seul éditeur Markdown monté à la fois
   };
   function cfg() {
     var o = state.opts.welcome, arts = o && Array.isArray(o.articles) ? o.articles : null;
@@ -4728,7 +4819,9 @@
       intro: (o && o.intro) || '',
       articles: arts ? arts.map(function (a) { return { title: a.title || '', date: a.date || '', endDate: a.endDate || '', status: a.status || '', before: a.before || '', after: a.after || '', body: a.body || '' }; }) : JSON.parse(JSON.stringify(DEFAULT_ARTICLES)),
       counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '', page: c.page || '' }; }),
-      faq: (o && Array.isArray(o.faq) ? o.faq : DEFAULT_FAQ).map(function (f) { return { q: f.q || '', a: f.a || '' }; })
+      faq: (o && Array.isArray(o.faq) ? o.faq : DEFAULT_FAQ).map(function (f) { return { q: f.q || '', a: f.a || '' }; }),
+      sign: normSign(o && o.signataires),
+      tuto: (o && Array.isArray(o.tuto) ? o.tuto : DEFAULT_TUTO).map(function (t) { return { icon: t.icon || '', title: t.title || '', page: t.page || '', target: t.target || '', body: t.body || '' }; })
     };
   }
   // Fin de publication (facultative) : un article dont la date de fin est dépassée n'est plus affiché sur la page (mais reste
@@ -4868,8 +4961,36 @@
     return HD.loading;
   }
   function hdStored(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  // Depuis le pied de page : avant le formulaire, on propose de chercher la réponse dans la FAQ (recherche et questions suggérées).
+  function hdFaqResultsHtml(q) {
+    var items = cfg().faq, terms = fold(q).split(/\s+/).filter(Boolean);
+    var hits = items.map(function (f, i) { return { f: f, i: i }; }).filter(function (x) { var h = fold(x.f.q + ' ' + x.f.a); return terms.every(function (t) { return h.indexOf(t) !== -1; }); });
+    var list = terms.length ? hits.slice(0, 6) : items.slice(0, 5).map(function (f, i) { return { f: f, i: i }; });
+    if (!list.length) return '<p class="hint">Aucune question ne correspond à « ' + esc(q) + ' ».</p>';
+    return '<p class="hd-faq-h">' + (terms.length ? list.length + (list.length > 1 ? ' questions correspondent' : ' question correspond') : 'Questions fréquentes') + '</p><ul class="hd-faq-list">' + list.map(function (x) {
+      return '<li><button type="button" class="hd-faq-item" data-hd="faqopen" data-i="' + x.i + '"><span>' + esc(x.f.q) + '</span><span aria-hidden="true">›</span></button></li>';
+    }).join('') + '</ul>';
+  }
+  function openFaqQuestion(i) {
+    var f = cfg().faq[i]; if (!f) return;
+    closeHelpdesk(); if (window.__showPage) window.__showPage('faq');
+    $('faq-q').value = ''; renderFaq('none');
+    setTimeout(function () {
+      [].some.call($('faq-list').querySelectorAll('details.faq-item'), function (d) {
+        if (d.querySelector('summary').textContent !== f.q) return false;
+        d.open = true; d.classList.add('is-hit'); try { d.scrollIntoView({ block: 'center' }); } catch (e) {} setTimeout(function () { d.classList.remove('is-hit'); }, 2500); syncFaqToggle(); return true;
+      });
+    }, 120);
+  }
   function renderHelpdesk() {
     var h = HD.state, body = $('hdmodal-body'); if (!h) return;
+    if (h.stage === 'faq' && h.ready && !h.done && !(HD.info && HD.info.error)) {
+      body.innerHTML = '<p class="hd-faq-intro"><strong>Votre réponse est peut-être déjà dans la FAQ.</strong> Cherchez un mot-clé avant d’écrire à l’équipe projet.</p>' +
+        '<div class="cf-field"><label for="w-hd-faqq">Rechercher dans la FAQ</label><input class="input" type="search" id="w-hd-faqq" placeholder="Mot-clé…" autocomplete="off" value="' + esc(h.q || '') + '"></div>' +
+        '<div id="w-hd-faqres" aria-live="polite">' + hdFaqResultsHtml(h.q || '') + '</div>' +
+        '<div class="cf-actions"><button type="button" class="btn" data-hd="goform">Je n’ai pas trouvé : contacter l’équipe projet</button><button type="button" class="btn secondary" data-hd="faqall">Voir toute la FAQ</button></div>';
+      return;
+    }
     if (h.done) { body.innerHTML = '<div class="doc-alert success" role="status"><p>' + esc(h.done) + '</p></div><div class="cf-actions"><button type="button" class="btn" data-hd="close">Fermer</button></div>'; return; }
     if (!h.ready) { body.innerHTML = '<p class="hint">Chargement…</p>'; return; }
     if (HD.info && HD.info.error) { body.innerHTML = '<div class="doc-alert error" role="alert"><p>Contact impossible depuis le widget : ' + esc(HD.info.error) + '.</p></div><div class="cf-actions"><button type="button" class="btn secondary" data-hd="close">Fermer</button></div>'; return; }
@@ -4883,13 +5004,13 @@
       '<div class="cf-field" style="margin-top:1rem"><label for="w-hd-msg">Votre message<span class="req" aria-hidden="true">*</span></label><textarea class="textarea" rows="6" id="w-hd-msg" placeholder="Décrivez votre demande ou votre difficulté…">' + esc(h.msg) + '</textarea></div>' +
       '<div class="cf-actions"><button type="button" class="btn" data-hd="send"' + (h.busy ? ' disabled' : '') + '>' + (h.busy ? 'Envoi…' : 'Envoyer à l’équipe projet') + '</button><button type="button" class="btn secondary" data-hd="close"' + (h.busy ? ' disabled' : '') + '>Annuler</button></div>';
   }
-  function openHelpdesk(module, opener) {
+  function openHelpdesk(module, opener, opts) {
     HD.opener = opener || null;
-    HD.state = { ready: false, busy: false, error: '', done: '', nigend: hdStored('hdNigend'), type: '', module: module || document.title || '', msg: '' };
+    HD.state = { stage: opts && opts.faqFirst && cfg().faq.length ? 'faq' : 'form', q: '', ready: false, busy: false, error: '', done: '', nigend: hdStored('hdNigend'), type: '', module: module || document.title || '', msg: '' };
     renderHelpdesk();
     var ov = $('hdmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('hdmodal-close').focus(); }); });
-    var h = HD.state; loadHelpdesk().then(function () { if (HD.state === h) { h.ready = true; renderHelpdesk(); var f = $('hdmodal-body').querySelector(h.nigend ? '#w-hd-type' : '#w-hd-nigend'); if (f) f.focus(); } });
+    var h = HD.state; loadHelpdesk().then(function () { if (HD.state === h) { h.ready = true; renderHelpdesk(); var f = $('hdmodal-body').querySelector(h.stage === 'faq' ? '#w-hd-faqq' : h.nigend ? '#w-hd-type' : '#w-hd-nigend'); if (f) setTimeout(function () { f.focus(); }, 120); } }); // après le focus d'ouverture de la fenêtre
   }
   function closeHelpdesk() {
     var ov = $('hdmodal'); if (ov.hidden || (HD.state && HD.state.busy)) return;
@@ -4911,7 +5032,15 @@
       h.busy = false; h.done = 'Votre demande a bien été transmise à l’équipe projet. Merci !'; renderHelpdesk();
     }).catch(function (e) { h.busy = false; h.error = 'Envoi impossible : ' + ((e && e.message) || e) + '.'; renderHelpdesk(); });
   }
-  $('hdmodal-body').addEventListener('click', function (e) { var b = e.target.closest('[data-hd]'); if (!b) return; if (b.getAttribute('data-hd') === 'send') sendHelpdesk(); else closeHelpdesk(); });
+  $('hdmodal-body').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-hd]'); if (!b) return; var a = b.getAttribute('data-hd');
+    if (a === 'send') sendHelpdesk();
+    else if (a === 'goform') { HD.state.stage = 'form'; renderHelpdesk(); var f = $('hdmodal-body').querySelector(HD.state.nigend ? '#w-hd-type' : '#w-hd-nigend'); if (f) f.focus(); }
+    else if (a === 'faqopen') openFaqQuestion(+b.getAttribute('data-i'));
+    else if (a === 'faqall') { closeHelpdesk(); if (window.__showPage) window.__showPage('faq'); }
+    else closeHelpdesk();
+  });
+  $('hdmodal-body').addEventListener('input', function (e) { if (e.target.id !== 'w-hd-faqq' || !HD.state) return; HD.state.q = e.target.value; $('hd-faqres').innerHTML = hdFaqResultsHtml(HD.state.q); });
   $('hdmodal-close').addEventListener('click', closeHelpdesk);
   $('hdmodal').addEventListener('mousedown', function (e) { if (e.target === $('hdmodal')) closeHelpdesk(); });
   $('hdmodal').addEventListener('keydown', function (e) {
@@ -4924,8 +5053,160 @@
   });
   // Le lien « Contacter l'équipe projet » du pied de page ouvre la même modale (Module = page courante) quand la table Helpdesk est disponible ; sinon il garde son lien externe.
   var fc = document.getElementById('footer-contact');
-  if (fc) fc.addEventListener('click', function (e) { if (HD.info && !HD.info.error) { e.preventDefault(); openHelpdesk(document.title, fc); } });
+  if (fc) fc.addEventListener('click', function () { if (HD.info && !HD.info.error) openHelpdesk(document.title, fc, { faqFirst: true }); else window.open(fc.getAttribute('data-href'), '_blank', 'noopener'); }); // pied de page : FAQ d'abord ; repli : formulaire externe
   loadHelpdesk();
+
+  /* ---------- Signataires : un par défaut, les autres programmés par dates ---------- */
+  function newSignId() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function normSign(v) { // liste { nom, qualite, def, from, to } ; un seul signataire par défaut (le premier, ou à défaut le premier de la liste)
+    var out = (Array.isArray(v) ? v : []).map(function (x) {
+      var d = !!(x && x.def);
+      var dg = !!(x && x.deleg), sp = !!(x && x.suppl);
+      return { id: String(x && x.id || newSignId()), nom: String(x && x.nom || ''), qualite: String(x && x.qualite || ''), def: d, from: d ? '' : String(x && x.from || ''), to: d ? '' : String(x && x.to || ''), deleg: dg, dref: dg ? String(x && x.dref || '') : '', suppl: sp, sref: sp ? String(x && x.sref || '') : '' };
+    });
+    var first = -1; out.forEach(function (x, i) { if (x.def && first < 0) first = i; else if (x.def) { x.def = false; } });
+    if (first < 0 && out.length) { out[0].def = true; out[0].from = ''; out[0].to = ''; }
+    out.forEach(function (x) { // délégant et suppléé : un autre signataire de la liste
+      var ok = function (id) { return id && id !== x.id && out.some(function (y) { return y.id === id; }); };
+      if (!ok(x.dref)) x.dref = ''; if (!ok(x.sref)) x.sref = '';
+    });
+    return out;
+  }
+  function todayIso() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  // Signataire en vigueur à une date : parmi les signataires programmés dont la période contient la date, priorité au suppléant, puis au délégataire, puis aux autres (le plus récent à rang égal) ; sinon le signataire par défaut.
+  function rank(x) { return x.suppl ? 2 : x.deleg ? 1 : 0; }
+  function currentSigner(list, iso) {
+    var d = iso || todayIso(), best = null, def = null;
+    (list || []).forEach(function (x) {
+      if (x.def) { def = x; return; }
+      if (x.from && x.from <= d && (!x.to || d <= x.to) && (!best || rank(x) > rank(best) || (rank(x) === rank(best) && x.from >= best.from))) best = x;
+    });
+    var r = best || def, tr = function (t) { return String(t || '').replace(/^\s+|\s+$/g, ''); };
+    var by = function (id) { var y = (list || []).filter(function (z) { return z.id === id; })[0]; return y ? { nom: y.nom.trim(), qualite: tr(y.qualite) } : { nom: '', qualite: '' }; };
+    if (!r) return { nom: '', qualite: '', deleg: false, dnom: '', dqualite: '', suppl: false, snom: '', squalite: '' };
+    var dl = r.deleg ? by(r.dref) : { nom: '', qualite: '' }, sp = r.suppl ? by(r.sref) : { nom: '', qualite: '' };
+    return { nom: r.nom.trim(), qualite: tr(r.qualite), deleg: !!r.deleg, dnom: dl.nom, dqualite: dl.qualite, suppl: !!r.suppl, snom: sp.nom, squalite: sp.qualite };
+  }
+  function fmtIso(iso) { return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : ''; }
+  function signPeriod(x) { return x.def ? 'Par défaut' : (!x.from ? 'Délégant / suppléé uniquement' : x.from ? 'Du ' + fmtIso(x.from) : '') + (x.to ? ' au ' + fmtIso(x.to) : x.from ? ' (sans fin)' : ''); }
+  function signSummary(x, cur) {
+    var active = x.nom.trim() && cur.nom === x.nom.trim() && cur.qualite === x.qualite.trim();
+    return '<span class="sg-name">' + esc(x.nom.trim() || 'Nouveau signataire') + '</span> <span class="hint">· ' + esc(signPeriod(x)) + (x.deleg ? ' · par délégation' : '') + (x.suppl ? ' · par suppléance' : '') + '</span>' + (active ? ' <span class="badge-live">En vigueur aujourd’hui</span>' : '');
+  }
+  function refreshSignSummaries() { // met à jour les intitulés sans recréer les champs (le focus reste en place)
+    var cur = currentSigner(state.draft.sign);
+    Array.prototype.forEach.call($('sign-admin').querySelectorAll('details'), function (d) { var x = state.draft.sign[Number(d.getAttribute('data-i'))], sm = d.querySelector('summary'); if (x && sm) sm.innerHTML = signSummary(x, cur); });
+    Array.prototype.forEach.call($('sign-admin').querySelectorAll('select[data-sf=dref], select[data-sf=sref]'), function (sel) { // libellés des listes de choix (nom modifié ailleurs)
+      var i = Number(sel.getAttribute('data-i')); if (state.draft.sign[i]) sel.innerHTML = signOptions(state.draft.sign, i, sel.getAttribute('data-sf'));
+    });
+  }
+  function signLabel(y) { var q = y.qualite.trim().split(/\r?\n/)[0]; return (y.nom.trim() || 'Nouveau signataire') + (q ? ' — ' + q : ''); }
+  function signOptions(list, i, field) { // les autres signataires de la liste
+    var cur = list[i][field];
+    return '<option value=""' + (cur ? '' : ' selected') + '>— Choisir un signataire enregistré —</option>' + list.map(function (y, k) { return k === i ? '' : '<option value="' + esc(y.id) + '"' + (y.id === cur ? ' selected' : '') + '>' + esc(signLabel(y)) + '</option>'; }).join('');
+  }
+  function signSelect(list, i, field, id) {
+    return '<select class="select" id="' + id + '" data-sf="' + field + '" data-i="' + i + '">' + signOptions(list, i, field) + '</select>' +
+      (list.length < 2 ? '<p class="hint">Ajoutez d’abord cette personne à la liste des signataires (bouton « Ajouter un signataire »), puis revenez la choisir ici.</p>' : '');
+  }
+  function renderSignAdmin() {
+    var list = state.draft.sign, host = $('sign-admin'), cur = currentSigner(list);
+    host.innerHTML = list.length ? list.map(function (x, i) {
+      var p = 'w-sg-' + i, isOpen = x === state.openSign;
+      return '<details class="mail-block" data-i="' + i + '"' + (isOpen ? ' open' : '') + '><summary>' + signSummary(x, cur) + '</summary><div class="mail-body">' +
+        '<div class="mail-head"><span class="hint">' + (x.def ? 'Signataire par défaut : utilisé lorsqu’aucun signataire programmé n’est en vigueur.' : 'Signataire programmé : prioritaire sur le signataire par défaut pendant sa période. Sans date de début, il n’est jamais choisi automatiquement : il sert uniquement de délégant ou de suppléé.') + '</span>' +
+        (x.def ? '' : '<button type="button" class="btn secondary sm" data-sact="def" data-i="' + i + '">Définir par défaut</button> ') +
+        '<button type="button" class="btn secondary sm" data-sact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer ce signataire"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="' + p + '-nom">Nom (grade, prénom, nom)<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-nom" data-sf="nom" data-i="' + i + '" value="' + esc(x.nom) + '" placeholder="ex. Colonel Jean DUPONT"></div>' +
+        '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-qual">Fonction (les retours à la ligne sont conservés dans le contrat)</label><textarea class="textarea" rows="3" id="' + p + '-qual" data-sf="qualite" data-i="' + i + '" spellcheck="true" placeholder="ex. Le chef de la division&#10;des réserves jeunesse">' + esc(x.qualite) + '</textarea></div>' +
+        (x.def ? '' : '<div class="cf-field"><label for="' + p + '-from">En vigueur à partir du</label><input class="input" type="date" id="' + p + '-from" data-sf="from" data-i="' + i + '" value="' + esc(x.from) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + '-to">Jusqu’au (inclus, facultatif)</label><input class="input" type="date" id="' + p + '-to" data-sf="to" data-i="' + i + '" value="' + esc(x.to) + '"></div>') +
+        '<div class="cf-field" style="grid-column:1/-1"><div class="fr-checkbox-group"><input type="checkbox" id="' + p + '-suppl" data-sf="suppl" data-i="' + i + '"' + (x.suppl ? ' checked' : '') + '><label class="fr-label" for="' + p + '-suppl">Par suppléance <span class="hint">(la signature du suppléé, à choisir dans la liste, s’affiche d’abord, puis « Par suppléance », puis ce signataire, le suppléant)</span></label></div></div>' +
+        (x.suppl ? '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-sref">Suppléé<span class="req" aria-hidden="true">*</span></label>' + signSelect(list, i, 'sref', p + '-sref') + '</div>' : '') +
+        '<div class="cf-field" style="grid-column:1/-1"><div class="fr-checkbox-group"><input type="checkbox" id="' + p + '-deleg" data-sf="deleg" data-i="' + i + '"' + (x.deleg ? ' checked' : '') + '><label class="fr-label" for="' + p + '-deleg">Par délégation <span class="hint">(la signature du délégant, à choisir dans la liste, s’affiche d’abord, puis « Par délégation », puis ' + (x.suppl ? 'le suppléé, délégataire' : 'ce signataire, le délégataire') + ')</span></label></div></div>' +
+        (x.deleg ? '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-dref">Délégant<span class="req" aria-hidden="true">*</span></label>' + signSelect(list, i, 'dref', p + '-dref') + '</div>' : '') +
+        '</div></div></details>';
+    }).join('') : '<p class="hint">Aucun signataire : les variables {{SIGNATAIRE_BLOC}}, {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}} restent vides dans les contrats.</p>';
+  }
+  $('sign-admin').addEventListener('input', function (e) {
+    var f = e.target.getAttribute('data-sf'), i = Number(e.target.getAttribute('data-i')); if (!f || !state.draft.sign[i]) return;
+    if (f === 'deleg' || f === 'suppl') { state.draft.sign[i][f] = e.target.checked; state.openSign = state.draft.sign[i]; renderSignAdmin(); setDirty(true); return; }
+    state.draft.sign[i][f] = e.target.value;
+    refreshSignSummaries(); setDirty(true);
+  });
+  $('sign-admin').addEventListener('toggle', function (e) {
+    var d = e.target, i = Number(d.getAttribute && d.getAttribute('data-i')); if (isNaN(i) || !state.draft.sign[i]) return;
+    if (d.open) state.openSign = state.draft.sign[i]; else if (state.openSign === state.draft.sign[i]) state.openSign = null;
+  }, true);
+  $('sign-admin').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-sact]'); if (!b) return;
+    var i = Number(b.getAttribute('data-i')), list = state.draft.sign, act = b.getAttribute('data-sact');
+    if (act === 'del') { list.splice(i, 1); var n = normSign(list); list.length = 0; n.forEach(function (x) { list.push(x); }); }
+    else if (act === 'def') { list.forEach(function (x) { x.def = false; }); list[i].def = true; list[i].from = ''; list[i].to = ''; state.openSign = list[i]; }
+    renderSignAdmin(); setDirty(true);
+  });
+  $('sign-add').addEventListener('click', function () {
+    var list = state.draft.sign, x = { nom: '', qualite: '', id: newSignId(), def: !list.length, from: '', to: '', deleg: false, dref: '', suppl: false, sref: '' }; list.push(x); state.openSign = x; renderSignAdmin(); setDirty(true);
+    var q = $('sign-admin').querySelector('details[open] input[data-sf=nom]'); if (q) q.focus();
+  });
+
+  /* ---------- Back office : étapes du tutoriel ---------- */
+  function tutoStepsFrom(list) { return (list || []).map(function (t) { return { icon: t.icon || '', title: t.title || '', page: t.page || '', target: t.target || '', bodyHtml: mdToHtml(t.body || '') }; }); }
+  function tutoKnownTarget(v) { return TUTO_TARGETS.some(function (x) { return x[0] === v; }); }
+  function renderTutoAdmin() {
+    var list = state.draft.tuto, host = $('tuto-admin');
+    host.innerHTML = list.length ? list.map(function (t, i) {
+      var p = 'w-tu-' + i, isOpen = t === state.openTuto, known = tutoKnownTarget(t.target), custom = !known || t._custom;
+      return '<details class="mail-block" data-i="' + i + '"' + (isOpen ? ' open' : '') + '><summary>' + (i + 1) + '. ' + esc((t.icon ? t.icon + ' ' : '') + (t.title || 'Nouvelle étape')) + '</summary><div class="mail-body">' +
+        '<div class="mail-head"><span class="hint">Étape ' + (i + 1) + ' sur ' + list.length + '</span>' +
+        '<button type="button" class="btn secondary sm" data-tact="preview" data-i="' + i + '" title="Voir cette étape dans le tutoriel (avec vos modifications non enregistrées)">▶ Aperçu</button> ' +
+        '<button type="button" class="btn secondary sm" data-tact="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Monter" aria-label="Monter cette étape"><span class="fr-icon-arrow-up-line" aria-hidden="true"></span></button> ' +
+        '<button type="button" class="btn secondary sm" data-tact="down" data-i="' + i + '"' + (i === list.length - 1 ? ' disabled' : '') + ' title="Descendre" aria-label="Descendre cette étape"><span class="fr-icon-arrow-down-line" aria-hidden="true"></span></button> ' +
+        '<button type="button" class="btn secondary sm" data-tact="del" data-i="' + i + '" title="Supprimer" aria-label="Supprimer cette étape"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>' +
+        '<div class="cf-grid">' +
+        '<div class="cf-field"><label for="' + p + '-icon">Icône (émoji)</label><input class="input" type="text" id="' + p + '-icon" data-tf="icon" data-i="' + i + '" maxlength="8" value="' + esc(t.icon) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + '-title">Titre<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="' + p + '-title" data-tf="title" data-i="' + i + '" value="' + esc(t.title) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + '-page">Page à ouvrir</label><select class="select" id="' + p + '-page" data-tf="page" data-i="' + i + '">' + TUTO_PAGES.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === t.page ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="cf-field"><label for="' + p + '-target">Élément mis en lumière</label><select class="select" id="' + p + '-target" data-tf="targetSel" data-i="' + i + '">' + TUTO_TARGETS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (!custom && x[0] === t.target ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '<option value="__custom"' + (custom ? ' selected' : '') + '>Autre (sélecteur CSS)…</option></select></div>' +
+        (custom ? '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-sel">Sélecteur CSS de l’élément</label><input class="input mono" type="text" id="' + p + '-sel" data-tf="target" data-i="' + i + '" value="' + esc(t.target) + '" placeholder="ex. #btn-create" spellcheck="false"></div>' : '') +
+        '</div>' +
+        '<div class="cf-field"><label for="' + p + '-body">Texte (Markdown)<span class="req" aria-hidden="true">*</span></label><textarea class="textarea tall" id="' + p + '-body" data-tf="body" data-i="' + i + '" spellcheck="true">' + esc(t.body) + '</textarea></div>' +
+        '</div></details>';
+    }).join('') : '<p class="hint">Aucune étape : le tutoriel est vide.</p>';
+  }
+  $('tuto-admin').addEventListener('input', function (e) {
+    var f = e.target.getAttribute('data-tf'), i = Number(e.target.getAttribute('data-i')); if (!f || !state.draft.tuto[i] || f === 'targetSel') return;
+    state.draft.tuto[i][f] = e.target.value;
+    if (f === 'title' || f === 'icon') { var sm = e.target.closest('details').querySelector('summary'), t = state.draft.tuto[i]; if (sm) sm.textContent = (i + 1) + '. ' + (t.icon ? t.icon + ' ' : '') + (t.title || 'Nouvelle étape'); }
+    setDirty(true);
+  });
+  $('tuto-admin').addEventListener('change', function (e) {
+    var f = e.target.getAttribute('data-tf'), i = Number(e.target.getAttribute('data-i')); if (!f || !state.draft.tuto[i]) return;
+    var t = state.draft.tuto[i];
+    if (f === 'page') { t.page = e.target.value; setDirty(true); }
+    else if (f === 'targetSel') {
+      if (e.target.value === '__custom') { t._custom = true; if (tutoKnownTarget(t.target)) t.target = ''; } else { t._custom = false; t.target = e.target.value; }
+      state.openTuto = t; renderTutoAdmin(); setDirty(true);
+    }
+  });
+  $('tuto-admin').addEventListener('toggle', function (e) {
+    var d = e.target, i = Number(d.getAttribute && d.getAttribute('data-i')); if (isNaN(i) || !state.draft.tuto[i]) return;
+    if (d.open) state.openTuto = state.draft.tuto[i]; else if (state.openTuto === state.draft.tuto[i]) state.openTuto = null;
+  }, true);
+  $('tuto-admin').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tact]'); if (!b) return;
+    var i = Number(b.getAttribute('data-i')), list = state.draft.tuto, act = b.getAttribute('data-tact');
+    if (act === 'preview') { if (window.__tuto && window.__tuto.open) window.__tuto.open(i, tutoStepsFrom(list)); return; }
+    if (act === 'del') list.splice(i, 1);
+    else { var j = act === 'up' ? i - 1 : i + 1; if (j < 0 || j >= list.length) return; var t = list[i]; list[i] = list[j]; list[j] = t; }
+    renderTutoAdmin(); setDirty(true);
+  });
+  $('tuto-add').addEventListener('click', function () {
+    var t = { icon: '✨', title: 'Nouvelle étape', page: '', target: '', body: '' }; state.draft.tuto.push(t); state.openTuto = t; renderTutoAdmin(); setDirty(true);
+    var all = $('tuto-admin').querySelectorAll('input[data-tf=title]'), q = all[all.length - 1]; if (q) { q.focus(); q.select(); }
+  });
+  $('tuto-reset').addEventListener('click', function () { state.draft.tuto = DEFAULT_TUTO.map(function (t) { return { icon: t.icon, title: t.title, page: t.page, target: t.target, body: t.body }; }); state.openTuto = null; renderTutoAdmin(); setDirty(true); });
 
   /* ---------- Back office : questions de la FAQ ---------- */
   function renderFaqAdmin() {
@@ -5144,7 +5425,7 @@
     var openIdx = arts.indexOf(state.openArticle); // -1 si aucun (ou si l'article ouvert vient d'être supprimé)
     if (openIdx !== -1) mountArticleEditor(openIdx);
   }
-  function renderAdminForm() { renderCounters(); renderArticles(); renderFaqAdmin(); } // le bloc d'introduction se monte à l'ouverture de son détail
+  function renderAdminForm() { renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); } // le bloc d'introduction se monte à l'ouverture de son détail
   function setDirty(d) {
     $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
     $('bo-state').classList.toggle('is-dirty', d);
@@ -5189,10 +5470,10 @@
     var f = first && first.querySelector('input[data-wf=title]'); if (f) f.focus();
   });
   function cancelWel() {
-    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq };
-    state.openArticle = null; state.openCounter = null; state.openFaq = null;
+    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign };
+    state.openArticle = null; state.openCounter = null; state.openFaq = null; state.openTuto = null; state.openSign = null;
     $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut, y compris après Annuler
-    renderCounters(); renderArticles(); renderFaqAdmin(); setDirty(false);
+    renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); setDirty(false);
   }
   function saveWel() {
     var arts = state.draft.articles, cnt = state.draft.counters, i;
@@ -5202,6 +5483,17 @@
     var fq = state.draft.faq;
     for (i = 0; i < fq.length; i++) {
       if (!fq[i].q.trim() || !fq[i].a.trim()) return Promise.reject(new Error('FAQ : la question et la réponse sont obligatoires pour chaque entrée.'));
+    }
+    var tt = state.draft.tuto;
+    for (i = 0; i < tt.length; i++) {
+      if (!tt[i].title.trim() || !tt[i].body.trim()) return Promise.reject(new Error('Tutoriel : le titre et le texte sont obligatoires pour chaque étape.'));
+    }
+    var sg = state.draft.sign;
+    for (i = 0; i < sg.length; i++) {
+      if (!sg[i].nom.trim()) return Promise.reject(new Error('Signataires : le nom est obligatoire pour chaque signataire.'));
+      if (sg[i].deleg && !sg[i].dref) return Promise.reject(new Error('Signataires : « ' + sg[i].nom.trim() + ' » signe par délégation : choisissez le délégant.'));
+      if (sg[i].suppl && !sg[i].sref) return Promise.reject(new Error('Signataires : « ' + sg[i].nom.trim() + ' » signe par suppléance : choisissez le suppléé.'));
+      if (!sg[i].def && sg[i].to && sg[i].to < sg[i].from) return Promise.reject(new Error('Signataires : la date de fin de « ' + sg[i].nom.trim() + ' » précède sa date de début.'));
     }
     var seen = {};
     for (i = 0; i < cnt.length; i++) {
@@ -5215,7 +5507,9 @@
       intro: state.draft.intro || '',
       articles: arts.map(function (a) { return { title: a.title.trim(), date: a.date, endDate: a.endDate || '', status: a.status || '', before: (a.before || '').trim(), after: (a.after || '').trim(), body: a.body || '' }; }),
       counters: cnt.map(function (c) { return { name: c.name.trim(), table: c.table.trim(), column: c.column.trim(), mode: c.mode || 'contains', value: c.value.trim(), page: c.page || '' }; }),
-      faq: fq.map(function (f) { return { q: f.q.trim(), a: f.a }; })
+      faq: fq.map(function (f) { return { q: f.q.trim(), a: f.a }; }),
+      signataires: normSign(sg),
+      tuto: tt.map(function (t) { return { icon: (t.icon || '').trim(), title: t.title.trim(), page: t.page || '', target: (t.target || '').trim(), body: t.body }; })
     };
     return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return refreshCounters(); }).then(function () { render(); renderFaq(); setDirty(false); $('saved').hidden = false; });
   }
@@ -5223,12 +5517,15 @@
   $('btn-save').addEventListener('click', function () { saveWel().catch(function () {}); });
 
   window.WEL = {
+    // Signataire en vigueur (par défaut : aujourd'hui) : { nom, qualite } ; utilisé par les variables {{SIGNATAIRE}} des modèles de contrat.
+    signataire: function (iso) { return currentSigner(cfg().sign, iso); },
+    tutoSteps: function (draft) { return tutoStepsFrom(draft ? state.draft.tuto : cfg().tuto); }, // étapes du tutoriel (brouillon du back office pour l'aperçu)
     setOptions: function (o) { state.opts = o || {}; render(); renderFaq(); refreshCounters(); },
     refresh: function () { render(); renderFaq(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
     openAdmin: function () {
-      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq };
-      state.openArticle = null; state.openCounter = null; state.openFaq = null;
+      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign };
+      state.openArticle = null; state.openCounter = null; state.openFaq = null; state.openTuto = null; state.openSign = null;
       $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut
       $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false);
     },
@@ -5536,7 +5833,7 @@
       '  <p>Entre le ministère de l’intérieur (Division réserves jeunesse) et <strong>{{IDENTITE}}</strong>, grade {{GRADE}}, Nigend {{NIGEND}}.</p>\n' +
       '  <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">\n' + rows + '  </table>\n' +
       '  <p style="margin-top: 32px;">Fait le {{DATE_DU_JOUR}}</p>\n' +
-      '  <table style="width: 100%; margin-top: 40px;"><tr><td style="width: 50%; vertical-align: top;">Le réserviste<br><br><br><br></td><td style="vertical-align: top;">Pour le ministère de l’intérieur<br><br><br><br></td></tr></table>\n</div>';
+      '  <table style="width: 100%; margin-top: 40px;"><tr><td style="width: 50%; vertical-align: top;">Le réserviste<br><br><br><br></td><td style="vertical-align: top;">Pour le ministère de l’intérieur<br><br><br><br>{{SIGNATAIRE_BLOC}}</td></tr></table>\n</div>';
   }
   var DEFAULT_CTR = {
     ren: {
@@ -5811,7 +6108,7 @@
 
   // États affichés en tags après le nom : Tir (Exp. tir PA / HK), VMP (Exp. VMP) et Contrat (Exp. contrat).
   var STATUS_DEFS = [
-    { name: 'Tir', cols: ['Exp. tir PA', 'Exp. tir HK'] },
+    { name: 'Tir', cols: ['Exp. tir PA'] }, // le tag Tir ne tient compte que du PA (le HK reste affiché dans la fiche, sans influencer le tag)
     { name: 'VMP', cols: ['Exp. VMP'] },
     { name: 'Contrat', cols: ['Exp. contrat'] }
   ];
@@ -6233,6 +6530,17 @@
       var key = name.toUpperCase().replace(/\s+/g, '_');
       if (key === 'IDENTITE') return E(formatName(identityOf(item.raw, c)));
       if (key === 'DATE_DU_JOUR') return E(todayFr());
+      if (key === 'SIGNATAIRE' || key === 'SIGNATAIRE_QUALITE' || key === 'SIGNATAIRE_BLOC') { // signature : nom en majuscules (gras dans le bloc), puis la fonction avec ses retours à la ligne
+        var sg = window.WEL && window.WEL.signataire ? window.WEL.signataire() : { nom: '', qualite: '' }, nm = sg.nom.toUpperCase(), ql = sg.qualite, br = function (t) { return plain ? t : E(t).replace(/\r?\n/g, '<br>'); };
+        if (key === 'SIGNATAIRE') return br(nm);
+        if (key === 'SIGNATAIRE_QUALITE') return br(ql);
+        var blk = function (n, f) { return plain ? [n, f].filter(Boolean).join('\n') : (n ? '<strong>' + E(n) + '</strong>' : '') + (n && f ? '<br>' : '') + br(f); };
+        var parts = []; // chaîne : [délégant, « Par délégation », ] [suppléé, « Par suppléance », ] signataire
+        if (sg.deleg && sg.dnom) parts.push(blk(sg.dnom.toUpperCase(), sg.dqualite), 'Par délégation');
+        if (sg.suppl && sg.snom) parts.push(blk(sg.snom.toUpperCase(), sg.squalite), 'Par suppléance');
+        parts.push(blk(nm, ql));
+        return parts.join(plain ? '\n' : '<br>');
+      }
       if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return E(extra[key]);
       var alias = PPE_ALIASES[key], col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
       if (alias) return col ? E(textOfValue(col, item.raw[col.id])) : '';
@@ -10275,6 +10583,92 @@
 })();
 </script>
 <script>
+// Tutoriel : visite guidée des principales fonctionnalités (bouton « Tutoriel » de l'en-tête). Chaque étape peut ouvrir une page, mettre un élément en lumière
+// et l'expliquer dans une carte ; navigation au clavier (← → Entrée, Échap), points de progression cliquables.
+(function () {
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var STEPS = []; // étapes en cours (configurées dans le back office, rubrique « Tutoriel » ; aperçu possible avec un brouillon)
+  var root, hole, card, idx = 0, active = false, startPage = 'welcome', token = 0;
+  function seen() { try { localStorage.setItem('servirTuto', '1'); } catch (e) {} Array.prototype.forEach.call(document.querySelectorAll('[data-tuto]'), function (b) { b.classList.remove('tuto-pulse'); }); }
+  function build() {
+    if (root) return;
+    root = document.createElement('div'); root.className = 'tuto-root'; root.hidden = true;
+    root.innerHTML = '<div class="tuto-shade"></div><div class="tuto-hole" hidden></div><div class="tuto-card" role="dialog" aria-modal="true" aria-labelledby="tuto-title" tabindex="-1"></div>';
+    document.body.appendChild(root);
+    hole = root.querySelector('.tuto-hole'); card = root.querySelector('.tuto-card');
+    card.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ta]'); if (!b) return;
+      var a = b.getAttribute('data-ta');
+      if (a === 'next') go(idx + 1); else if (a === 'prev') go(idx - 1); else if (a === 'end') close(); else if (a === 'dot') go(+b.getAttribute('data-i'));
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!active) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+      else if (e.key === 'ArrowRight' || (e.key === 'Enter' && document.activeElement && document.activeElement.tagName !== 'BUTTON')) { e.preventDefault(); go(idx + 1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+      else if (e.key === 'Tab') { var f = card.querySelectorAll('button'); if (!f.length) return; if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); } }
+    }, true);
+    window.addEventListener('resize', function () { if (active) place(); });
+  }
+  var curTarget = null;
+  function visible(el) { if (!el) return false; var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && el.offsetParent !== null || (el.getClientRects && el.getClientRects().length > 0 && r.width > 0); }
+  function place() {
+    var vw = window.innerWidth, vh = window.innerHeight, cw = card.offsetWidth, ch = card.offsetHeight;
+    if (curTarget && visible(curTarget)) {
+      var r = curTarget.getBoundingClientRect(), pad = 8;
+      hole.hidden = false; hole.style.left = (r.left - pad) + 'px'; hole.style.top = (r.top - pad) + 'px'; hole.style.width = (r.width + pad * 2) + 'px'; hole.style.height = (r.height + pad * 2) + 'px';
+      root.querySelector('.tuto-shade').style.display = 'none';
+      var top = r.bottom + pad + 14; if (top + ch > vh - 10) { top = r.top - pad - 14 - ch; if (top < 10) top = Math.max(10, vh - ch - 12); }
+      card.style.top = top + 'px'; card.style.left = Math.max(12, Math.min(r.left + r.width / 2 - cw / 2, vw - cw - 12)) + 'px';
+    } else {
+      hole.hidden = true; root.querySelector('.tuto-shade').style.display = '';
+      card.style.top = Math.max(12, (vh - ch) / 2) + 'px'; card.style.left = Math.max(12, (vw - cw) / 2) + 'px';
+    }
+  }
+  function render() {
+    var st = STEPS[idx], last = idx === STEPS.length - 1;
+    card.innerHTML = '<p class="tuto-step">Étape ' + (idx + 1) + ' sur ' + STEPS.length + '</p><h2 class="tuto-title" id="tuto-title">' + (st.icon ? '<span aria-hidden="true">' + esc(st.icon) + '</span> ' : '') + esc(st.title) + '</h2><div class="tuto-body">' + st.bodyHtml + '</div>' +
+      '<div class="tuto-dots" role="group" aria-label="Étapes">' + STEPS.map(function (x, i) { return '<button type="button" class="tuto-dot' + (i === idx ? ' is-on' : i < idx ? ' is-done' : '') + '" data-ta="dot" data-i="' + i + '" aria-label="Étape ' + (i + 1) + ' : ' + esc(x.title) + '"' + (i === idx ? ' aria-current="step"' : '') + '></button>'; }).join('') + '</div>' +
+      '<div class="tuto-actions">' + (last ? '' : '<button type="button" class="tuto-skip" data-ta="end">Passer le tutoriel</button>') + (idx ? '<button type="button" class="tuto-btn tuto-btn--prev" data-ta="prev">‹ Précédent</button>' : '') +
+      '<button type="button" class="tuto-btn tuto-btn--next" data-ta="' + (last ? 'end' : 'next') + '">' + (last ? 'Terminer' : 'Suivant ›') + '</button></div>';
+    card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+  }
+  function go(n) {
+    if (n < 0) return; if (n >= STEPS.length) { close(); return; }
+    idx = n; var my = ++token, st = STEPS[idx];
+    if (st.page && window.__showPage && window.__page !== st.page) window.__showPage(st.page);
+    render(); curTarget = null; place();
+    var tries = 0;
+    (function find() {
+      if (my !== token || !active) return;
+      var el = st.target ? document.querySelector(st.target) : null;
+      if (el && visible(el)) { curTarget = el; try { el.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {} setTimeout(function () { if (my === token) { place(); var nb = card.querySelector('.tuto-btn--next'); if (nb) nb.focus({ preventScroll: true }); } }, 120); return; }
+      if (++tries < 8 && st.target) { setTimeout(find, 150); return; }
+      curTarget = null; place(); var nb2 = card.querySelector('.tuto-btn--next'); if (nb2) nb2.focus({ preventScroll: true });
+    })();
+  }
+  function open(from, override) {
+    build(); seen();
+    if (active) return;
+    var list = override || (window.WEL && window.WEL.tutoSteps ? window.WEL.tutoSteps() : []); if (!list.length) return;
+    STEPS = list;
+    active = true; startPage = window.__page || 'welcome'; root.hidden = false; document.body.style.overflow = 'hidden';
+    go(typeof from === 'number' ? Math.min(from, STEPS.length - 1) : 0);
+  }
+  function close() {
+    if (!active) return;
+    active = false; token++; root.hidden = true; document.body.style.overflow = '';
+    if (window.__showPage && window.__page !== startPage) window.__showPage(startPage);
+    var b = document.getElementById('btn-tuto'); if (b) b.focus();
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-tuto="open"]'); if (b) { e.preventDefault(); open(0); } });
+  // Première visite : le bouton pulse jusqu'au premier clic.
+  var first = true; try { first = !localStorage.getItem('servirTuto'); } catch (e) {}
+  if (first) Array.prototype.forEach.call(document.querySelectorAll('[data-tuto]'), function (b) { b.classList.add('tuto-pulse'); });
+  window.__tuto = { open: open, close: close };
+})();
+</script>
+<script>
 // Back office unifié : une page cachée pour l'ensemble du widget (comme les autres widgets), pas un onglet de la page Candidats.
 // Déclencheur unique : 5 clics sur l'en-tête, sur n'importe quelle page. Rattache les back offices des trois pages, repliés par défaut.
 (function () {
@@ -10377,7 +10771,7 @@
     setGrp(d, 'reglages');
     if (sm) sm.textContent = t.replace(/^Options avancées · /, '').replace(/Réservistes RO1\/RS\/RC : source, colonnes de la fiche/, 'Réservistes · source et colonnes de la fiche').replace(/^Candidats : /, 'Candidats · ').replace(/^Réservations : tables/, 'Réservations · tables');
   });
-  var TABS = [['accueil', 'Accueil', 'Introduction, compteurs et articles de la page Bienvenue.'], ['faq', 'FAQ', 'Questions et réponses de la page FAQ.'], ['courriels', 'Courriels', 'Modèles et réglages des courriels préparés depuis les fiches et les réservations.'],
+  var TABS = [['accueil', 'Accueil', 'Introduction, compteurs et articles de la page Bienvenue.'], ['faq', 'FAQ', 'Questions et réponses de la page FAQ.'], ['tuto', 'Tutoriel', 'Étapes de la visite guidée (bouton « Tutoriel » de l’en-tête).'], ['courriels', 'Courriels', 'Modèles et réglages des courriels préparés depuis les fiches et les réservations.'],
     ['documents', 'Documents et contrats', 'Modèles HTML convertis en PDF : lettres, ESR, PPE, contrats et avenants.'], ['reglages', 'Réglages avancés', 'Sources de données et colonnes : à modifier seulement si une colonne est introuvable.']];
   var tabsEl = document.createElement('div'); tabsEl.className = 'bo-tabs'; tabsEl.setAttribute('role', 'tablist'); tabsEl.setAttribute('aria-label', 'Rubriques du back office');
   tabsEl.innerHTML = TABS.map(function (t) { return '<button type="button" class="bo-tab" role="tab" id="bo-tab-' + t[0] + '" data-botab="' + t[0] + '" aria-selected="false">' + t[1] + '</button>'; }).join('');
