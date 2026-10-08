@@ -1885,7 +1885,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 4.98</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 5.03</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -6885,7 +6885,7 @@
     sprint.current = rec.raw.id; sprint.advancing = false; state.modal.tab = null; state.edit = null;
     sprint.curCols = sprintMissing(rec.raw, c).map(function (col) { return col.id; }); sprint.prevMiss = sprint.curCols.slice(); sprint.lastDone = null;
     sprintRender();
-    sprintSwap(function () { if (sprintActive() || (sprint && sprint.current === rec.raw.id)) openModal(idx, null); });
+    sprintSwap(function () { try { if (sprintActive() || (sprint && sprint.current === rec.raw.id)) openModal(idx, null); } catch (e) { sprintFail('la fiche n’a pas pu s’afficher (' + ((e && e.message) || e) + ').', e); } });
   }
   // Après chaque affichage de la fiche : si la fiche en cours est complète, on célèbre (carillon, confettis, +1) puis on enchaîne.
   function sprintCheck(item, c) {
@@ -6893,6 +6893,15 @@
     sprint.advancing = true; sprint.done++; sprint.streak++; sprintRender();
     sfxValid(sprint.streak); sprintConfetti(18);
     setTimeout(function () { if (sprintActive() && sprint.current === item.raw.id) sprintNext(); }, 1400);
+  }
+  // Échec visible (jamais silencieux) : bandeau en haut de la page Réservistes, session abandonnée.
+  function sprintFail(msg, e) {
+    if (sprint) { clearInterval(sprint.timer); sprint = null; sprintRender(); }
+    var wrap = document.querySelector('#page-res .wrap'), box = document.createElement('div');
+    box.className = 'doc-alert error'; box.setAttribute('role', 'alert'); box.style.margin = '0 0 1rem';
+    box.innerHTML = '<p><strong>« Dix-moi tout ! » n’a pas pu démarrer :</strong> ' + esc(msg) + '</p>';
+    if (wrap) wrap.insertBefore(box, wrap.firstChild); setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 20000);
+    try { console.error(e || msg); } catch (x) {}
   }
   function sprintStart() {
     if (sprintActive()) { var ov = $('modal'); if (!ov.hidden) $('modal-close').focus(); return; }
@@ -6907,7 +6916,12 @@
       for (var i = ids.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = ids[i]; ids[i] = ids[j]; ids[j] = t; } // ordre aléatoire
       sprint = { startAt: Date.now(), endAt: Date.now() + SPRINT_MS, total: ids.length, queue: ids, done: 0, nTouched: 0, fields: 0, touched: {}, streak: 0, current: null, advancing: false, finished: false, msg: '', lastSec: 0 };
       sprintSoundUi();
-      if (!ids.length) { sprint.endAt = Date.now(); sprintEnd('empty'); return; }
+      if (!ids.length) {
+        var anyMiss = state.records.filter(function (r) { return missingColsOf(r.raw, c).length; }).length;
+        if (!state.records.length) return sprintFail('aucun réserviste n’a été chargé depuis la table « ' + (c.table || '?') + ' ».');
+        if (anyMiss) return sprintFail(anyMiss + ' réserviste' + (anyMiss > 1 ? 's ont' : ' a') + ' des informations manquantes, mais aucune des colonnes concernées n’est modifiable depuis la fiche (colonne calculée ou absente des onglets de la fiche).');
+        sprint.endAt = Date.now(); sprintEnd('empty'); return;
+      }
       sprint.timer = setInterval(function () {
         var left = sprint.endAt - Date.now(), sec = Math.ceil(left / 1000);
         if (left <= 0) { sprintEnd('time'); return; }
@@ -6915,14 +6929,7 @@
         sprintRender();
       }, 250);
       sprintRender(); sprintNext();
-    }).catch(function (e) { // jamais d'échec silencieux : message visible et session abandonnée
-      if (sprint) { clearInterval(sprint.timer); sprint = null; sprintRender(); }
-      var wrap = document.querySelector('#page-res .wrap'), box = document.createElement('div');
-      box.className = 'doc-alert error'; box.setAttribute('role', 'alert'); box.style.margin = '0 0 1rem';
-      box.innerHTML = '<p><strong>« Dix-moi tout ! » n’a pas pu démarrer :</strong> ' + esc((e && e.message) || String(e)) + '</p>';
-      if (wrap) wrap.insertBefore(box, wrap.firstChild); setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 12000);
-      try { console.error(e); } catch (x) {}
-    });
+    }).catch(function (e) { sprintFail((e && e.message) || String(e), e); });
   }
   $('sprint-skip').addEventListener('click', function () { if (sprintActive()) { sprint.streak = 0; sprintNext(); } });
   $('sprint-stop').addEventListener('click', function () { if (sprint && sprint.finished) sprintClose(); else sprintEnd('stop'); });
@@ -8096,8 +8103,22 @@
   }
   // Camembert (tranches d'âge) : rampe ordinale d'un seul bleu (clair → foncé, dans l'ordre des tranches), gris pour « non renseigné » ; effectifs et pourcentages dans la légende.
   var PIE_COLORS = ['#8585f6', '#6a6af4', '#3f3fd6', '#1f1fb0', '#000091'], PIE_NONE = '#b5b4ac';
-  function pieColor(i, r) { return r.label === '' ? PIE_NONE : PIE_COLORS[i % PIE_COLORS.length]; }
-  function pieLabel(r) { return r.label ? r.label + ' ans' : 'Non renseigné'; }
+  // Camembert de modalités sans ordre (groupement…) : couleurs distinctes, gris pour « Autres » et « Non renseigné », libellé tel quel.
+  var CAT_COLORS = ['#000091', '#d64d00', '#18753c', '#6a6af4', '#a558a0', '#009081', '#c3992a'];
+  function pieColor(i, r) { return r.label === '' || r.other ? PIE_NONE : r.cat ? CAT_COLORS[i % CAT_COLORS.length] : PIE_COLORS[i % PIE_COLORS.length]; }
+  function pieLabel(r) { return r.cat ? (r.label || 'Non renseigné') : r.label ? r.label + ' ans' : 'Non renseigné'; }
+  // Répartition en camembert : au-delà de max modalités, les plus petites sont regroupées dans « Autres ».
+  function asCatPie(d, max) {
+    if (!d) return d;
+    var rows = d.rows.slice();
+    if (rows.length > max) {
+      var rest = rows.slice(max - 1), keep = rows.slice(0, max - 1);
+      keep.push({ label: 'Autres (' + rest.length + ')', count: rest.reduce(function (a, r) { return a + r.count; }, 0), pct: Math.round(rest.reduce(function (a, r) { return a + r.pct; }, 0) * 10) / 10, other: true });
+      rows = keep;
+    }
+    rows.forEach(function (r) { r.cat = true; });
+    d.rows = rows; d.pie = true; return d;
+  }
   function piePath(cx, cy, R, a0, a1) { // angles en radians depuis le haut, sens horaire
     var x0 = cx + R * Math.sin(a0), y0 = cy - R * Math.cos(a0), x1 = cx + R * Math.sin(a1), y1 = cy - R * Math.cos(a1);
     return 'M' + cx + ' ' + cy + ' L' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + R + ' ' + R + ' 0 ' + (a1 - a0 > Math.PI ? 1 : 0) + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' Z';
@@ -8312,7 +8333,7 @@
     var secs = Object.keys(ETAT_GROUPS).map(function (k) {
       var g = d.groups.filter(function (x) { return x.key === k; })[0];
       return { key: k, label: ETAT_GROUPS[k].label, color: ETAT_GROUPS[k].color, count: g ? g.count : 0, rows: d.rows.filter(function (r) { return r.grp === k && !r.none; }) };
-    }).filter(function (x) { return x.rows.length; });
+    }).filter(function (x) { return x.rows.length > 1 && x.count > 0; }); // un groupe à un seul état (ex. Admis) n'est pas détaillé : la tuile et la barre suffisent
     var none = d.rows.filter(function (r) { return r.none; });
     if (none.length) secs.push({ key: 'none', label: '', color: '#b5b4ac', count: none[0].count, rows: none });
     return secs;
@@ -8320,7 +8341,7 @@
   function etatCardHtml(d) {
     var max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1, sum = d.groups.reduce(function (a, g) { return a + g.count; }, 0) || 1;
     var aria = d.title + ' : ' + d.groups.map(function (g) { return g.label + ' ' + g.count; }).join(', ') + '. ' + d.rows.map(function (r) { return (r.label || 'Non renseigné') + ' ' + r.count; }).join(', ');
-    var kpis = '<div class="et-kpis">' + d.groups.map(function (g) {
+    var kpis = '<div class="et-kpis">' + d.groups.filter(function (g) { return g.count; }).map(function (g) {
       return '<div class="et-kpi" style="--c:' + g.color + '"><span class="et-kn">' + g.count + '</span><span class="et-kl">' + esc(g.label) + '</span><span class="et-kp">' + frPct(g.pct) + '</span></div>';
     }).join('') + '</div>';
     var stack = '<div class="et-stack">' + d.groups.filter(function (g) { return g.count; }).map(function (g) {
@@ -8347,7 +8368,7 @@
       if (w > 22) { g.fillStyle = '#fff'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(q.count), 1 + x - w / 2, 11); }
     });
     var lx = 1; g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '10.5px Arial, Helvetica, sans-serif';
-    d.groups.forEach(function (q) { g.fillStyle = q.color; g.fillRect(lx, 28, 9, 9); g.fillStyle = '#000'; var t = q.label + ' ' + q.count + ' (' + frPct(q.pct) + ')'; g.fillText(t, lx + 14, 33); lx += 14 + g.measureText(t).width + 18; });
+    d.groups.filter(function (q) { return q.count; }).forEach(function (q) { g.fillStyle = q.color; g.fillRect(lx, 28, 9, 9); g.fillStyle = '#000'; var t = q.label + ' ' + q.count + ' (' + frPct(q.pct) + ')'; g.fillText(t, lx + 14, 33); lx += 14 + g.measureText(t).width + 18; });
     var lw = 170, nw = 40, maxc = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1, tw = W - lw - nw - 8, y = top + 8;
     secs.forEach(function (sc) {
       if (sc.label) { g.fillStyle = sc.color; g.fillRect(1, y + 5, 8, 8); g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(sc.label.toUpperCase() + '  ·  ' + sc.count, 15, y + 9); y += 19; }
@@ -8386,10 +8407,8 @@
       po.opts.map(function (o) { return '<option value="' + esc(o.value) + '"' + (o.value === sel ? ' selected' : '') + '>' + esc(o.none ? 'Non renseignée' : o.value) + ' (' + o.count + ')</option>'; }).join('') + '</select></div></div>';
     if (!n) return '<section class="stat-focus">' + head + '<p class="stat-hint">Aucune candidature pour cette PMG.</p></section>';
     var tiles = '<div class="stat-grid">' + statTile('Candidats', n, frPct(pct(n, S.n)) + ' des candidats') + (actives == null ? '' : statTile('Candidatures actives', actives, 'sans rejets ni abandons')) + (admis == null ? '' : statTile('Admis PMG', admis, frPct(pct(admis, n)) + ' de la PMG')) + '</div>';
-    // âge : histogramme (échelle ordonnée) ; sexe : barre unique à 100 % ; groupement : barres horizontales ; état : parcours complet
     var age = candAge(recs, t), sex = candDist(recs, t, 'Par sexe', findCol(t, 'Sexe') ? 'Sexe' : 'Civilité', candSexMap), aff = candDist(recs, t, 'Par groupement', 'Affectation'), etat = candEtat(recs, t);
-    if (age) { age.pie = false; age.chart = true; age.title = 'Par tranche d’âge (en années)'; }
-    if (sex) { sex.stack = true; }
+    asCatPie(aff, 8); stackOf(sex); // mêmes visuels que les statistiques générales : âge et groupement en camembert, sexe en barre unique
     return '<section class="stat-focus">' + head + tiles + '<div class="stat-cards">' + [age, sex, aff].filter(Boolean).map(distCard).join('') + '</div>' + (etat ? '<div class="stat-cards" style="margin-top:1rem">' + etatCardHtml(etat) + '</div>' : '') + '</section>';
   }
   var STACK_COLORS = ['#000091', '#d64d00', '#b5b4ac', '#18753c'];
@@ -8400,6 +8419,7 @@
       d.rows.filter(function (r) { return r.count; }).map(function (r, i) { return '<span class="et-seg" style="flex:' + r.count + ';background:' + STACK_COLORS[d.rows.indexOf(r) % STACK_COLORS.length] + '" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '">' + (r.count / total >= .12 ? frPct(r.pct) : '') + '</span>'; }).join('') + '</div>' +
       '<ul class="et-legend">' + d.rows.map(function (r, i) { return '<li><span class="et-sw" style="background:' + STACK_COLORS[i % STACK_COLORS.length] + '"></span>' + esc(r.label || 'Non renseigné') + ' <strong>' + r.count + '</strong> <span class="et-p">' + frPct(r.pct) + '</span></li>'; }).join('') + '</ul></div></section>';
   }
+  function stackOf(d) { if (d) d.stack = true; return d; } // répartition en une barre unique à 100 % (sexe)
   function candStatsData() {
     var sn = candSnap();
     if (!sn || !sn.table) return { error: 'Table des candidats introuvable : vérifiez la configuration de la page Candidats.' };
@@ -8410,9 +8430,8 @@
     var sexMap = candSexMap;
     var d = {
       n: n, actives: actives, admis: admis, recs: recs, table: t,
-      dists: [candEtat(recs, t), candDist(recs, t, 'Par PMG souhaitée', 'PMG'), candDist(recs, t, 'Par groupement', 'Affectation'),
-        candDist(recs, t, 'Par origine', 'Origine'), candDist(recs, t, 'Par sexe', findCol(t, 'Sexe') ? 'Sexe' : 'Civilité', sexMap), candAge(recs, t),
-        candDist(recs, t, 'Tests psychométriques (résultat)', 'Tests psy'), candDist(recs, t, 'VEMI (résultat)', 'VEMI')].filter(Boolean),
+      dists: [candEtat(recs, t), candDist(recs, t, 'Par PMG souhaitée', 'PMG'), asCatPie(candDist(recs, t, 'Par groupement', 'Affectation'), 8),
+        candDist(recs, t, 'Par origine', 'Origine'), stackOf(candDist(recs, t, 'Par sexe', findCol(t, 'Sexe') ? 'Sexe' : 'Civilité', sexMap)), candAge(recs, t)].filter(Boolean),
       ech: []
     };
     d.indicators = [['Candidats', n]].concat(actives == null ? [] : [['Candidatures actives (sans rejets ni abandons)', actives + ' (' + frPct(pct(actives, n)) + ')']]).concat(admis == null ? [] : [['Admis PMG', admis + ' (' + frPct(pct(admis, n)) + ')']]);
@@ -8482,7 +8501,7 @@
     out += h('Indicateurs') + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + ind.map(function (r, i) { return '<tr><td style="' + td + 'width:75%;">' + esc(r[0]) + '</td><td style="' + td + num + 'font-weight:bold;' + (i === 1 && S.nonEmp > 0 ? 'color:#ce0500;' : '') + '">' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
     S.dists.forEach(function (d) {
       if (d.etat) { var ep = etatPng(d, 620); out += h(d.title) + '<img alt="" src="' + ep.src + '" width="' + ep.w + '" height="' + ep.h + '" style="display:block;">'; return; }
-      if (d.pie) { out += h(d.title) + '<img alt="" src="' + distPiePng(d, 620, 130) + '" width="620" height="130" style="display:block;">'; return; }
+      if (d.pie) { var ph = Math.max(130, d.rows.length * 18 + 20); out += h(d.title) + '<img alt="" src="' + distPiePng(d, 620, ph) + '" width="620" height="' + ph + '" style="display:block;">'; return; }
       if (d.chart) { out += h(d.title) + '<img alt="" src="' + distChartPng(d, 620, 134) + '" width="620" height="134" style="display:block;">'; return; }
       out += h(d.title) + '<table style="width:100%;border-collapse:collapse;' + B10 + '">' + d.rows.map(function (r) {
         return '<tr><td style="' + td + 'width:30%;">' + (r.label ? esc(r.label) : 'Non renseigné') + '</td><td style="' + td + num + 'width:8%;font-weight:bold;">' + r.count + '</td>' +
@@ -11095,43 +11114,6 @@
     if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
     if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
     if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-</body>
-</html>
-RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-</body>
-</html>
-('welcome'); }, 350);
-    } else if (homeTimer) {
-      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
-    }
-    if (hdrClicks < 5) return;
-    hdrClicks = 0;
-    returnPage = window.__page || 'pmg';
-    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
-    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
-    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
-    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
-    window.__showPage('bo');
-  });
-  document.getElementById('bo-close').addEventListener('click', function () {
-    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
-    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
-    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-</body>
-</html>
-.closeAdmin();
     window.__showPage(returnPage || 'pmg');
   });
 })();
