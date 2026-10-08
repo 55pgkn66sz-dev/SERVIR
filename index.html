@@ -1973,9 +1973,9 @@
   </div>
 </div>
 
-<!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
+<!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 5.40</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.5.41</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -8451,16 +8451,16 @@
   // qui compte plusieurs états (Sans suite, En cours) montre le détail : mêmes barres, découpées par état.
   var ETAT_GROUPS = {
     fin: { label: 'Sans suite', color: '#ce0500' },
-    attente: { label: 'En attente', hint: 'attente de pièces', color: '#a56a00' },
+    attente: { label: 'En attente de résultats', color: '#a56a00' },
     cours: { label: 'En cours', color: '#000091' },
     admis: { label: 'Admis', color: '#18753c' }
   };
-  var ETAT_ORDER = ['fin', 'attente', 'cours', 'admis'];
+  var ETAT_ORDER = ['fin', 'cours', 'attente', 'admis'];
   // Affichage à l'écran, comme les jauges d'objectif : aplats pastel arrondis d'une seule couleur, plein pour les admis (le PDF garde les couleurs pleines).
   var ETAT_FILL = { // une seule teinte (bleu) : de plus en plus soutenue vers l'issue favorable, plein pour les admis
     fin: { fill: 'color-mix(in srgb, var(--blue) 20%, var(--bg))', ink: 'var(--ink)' },
-    attente: { fill: 'color-mix(in srgb, var(--blue) 34%, var(--bg))', ink: 'var(--ink)' },
-    cours: { fill: 'color-mix(in srgb, var(--blue) 50%, var(--bg))', ink: 'var(--ink)' },
+    cours: { fill: 'color-mix(in srgb, var(--blue) 42%, var(--bg))', ink: 'var(--ink)' },
+    attente: { fill: 'color-mix(in srgb, var(--blue) 60%, var(--bg))', ink: 'var(--ink)' },
     admis: { fill: 'var(--blue)', ink: '#fff' }
   };
 
@@ -8473,7 +8473,7 @@
   function candEtat(recs, t) {
     var col = findCol(t, 'Etat candidature'); if (!col) return null;
     var affCol = findCol(t, 'Affectation');
-    var counts = {}, order = [], total = recs.length, perGroup = { fin: 0, attente: 0, cours: 0, admis: 0 }, byAff = {};
+    var counts = {}, order = [], total = recs.length, perGroup = { fin: 0, cours: 0, attente: 0, admis: 0 }, byAff = {};
     (col.choices || []).forEach(function (v) { if (order.indexOf(v) === -1) order.push(v); });
     recs.forEach(function (r) {
       var seen = {}, vals = cellVals(col, r.raw[col.id]);
