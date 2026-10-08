@@ -355,6 +355,9 @@
   @keyframes tuto-in { from { opacity: 0; transform: translateY(.6rem) scale(.97); } to { opacity: 1; transform: none; } }
   .tuto-step { margin: 0 0 .35rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); }
   .badge-live { display: inline-block; margin-left: .4rem; padding: 0 .5rem; font-size: .75rem; font-weight: 700; color: var(--text-default-success); background: var(--background-contrast-success); border-radius: 4px; }
+  .tuto-card .fr-stepper { margin-bottom: 1rem; }
+  .tuto-card .fr-stepper__title { margin-bottom: .75rem; }
+  .tuto-card .fr-stepper__details { margin-bottom: 0; }
   .tuto-title { margin: 0 0 .6rem; font-size: 1.3rem; line-height: 1.7rem; font-weight: 800; }
   .tuto-body { font-size: .9375rem; line-height: 1.55rem; }
   .tuto-body p { margin: 0 0 .5rem; }
@@ -532,6 +535,8 @@
   .flag-esr > span { transform: scale(1.1); transform-origin: center; }
   .flag-esr { color: var(--blue); }
   .flag-dup { color: var(--text-default-warning); }
+  .flag-badge { white-space: nowrap; }
+  .x-badge-btn { margin-left: .5rem; border: 0; cursor: pointer; font: inherit; font-size: .75rem; vertical-align: middle; }
   .modal-title .flags { margin-left: 0.6rem; }
   td.end .flags { justify-content: flex-end; }
   th.end, td.end { width: 1%; text-align: right; white-space: nowrap; }
@@ -1885,7 +1890,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 5.03</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 5.14</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -2524,7 +2529,7 @@
   function flagsHtml(raw, c) {
     var out = '';
     if (flagValue(raw, c, 'Déjà ESR')) out += '<span class="flag flag-esr" role="img" aria-label="Déjà ESR" title="Déjà ESR"><span class="fr-icon-alarm-warning-line" aria-hidden="true"></span></span>';
-    if (flagValue(raw, c, 'Doublon')) out += '<span class="flag flag-dup" role="img" aria-label="Doublon" title="Doublon : fiche à vérifier"><span class="fr-icon-group-line" aria-hidden="true"></span></span>';
+    if (flagValue(raw, c, 'Doublon')) out += '<span class="fr-badge fr-badge--warning fr-badge--sm flag-badge" title="Doublon : fiche à vérifier">Conflit</span>';
     return out ? '<span class="flags">' + out + '</span>' : '';
   }
   // Lettre d'incorporation (à côté de « Stage ») et ESR (à côté de « Contrat »).
@@ -5843,11 +5848,15 @@
   }
   function cfg() {
     var o = ro(), table = o.table || state.detected || '';
+    var tabs = o.tabs ? withNewDefaults(table, normalizeTabs(table, o.tabs), o.tabsV || 0) : defaultTabs(table);
+    Object.keys(state.extraTabs || {}).forEach(function (k) { // colonnes rattachées en cours de session (« Dix-moi tout ! »)
+      var cur = tabs[k] || []; tabs[k] = cur.concat(state.extraTabs[k].filter(function (id) { return cur.indexOf(id) === -1; }));
+    });
     return {
       table: table,
       identity: ('identity' in o) ? o.identity : DEFAULTS.identity,
       tag: DEFAULTS.tag, // colonne « Type R » : fixe, pas de choix en back office
-      tabs: o.tabs ? withNewDefaults(table, normalizeTabs(table, o.tabs), o.tabsV || 0) : defaultTabs(table),
+      tabs: tabs,
       ppeTpl: typeof o.ppeTpl === 'string' ? o.ppeTpl : '', // modèle HTML du PPE (vide : modèle par défaut)
       ctrTpl: normCtr(o.ctrTpl) // modèles des contrats et courriels (renouvellements, avenants)
     };
@@ -5991,10 +6000,13 @@
   // Données attendues : les colonnes ci-dessous (si elles existent dans la table) et toutes les dates d'expiration « Exp. … » (sauf PPE et tir HK, facultatives).
   var quick = { nonemp: false, missing: false };
   var MISSING_LABELS = ['Affectation', 'Grade', 'NID', 'Nigend', 'Civilité'];
-  function missingColsOf(raw, c) {
+  function expectedCols(c) { // colonnes dont l'absence de valeur compte comme « donnée manquante »
     var cols = MISSING_LABELS.map(function (l) { return findCol(c.table, l); }).filter(Boolean);
     (state.colsByTable[c.table] || []).filter(isExpCol).forEach(function (col) { if (cols.indexOf(col) === -1 && !/\bppe\b|\bhk\b/.test(norm(col.label + ' ' + displayLabel(col)))) cols.push(col); });
-    return cols.filter(function (col) { var v = raw[col.id]; return emptyVal(v) || (typeof v === 'string' && !v.trim()); });
+    return cols;
+  }
+  function missingColsOf(raw, c) {
+    return expectedCols(c).filter(function (col) { var v = raw[col.id]; return emptyVal(v) || (typeof v === 'string' && !v.trim()); });
   }
   function missingFields(raw, c) { return missingColsOf(raw, c).map(function (col) { return displayLabel(col); }); }
   function renderQuick(c) {
@@ -6699,6 +6711,24 @@
   var SPRINT_MS = 10 * 60 * 1000;
   var sprint = null; // { endAt, total, timer, queue, done, streak, seen, current, advancing, finished, lastSec }
   function reducedMotion() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  // Colonnes attendues, modifiables, mais absentes de tous les onglets de la fiche : elles sont rattachées à l'onglet qui convient pour la session
+  // (« Dix-moi tout ! » peut alors les faire compléter) ; la configuration enregistrée n'est pas modifiée.
+  function tabKeyFor(col) {
+    var l = norm(col.label), i;
+    for (i = 0; i < TAB_DEFS.length; i++) if (TAB_DEFS[i].defaults.some(function (d) { return norm(d) === l; })) return TAB_DEFS[i].key;
+    if (/^exp\./.test(l)) return /tir|\bpa\b|\bhk\b/.test(l) ? 'qual' : /vmp/.test(l) ? 'hab' : 'mil';
+    return 'info';
+  }
+  function adoptOrphanCols(c) {
+    var added = 0; state.extraTabs = state.extraTabs || {};
+    expectedCols(c).forEach(function (col) {
+      if (!isEditableCol(col) || TAB_DEFS.some(function (t) { return (c.tabs[t.key] || []).indexOf(col.id) !== -1; })) return;
+      var k = tabKeyFor(col); (state.extraTabs[k] = state.extraTabs[k] || []).push(col.id); added++;
+    });
+    return added;
+  }
+  // Pourquoi une colonne attendue ne peut pas être complétée (colonne calculée, référence, absente de la fiche).
+  function whyNotEditable(col) { return col.formula ? 'colonne calculée par une formule' : ['Ref', 'RefList', 'Attachments'].indexOf(typeBase(col.type)) !== -1 ? 'colonne de type référence' : 'colonne non modifiable'; }
   function tabOfCol(c, id) { return modalTabs(c).filter(function (t) { return (c.tabs[t.key] || []).indexOf(id) !== -1; })[0] || null; }
   function sprintMissing(raw, c) { return missingColsOf(raw, c).filter(function (col) { return isEditableCol(col) && tabOfCol(c, col.id); }); }
   function sprintActive() { return !!sprint && !sprint.finished; }
@@ -6912,6 +6942,7 @@
     function ready(n) { return load().then(function () { if (state.records.length || state.read.error || n >= 4) return; return new Promise(function (r) { setTimeout(r, 400); }).then(function () { return ready(n + 1); }); }); }
     ready(0).then(function () {
       if (state.read && state.read.error) throw new Error('lecture de la table impossible (' + state.read.error + ')');
+      adoptOrphanCols(cfg());
       var c = cfg(), ids = state.records.filter(function (r) { return sprintMissing(r.raw, c).length; }).map(function (r) { return r.raw.id; });
       for (var i = ids.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = ids[i]; ids[i] = ids[j]; ids[j] = t; } // ordre aléatoire
       sprint = { startAt: Date.now(), endAt: Date.now() + SPRINT_MS, total: ids.length, queue: ids, done: 0, nTouched: 0, fields: 0, touched: {}, streak: 0, current: null, advancing: false, finished: false, msg: '', lastSec: 0 };
@@ -6919,7 +6950,11 @@
       if (!ids.length) {
         var anyMiss = state.records.filter(function (r) { return missingColsOf(r.raw, c).length; }).length;
         if (!state.records.length) return sprintFail('aucun réserviste n’a été chargé depuis la table « ' + (c.table || '?') + ' ».');
-        if (anyMiss) return sprintFail(anyMiss + ' réserviste' + (anyMiss > 1 ? 's ont' : ' a') + ' des informations manquantes, mais aucune des colonnes concernées n’est modifiable depuis la fiche (colonne calculée ou absente des onglets de la fiche).');
+        if (anyMiss) {
+          var byCol = expectedCols(c).map(function (col) { return { col: col, n: state.records.filter(function (r) { var v = r.raw[col.id]; return emptyVal(v) || (typeof v === 'string' && !v.trim()); }).length }; }).filter(function (x) { return x.n; }).sort(function (a, b) { return b.n - a.n; });
+          return sprintFail(anyMiss + ' réserviste' + (anyMiss > 1 ? 's ont' : ' a') + ' des informations manquantes, mais ces colonnes ne sont pas modifiables : ' +
+            byCol.slice(0, 6).map(function (x) { return displayLabel(x.col) + ' (' + whyNotEditable(x.col) + ', ' + x.n + ')'; }).join(' ; ') + '.');
+        }
         sprint.endAt = Date.now(); sprintEnd('empty'); return;
       }
       sprint.timer = setInterval(function () {
@@ -9152,7 +9187,9 @@
       { 'Créneau': 'Jeudi 10h30', 'Multi résa': true, 'Nigend': '2019-1120', 'Affectation': 'GD 38', 'Militaire': 'PERRIN Camille', 'DDN': dd(1996, 11, 2), 'Adresse email': 'camille.perrin@example.fr', 'Date': dd(2026, 10, 8), 'Heure': '10:30', 'Antenne médicale': 'Antenne médicale de Grenoble', 'Convoc. RO': true, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 20) + 30000 },
       { 'Créneau': 'Vendredi 14h00', 'Multi résa': true, 'Nigend': '2019-1120', 'Affectation': 'GD 38', 'Militaire': 'PERRIN Camille', 'DDN': dd(1996, 11, 2), 'Adresse email': 'camille.perrin@example.fr', 'Date': dd(2026, 10, 16), 'Heure': '14:00', 'Antenne médicale': 'Antenne médicale de Metz', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 25) + 50000 },
       { 'Créneau': 'Lundi 09h00', 'Nigend': '2022-0555', 'Affectation': 'GD 73', 'Militaire': 'GARNIER Lucas', 'DDN': dd(2000, 1, 25), 'Adresse email': 'lucas.garnier@example.fr', 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 20000 },
-      { 'Créneau': 'Lundi 09h00', 'Nigend': '2008-0210', 'Affectation': 'GD 01', 'Militaire': 'ROBIN Sophie', 'DDN': dd(1988, 6, 14), 'Adresse email': 'sophie.robin@example.fr', 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 20060 }
+      { 'Créneau': 'Lundi 09h00', 'Nigend': '2008-0210', 'Affectation': 'GD 01', 'Militaire': 'ROBIN Sophie', 'DDN': dd(1988, 6, 14), 'Adresse email': 'sophie.robin@example.fr', 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 20060 },
+      { 'Créneau': 'Lundi 09h00', 'Nigend': '2015-0999', 'Affectation': 'GD 38', 'Militaire': 'DUPONT Marc', 'DDN': dd(1990, 2, 3), 'Adresse email': 'marc.dupont@example.fr', 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 20120 },
+      { 'Créneau': 'Lundi 08h00', 'Nigend': '2011-0384', 'Affectation': 'GD 74', 'Militaire': 'LEFÈVRE Antoine', 'DDN': dd(1981, 4, 9), 'Adresse email': 'antoine.lefevre@example.fr', 'Date': dd(2025, 9, 1), 'Heure': '08:00', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. RO': true, 'Envoyé AM': true, 'Réservation faite le': dd(2025, 8, 20) }
     ]) },
     Reservations_VEMI: { labels: SPECS.vemi.cols, rows: demoRows([
       { 'NID': '1042871', 'Candidat': 'MARTIN Camille', 'Affectation': 'GD 74', 'Date': dd(2026, 10, 15), 'Heure': '14:30', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 21) + 42000, 'Créé par': 'MARTIN Camille' },
@@ -9184,14 +9221,15 @@
       { 'Nom': 'Antenne médicale de Metz', 'Adresse': '8 place du Docteur, 57000 Metz', 'Mail': '' }
     ]) },
     Creneaux_VMP: { labels: ['Etat créneau', 'Proposé ?', 'Date', 'Heure', 'Antenne médicale'], rows: demoRows([
-      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 6), 'Heure': '08:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
-      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Libre', 'Proposé ?': true, 'Date': dd(2026, 10, 6), 'Heure': '08:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Libre', 'Proposé ?': true, 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Libre', 'Proposé ?': true, 'Date': dd(2026, 10, 12), 'Heure': '09:00', 'Antenne médicale': 'Antenne médicale de Lyon' },
       { 'Etat créneau': 'Complet', 'Proposé ?': true, 'Date': dd(2026, 10, 8), 'Heure': '10:30', 'Antenne médicale': 'Antenne médicale de Grenoble' },
       { 'Etat créneau': 'Fermé', 'Proposé ?': false, 'Date': dd(2026, 10, 20), 'Heure': '15:00', 'Antenne médicale': 'Antenne médicale de Metz' }
     ]) },
     Creneaux_VEMI: { labels: ['Etat créneau', 'Proposé ?', 'Date', 'Heure', 'Antenne médicale'], rows: demoRows([
-      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 15), 'Heure': '14:30', 'Antenne médicale': 'Antenne médicale de Lyon' },
-      { 'Etat créneau': 'Disponible', 'Proposé ?': true, 'Date': dd(2026, 10, 20), 'Heure': '09:15', 'Antenne médicale': 'Antenne médicale de Grenoble' },
+      { 'Etat créneau': 'Libre', 'Proposé ?': true, 'Date': dd(2026, 10, 15), 'Heure': '14:30', 'Antenne médicale': 'Antenne médicale de Lyon' },
+      { 'Etat créneau': 'Libre', 'Proposé ?': true, 'Date': dd(2026, 10, 20), 'Heure': '09:15', 'Antenne médicale': 'Antenne médicale de Grenoble' },
       { 'Etat créneau': 'Fermé', 'Proposé ?': false, 'Date': dd(2026, 10, 27), 'Heure': '11:00', 'Antenne médicale': 'Antenne médicale de Metz' }
     ]) },
     Creneaux_psy: { labels: ['Proposé ?', 'Date', 'Capacité'], rows: demoRows([
@@ -9317,7 +9355,15 @@
     return k;
   }
   function slotCap(tab, key) {
-    if (tab !== 'psy') return 1;
+    if (tab !== 'psy') { // VMP, VEMI : un même créneau peut figurer plusieurs fois dans la table des créneaux (une ligne = une place)
+      var sl = state.slots[tab], sd = sl && findCol(sl.cols, 'Date'), st = sl && findCol(sl.cols, 'Heure'), sa = sl && SPECS[tab].antenne && findCol(sl.cols, SPECS[tab].antenne);
+      if (!sd || !st) return 1;
+      var n = sl.rows.filter(function (r) {
+        if (typeof r[sd.id] !== 'number') return false;
+        return String(Math.floor(r[sd.id] / 86400)) + '|' + String(r[st.id] || '').trim() + '|' + norm(String(sa ? r[sa.id] || '' : '')) === key;
+      }).length;
+      return n > 0 ? n : 1;
+    }
     var s = state.slots.psy, sdc = s && findCol(s.cols, 'Date'), cc = s && findCol(s.cols, 'Capacité'); if (!sdc || !cc) return Infinity;
     var cap = s.rows.filter(function (r) { return typeof r[sdc.id] === 'number' && String(Math.floor(r[sdc.id] / 86400)) === key; }).reduce(function (n, r) { return n + (Number(r[cc.id]) || 0); }, 0);
     return cap > 0 ? cap : Infinity;
@@ -9335,7 +9381,20 @@
   }
   function inConflict(tab, row) { return !!(state.conf && state.conf.tab === tab && state.conf.byRow[row.id]); }
   function flagged(tab, row) { return SPECS[tab].dupFlags.some(function (l) { return isYes(val(tab, row, l)); }); }
-  function isDup(tab, row, groups) { var k = keyOf(tab, row); return flagged(tab, row) || (k && groups[k] && groups[k].length > 1); }
+  // VMP : une autre réservation du même réserviste datée de plus d'un an d'écart n'est pas un doublon (visite périodique annuelle). Sans date : par prudence, doublon.
+  function withinYearSec(tab, x, y) {
+    if (tab !== 'vmp' || typeof x !== 'number' || typeof y !== 'number') return true;
+    var lo = Math.min(x, y), hi = Math.max(x, y), d = new Date(lo * 1000); d.setUTCFullYear(d.getUTCFullYear() + 1);
+    return hi <= d.getTime() / 1000;
+  }
+  function rowDate(tab, row) { var v = val(tab, row, 'Date'); return typeof v === 'number' ? v : null; }
+  function isDup(tab, row, groups) {
+    var k = keyOf(tab, row), g = k && groups[k] ? groups[k] : [], me = rowDate(tab, row);
+    var others = g.filter(function (r) { return r.id !== row.id; });
+    var twin = others.some(function (r) { return withinYearSec(tab, me, rowDate(tab, r)); });
+    if (tab === 'vmp' && others.length) return twin; // les autres réservations existent mais sont toutes à plus d'un an : le marquage de la table ne compte pas
+    return flagged(tab, row) || twin;
+  }
   // Une réservation « attend une action » tant que sa convocation (candidat/réserviste, et service le cas échéant) n'est pas marquée envoyée, ou tant qu'elle est en doublon.
   function needsAction(tab, row, groups) {
     var spec = SPECS[tab];
@@ -9491,7 +9550,12 @@
         cols.map(function (c) {
           // Tests psy : les créneaux n'ont pas d'heure fixe (contrairement à VMP/VEMI) ; l'heure de chaque réservation se renseigne au cas par cas, ici en un clic.
           if (tab === 'psy' && hc && c.id === hc.id) return heureTd(r, hc);
-          return '<td>' + cellHtml(c, r[c.id]) + '</td>';
+          var badge = '';
+          if (norm(c.label) === norm(spec.person) && (dup || inConflict(tab, r))) { // « Conflit » à côté du nom : ouvre la fenêtre de traitement
+            var isC = inConflict(tab, r);
+            badge = '<button type="button" class="fr-badge fr-badge--warning fr-badge--sm x-badge-btn" data-act="' + (isC ? 'conflict' : 'dup') + '" data-id="' + r.id + '" title="' + (isC ? 'Créneau réservé au-delà de sa capacité : voir les réservations et choisir celle à annuler' : 'Doublon : voir les demandes et choisir laquelle supprimer') + '">Conflit</button>';
+          }
+          return '<td>' + cellHtml(c, r[c.id]) + badge + '</td>';
         }).join('') + '</tr>';
     }).join('');
     if (state.error) { stateEl.hidden = false; stateEl.innerHTML = '<strong>Source inaccessible</strong>' + esc(state.error); }
@@ -9515,8 +9579,6 @@
       var w2 = dupWhy || (miss.length ? 'à renseigner : ' + miss.join(', ') : (!state.ant ? 'table Antennes medicales introuvable' : (!addrs.length ? 'aucune adresse pour cette antenne' : '')));
       out += btn('service', ICON_SERVICE, 'Envoyer la convocation à l’antenne médicale', !w2, w2, isYes(val(tab, row, spec.sentService)));
     }
-    if (cfl) out += '<button type="button" class="icon-btn" data-act="conflict" data-id="' + row.id + '" title="Créneau réservé par plusieurs personnes : voir les réservations et choisir celle à annuler" aria-label="Voir le conflit de créneau"><span class="fr-icon-alarm-warning-line" aria-hidden="true"></span></button>';
-    if (dup) out += '<button type="button" class="icon-btn" data-act="dup" data-id="' + row.id + '" title="Doublon : voir les demandes et choisir laquelle supprimer" aria-label="Voir les doublons"><span class="fr-icon-group-line" aria-hidden="true"></span></button>';
     var confirming = state.confirmDelete && state.confirmDelete.tab === tab && state.confirmDelete.id === row.id;
     if (confirming) {
       out += '<button type="button" class="icon-btn danger" data-act="delete-confirm" data-id="' + row.id + '" title="Confirmer la suppression de cette réservation" aria-label="Confirmer la suppression"><span class="fr-icon-check-line" aria-hidden="true"></span></button>' +
@@ -9662,7 +9724,7 @@
   var DUP_COLS = ['Date', 'Heure', 'Antenne médicale', 'Créneau', 'Réservation faite le', 'Affectation'];
   function openDup(rowId) {
     var tab = state.tab, d = state.data[tab], row = d.rows.filter(function (r) { return r.id === rowId; })[0]; if (!row) return;
-    state.dup = { tab: tab, key: keyOf(tab, row), rowId: rowId, confirm: null, sendMail: true, busy: false, error: '' };
+    state.dup = { tab: tab, key: keyOf(tab, row), rowId: rowId, baseDate: rowDate(tab, row), confirm: null, sendMail: true, busy: false, error: '' };
     renderDup();
     var ov = $('dmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('dmodal-close').focus(); }); });
@@ -9672,7 +9734,7 @@
     ov.classList.remove('is-open'); document.body.style.overflow = ''; state.dup = null;
     setTimeout(function () { ov.hidden = true; }, 200); load();
   }
-  function dupRows() { var D = state.dup, d = state.data[D.tab]; return (D.key ? d.rows.filter(function (r) { return keyOf(D.tab, r) === D.key; }) : d.rows.filter(function (r) { return r.id === D.rowId; })); }
+  function dupRows() { var D = state.dup, d = state.data[D.tab]; return (D.key ? d.rows.filter(function (r) { return keyOf(D.tab, r) === D.key && withinYearSec(D.tab, D.baseDate, rowDate(D.tab, r)); }) : d.rows.filter(function (r) { return r.id === D.rowId; })); }
   function renderDup() {
     var D = state.dup; if (!D) return;
     var spec = SPECS[D.tab], d = state.data[D.tab], rows = dupRows();
@@ -9708,15 +9770,30 @@
   }
 
   /* ---------- Conflits de créneau : une fiche par réservation, côte à côte ; choix de celle à annuler + courriel ---------- */
-  function renderConflictBar() {
-    var el = $('conflict-bar'), c = state.conf, n = c ? c.groups.length : 0;
-    el.innerHTML = n ? '<div class="doc-alert warning" role="status" style="margin-left:0"><p><strong>' + n + (n > 1 ? ' créneaux sont réservés' : ' créneau est réservé') + ' par plusieurs personnes.</strong> Une seule peut le garder. ' +
-      '<button type="button" class="btn secondary sm" data-cfopen="' + c.groups[0].rows[0].id + '">Traiter' + (n > 1 ? ' le premier' : '') + '</button> <button type="button" class="btn secondary sm" data-cfonly="1">Les afficher dans la liste</button></p></div>' : '';
+  // Doublons : une même personne qui a réservé plusieurs créneaux (ou ligne marquée « Doublon » dans la table).
+  function dupPersons(tab) {
+    var d = state.data[tab], res = { n: 0, firstId: null, rows: 0 }; if (!d) return res;
+    var groups = groupsOf(tab), seen = {};
+    d.rows.forEach(function (r) {
+      if (!isDup(tab, r, groups)) return;
+      var k = keyOf(tab, r) || ('#' + r.id); res.rows++;
+      if (!seen[k]) { seen[k] = 1; res.n++; if (res.firstId == null) res.firstId = r.id; }
+    });
+    return res;
   }
-  function renderTabWarn() { // repère les onglets qui contiennent un conflit de créneau
+  function renderConflictBar() {
+    var el = $('conflict-bar'), c = state.conf, n = c ? c.groups.length : 0, dp = dupPersons(state.tab), html = '';
+    if (n) html += '<div class="doc-alert warning" role="status" style="margin-left:0"><p><strong>' + n + (n > 1 ? ' créneaux sont réservés' : ' créneau est réservé') + ' par plus de personnes que de places disponibles.</strong> ' +
+      '<button type="button" class="btn secondary sm" data-cfopen="' + c.groups[0].rows[0].id + '">Traiter' + (n > 1 ? ' le premier' : '') + '</button> <button type="button" class="btn secondary sm" data-cfonly="1">Les afficher dans la liste</button></p></div>';
+    if (dp.n) html += '<div class="doc-alert warning" role="status" style="margin-left:0"><p><strong>' + dp.n + (dp.n > 1 ? ' ' + esc(SPECS[state.tab].personWord) + 's ont réservé plusieurs créneaux' : ' ' + esc(SPECS[state.tab].personWord) + ' a réservé plusieurs créneaux') + '.</strong> ' +
+      '<button type="button" class="btn secondary sm" data-dupopen="' + dp.firstId + '">Traiter' + (dp.n > 1 ? ' le premier' : '') + '</button> <button type="button" class="btn secondary sm" data-duponly="1">Les afficher dans la liste</button></p></div>';
+    el.innerHTML = html;
+  }
+  function renderTabWarn() { // repère les onglets qui contiennent un conflit de créneau ou un doublon
     TAB_ORDER.forEach(function (t) {
-      var b = $('tab-' + t), n = conflictsOf(t).groups.length; if (!b) return;
-      b.innerHTML = esc(SPECS[t].title) + (n ? ' <span class="x-tab-warn" title="' + n + ' créneau(x) réservé(s) par plusieurs personnes" aria-label="' + n + ' conflit(s) de créneau">⚠</span>' : '');
+      var b = $('tab-' + t), n = conflictsOf(t).groups.length, dn = dupPersons(t).n; if (!b) return;
+      var tip = [n ? n + ' créneau(x) réservé(s) au-delà de leur capacité' : '', dn ? dn + ' doublon(s)' : ''].filter(Boolean).join(' · ');
+      b.innerHTML = esc(SPECS[t].title) + (n || dn ? ' <span class="x-tab-warn" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">⚠</span>' : '');
     });
   }
   function openConflict(rowId) {
@@ -9740,7 +9817,7 @@
     var madeCol = findCol(d.cols, 'Réservation faite le'), times = madeCol ? rows.map(function (r) { return typeof r[madeCol.id] === 'number' ? r[madeCol.id] : null; }) : [];
     var known = times.filter(function (t) { return t != null; }), tmin = known.length > 1 ? Math.min.apply(null, known) : null, tmax = known.length > 1 ? Math.max.apply(null, known) : null;
     $('cf-head').innerHTML = '<div style="min-width:0"><h2 class="modal-title" id="x-cf-title">Conflit de créneau · ' + esc(spec.title) + '</h2>' +
-      '<p class="modal-sub"><strong>' + esc(when) + '</strong> : ' + slotPersons(tab, rows) + ' ' + esc(spec.personWord) + 's ont réservé ce créneau (' + (cap === Infinity ? 'capacité non renseignée' : cap === 1 ? 'une seule place' : cap + ' places') + '). Choisissez la réservation à annuler : la personne concernée peut être prévenue par courriel.</p></div>' +
+      '<p class="modal-sub"><strong>' + esc(when) + '</strong> : ' + slotPersons(tab, rows) + ' ' + esc(spec.personWord) + 's ont réservé ce créneau (' + (cap === Infinity ? 'capacité non renseignée' : cap === 1 ? 'une seule place' : cap + ' places') + '). Choisissez ' + (slotPersons(tab, rows) - cap > 1 ? 'les ' + (slotPersons(tab, rows) - cap) + ' réservations' : 'la réservation') + ' à annuler : la personne concernée peut être prévenue par courriel.</p></div>' +
       '<button class="round-btn" type="button" data-cf="close" aria-label="Fermer" title="Fermer">✕</button>';
     $('cf-head').setAttribute('role', 'dialog'); $('cf-head').setAttribute('aria-modal', 'true'); $('cf-head').setAttribute('aria-labelledby', 'x-cf-title');
     $('cf-stack').innerHTML = rows.map(function (r, i) {
@@ -9807,6 +9884,8 @@
   $('conflict-bar').addEventListener('click', function (e) {
     var o = e.target.closest('[data-cfopen]'); if (o) { openConflict(Number(o.getAttribute('data-cfopen'))); return; }
     if (e.target.closest('[data-cfonly]')) { state.filter = 'conflict'; $('flt-action').value = 'conflict'; renderList(); }
+    var dpn = e.target.closest('[data-dupopen]'); if (dpn) { openDup(Number(dpn.getAttribute('data-dupopen'))); return; }
+    if (e.target.closest('[data-duponly]')) { state.filter = 'dup'; $('flt-action').value = 'dup'; renderList(); }
   });
 
   /* ---------- Onglets, événements de la vue ---------- */
@@ -9934,7 +10013,7 @@
     }).length;
   }
   function openSlots() {
-    state.slotAdmin = { tab: state.tab, create: null, import: null, edit: null, confirmDelete: null, busy: false, msg: null };
+    state.slotAdmin = { tab: state.tab, create: null, import: null, edit: null, confirmDelete: null, busy: false, msg: null, fEtat: '', fMonth: '', fAnt: '', past: false };
     renderSlots();
     var ov = $('smodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('smodal-close').focus(); }); });
@@ -9965,16 +10044,36 @@
       return timeCol ? String(a[timeCol.id] || '').localeCompare(String(b[timeCol.id] || '')) : 0;
     });
 
+    // Filtres : état du créneau, mois ; par défaut, les créneaux passés (avant aujourd'hui) sont masqués.
+    var now = new Date(), todayD = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 1000;
+    function monthOf(r) { return dateCol && typeof r[dateCol.id] === 'number' ? new Date(r[dateCol.id] * 1000).toISOString().slice(0, 7) : ''; }
+    function monthLabel(m) { return new Date(m + '-01T00:00:00Z').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric', timeZone: 'UTC' }); }
+    var base = rows.filter(function (r) { return sa.past || !dateCol || typeof r[dateCol.id] !== 'number' || r[dateCol.id] >= todayD || (sa.edit && sa.edit.id === r.id); });
+    function antOf(r) { return antCol ? String(antenneNameFromCol(antCol, r[antCol.id]) || '') : ''; }
+    var months = [], etats = [], ants = [];
+    base.forEach(function (r) { var a = antOf(r); if (a && ants.indexOf(a) === -1) ants.push(a); var m = monthOf(r); if (m && months.indexOf(m) === -1) months.push(m); var et = etatCol ? String(r[etatCol.id] == null ? '' : r[etatCol.id]) : ''; if (et && etats.indexOf(et) === -1) etats.push(et); });
+    months.sort(); etats.sort(function (a, b) { return a.localeCompare(b, 'fr'); }); ants.sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+    if (sa.fAnt && ants.indexOf(sa.fAnt) === -1) sa.fAnt = '';
+    if (sa.fMonth && months.indexOf(sa.fMonth) === -1) sa.fMonth = '';
+    if (sa.fEtat && etats.indexOf(sa.fEtat) === -1) sa.fEtat = '';
+    var allRows = rows;
+    rows = base.filter(function (r) { return (!sa.fMonth || monthOf(r) === sa.fMonth) && (!sa.fAnt || antOf(r) === sa.fAnt) && (!sa.fEtat || String(etatCol && r[etatCol.id] == null ? '' : etatCol ? r[etatCol.id] : '') === sa.fEtat); });
+    var fbar = '<div class="x-sf-filters" role="group" aria-label="Filtrer les créneaux" style="display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;align-items:flex-end;margin:0 0 .85rem">' +
+      (etatCol ? '<div class="tb-field"><label for="x-sf-etat">État du créneau</label><select class="select" id="x-sf-etat" data-sflt="etat"><option value="">Tous</option>' + etats.map(function (v) { return '<option value="' + esc(v) + '"' + (v === sa.fEtat ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></div>' : '') +
+      (antCol ? '<div class="tb-field"><label for="x-sf-ant">Antenne médicale</label><select class="select" id="x-sf-ant" data-sflt="ant"><option value="">Toutes</option>' + ants.map(function (v) { return '<option value="' + esc(v) + '"' + (v === sa.fAnt ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></div>' : '') +
+      '<div class="tb-field"><label for="x-sf-month">Mois</label><select class="select" id="x-sf-month" data-sflt="month"><option value="">Tous</option>' + months.map(function (m) { return '<option value="' + m + '"' + (m === sa.fMonth ? ' selected' : '') + '>' + esc(monthLabel(m)) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="tb-field"><label class="x-check" for="x-sf-past"><input type="checkbox" id="x-sf-past" data-sflt="past"' + (sa.past ? ' checked' : '') + '> Afficher les créneaux passés</label></div>' +
+      '<div class="count" aria-live="polite">' + rows.length + (rows.length > 1 ? ' créneaux' : ' créneau') + (rows.length !== allRows.length ? ' sur ' + allRows.length : '') + '</div></div>';
     var out = sa.msg ? '<div class="doc-alert ' + sa.msg.type + '" role="' + (sa.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(sa.msg.text) + '</p></div>' : '';
     if (missing.length) out += '<div class="doc-alert error" role="alert"><p>Colonnes introuvables dans cette table : ' + esc(missing.join(', ')) + '.</p></div>';
 
-    out += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Créneaux ' + esc(cs.title) + '</caption><thead><tr>' +
+    out += fbar + '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Créneaux ' + esc(cs.title) + '</caption><thead><tr>' +
       '<th scope="col" class="doc-actions" style="text-align:left">Actions</th><th scope="col">Date</th>' + (timeCol ? '<th scope="col">Heure</th>' : '') + (antCol ? '<th scope="col">Antenne médicale</th>' : '') +
       (capCol ? '<th scope="col">Places</th>' : '<th scope="col">Réservations</th>') + (etatCol ? '<th scope="col">État</th>' : '') +
       '<th scope="col">Proposé ?</th></tr></thead><tbody>';
 
     var colCount = 4 + (timeCol ? 1 : 0) + (antCol ? 1 : 0) + (etatCol ? 1 : 0);
-    if (!rows.length) out += '<tr><td colspan="' + colCount + '" class="is-empty">Aucun créneau.</td></tr>';
+    if (!rows.length) out += '<tr><td colspan="' + colCount + '" class="is-empty">' + (allRows.length ? 'Aucun créneau ne correspond aux filtres' + (sa.past ? '.' : ' (les créneaux passés sont masqués).') : 'Aucun créneau.') + '</td></tr>';
 
     rows.forEach(function (r) {
       var booked = slotBookedCount(tab, r, s);
@@ -10307,7 +10406,14 @@
   }
   function readSlotField(el) {
     var sa = state.slotAdmin; if (!sa) return;
-    var cf = el.getAttribute && el.getAttribute('data-cf'), ef = el.getAttribute && el.getAttribute('data-ef');
+    var cf = el.getAttribute && el.getAttribute('data-cf'), ef = el.getAttribute && el.getAttribute('data-ef'), fl = el.getAttribute && el.getAttribute('data-sflt');
+    if (fl) { // filtres de la liste
+      var nv = fl === 'past' ? el.checked : el.value, key = fl === 'etat' ? 'fEtat' : fl === 'month' ? 'fMonth' : fl === 'ant' ? 'fAnt' : 'past';
+      if (sa[key] === nv) return;
+      sa[key] = nv; renderSlots();
+      var again = $('smodal-body').querySelector('[data-sflt="' + fl + '"]'); if (again) again.focus();
+      return;
+    }
     if (cf && sa.create) { sa.create[cf] = el.value; sa.create.error = ''; }
     else if (ef && sa.edit) { sa.edit[ef] = el.value; sa.edit.error = ''; }
   }
@@ -10508,11 +10614,10 @@
       var sDateCol = findCol(s.cols, cs.dateLabel), sTimeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
         sAntCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), sCapCol = cs.capLabel && findCol(s.cols, cs.capLabel), sToggleCol = findCol(s.cols, cs.toggleLabel);
       var sEtatCol = cs.etatLabel && findCol(s.cols, cs.etatLabel);
-      // Seuls les créneaux proposés et honorables sont listés (« Proposé ? » oui, état ni « non honoré » ni « non proposé »).
+      // VMP et VEMI : seuls les créneaux dont l'« Etat créneau » est « Libre » sont proposés. Tests psy (pas d'état) : créneaux « Proposé ? ».
       var opts = s.rows.filter(function (r) {
-        if (sToggleCol && !isYes(r[sToggleCol.id])) return false;
-        var et = sEtatCol ? norm(String(r[sEtatCol.id] == null ? '' : r[sEtatCol.id])) : '';
-        return !/non\s+(honore|propose)/.test(et);
+        if (sEtatCol) return norm(String(r[sEtatCol.id] == null ? '' : r[sEtatCol.id])) === 'libre';
+        return !sToggleCol || isYes(r[sToggleCol.id]);
       })
         .sort(function (a, b) { var av = sDateCol ? (a[sDateCol.id] || 0) : 0, bv = sDateCol ? (b[sDateCol.id] || 0) : 0; if (av !== bv) return av - bv; return sTimeCol ? String(a[sTimeCol.id] || '').localeCompare(String(b[sTimeCol.id] || '')) : 0; })
         .map(function (r) {
@@ -10587,7 +10692,7 @@
     if (bk.mode !== 'edit') { var madeCol = findCol(d.cols, 'Réservation faite le'); if (madeCol) fields[madeCol.id] = Math.floor(Date.now() / 1000); }
 
     var keyVal = keyCol && fields[keyCol.id] != null ? norm(String(fields[keyCol.id])) : '';
-    var existing = keyVal ? d.rows.filter(function (r) { return r.id !== bk.id && norm(String(r[keyCol.id] || '')) === keyVal; }) : [];
+    var existing = keyVal ? d.rows.filter(function (r) { return r.id !== bk.id && norm(String(r[keyCol.id] || '')) === keyVal && withinYearSec(tab, dv, rowDate(tab, r)); }) : [];
     if (existing.length && !bk.confirmDup) {
       bk.warn = (tab === 'vmp' ? 'Ce réserviste a' : 'Ce candidat a') + ' déjà ' + (existing.length > 1 ? 'plusieurs réservations' : 'une réservation') + ' ' + spec.title + '. Continuer quand même (marquée comme doublon) ?';
       bk.confirmDup = true; bk.error = ''; renderBook(); return;
@@ -10916,10 +11021,21 @@
   }
   function render() {
     var st = STEPS[idx], last = idx === STEPS.length - 1;
-    card.innerHTML = '<p class="tuto-step">Étape ' + (idx + 1) + ' sur ' + STEPS.length + '</p><h2 class="tuto-title" id="tuto-title">' + (st.icon ? '<span aria-hidden="true">' + esc(st.icon) + '</span> ' : '') + esc(st.title) + '</h2><div class="tuto-body">' + st.bodyHtml + '</div>' +
-      '<div class="tuto-dots" role="group" aria-label="Étapes">' + STEPS.map(function (x, i) { return '<button type="button" class="tuto-dot' + (i === idx ? ' is-on' : i < idx ? ' is-done' : '') + '" data-ta="dot" data-i="' + i + '" aria-label="Étape ' + (i + 1) + ' : ' + esc(x.title) + '"' + (i === idx ? ' aria-current="step"' : '') + '></button>'; }).join('') + '</div>' +
+    // Indicateur d'étapes du système de design de l'État (composant « Indicateur d'étapes »).
+    var nxt = STEPS[idx + 1];
+    card.innerHTML = '<div class="fr-stepper"><h2 class="fr-stepper__title" id="tuto-title"><span class="fr-stepper__state">Étape ' + (idx + 1) + ' sur ' + STEPS.length + '</span>' +
+      '<span>' + (st.icon ? '<span aria-hidden="true">' + esc(st.icon) + '</span> ' : '') + esc(st.title) + '</span></h2>' +
+      '<div class="fr-stepper__steps" data-fr-current-step="' + (idx + 1) + '" data-fr-steps="' + STEPS.length + '"></div>' +
+      (nxt ? '<p class="fr-stepper__details"><span class="fr-text--bold">Étape suivante :</span> ' + esc(nxt.title) + '</p>' : '') + '</div>' +
+      '<div class="tuto-body">' + st.bodyHtml + '</div>' +
       '<div class="tuto-actions">' + (last ? '' : '<button type="button" class="tuto-skip" data-ta="end">Passer le tutoriel</button>') + (idx ? '<button type="button" class="tuto-btn tuto-btn--prev" data-ta="prev">‹ Précédent</button>' : '') +
       '<button type="button" class="tuto-btn tuto-btn--next" data-ta="' + (last ? 'end' : 'next') + '">' + (last ? 'Terminer' : 'Suivant ›') + '</button></div>';
+    // Le composant DSFR ne dessine sa barre que jusqu'à 8 étapes : au-delà, même tracé (segments de 8 px d'écart, mêmes couleurs) généré ici.
+    if (STEPS.length > 8) {
+      var n = STEPS.length, on = 'var(--background-action-high-blue-france, #000091)', off = 'var(--background-contrast-grey, #eee)', stops = [];
+      for (var k = 0; k < n; k++) stops.push((k < idx + 1 ? on : off) + ' calc((100% + 8px) * ' + k + ' / ' + n + ') calc((100% + 8px) * ' + (k + 1) + ' / ' + n + ' - 8px)', 'transparent calc((100% + 8px) * ' + (k + 1) + ' / ' + n + ' - 8px) calc((100% + 8px) * ' + (k + 1) + ' / ' + n + ')');
+      var bar = card.querySelector('.fr-stepper__steps'); if (bar) bar.style.cssText = 'background-image:linear-gradient(to right,' + stops.join(',') + ');background-size:100% 100%;background-repeat:no-repeat;';
+    }
     card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
   }
   function go(n) {
