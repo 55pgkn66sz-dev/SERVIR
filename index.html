@@ -167,13 +167,24 @@
   .mx-all { background: var(--blue-tint); border-radius: .25rem; padding-left: .5rem; padding-right: .5rem; margin-left: -.5rem; margin-right: -.5rem; border-top: 0; }
   .mx-cell { display: block; padding: .15rem 0; border-radius: .25rem; cursor: default; }
   .mx-cell:hover, .mx-cell:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-  .mx-bar { display: flex; gap: 2px; height: 1.375rem; }
-  .mx-seg { min-width: 4px; display: block; text-align: center; font-size: .75rem; line-height: 1.375rem; font-weight: 600; }
-  .mx-seg:first-child { border-radius: 4px 0 0 4px; } .mx-seg:last-child { border-radius: 0 4px 4px 0; } .mx-seg:only-child { border-radius: 4px; }
+  .mx-bar { --h: 1.375rem; display: flex; height: var(--h); }
+  .mx-seg { position: relative; min-width: calc(var(--h) * 1.3); display: block; text-align: center; font-size: .75rem; line-height: var(--h); font-weight: 600; border-radius: 999px; box-shadow: 0 0 0 2px var(--bg); }
+  .mx-seg + .mx-seg { margin-left: calc(var(--h) / -2); padding-left: calc(var(--h) / 2); } /* jonctions arrondies : chaque tranche passe sous la précédente */
   .mx-tip { position: absolute; z-index: 5; background: var(--background-overlap-grey, #fff); color: var(--ink); border: 1px solid var(--border-default-grey); border-radius: .375rem; padding: .5rem .75rem; box-shadow: 0 4px 16px rgba(0,0,0,.25); font-size: .8125rem; pointer-events: none; white-space: nowrap; }
   .mx-tip-h { font-weight: 700; margin-bottom: .25rem; }
   .mx-sw { display: inline-block; width: 12px; height: 4px; border-radius: 2px; margin-right: .5rem; vertical-align: middle; }
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin: 1rem 0 1.5rem; }
+  .stat-top { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0 1.5rem; }
+  .stat-top > div { display: flex; flex-direction: column; min-width: 0; } /* chaque case remplit sa cellule */
+  .stat-top > div > .stat-tile, .stat-top > div > .stat-card { flex: 1; }
+  .stat-top .st-pop > .stat-card { display: flex; flex-direction: column; justify-content: center; }
+  .stat-top .st-pop .gj { max-width: 18rem; margin: auto; }
+  @media (min-width: 60em) {
+    .stat-top { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stat-top .st-res { grid-column: 1; grid-row: 1; } .stat-top .st-emp { grid-column: 2; grid-row: 1; }
+    .stat-top .st-aff { grid-column: 1; grid-row: 2; } .stat-top .st-typ { grid-column: 2; grid-row: 2; }
+    .stat-top .st-pop { grid-column: 3; grid-row: 1 / span 2; }
+  }
   .stat-tile { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; }
   .stat-num { margin: 0; font-size: 2.25rem; line-height: 2.5rem; font-weight: 700; color: var(--blue); }
   .stat-tile--btn { display: flex; flex-direction: column; justify-content: flex-start; box-sizing: border-box; width: 100%; text-align: left; font: inherit; color: inherit; background: transparent; cursor: pointer; }
@@ -329,6 +340,67 @@
   .et-kl { grid-area: l; font-weight: 700; font-size: .9375rem; }
   .et-kp { grid-area: p; color: var(--muted); font-size: .8125rem; }
   .et-stack { display: flex; gap: 3px; height: 2.1rem; border-radius: .5rem; overflow: hidden; }
+  .et-kpi.is-btn { font: inherit; color: inherit; text-align: left; cursor: pointer; border-top: 0; border-right: 0; border-bottom: 0; }
+  .et-kpi.is-btn:hover { background: var(--row-hover); }
+  .et-kpi.is-btn.is-on { outline: 2px solid var(--c); outline-offset: 1px; }
+  .et-kpi.is-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .et-hint { font-weight: 400; font-size: .8125rem; color: var(--muted); }
+  .et-drillhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+  .es-bar { --h: 2.25rem; display: flex; height: var(--h); margin: .25rem 0 1rem; }
+  .es-seg { position: relative; display: grid; place-items: center; min-width: calc(var(--h) * 1.4); border-radius: 999px; box-shadow: 0 0 0 2px var(--bg); color: #fff; font-size: .9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .es-list { margin: 0; padding: 0; list-style: none; }
+  .es-item { border-top: 1px solid var(--border-default-grey); }
+  .es-item > .es-sw, .es-sum .es-sw { flex: none; }
+  .es-item, .es-sum { display: flex; align-items: center; gap: .6rem; }
+  .es-item { padding: .55rem .25rem; }
+  .es-item:has(> .es-det) { display: block; padding: 0; }
+  .es-sum { padding: .55rem .25rem; cursor: pointer; list-style: none; width: 100%; }
+  .es-sum::-webkit-details-marker { display: none; }
+  .es-sum::after { content: '›'; display: inline-block; width: 1.25rem; text-align: center; color: var(--muted); font-size: 1.25rem; line-height: 1; transition: transform .2s; }
+  .es-item:not(:has(> .es-det))::after { content: ''; width: 1.25rem; flex: none; } /* même alignement des colonnes que les lignes dépliables */
+  .es-det[open] > .es-sum::after { transform: rotate(90deg); }
+  .es-sum:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .es-sw { width: .9rem; height: .9rem; border-radius: 50%; }
+  .es-l { flex: 1; font-weight: 600; }
+  .es-n { min-width: 2rem; text-align: right; font-variant-numeric: tabular-nums; }
+  .es-p { min-width: 3.4rem; text-align: right; color: var(--muted); font-size: .8125rem; }
+  .es-sub { margin: 0 0 .5rem 1.45rem; padding: 0; list-style: none; }
+  .es-sub li { display: flex; justify-content: space-between; gap: 1rem; padding: .25rem .25rem; font-size: .9375rem; color: var(--muted); }
+  .es-sub li strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .es-aff { margin-top: .75rem; border-top: 1px solid var(--border-default-grey); padding-top: .5rem; }
+  .es-aff > summary { cursor: pointer; font-weight: 600; color: var(--blue); padding: .35rem 0; }
+  .es-aff .eb-rows { margin-top: .5rem; }
+  .et-toggle { display: inline-flex; border: 1px solid var(--blue); border-radius: .25rem; overflow: hidden; }
+  .et-toggle button { white-space: nowrap; padding: .3rem .8rem; border: 0; background: transparent; color: var(--blue); font: inherit; font-size: .875rem; cursor: pointer; }
+  .et-toggle button[aria-pressed="true"] { background: var(--blue); color: #fff; font-weight: 700; }
+  .et-toggle button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .eb-row.is-total { padding-bottom: .5rem; margin-bottom: .25rem; border-bottom: 1px solid var(--border-default-grey); }
+  .eb-row.is-total .eb-l, .eb-row.is-total .eb-n { font-weight: 800; }
+  .eb-row.is-total .eb-bar { height: 2rem; }
+  .eb-row:not(.is-total):hover .eb-bar { filter: brightness(1.12); }
+  .eb-rows { display: flex; flex-direction: column; gap: .35rem; }
+  .eb-row { display: grid; grid-template-columns: minmax(5rem, 10rem) 1fr 2.2rem; align-items: center; gap: .75rem; font-size: .9375rem; }
+  .eb-l { font-weight: 600; overflow-wrap: anywhere; }
+  .eb-track { display: block; }
+  .eb-bar { --h: 1.6rem; display: flex; height: var(--h); }
+  .eb-seg { position: relative; display: grid; place-items: center; min-width: calc(var(--h) * 1.4); border-radius: 999px; box-shadow: 0 0 0 2px var(--bg); color: #fff; font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .es-seg + .es-seg, .eb-seg + .eb-seg { margin-left: calc(var(--h) / -2); padding-left: calc(var(--h) / 2); } /* chaque tranche passe sous l'extrémité arrondie de la précédente */
+  .eb-n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  @media (max-width: 560px) { .eb-row { grid-template-columns: 1fr 2rem; } .eb-track { grid-column: 1 / -1; order: 5; } }
+  .gj-leg { display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem 1.1rem; margin: .35rem 0 0; padding: 0; list-style: none; font-size: .8125rem; }
+  .gj-leg li { display: inline-flex; align-items: center; }
+  .gj-etip { cursor: help; }
+  #r-etip { max-width: 18rem; padding: .6rem .8rem; font-size: .8125rem; line-height: 1.25rem; text-align: left; transition: none; background: var(--bg, #fff); color: var(--ink, #161616); border: 1px solid var(--border-default-grey, #ddd); border-radius: .25rem; box-shadow: 0 6px 18px rgba(0, 0, 18, .16); }
+  #r-etip .etip-list { margin: .25rem 0 0; padding: 0; list-style: none; }
+  #r-etip .etip-list li { display: flex; justify-content: space-between; gap: 1rem; }
+  .gj-leg li.gj-tip { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .gj-leg li strong { margin-left: .3rem; font-variant-numeric: tabular-nums; }
+  .gj-sw { display: inline-block; width: 1rem; height: 1rem; margin-right: .4rem; border-radius: 3px; }
+  .gj-sw.gj-prog { background: color-mix(in srgb, var(--blue) 42%, var(--bg)); }
+  .gj-sw.gj-rest { background: var(--blue-tint); }
+  .gj-msg { margin: .5rem 0 0; text-align: center; font-weight: 600; font-size: .9375rem; }
+  .gj-sub { font-weight: 400; font-size: .8125rem; color: var(--muted); }
+  .stat-gauge .gj { width: 100%; max-width: 20rem; display: block; margin: 0 auto; }
   .et-seg { display: grid; place-items: center; min-width: 4px; color: #fff; font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .et-sw { display: inline-block; width: .75rem; height: .75rem; border-radius: 3px; }
   .et-p { color: var(--muted); font-size: .8125rem; }
@@ -397,11 +469,17 @@
   .stat-table .stat-n { text-align: right; font-variant-numeric: tabular-nums; width: 1%; white-space: nowrap; }
   .stat-table .stat-n.is-bad { color: #ce0500; font-weight: 700; }
   .stat-bar-cell { width: 55%; white-space: nowrap; }
-  .stat-bar { display: inline-block; width: calc(100% - 3.5rem); height: .6rem; border-radius: .3rem; background: var(--blue-tint); vertical-align: middle; overflow: hidden; }
-  .stat-bar > span { display: block; height: 100%; background: var(--blue); }
+  .stat-bar { display: inline-block; width: calc(100% - 3.5rem); height: .75rem; border-radius: 999px; background: var(--blue-tint); vertical-align: middle; overflow: hidden; }
+  .stat-bar > span { display: block; height: 100%; border-radius: 999px; background: color-mix(in srgb, var(--blue) 55%, var(--bg)); }
   .stat-pct { display: inline-block; width: 3.2rem; text-align: right; font-size: .8125rem; color: var(--muted); }
   .pie-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
   .pie { flex: none; }
+  .pie-wrap.is-stack { flex-direction: column; align-items: center; }
+  .pie-wrap.is-stack .pie { width: min(100%, 16rem); height: auto; }
+  .pie-wrap.is-stack .pie-leg { flex: none; width: 100%; }
+  .stat-equal { align-items: stretch; } /* blocs d'une même rangée à la même hauteur */
+  .stat-equal > .stat-card { display: flex; flex-direction: column; }
+  .stat-equal .stat-gauge .gj { margin-top: auto; margin-bottom: auto; }
   .pie path, .pie circle { stroke: var(--bg); stroke-width: 2; }
   .pie path:hover, .pie circle:hover { filter: brightness(1.15); }
   .pie-leg { flex: 1 1 11rem; margin: 0; padding: 0; list-style: none; }
@@ -414,7 +492,7 @@
   .gc-bars { display: flex; align-items: flex-end; gap: .35rem; height: 7.5rem; padding-top: .25rem; border-bottom: 1px solid var(--border-default-grey); }
   .gc-blk { margin-top: .35rem; text-align: center; font-size: .75rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
   .gc { flex: 1 1 0; width: 2.75rem; max-width: 4.5rem; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; padding-bottom: 1.5rem; }
-  .gc-bar { display: block; width: 65%; max-width: 1.9rem; background: var(--blue); border-radius: .2rem .2rem 0 0; }
+  .gc-bar { display: block; width: 65%; max-width: 1.9rem; background: color-mix(in srgb, var(--blue) 55%, var(--bg)); border-radius: .6rem .6rem 0 0; }
   .gc:hover .gc-bar, .gc:focus .gc-bar { filter: brightness(1.25); }
   .gc-n { font-size: .8125rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1rem; }
   .gc-l { position: absolute; bottom: .15rem; font-size: .75rem; color: var(--muted); white-space: nowrap; }
@@ -1372,6 +1450,13 @@
       <div class="actions" style="margin-top:12px"><button class="btn secondary sm" id="r-ppe-reset" type="button">Rétablir le modèle par défaut</button></div>
     </details>
 
+    <section class="step" data-grp="reglages">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Objectifs : population et PMG</h2></div>
+      <p class="lead">La population à atteindre alimente la jauge de la page Statistiques des réservistes. Pour chaque PMG, un objectif séparé pour les candidats d’origine CIV et d’origine VCA : ils alimentent les deux jauges de progression du « Focus par PMG » (page Statistiques des candidats). Laisser vide pour ne pas afficher la jauge correspondante.</p>
+      <div class="cf-field" style="max-width:22rem;margin-bottom:1.25rem"><label for="r-poptarget">Population à atteindre (réservistes)</label><input class="input" type="number" min="0" step="1" inputmode="numeric" id="r-poptarget" data-poptarget placeholder="Aucune cible"><span class="hint">Cible de la jauge « Population à atteindre » de la page Statistiques des réservistes : effectif de réservistes visé, candidats (hors rejets et abandons) en pastel.</span></div>
+      <div id="r-pmgt-admin"></div>
+    </section>
+
     <details class="bo-advanced">
       <summary>Réservistes · modèles des contrats et courriels (renouvellements, avenants)</summary>
       <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, <code>{{SIGNATAIRE_BLOC}}</code> (signature : nom en gras et majuscules, puis fonction), <code>{{SIGNATAIRE}}</code> et <code>{{SIGNATAIRE_QUALITE}}</code> (signataire en vigueur, voir « Signataires des contrats »), ou toute colonne de la demande ou du réserviste par son libellé.</p>
@@ -1890,7 +1975,7 @@
 
 <!-- Numéro de version : à mettre à jour ici (#widgetVersion) à chaque livraison : la décimale pour une petite modification (1.0 -> 1.1), le nombre pour une modification structurelle (1.x -> 2.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 5.14</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 5.40</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -2093,13 +2178,13 @@
     ['PJ', 'Attachments'], ['Nom PJ', 'Text']  ];
   function d(y, m, day) { return Date.UTC(y, m - 1, day) / 1000; }
   var DEMO_ROWS_BY_LABEL = [
-    { 'NID': '1042871', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'Code postal': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean', 'RIB': ['L', 40], 'CNI': ['L', 41], 'Diplôme': ['L', 42], 'PJ': ['L', 43], 'Nom PJ': 'Attestation_mutuelle.pdf' },
+    { 'NID': '1042871', 'Origine': 'CIV', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Âge': 22, 'Email': 'camille.martin@example.fr', 'Numéro de téléphone': '06 12 34 56 78', 'Ville': 'Annecy', 'Code postal': '74000', 'Etat candidature': 'Admis PMG', 'Tests psy': 'Favorable', 'Date tests psy': d(2026, 6, 4) + 32400, 'VEMI': 'Apte', 'Validité VEMI': d(2027, 6, 30), 'Lettre intégration': ['L', 12, 13], 'Convention': ['L', 20], 'Droits EAD': true, 'Grade': 'GAV', 'Corps': 'Gendarmerie', 'Date contrat': d(2026, 6, 25), 'Date de début contrat': d(2026, 7, 1), 'Déjà ESR': true, 'Doublon': true, 'N° ESR': 'ESR-2024-118', 'Profession': 'Infirmière', 'Date VEMI': d(2026, 6, 18) + 45000, 'Antenne VEMI': 'Antenne médicale de Lyon', 'Commentaires': 'Dossier complet.\nContrat signé.', 'Création candidature': d(2026, 5, 2) + 36000, 'Nigend': '2026-0451', 'CRT': 'Rhône-Alpes', 'Dpt': '74', 'Lieu de naissance': 'Annecy', 'Adresse': '12 rue des Alpes', 'Dernière mise à jour': d(2026, 6, 10) + 50400, 'Dernière mise à jour par': 'DUPONT Jean', 'RIB': ['L', 40], 'CNI': ['L', 41], 'Diplôme': ['L', 42], 'PJ': ['L', 43], 'Nom PJ': 'Attestation_mutuelle.pdf' },
     { 'NID': '1043310', 'PMG': 'PMG 38', 'Numéro de téléphone': '612345678', 'NOM': 'Bernard', 'Prénom': 'Julien', 'Affectation': 'GD 38', 'Civilité': 'M.', 'DDN': d(2005, 11, 3), 'Âge': 20, 'Etat candidature': ['L', 'En attente', 'Pièces manquantes'], 'Dde BPRO': true, 'Doublon': false },
     { 'NID': '1043544', 'PMG': 'PMG 73', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Affectation': 'GD 73', 'Civilité': 'Mme', 'Etat candidature': 'Rejet DRJ', 'Email': 'lea.dubois@example.fr', 'Adresse': '4 place du Marché', 'Code postal': '73000', 'Ville': 'Chambéry', 'VEMI': 'Inapte' },
-    { 'NID': '1044002', 'PMG': 'PMG 74', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Affectation': 'GD 74', 'Civilité': 'M.', 'Etat candidature': 'Entretien programmé' },
+    { 'NID': '1044002', 'Origine': 'VCA', 'PMG': 'PMG 74', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Affectation': 'GD 74', 'Civilité': 'M.', 'Etat candidature': 'Admis PMG' },
     { 'NID': '1044120', 'PMG': 'PMG 01', 'NOM': 'Moreau', 'Prénom': 'Sarah', 'Affectation': 'GD 01', 'Civilité': 'Mme', 'Etat candidature': 'Dossier reçu', 'Lettre intégration': ['L', 15, 16] },
     { 'NID': '1044377', 'PMG': 'PMG 38', 'NOM': 'Petit', 'Prénom': 'Nathan', 'Affectation': 'GD 38', 'Civilité': 'M.', 'Etat candidature': 'Abandon' },
-    { 'NID': '1010234', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0460', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Affectation': 'GD 74', 'Civilité': 'M.', 'DDN': d(1981, 4, 9), 'Email': 'antoine.lefevre@example.fr', 'Etat candidature': 'Dossier reçu', 'Déjà ESR': true, 'N° ESR': 'ESR-2021-044', 'Création candidature': d(2026, 6, 20) + 30000 },
+    { 'NID': '1010234', 'Origine': 'CIV', 'PMG': 'PMG 74', 'N° candidature': 'PMG-2026-0460', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Affectation': 'GD 74', 'Civilité': 'M.', 'DDN': d(1981, 4, 9), 'Email': 'antoine.lefevre@example.fr', 'Etat candidature': 'Dossier reçu', 'Déjà ESR': true, 'N° ESR': 'ESR-2021-044', 'Création candidature': d(2026, 6, 20) + 30000 },
     { 'NID': '1042871', 'PMG': 'PMG 74', 'NOM': 'Martin', 'Prénom': 'Camille', 'Affectation': 'GD 74', 'Civilité': 'Mme', 'DDN': d(2004, 3, 12), 'Numéro de téléphone': '07 99 88 77 66', 'Ville': 'Chambéry', 'Etat candidature': 'Dossier reçu', 'Doublon': true, 'Convention': ['L', 21], 'Création candidature': d(2026, 4, 10) + 30000, 'Dernière mise à jour': d(2026, 4, 12) + 30000, 'Dernière mise à jour par': 'MARTIN Paul' }
   ];
   var DEMO_CHOICES = {
@@ -5858,8 +5943,21 @@
       tag: DEFAULTS.tag, // colonne « Type R » : fixe, pas de choix en back office
       tabs: tabs,
       ppeTpl: typeof o.ppeTpl === 'string' ? o.ppeTpl : '', // modèle HTML du PPE (vide : modèle par défaut)
-      ctrTpl: normCtr(o.ctrTpl) // modèles des contrats et courriels (renouvellements, avenants)
+      ctrTpl: normCtr(o.ctrTpl), // modèles des contrats et courriels (renouvellements, avenants)
+      popTarget: Math.max(0, Math.round(Number(o.popTarget) || 0)), // population de réservistes à atteindre (jauge de la page Statistiques des réservistes)
+      pmgTargets: normTargets(o.pmgTargets) // objectif d'admis par PMG (jauge du focus des statistiques Candidats)
     };
+  }
+  // Objectifs d'admis : { PMG : { civ, vca } } (un ancien nombre seul est repris comme objectif CIV).
+  var ORIGINS = [['civ', 'CIV'], ['vca', 'VCA']];
+  function normTargets(v) {
+    var out = {};
+    if (v && typeof v === 'object') Object.keys(v).forEach(function (k) {
+      var x = v[k], o = typeof x === 'object' && x ? x : { civ: x }, r = {};
+      ORIGINS.forEach(function (og) { var n = Number(o[og[0]]); if (isFinite(n) && n > 0) r[og[0]] = Math.round(n); });
+      if (Object.keys(r).length) out[k] = r;
+    });
+    return out;
   }
   /* ---------- Contrats des demandes (renouvellements, avenants) : modèles par défaut, modifiables en back office ---------- */
   function ctrBlock(title, rows) {
@@ -8139,7 +8237,7 @@
   // Camembert (tranches d'âge) : rampe ordinale d'un seul bleu (clair → foncé, dans l'ordre des tranches), gris pour « non renseigné » ; effectifs et pourcentages dans la légende.
   var PIE_COLORS = ['#8585f6', '#6a6af4', '#3f3fd6', '#1f1fb0', '#000091'], PIE_NONE = '#b5b4ac';
   // Camembert de modalités sans ordre (groupement…) : couleurs distinctes, gris pour « Autres » et « Non renseigné », libellé tel quel.
-  var CAT_COLORS = ['#000091', '#d64d00', '#18753c', '#6a6af4', '#a558a0', '#009081', '#c3992a'];
+  var CAT_COLORS = ['#000091', '#2e2ea5', '#5757b6', '#7a7ac6', '#9999d3', '#b8b8e0', '#d1d1eb']; // une seule teinte, du plein au pastel
   function pieColor(i, r) { return r.label === '' || r.other ? PIE_NONE : r.cat ? CAT_COLORS[i % CAT_COLORS.length] : PIE_COLORS[i % PIE_COLORS.length]; }
   function pieLabel(r) { return r.cat ? (r.label || 'Non renseigné') : r.label ? r.label + ' ans' : 'Non renseigné'; }
   // Répartition en camembert : au-delà de max modalités, les plus petites sont regroupées dans « Autres ».
@@ -8167,7 +8265,8 @@
       a = a1;
     });
     var label = d.title + ' : ' + d.rows.map(function (r) { return pieLabel(r) + ' ' + r.count + ' (' + frPct(r.pct) + ')'; }).join(', ');
-    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="pie-wrap"><svg class="pie" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="' + esc(label) + '">' + (total ? parts : '') + '</svg>' +
+    var big = !!d.big; // grand camembert, légende dessous (focus par PMG)
+    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="pie-wrap' + (big ? ' is-stack' : '') + '"><svg class="pie" viewBox="0 0 120 120" width="' + (big ? 240 : 120) + '" height="' + (big ? 240 : 120) + '" role="img" aria-label="' + esc(label) + '">' + (total ? parts : '') + '</svg>' +
       '<ul class="pie-leg">' + d.rows.map(function (r, i) { return '<li><span class="pie-sw" style="background:' + pieColor(i, r) + '" aria-hidden="true"></span><span class="pie-l">' + esc(pieLabel(r)) + '</span><span class="pie-n">' + r.count + '</span><span class="pie-p">' + frPct(r.pct) + '</span></li>'; }).join('') + '</ul></div></section>';
   }
   function distPiePng(d, W, H) { // même camembert en PNG pour le PDF
@@ -8215,7 +8314,7 @@
     return {
       n: n, nonEmp: nonEmp, ren: openRequests('ren'), ave: openRequests('mut'),
       echCols: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) { return { id: col.id, label: displayLabel(col) }; }),
-      dists: [distData('Par affectation', c, 'Affectation'), distData('Par type de réserviste', c, 'Type R'), sexDist(c), ageDist(c), gradeDist(c)].filter(Boolean), // grade (histogramme pleine largeur) en dernier
+      dists: [distData('Par affectation', c, 'Affectation'), distData('Par type de réserviste', c, 'Type R'), stackOf(sexDist(c)), ageDist(c), gradeDist(c)].filter(Boolean), // grade (histogramme pleine largeur) en dernier
       ech: (state.colsByTable[c.table] || []).filter(isExpCol).map(function (col) {
         var e = 0, s = 0, ok = 0, none = 0;
         recs.forEach(function (r) { var v = r.raw[col.id], st = expiryState(v); if (typeof v !== 'number') none++; else if (st === 'expired') e++; else if (st === 'soon') s++; else ok++; });
@@ -8238,8 +8337,7 @@
   }
   // Échéances : vue « Tableau » ou « Graphique ». Le graphique est une matrice affectation × échéance : chaque cellule est une barre
   // empilée à 100 % de l'état des réservistes concernés (expirée, < 60 jours, à jour, non renseignée), les affectations les plus touchées en tête.
-  var statEch = { view: 'table' };
-  var ECH_STATES = [['expired', 'Expirées', '#d03b3b', '#fff'], ['soon', '< ' + SOON_DAYS + ' jours', '#fab219', '#0b0b0b'], ['ok', 'À jour', '#0ca30c', '#fff'], ['none', 'Non renseignées', '#b5b4ac', '#0b0b0b']];
+  var ECH_STATES = [['expired', 'Expirées', '#ec9693', '#0b0b0b'], ['soon', '< ' + SOON_DAYS + ' jours', '#f7d27b', '#0b0b0b'], ['ok', 'À jour', '#9fd8a6', '#0b0b0b'], ['none', 'Non renseignées', '#d6d6d3', '#0b0b0b']]; // aplats pastel : les couleurs d'état gardent leur sens
   function echState(col, r) { var v = r.raw[col.id]; return typeof v !== 'number' ? 'none' : (expiryState(v) || 'ok'); }
   function echMatrix() {
     var c = cfg(), cols = (state.colsByTable[c.table] || []).filter(isExpCol), ac = findCol(c.table, 'Affectation'), groups = {};
@@ -8278,7 +8376,7 @@
         var lbl = w >= 24 ? v : '';
         return pdf
           ? '<span style="display:inline-block;width:' + w + '%;height:' + H + 'px;background:' + s[2] + ';color:' + s[3] + ';border-right:2px solid #fff;box-sizing:border-box;font-size:10px;line-height:' + H + 'px;text-align:center;vertical-align:top;">' + lbl + '</span>'
-          : '<span class="mx-seg" style="flex:' + v + ' 1 0;background:' + s[2] + ';color:' + s[3] + ';">' + lbl + '</span>';
+          : '<span class="mx-seg" style="z-index:' + (ECH_STATES.length - ECH_STATES.indexOf(s)) + ';flex:' + v + ' 1 0;background:' + s[2] + ';color:' + s[3] + ';">' + lbl + '</span>';
       }).join('');
       return pdf ? '<td style="padding:3px 6px;border:0;font-size:0;">' + segs + '</td>'
         : '<div class="mx-cell" role="img" tabindex="0" data-tip="' + esc(tip) + '" aria-label="' + esc(tip.replace(/\|/g, ', ')) + '"><span class="mx-bar">' + segs + '</span></div>';
@@ -8293,32 +8391,37 @@
       M.rows.map(function (g) { return '<div class="mx-row' + (g.isAll ? ' mx-all' : '') + '"><span class="mx-lbl">' + lead(g) + '</span>' + M.cols.map(function (x) { return cellBar(g, x); }).join('') + '</div>'; }).join('') +
       '</div></div><div class="mx-tip" id="r-mx-tip" role="status" hidden></div>';
   }
-  function echCardHtml(S) {
-    var isChart = statEch.view === 'chart';
-    var table = '<div class="table-wrap"><table class="stat-table"><caption class="fr-sr-only">Échéances par type</caption><thead><tr><th scope="col">Échéance</th><th scope="col" class="stat-n">Expirées</th><th scope="col" class="stat-n">&lt; ' + SOON_DAYS + ' jours</th><th scope="col" class="stat-n">À jour</th><th scope="col" class="stat-n">Non renseignées</th></tr></thead><tbody>' +
-      S.ech.map(function (r) { return '<tr><th scope="row">' + esc(r.label) + '</th><td class="stat-n' + (r.e ? ' is-bad' : '') + '">' + r.e + '</td><td class="stat-n">' + r.s + '</td><td class="stat-n">' + r.ok + '</td><td class="stat-n">' + r.none + '</td></tr>'; }).join('') + '</tbody></table></div>';
-    return '<section class="stat-card stat-wide"><div class="stat-card-head"><h2 class="fr-h6">Échéances</h2><div class="stat-seg" role="group" aria-label="Affichage des échéances">' +
-      '<button type="button" class="btn sm' + (isChart ? ' secondary' : '') + '" data-statview="table" aria-pressed="' + !isChart + '">Tableau</button>' +
-      '<button type="button" class="btn sm' + (isChart ? '' : ' secondary') + '" data-statview="chart" aria-pressed="' + isChart + '">Graphique</button></div></div>' +
-      (isChart ? '<p class="stat-hint">État des réservistes par affectation et par échéance (barre = 100 % des réservistes de l’affectation) ; les affectations les plus touchées par des échéances dépassées sont en tête.</p>' + echMatrixHtml(echMatrix(), false) : table) + '</section>';
+  function echCardHtml(S) { // vue graphique seule à l'écran (le tableau est réservé au PDF)
+    return '<section class="stat-card stat-wide"><div class="stat-card-head"><h2 class="fr-h6">Échéances</h2></div>' +
+      '<p class="stat-hint">État des réservistes par affectation et par échéance (barre = 100 % des réservistes de l’affectation) ; les affectations les plus touchées par des échéances dépassées sont en tête.</p>' + echMatrixHtml(echMatrix(), false) + '</section>';
+  }
+  // Jauge « Population à atteindre » : réservistes (plein) et candidats hors rejets et abandons (pastel) par rapport à la cible réglée en back office.
+  function candActiveCount() {
+    var sn = candSnap(); if (!sn || !sn.table) return 0;
+    var ec = findCol(sn.table, 'Etat candidature');
+    return sn.records.filter(function (r) { return !ec || !cellVals(ec, r.raw[ec.id]).some(function (v) { return /rejet|refus|abandon|desist/.test(norm(v)); }); }).length;
+  }
+  var POP_LABELS = { solid: 'Réservistes', pastel: 'Candidats', unit: 'réservistes', within: 'candidats actifs', ok: 'Cible atteinte', over: 'Cible dépassée de ', sub: function (p) { return 'Jusqu’à ' + p + ' % de la cible si tous les candidats actifs deviennent réservistes'; } };
+  function popGaugeHtml(S) {
+    var target = cfg().popTarget || 0;
+    if (!(target > 0)) return '<section class="stat-card"><h2 class="fr-h6">Population à atteindre</h2><p class="stat-hint">Aucune cible définie (back office, Réglages avancés).</p></section>';
+    return gaugeCardHtml('Population à atteindre', '', S.n, target, candActiveCount(), 'pop', null, POP_LABELS);
   }
   function statsHtml() {
     var S = statsData();
     if (S.error) return '<div class="state"><strong>Source inaccessible</strong>' + esc(S.error) + '</div>';
     if (S.empty) return '<div class="state"><strong>Aucun réserviste</strong>La table est vide.</div>';
-    var tiles = '<div class="stat-grid">' + statTile('Réservistes', S.n, '') + statTile('Non employables', S.nonEmp, frPct(pct(S.nonEmp, S.n)) + ' de l’effectif (échéance dépassée)', S.nonEmp > 0) +
-      (S.ren == null ? statTile('Demandes de renouvellement en cours', '—', '') : statTileBtn('ren', 'Demandes de renouvellement en cours', S.ren)) +
+    var pop = popGaugeHtml(S);
+    // Bloc du haut : Réservistes + Par affectation (colonne 1), Non employables + Par type (colonne 2) ; la jauge occupe la hauteur des deux colonnes (colonne 3).
+    var dAff = S.dists.filter(function (x) { return x.title === 'Par affectation'; })[0], dTyp = S.dists.filter(function (x) { return x.title === 'Par type de réserviste'; })[0];
+    var tiles = '<div class="stat-top"><div class="st-res">' + statTile('Réservistes', S.n, '') + '</div><div class="st-emp">' + statTile('Non employables', S.nonEmp, frPct(pct(S.nonEmp, S.n)) + ' de l’effectif (échéance dépassée)', S.nonEmp > 0) + '</div><div class="st-pop">' + pop + '</div>' +
+      (dAff ? '<div class="st-aff">' + distCard(dAff) + '</div>' : '') + (dTyp ? '<div class="st-typ">' + distCard(dTyp) + '</div>' : '') + '</div>';
+    var reqTiles = '<div class="stat-grid">' + (S.ren == null ? statTile('Demandes de renouvellement en cours', '—', '') : statTileBtn('ren', 'Demandes de renouvellement en cours', S.ren)) +
       (S.ave == null ? statTile('Demandes d’avenants en cours', '—', '') : statTileBtn('mut', 'Demandes d’avenants en cours', S.ave)) + '</div>';
     var detail = '';
     if (statReq) { var rd = reqStateDist(statReq, statReq === 'ren' ? 'Demandes de renouvellement en cours' : 'Demandes d’avenants en cours'); if (rd) detail = '<div id="stat-req-detail" style="margin:-.5rem 0 1.5rem">' + (rd.rows.length ? distCard(rd) : '<section class="stat-card"><h2 class="fr-h6">' + esc(rd.title) + '</h2><p class="stat-hint">Aucune demande en cours.</p></section>') + '</div>'; }
-    // « Par sexe » est empilé sous « Par type de réserviste » (même colonne).
-    var cards = [], di = 0;
-    while (di < S.dists.length) {
-      var dd = S.dists[di], nx = S.dists[di + 1];
-      if (dd.title === 'Par type de réserviste' && nx && nx.title === 'Par sexe') { cards.push('<div class="stat-col">' + distCard(dd) + distCard(nx) + '</div>'); di += 2; }
-      else { cards.push(distCard(dd)); di++; }
-    }
-    return tiles + detail + '<div class="stat-cards">' + cards.join('') + (S.ech.length ? echCardHtml(S) : '') + '</div>';
+    var cards = S.dists.filter(function (x) { return x !== dAff && x !== dTyp; }).map(distCard);
+    return tiles + '<div class="stat-cards">' + cards.join('') + (S.ech.length ? echCardHtml(S) : '') + '</div><div class="stat-requests" style="margin-top:1.5rem">' + reqTiles + detail + '</div>';
   }
   function renderStats() { var el = $('stats-body'); if (el) el.innerHTML = statsHtml(); }
   function refreshStats() { return loadRequestsData().then(renderStats); }
@@ -8342,84 +8445,105 @@
     recs.forEach(function (r) { var a = ageOf(r.raw, ac, dc); if (a == null || a < 0) { none++; return; } for (var i = 0; i < AGE_BANDS.length; i++) if (a >= AGE_BANDS[i][1] && a <= AGE_BANDS[i][2]) { counts[i]++; return; } });
     var rows = AGE_BANDS.map(function (b, i) { return { label: b[0], count: counts[i], pct: pct(counts[i], total) }; });
     if (none) rows.push({ label: '', count: none, pct: pct(none, total) });
-    return { title: 'Par tranche d’âge', rows: rows, pie: true };
+    return { title: 'Par tranche d’âge (en années)', rows: rows, chart: true }; // histogramme (échelle ordonnée)
   }
-  // État des candidatures : graphique du parcours. Barres dans l'ordre des choix de la colonne (ordre du parcours), colorées par issue :
-  // en cours (bleu), admis (vert), sans suite (rouge : rejet, refus, abandon) ; une barre empilée résume la répartition par issue.
-  var ETAT_GROUPS = { cours: { label: 'En cours', color: '#000091' }, admis: { label: 'Admis', color: '#18753c' }, fin: { label: 'Sans suite', color: '#ce0500' } };
-  function etatGroup(label) { var n = norm(label); return /admis|retenu/.test(n) ? 'admis' : /rejet|refus|abandon|desist|annul|inapte|radi/.test(n) ? 'fin' : 'cours'; }
+  // État des candidatures : barres empilées par affectation, en quatre issues (Sans suite, En attente, En cours, Admis). Un clic sur une issue
+  // qui compte plusieurs états (Sans suite, En cours) montre le détail : mêmes barres, découpées par état.
+  var ETAT_GROUPS = {
+    fin: { label: 'Sans suite', color: '#ce0500' },
+    attente: { label: 'En attente', hint: 'attente de pièces', color: '#a56a00' },
+    cours: { label: 'En cours', color: '#000091' },
+    admis: { label: 'Admis', color: '#18753c' }
+  };
+  var ETAT_ORDER = ['fin', 'attente', 'cours', 'admis'];
+  // Affichage à l'écran, comme les jauges d'objectif : aplats pastel arrondis d'une seule couleur, plein pour les admis (le PDF garde les couleurs pleines).
+  var ETAT_FILL = { // une seule teinte (bleu) : de plus en plus soutenue vers l'issue favorable, plein pour les admis
+    fin: { fill: 'color-mix(in srgb, var(--blue) 20%, var(--bg))', ink: 'var(--ink)' },
+    attente: { fill: 'color-mix(in srgb, var(--blue) 34%, var(--bg))', ink: 'var(--ink)' },
+    cours: { fill: 'color-mix(in srgb, var(--blue) 50%, var(--bg))', ink: 'var(--ink)' },
+    admis: { fill: 'var(--blue)', ink: '#fff' }
+  };
+
+  function etatGroup(label) {
+    var n = norm(label);
+    return /admis|retenu/.test(n) ? 'admis' : /rejet|refus|abandon|desist|annul|inapte|radi/.test(n) ? 'fin' : /attente|pieces?\s+manquant/.test(n) ? 'attente' : 'cours';
+  }
+  var etatMode = 'n'; // 'n' : effectifs (longueur = nombre de candidats) ; 'pct' : parts (toutes les barres à 100 %)
+  var etatDrill = null; // issue dont le détail est affiché (null : vue d'ensemble)
   function candEtat(recs, t) {
     var col = findCol(t, 'Etat candidature'); if (!col) return null;
-    var counts = {}, order = [], total = recs.length;
+    var affCol = findCol(t, 'Affectation');
+    var counts = {}, order = [], total = recs.length, perGroup = { fin: 0, attente: 0, cours: 0, admis: 0 }, byAff = {};
     (col.choices || []).forEach(function (v) { if (order.indexOf(v) === -1) order.push(v); });
-    recs.forEach(function (r) { cellVals(col, r.raw[col.id]).forEach(function (k) { counts[k] = (counts[k] || 0) + 1; if (order.indexOf(k) === -1) order.push(k); }); });
+    recs.forEach(function (r) {
+      var seen = {}, vals = cellVals(col, r.raw[col.id]);
+      vals.forEach(function (k) { counts[k] = (counts[k] || 0) + 1; if (order.indexOf(k) === -1) order.push(k); seen[k === '' ? 'cours' : etatGroup(k)] = true; });
+      Object.keys(seen).forEach(function (g) { perGroup[g]++; }); // un candidat n'est compté qu'une fois par issue, même avec plusieurs états de cette issue
+      var a = affCol ? (cellVals(affCol, r.raw[affCol.id])[0] || '') : '', B = byAff[a] = byAff[a] || { label: a, total: 0, groups: {}, states: {} };
+      B.total++; Object.keys(seen).forEach(function (g) { B.groups[g] = (B.groups[g] || 0) + 1; });
+      vals.forEach(function (k) { if (k !== '') B.states[k] = (B.states[k] || 0) + 1; });
+    });
     var rows = order.filter(function (k) { return k !== ''; }).map(function (k) { return { label: k, count: counts[k] || 0, pct: pct(counts[k] || 0, total), grp: etatGroup(k) }; });
     if (counts['']) rows.push({ label: '', count: counts[''], pct: pct(counts[''], total), grp: 'cours', none: true });
-    var groups = Object.keys(ETAT_GROUPS).map(function (g) {
-      var c = rows.filter(function (r) { return r.grp === g; }).reduce(function (a, r) { return a + r.count; }, 0);
-      return { key: g, label: ETAT_GROUPS[g].label, color: ETAT_GROUPS[g].color, count: c };
-    });
+    var groups = ETAT_ORDER.map(function (g) { return { key: g, label: ETAT_GROUPS[g].label, hint: ETAT_GROUPS[g].hint, color: ETAT_GROUPS[g].color, count: perGroup[g] }; });
     var sum = groups.reduce(function (a, g) { return a + g.count; }, 0) || 1;
     groups.forEach(function (g) { g.pct = Math.round(g.count / sum * 1000) / 10; });
-    return { title: 'État des candidatures', etat: true, rows: rows, groups: groups, total: total };
+    var aff = Object.keys(byAff).map(function (k) { return byAff[k]; }).sort(function (a, b) { return b.total - a.total || a.label.localeCompare(b.label, 'fr'); });
+    return { title: 'État des candidatures', etat: true, rows: rows, groups: groups, total: total, byAff: aff };
   }
-  // Lignes de l'état regroupées par issue (En cours, Admis, Sans suite), dans l'ordre du parcours ; « Non renseigné » en dernier.
-  function etatSections(d) {
-    var secs = Object.keys(ETAT_GROUPS).map(function (k) {
-      var g = d.groups.filter(function (x) { return x.key === k; })[0];
-      return { key: k, label: ETAT_GROUPS[k].label, color: ETAT_GROUPS[k].color, count: g ? g.count : 0, rows: d.rows.filter(function (r) { return r.grp === k && !r.none; }) };
-    }).filter(function (x) { return x.rows.length > 1 && x.count > 0; }); // un groupe à un seul état (ex. Admis) n'est pas détaillé : la tuile et la barre suffisent
-    var none = d.rows.filter(function (r) { return r.none; });
-    if (none.length) secs.push({ key: 'none', label: '', color: '#b5b4ac', count: none[0].count, rows: none });
-    return secs;
+  // États d'une issue (hors « non renseigné »), dans l'ordre du parcours : le détail n'a de sens que s'il y en a plusieurs.
+  function etatStatesOf(d, key) { return d.rows.filter(function (r) { return r.grp === key && !r.none; }); }
+  var ETAT_OPAC = [1, .72, .52, .38, .28];
+  // Segments à tracer : issues (vue d'ensemble) ou états de l'issue choisie (détail).
+  function etatSegments(d, drill) {
+    if (drill) return etatStatesOf(d, drill).map(function (r, i) { return { key: r.label, label: r.label, color: ETAT_GROUPS[drill].color, op: ETAT_OPAC[Math.min(i, ETAT_OPAC.length - 1)], get: function (B) { return B.states[r.label] || 0; }, total: r.count }; });
+    return d.groups.map(function (g) { return { key: g.key, label: g.label, color: g.color, op: 1, get: function (B) { return B.groups[g.key] || 0; }, total: g.count }; });
   }
+  // Vue simple : une barre de répartition par issue, la liste des quatre issues (les états se déplient), puis, repliée, la répartition par affectation.
   function etatCardHtml(d) {
-    var max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1, sum = d.groups.reduce(function (a, g) { return a + g.count; }, 0) || 1;
-    var aria = d.title + ' : ' + d.groups.map(function (g) { return g.label + ' ' + g.count; }).join(', ') + '. ' + d.rows.map(function (r) { return (r.label || 'Non renseigné') + ' ' + r.count; }).join(', ');
-    var kpis = '<div class="et-kpis">' + d.groups.filter(function (g) { return g.count; }).map(function (g) {
-      return '<div class="et-kpi" style="--c:' + g.color + '"><span class="et-kn">' + g.count + '</span><span class="et-kl">' + esc(g.label) + '</span><span class="et-kp">' + frPct(g.pct) + '</span></div>';
+    var groups = d.groups.filter(function (g) { return g.count; }), sum = groups.reduce(function (a, g) { return a + g.count; }, 0) || 1;
+    var aria = d.title + ' : ' + d.groups.map(function (g) { return g.label + ' ' + g.count; }).join(', ') + '.';
+    var bar = '<div class="es-bar" role="img" aria-label="' + esc(aria) + '">' + groups.map(function (g, gi) {
+      return '<span class="es-seg" style="z-index:' + (groups.length - gi) + ';flex:' + g.count + ';background:' + ETAT_FILL[g.key].fill + ';color:' + ETAT_FILL[g.key].ink + '" title="' + esc(g.label + ' : ' + g.count + ' (' + frPct(g.pct) + ')') + '">' + (g.count / sum >= .07 ? g.count : '') + '</span>';
     }).join('') + '</div>';
-    var stack = '<div class="et-stack">' + d.groups.filter(function (g) { return g.count; }).map(function (g) {
-      return '<span class="et-seg" style="flex:' + g.count + ';background:' + g.color + '" title="' + esc(g.label + ' : ' + g.count + ' (' + frPct(g.pct) + ')') + '">' + (g.count / sum >= .1 ? frPct(g.pct) : '') + '</span>';
-    }).join('') + '</div>';
-    var secs = etatSections(d).map(function (sc) {
-      return '<div class="et-sec">' + (sc.label ? '<h3 class="et-gh"><span class="et-sw" style="background:' + sc.color + '"></span>' + esc(sc.label) + '<span class="et-gc">' + sc.count + '</span></h3>' : '') +
-        sc.rows.map(function (r) {
-          return '<div class="et-row' + (r.count ? '' : ' is-zero') + '" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count) + '"><span class="et-l">' + (r.label ? esc(r.label) : '<span class="is-empty">Non renseigné</span>') + '</span>' +
-            '<span class="et-track"><span class="et-bar" style="width:' + (r.count ? Math.max(2, Math.round(r.count / max * 100)) : 0) + '%;background:' + (r.none ? '#b5b4ac' : sc.color) + '"></span></span><span class="et-n">' + r.count + '</span></div>';
-        }).join('') + '</div>';
-    }).join('');
-    return '<section class="stat-card stat-wide"><h2 class="fr-h6">' + esc(d.title) + '</h2><p class="stat-hint">Parcours des candidatures, dans l’ordre des états, regroupés par issue ; une candidature à plusieurs états est comptée dans chacun.</p>' +
-      '<div class="et-wrap" role="img" aria-label="' + esc(aria) + '">' + kpis + stack + '<div class="et-rows">' + secs + '</div></div></section>';
+    var list = '<ul class="es-list">' + groups.map(function (g) {
+      var states = etatStatesOf(d, g.key).filter(function (r) { return r.count; });
+      var head = '<span class="es-sw" style="background:' + ETAT_FILL[g.key].fill + '"></span><span class="es-l">' + esc(g.label) + (g.hint ? ' <span class="et-hint">(' + esc(g.hint) + ')</span>' : '') + '</span><strong class="es-n">' + g.count + '</strong><span class="es-p">' + frPct(g.pct) + '</span>';
+      if (states.length < 2) return '<li class="es-item">' + head + '</li>';
+      return '<li class="es-item"><details class="es-det"><summary class="es-sum">' + head + '</summary><ul class="es-sub">' + states.map(function (r) { return '<li><span>' + esc(r.label) + '</span><strong>' + r.count + '</strong></li>'; }).join('') + '</ul></details></li>';
+    }).join('') + '</ul>';
+    var max = Math.max.apply(null, d.byAff.map(function (B) { return B.total; })) || 1;
+    var aff = d.byAff.length > 1 ? '<details class="es-aff"><summary>Voir par affectation</summary><div class="eb-rows">' + d.byAff.map(function (B) {
+      var tot = groups.reduce(function (a, g) { return a + (B.groups[g.key] || 0); }, 0); if (!tot) return '';
+      return '<div class="eb-row"><span class="eb-l">' + (B.label ? esc(B.label) : '<span class="is-empty">Non renseignée</span>') + '</span><span class="eb-track"><span class="eb-bar" style="width:' + Math.max(4, Math.round(tot / max * 100)) + '%">' +
+        groups.map(function (g, gi) { var n = B.groups[g.key] || 0; return n ? '<span class="eb-seg" style="z-index:' + (groups.length - gi) + ';flex:' + n + ';background:' + ETAT_FILL[g.key].fill + ';color:' + ETAT_FILL[g.key].ink + '" title="' + esc((B.label || 'Non renseignée') + ' · ' + g.label + ' : ' + n) + '">' + n + '</span>' : ''; }).join('') + '</span></span><span class="eb-n">' + tot + '</span></div>';
+    }).join('') + '</div></details>' : '';
+    return '<section class="stat-card stat-wide"><h2 class="fr-h6">' + esc(d.title) + '</h2>' + bar + list + aff + '</section>';
   }
-  // Même graphique en PNG pour le PDF (html2canvas ne rend pas bien les barres imbriquées).
+  // Même graphique en PNG pour le PDF (html2canvas ne rend pas bien les barres imbriquées) : barres par affectation + détail des issues à plusieurs états.
   function etatPng(d, W) {
-    var secs = etatSections(d), K = 3, rowH = 19, headH = 20, top = 46, nrows = secs.reduce(function (a, q) { return a + q.rows.length + (q.label ? 1 : 0); }, 0);
-    var H = top + 8 + nrows * 19 + 6, cv = document.createElement('canvas'); cv.width = W * K; cv.height = H * K;
+    var K = 3, rowH = 19, lines = [];
+    ETAT_ORDER.forEach(function (g) { var st = etatStatesOf(d, g); if (st.length > 1) lines.push(ETAT_GROUPS[g].label + ' : ' + st.map(function (r) { return r.label + ' ' + r.count; }).join(' · ')); });
+    var segs = etatSegments(d, null).filter(function (q) { return q.total; }), aff = d.byAff.filter(function (B) { return segs.some(function (q) { return q.get(B); }); });
+    var top = 24, H = top + aff.length * rowH + 8 + lines.length * 16 + 6, cv = document.createElement('canvas'); cv.width = W * K; cv.height = H * K;
     var g = cv.getContext('2d'); g.scale(K, K); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-    var sum = d.groups.reduce(function (a, x) { return a + x.count; }, 0) || 1, x = 0, bw = W - 2;
-    d.groups.filter(function (q) { return q.count; }).forEach(function (q) {
-      var w = Math.max(2, Math.round(bw * q.count / sum)); g.fillStyle = q.color; g.fillRect(1 + x, 2, w - 1, 18); x += w;
-      if (w > 22) { g.fillStyle = '#fff'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(q.count), 1 + x - w / 2, 11); }
+    var lx = 1; g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '10.5px Arial, Helvetica, sans-serif';
+    segs.forEach(function (q) { g.fillStyle = q.color; g.fillRect(lx, 7, 9, 9); g.fillStyle = '#000'; var t = q.label + ' ' + q.total; g.fillText(t, lx + 14, 12); lx += 14 + g.measureText(t).width + 18; });
+    var lw = 90, nw = 28, tw = W - lw - nw - 6, maxS = Math.max.apply(null, aff.map(function (B) { return segs.reduce(function (a, q) { return a + q.get(B); }, 0); })) || 1, y = top;
+    aff.forEach(function (B) {
+      var sum = segs.reduce(function (a, q) { return a + q.get(B); }, 0), x = lw, full = tw * sum / maxS;
+      g.fillStyle = '#000'; g.font = '10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(B.label || 'Non renseignée', 1, y + 8);
+      segs.forEach(function (q) { var n = q.get(B); if (!n) return; var w = full * n / sum; g.fillStyle = q.color; g.fillRect(x, y + 1, Math.max(1, w - 1), 14); if (w > 14) { g.fillStyle = '#fff'; g.font = 'bold 9.5px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.fillText(String(n), x + w / 2, y + 8.5); } x += w; });
+      g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(String(sum), lw + full + 6, y + 8); y += rowH;
     });
-    var lx = 1; g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '10.5px Arial, Helvetica, sans-serif';
-    d.groups.filter(function (q) { return q.count; }).forEach(function (q) { g.fillStyle = q.color; g.fillRect(lx, 28, 9, 9); g.fillStyle = '#000'; var t = q.label + ' ' + q.count + ' (' + frPct(q.pct) + ')'; g.fillText(t, lx + 14, 33); lx += 14 + g.measureText(t).width + 18; });
-    var lw = 170, nw = 40, maxc = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1, tw = W - lw - nw - 8, y = top + 8;
-    secs.forEach(function (sc) {
-      if (sc.label) { g.fillStyle = sc.color; g.fillRect(1, y + 5, 8, 8); g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(sc.label.toUpperCase() + '  ·  ' + sc.count, 15, y + 9); y += 19; }
-      sc.rows.forEach(function (r) {
-        g.fillStyle = '#000'; g.font = '10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(r.label || 'Non renseigné', 1, y + 8);
-        g.fillStyle = '#e3e3fd'; g.fillRect(lw, y + 3, tw, 8);
-        g.fillStyle = r.none ? '#b5b4ac' : sc.color; g.fillRect(lw, y + 3, r.count ? Math.max(2, tw * r.count / maxc) : 0, 8);
-        g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'right'; g.fillText(String(r.count), lw + tw + 30, y + 8);
-        y += 19;
-      });
-    });
+    g.fillStyle = '#333'; g.font = '10px Arial, Helvetica, sans-serif'; g.textAlign = 'left';
+    lines.forEach(function (t, i) { g.fillText(t, 1, y + 12 + i * 16); });
     return { src: cv.toDataURL('image/png'), w: W, h: H };
   }
   function candSexMap(k) { var x = norm(k).replace(/\./g, ''); return /^(m|mr|monsieur|h|homme|masculin)$/.test(x) ? 'Hommes' : /^(mme|mlle|madame|mademoiselle|f|femme|feminin)$/.test(x) ? 'Femmes' : k; }
 
   /* ---------- 🔍 Focus par PMG : les mêmes indicateurs, restreints à la PMG choisie (âge, sexe, groupement, état) ---------- */
+  var candFocusUser = false; // vrai dès que l'utilisateur choisit lui-même une PMG (sinon la plus demandée est reprise à chaque affichage)
   var candFocus = null; // PMG choisie (valeur de la colonne « PMG ») ; null : la plus demandée
   function pmgOptions(S) {
     var col = findCol(S.table, 'PMG'); if (!col) return null;
@@ -8430,10 +8554,31 @@
     if (counts['']) opts.push({ value: '', count: counts[''], none: true });
     return opts.length ? { col: col, opts: opts } : null;
   }
+  // Jauge de progression : admis de la PMG par rapport à l'objectif réglé en back office (demi-cercle, vert une fois l'objectif atteint).
+  var GAUGE_LABELS = { solid: 'Admis', pastel: 'En cours', unit: 'admis', within: 'déjà en cours', ok: 'Objectif atteint', over: 'Objectif dépassé de ', sub: function (p) { return 'Jusqu’à ' + p + ' % de l’objectif si tous les dossiers en cours aboutissent'; } };
+  function gaugeCardHtml(title, pmg, admis, target, enCours, key, detail, L) {
+    if (!(target > 0)) return '';
+    L = L || GAUGE_LABELS; enCours = enCours || 0;
+    var f1 = Math.min(1, admis / target), f2 = Math.min(1, (admis + enCours) / target), done = admis >= target, col = done ? '#18753c' : 'var(--blue)';
+    var pctA = Math.round(admis / target * 100), pctP = Math.round(Math.min(admis + enCours, target) / target * 100), rest = Math.max(0, target - admis - enCours);
+    function pt(f) { return [110 - 90 * Math.cos(Math.PI * f), 110 - 90 * Math.sin(Math.PI * f)]; }
+    function arc(a, b) { var p = pt(a), q = pt(b); return 'M' + p[0].toFixed(2) + ' ' + p[1].toFixed(2) + 'A90 90 0 0 1 ' + q[0].toFixed(2) + ' ' + q[1].toFixed(2); }
+    var tip = enCours && detail && detail.length ? L.pastel + ' · détail par état\n' + detail.join('\n') : '';
+    var msg = done ? (admis > target ? L.over + (admis - target) : L.ok) : 'Il reste ' + (target - admis) + ' à atteindre' + (enCours ? ', dont ' + Math.min(enCours, target - admis) + ' ' + L.within : '');
+    return '<section class="stat-card stat-gauge"><h2 class="fr-h6">' + esc(title) + '</h2><svg class="gj" viewBox="0 0 220 142" role="img" aria-label="' + esc(title + (pmg ? ', ' + pmg : '') + ' : ' + admis + ' ' + L.unit + ' (bleu foncé), ' + enCours + ' ' + L.pastel.toLowerCase() + ' (bleu pastel), sur ' + target + '. ' + msg) + '">' +
+      '<path d="M20 110A90 90 0 0 1 200 110" fill="none" style="stroke:var(--blue-tint)" stroke-width="16" stroke-linecap="round"/>' +
+      (f2 > f1 ? '<path d="' + arc(f1, f2) + '" fill="none" style="stroke:color-mix(in srgb, var(--blue) 42%, var(--bg))" stroke-width="16" stroke-linecap="round"' + (tip ? ' class="gj-etip" data-etip="' + esc(tip) + '"' : '') + '>' + '</path>' : '') +
+      (f1 > 0 ? '<path d="' + arc(0, f1) + '" fill="none" style="stroke:' + col + '" stroke-width="16" stroke-linecap="round"/>' : '') +
+      '<text x="20" y="132" text-anchor="middle" font-size="11" style="fill:var(--muted)">0</text><text x="200" y="132" text-anchor="middle" font-size="11" style="fill:var(--muted)">' + target + '</text>' +
+      '<text x="110" y="92" text-anchor="middle" font-size="34" font-weight="800" style="fill:var(--ink)">' + admis + '<tspan font-size="18" font-weight="600" style="fill:var(--muted)"> / ' + target + '</tspan></text>' +
+      '<text x="110" y="112" text-anchor="middle" font-size="12" style="fill:var(--muted)">' + L.unit + ' · ' + pctA + ' %</text></svg>' +
+      '<ul class="gj-leg"><li><i class="gj-sw" style="background:' + col + '"></i>' + esc(L.solid) + ' <strong>' + admis + '</strong></li><li' + (tip ? ' class="gj-tip" tabindex="0" data-etip="' + esc(tip) + '" aria-label="' + esc(tip.replace(/\n/g, ', ')) + '"' : '') + '><i class="gj-sw gj-prog"></i>' + esc(L.pastel) + ' <strong>' + enCours + '</strong></li><li><i class="gj-sw gj-rest"></i>Restant <strong>' + rest + '</strong></li></ul>' +
+      '<p class="gj-msg">' + esc(msg) + (enCours && !done ? '<br><span class="gj-sub">' + esc(L.sub(pctP)) + '</span>' : '') + '</p></section>';
+  }
   function candFocusHtml(S) {
     var po = pmgOptions(S); if (!po) return '';
     var best = po.opts.filter(function (o) { return !o.none; }).sort(function (a, b) { return b.count - a.count; })[0] || po.opts[0];
-    if (candFocus == null || !po.opts.some(function (o) { return o.value === candFocus; })) candFocus = best.value;
+    if (!candFocusUser || candFocus == null || !po.opts.some(function (o) { return o.value === candFocus; })) candFocus = best.value;
     var sel = candFocus, recs = S.recs.filter(function (r) { return cellVals(po.col, r.raw[po.col.id]).indexOf(sel) !== -1; }), t = S.table, n = recs.length;
     var ec = findCol(t, 'Etat candidature');
     var actives = ec ? recs.filter(function (r) { return !cellVals(ec, r.raw[ec.id]).some(function (v) { return /rejet|refus|abandon|desist/.test(norm(v)); }); }).length : null;
@@ -8441,18 +8586,32 @@
     var head = '<div class="focus-head"><h2 class="fr-h5" style="margin:0"><span aria-hidden="true">🔍</span> Focus par PMG</h2><div class="focus-pick"><label for="r-cfocus">PMG</label><select id="r-cfocus" class="select">' +
       po.opts.map(function (o) { return '<option value="' + esc(o.value) + '"' + (o.value === sel ? ' selected' : '') + '>' + esc(o.none ? 'Non renseignée' : o.value) + ' (' + o.count + ')</option>'; }).join('') + '</select></div></div>';
     if (!n) return '<section class="stat-focus">' + head + '<p class="stat-hint">Aucune candidature pour cette PMG.</p></section>';
+    // Jauges d'objectif d'admis : une par origine (CIV, VCA) ayant un objectif pour cette PMG.
+    var oc = findCol(t, 'Origine'), tgt = (cfg().pmgTargets || {})[sel] || {}, gauges = ORIGINS.map(function (og) {
+      var ad = !ec || !oc ? 0 : recs.filter(function (r) { return norm(cellVals(oc, r.raw[oc.id])[0] || '') === og[0] && cellVals(ec, r.raw[ec.id]).some(function (v) { return norm(v) === 'admis pmg'; }); }).length;
+      var encList = !ec || !oc ? [] : recs.filter(function (r) { // en cours : au moins un état « en cours » (ou aucun état), et pas encore admis
+        if (norm(cellVals(oc, r.raw[oc.id])[0] || '') !== og[0]) return false;
+        var st = cellVals(ec, r.raw[ec.id]); return st.some(function (v) { return v === '' || etatGroup(v) === 'cours'; }) && !st.some(function (v) { return norm(v) === 'admis pmg'; });
+      }), det = {}; // détail au survol : nombre de candidats en cours pour chaque état
+      encList.forEach(function (r) { cellVals(ec, r.raw[ec.id]).forEach(function (v) { if (v === '' || etatGroup(v) === 'cours') det[v || 'Sans état'] = (det[v || 'Sans état'] || 0) + 1; }); });
+      return gaugeCardHtml('Objectif · ' + og[1], sel, ad, tgt[og[0]] || 0, encList.length, og[0], Object.keys(det).map(function (k) { return k + ' : ' + det[k]; }));
+    }).join('') || '<section class="stat-card"><h2 class="fr-h6">Objectifs</h2><p class="stat-hint">Aucun objectif défini pour cette PMG (back office, Réglages avancés).</p></section>';
     var tiles = '<div class="stat-grid">' + statTile('Candidats', n, frPct(pct(n, S.n)) + ' des candidats') + (actives == null ? '' : statTile('Candidatures actives', actives, 'sans rejets ni abandons')) + (admis == null ? '' : statTile('Admis PMG', admis, frPct(pct(admis, n)) + ' de la PMG')) + '</div>';
     var age = candAge(recs, t), sex = candDist(recs, t, 'Par sexe', findCol(t, 'Sexe') ? 'Sexe' : 'Civilité', candSexMap), aff = candDist(recs, t, 'Par groupement', 'Affectation'), etat = candEtat(recs, t);
-    asCatPie(aff, 8); stackOf(sex); // mêmes visuels que les statistiques générales : âge et groupement en camembert, sexe en barre unique
-    return '<section class="stat-focus">' + head + tiles + '<div class="stat-cards">' + [age, sex, aff].filter(Boolean).map(distCard).join('') + '</div>' + (etat ? '<div class="stat-cards" style="margin-top:1rem">' + etatCardHtml(etat) + '</div>' : '') + '</section>';
+    asCatPie(aff, 8); if (aff) aff.big = true; stackOf(sex); // mêmes visuels que les statistiques générales : âge et groupement en camembert, sexe en barre unique
+    // Disposition : les deux objectifs puis le groupement ; dessous l'âge et le sexe.
+    return '<section class="stat-focus">' + head + '<div class="stat-cards stat-equal">' + gauges + distCard(aff) + '</div>' +
+      '<div class="stat-cards" style="margin-top:1rem">' + [age, sex].filter(Boolean).map(distCard).join('') + '</div></section>';
   }
   var STACK_COLORS = ['#000091', '#d64d00', '#b5b4ac', '#18753c'];
-  function stackCardHtml(d) {
-    var total = d.rows.reduce(function (a, r) { return a + r.count; }, 0) || 1;
+  var STACK_FILLS = [['var(--blue)', '#fff'], ['color-mix(in srgb, var(--blue) 42%, var(--bg))', 'var(--ink)'], ['color-mix(in srgb, var(--blue) 20%, var(--bg))', 'var(--ink)'], ['color-mix(in srgb, var(--blue) 10%, var(--bg))', 'var(--ink)']];
+  function stackCardHtml(d) { // une seule barre à 100 % : une teinte de bleu, aplats pastel, jonctions arrondies (même principe que les objectifs)
+    var total = d.rows.reduce(function (a, r) { return a + r.count; }, 0) || 1, vis = d.rows.filter(function (r) { return r.count; });
     var aria = d.title + ' : ' + d.rows.map(function (r) { return (r.label || 'Non renseigné') + ' ' + r.count; }).join(', ');
-    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="et-wrap" role="img" aria-label="' + esc(aria) + '"><div class="et-stack" style="height:2.2rem">' +
-      d.rows.filter(function (r) { return r.count; }).map(function (r, i) { return '<span class="et-seg" style="flex:' + r.count + ';background:' + STACK_COLORS[d.rows.indexOf(r) % STACK_COLORS.length] + '" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '">' + (r.count / total >= .12 ? frPct(r.pct) : '') + '</span>'; }).join('') + '</div>' +
-      '<ul class="et-legend">' + d.rows.map(function (r, i) { return '<li><span class="et-sw" style="background:' + STACK_COLORS[i % STACK_COLORS.length] + '"></span>' + esc(r.label || 'Non renseigné') + ' <strong>' + r.count + '</strong> <span class="et-p">' + frPct(r.pct) + '</span></li>'; }).join('') + '</ul></div></section>';
+    function f(r) { return STACK_FILLS[Math.min(d.rows.indexOf(r), STACK_FILLS.length - 1)]; }
+    return '<section class="stat-card"><h2 class="fr-h6">' + esc(d.title) + '</h2><div class="es-bar" role="img" aria-label="' + esc(aria) + '">' +
+      vis.map(function (r, i) { return '<span class="es-seg" style="z-index:' + (vis.length - i) + ';flex:' + r.count + ';background:' + f(r)[0] + ';color:' + f(r)[1] + '" title="' + esc((r.label || 'Non renseigné') + ' : ' + r.count + ' (' + frPct(r.pct) + ')') + '">' + (r.count / total >= .1 ? r.count : '') + '</span>'; }).join('') + '</div>' +
+      '<ul class="et-legend">' + d.rows.map(function (r) { return '<li><span class="es-sw" style="background:' + f(r)[0] + '"></span>' + esc(r.label || 'Non renseigné') + ' <strong>' + r.count + '</strong> <span class="et-p">' + frPct(r.pct) + '</span></li>'; }).join('') + '</ul></section>';
   }
   function stackOf(d) { if (d) d.stack = true; return d; } // répartition en une barre unique à 100 % (sexe)
   function candStatsData() {
@@ -8482,9 +8641,34 @@
     return tiles + '<div class="stat-cards">' + S.dists.map(distCard).join('') + '</div>' + candFocusHtml(S);
   }
   function renderCandStats() { var el = $('cstats-body'); if (el) el.innerHTML = candStatsHtml(); }
+  // Infobulle (classes du composant DSFR « Infobulle ») : détail des dossiers en cours, au survol de l'arc ou de la légende (et au focus clavier).
+  var etipEl = null;
+  function etipShow(t) {
+    var lines = String(t.getAttribute('data-etip') || '').split('\n'); if (!lines.length) return;
+    if (!etipEl) { etipEl = document.createElement('div'); etipEl.id = 'r-etip'; etipEl.className = 'fr-tooltip fr-placement'; etipEl.setAttribute('role', 'tooltip'); document.body.appendChild(etipEl); }
+    etipEl.innerHTML = '<strong>' + esc(lines[0]) + '</strong>' + (lines.length > 1 ? '<ul class="etip-list">' + lines.slice(1).map(function (l) { var k = l.lastIndexOf(' : '); return '<li><span>' + esc(k < 0 ? l : l.slice(0, k)) + '</span><b>' + esc(k < 0 ? '' : l.slice(k + 3)) + '</b></li>'; }).join('') + '</ul>' : '');
+    etipEl.style.cssText = 'position:absolute;left:0;top:0;transform:none;margin:0;pointer-events:none;z-index:2000;visibility:hidden;opacity:0;';
+    etipEl.classList.add('fr-tooltip--shown');
+    var r = t.getBoundingClientRect(), w = etipEl.offsetWidth, h = etipEl.offsetHeight, vw = document.documentElement.clientWidth;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, vw - w - 8)), top = r.top - h - 10; if (top < 8) top = r.bottom + 10;
+    etipEl.style.left = (left + window.scrollX) + 'px'; etipEl.style.top = (top + window.scrollY) + 'px'; etipEl.style.visibility = 'visible'; etipEl.style.opacity = '1';
+  }
+  function etipHide() { if (etipEl) { etipEl.classList.remove('fr-tooltip--shown'); etipEl.style.visibility = 'hidden'; etipEl.style.opacity = '0'; } }
+  $('cstats-body').addEventListener('mouseover', function (e) { var t = e.target.closest && e.target.closest('[data-etip]'); if (t) etipShow(t); });
+  $('cstats-body').addEventListener('mouseout', function (e) { var t = e.target.closest && e.target.closest('[data-etip]'); if (t && !t.contains(e.relatedTarget)) etipHide(); });
+  $('cstats-body').addEventListener('focusin', function (e) { var t = e.target.closest && e.target.closest('[data-etip]'); if (t) etipShow(t); });
+  $('cstats-body').addEventListener('focusout', function (e) { var t = e.target.closest && e.target.closest('[data-etip]'); if (t) etipHide(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') etipHide(); });
+  $('cstats-body').addEventListener('click', function (e) { // détail d'une issue de « État des candidatures » ; mode effectifs / parts
+    var md = e.target.closest('[data-etat-mode]');
+    if (md) { etatMode = md.getAttribute('data-etat-mode') === 'pct' ? 'pct' : 'n'; renderCandStats(); var m2 = $('cstats-body').querySelector('[data-etat-mode="' + etatMode + '"]'); if (m2) m2.focus(); return; }
+    var b = e.target.closest('[data-etat-drill]'); if (!b) return;
+    var k = b.getAttribute('data-etat-drill'); etatDrill = (!k || etatDrill === k) ? null : k; renderCandStats();
+    var again = $('cstats-body').querySelector(etatDrill ? '[data-etat-drill="' + etatDrill + '"]' : '.et-kpi.is-btn'); if (again) again.focus();
+  });
   $('cstats-body').addEventListener('change', function (e) {
     if (e.target.id !== 'r-cfocus') return;
-    candFocus = e.target.value; renderCandStats();
+    candFocus = e.target.value; candFocusUser = true; renderCandStats();
     var f = document.getElementById('r-cfocus'); if (f) f.focus();
   });
   function refreshCandStats() { return Promise.resolve(window.PMG && window.PMG.refresh ? window.PMG.refresh() : null).then(renderCandStats, renderCandStats); }
@@ -8543,9 +8727,7 @@
           '<td style="' + td + '"><table style="width:62%;border-collapse:collapse;display:inline-table;vertical-align:middle;"><tr><td style="padding:0;border:0;height:8px;width:' + r.pct + '%;background:#000091;"></td><td style="padding:0;border:0;height:8px;background:#e3e3fd;"></td></tr></table> <span style="' + S8 + 'color:#555;">' + frPct(r.pct) + '</span></td></tr>';
       }).join('') + '</table>';
     });
-    if (S.ech && S.ech.length && statEch.view === 'chart') { // graphique : même matrice qu'à l'écran
-      out += '<div data-pdf-break="1" style="height:1px;"></div>' + h('Échéances par état et par affectation') + '<div style="' + S8 + 'color:#555;margin-bottom:6px;">Barre = 100 % des réservistes de l’affectation ; affectations les plus touchées en tête.</div>' + echMatrixHtml(echMatrix(), true);
-    } else if (S.ech && S.ech.length) {
+    if (S.ech && S.ech.length) { // dans le PDF : tableau (le graphique est réservé à l'écran)
       var th = 'text-align:left;padding:3px 6px;border-top:0;border-bottom:1px solid #999;font-weight:bold;';
       out += h('Échéances') + '<table style="width:100%;border-collapse:collapse;' + B10 + '"><tr><td style="' + th + '">Échéance</td><td style="' + th + num + '">Expirées</td><td style="' + th + num + '">&lt; ' + SOON_DAYS + ' jours</td><td style="' + th + num + '">À jour</td><td style="' + th + num + '">Non renseignées</td></tr>' +
         S.ech.map(function (r) { return '<tr><td style="' + td + '">' + esc(r.label) + '</td><td style="' + td + num + (r.e ? 'color:#ce0500;font-weight:bold;' : '') + '">' + r.e + '</td><td style="' + td + num + '">' + r.s + '</td><td style="' + td + num + '">' + r.ok + '</td><td style="' + td + num + '">' + r.none + '</td></tr>'; }).join('') + '</table>';
@@ -8578,8 +8760,6 @@
   $('stats-body').addEventListener('click', function (e) {
     var rq = e.target.closest('[data-reqstat]');
     if (rq) { var k = rq.getAttribute('data-reqstat'); statReq = statReq === k ? null : k; renderStats(); var nb = $('stats-body').querySelector('[data-reqstat="' + k + '"]'); if (nb) nb.focus(); return; }
-    var b = e.target.closest('[data-statview]'); if (!b) return;
-    statEch.view = b.getAttribute('data-statview'); renderStats();
   });
   // Infobulle des cellules de la matrice : au survol et au focus clavier (le texte vient des données : textContent uniquement).
   function showMxTip(cell) {
@@ -8855,9 +9035,35 @@
     renderPicks();
     $('f-ppe').value = dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : DEFAULT_PPE;
     if (!$('ppe-preview').hidden) refreshPpePreview();
+    renderPmgTargets();
     var ct = normCtr(dr.ctrTpl);
     Array.prototype.forEach.call($('view-admin').querySelectorAll('[data-ctr]'), function (el) { var k = el.getAttribute('data-ctr').split('.'); el.value = ct[k[0]][k[1]].trim() ? ct[k[0]][k[1]] : DEFAULT_CTR[k[0]][k[1]]; });
   }
+  // Objectif d'admis par PMG : une ligne par PMG de la table des candidats (vide : pas d'objectif, donc pas de jauge).
+  function renderPmgTargets() {
+    var host = $('pmgt-admin'); if (!host) return;
+    var pt = $('poptarget'); if (pt) pt.value = state.draft.popTarget > 0 ? state.draft.popTarget : '';
+    var sn = candSnap(), po = sn && sn.table ? pmgOptions({ table: sn.table, recs: sn.records }) : null, tg = state.draft.pmgTargets || {};
+    var names = po ? po.opts.filter(function (o) { return !o.none; }).map(function (o) { return o.value; }) : [];
+    Object.keys(tg).forEach(function (k) { if (names.indexOf(k) === -1) names.push(k); });
+    host.innerHTML = names.length ? '<div class="cf-grid">' + names.map(function (n, i) {
+      var t = tg[n] && typeof tg[n] === 'object' ? tg[n] : {};
+      return '<fieldset class="cf-field" style="border:0;padding:0;margin:0"><legend style="font-weight:700;margin-bottom:.25rem">' + esc(n) + '</legend><div style="display:flex;gap:.75rem">' + ORIGINS.map(function (og) {
+        return '<div style="flex:1"><label for="r-pmgt-' + i + '-' + og[0] + '" style="font-size:.8125rem">' + og[1] + '</label><input class="input" type="number" min="0" step="1" inputmode="numeric" id="r-pmgt-' + i + '-' + og[0] + '" data-pmgt="' + esc(n) + '" data-og="' + og[0] + '" value="' + (t[og[0]] > 0 ? t[og[0]] : '') + '" placeholder="Aucun"></div>';
+      }).join('') + '</div></fieldset>';
+    }).join('') + '</div>' : '<p class="hint">Aucune PMG trouvée : la table des candidats ou sa colonne « PMG » est introuvable.</p>';
+  }
+  $('view-admin').addEventListener('input', function (e) {
+    if (e.target.hasAttribute && e.target.hasAttribute('data-poptarget')) { var pn = parseInt(e.target.value, 10); state.draft.popTarget = pn > 0 ? pn : 0; return; }
+    var pm = e.target.getAttribute && e.target.getAttribute('data-pmgt');
+    if (pm != null) {
+      var og = e.target.getAttribute('data-og'), n = parseInt(e.target.value, 10), T = state.draft.pmgTargets = state.draft.pmgTargets || {};
+      var cur = T[pm] && typeof T[pm] === 'object' ? T[pm] : (T[pm] = {});
+      if (n > 0) cur[og] = n; else delete cur[og];
+      if (!Object.keys(cur).length) delete T[pm];
+      return;
+    }
+  });
   $('view-admin').addEventListener('input', function (e) {
     var k = e.target.getAttribute && e.target.getAttribute('data-ctr'); if (!k) return; k = k.split('.');
     state.draft.ctrTpl = normCtr(state.draft.ctrTpl); state.draft.ctrTpl[k[0]][k[1]] = e.target.value;
@@ -8943,7 +9149,7 @@
   function saveRes() {
     var dr = state.draft;
     if (!dr.table) return Promise.reject(new Error('Réservistes : sélectionnez la table des réservistes (options avancées).'));
-    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), tabsV: TABS_VERSION, ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '', ctrTpl: normCtr(dr.ctrTpl) };
+    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), tabsV: TABS_VERSION, ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '', ctrTpl: normCtr(dr.ctrTpl), pmgTargets: normTargets(dr.pmgTargets), popTarget: Math.max(0, Math.round(Number(dr.popTarget) || 0)) };
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.r = mine; // conserve la configuration de la première page
     return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
@@ -10023,6 +10229,12 @@
     ov.classList.remove('is-open'); document.body.style.overflow = ''; state.slotAdmin = null;
     setTimeout(function () { ov.hidden = true; }, 200); $('btn-slots').focus();
   }
+  // État d'un créneau en tag : Libre (vert), Complet (orange), Fermé / non proposé (gris), non honoré (rouge), autre (bleu).
+  function slotEtatTag(v) {
+    if (v == null || v === '') return '<span class="x-off">—</span>';
+    var n = norm(String(v)), c = /^libre|^disponible/.test(n) ? 'green' : /complet/.test(n) ? 'orange' : /non\s+honore/.test(n) ? 'red' : /ferme|non\s+propose/.test(n) ? 'grey' : 'blue';
+    return '<span class="fr-tag fr-tag--sm tag-c-' + c + '">' + esc(String(v)) + '</span>';
+  }
   function renderSlots() {
     var sa = state.slotAdmin; if (!sa) return;
     var tab = sa.tab, cs = CRENEAU_SPECS[tab], s = state.slots[tab];
@@ -10086,7 +10298,7 @@
         if (timeCol) cells.push('<input type="text" class="input" data-ef="time" placeholder="HH:mm" value="' + esc(e.time) + '" style="max-width:6rem">');
         if (antCol) cells.push('<select class="select" data-ef="antenne">' + antenneOptionsHtml(e.antenne) + '</select>');
         cells.push(capCol ? '<input type="text" inputmode="numeric" class="input" data-ef="cap" value="' + esc(e.cap) + '" style="max-width:5rem">' : String(booked));
-        if (etatCol) cells.push(esc(r[etatCol.id] || '—'));
+        if (etatCol) cells.push(slotEtatTag(r[etatCol.id]));
         cells.push('—');
         out += '<tr data-id="' + r.id + '"><td class="doc-actions" style="text-align:left">' + actionsCell + '</td>' + cells.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
         return;
@@ -10100,7 +10312,7 @@
       if (timeCol) cells2.push(esc(r[timeCol.id] || '—'));
       if (antCol) cells2.push(esc(r[antCol.id] || '—'));
       cells2.push(capCol ? (booked + ' / ' + (r[capCol.id] == null ? '—' : r[capCol.id])) : String(booked));
-      if (etatCol) cells2.push(esc(r[etatCol.id] || '—'));
+      if (etatCol) cells2.push(slotEtatTag(r[etatCol.id]));
       var proposed = toggleCol ? isYes(r[toggleCol.id]) : null;
       var toggleCell = toggleCol
         ? '<button type="button" class="tag ' + (proposed ? 'green' : 'grey') + '" style="border:0;cursor:pointer;font:inherit" data-sact="toggle" data-id="' + r.id + '" title="Cliquer pour ' + (proposed ? 'fermer' : 'proposer') + '" aria-label="' + (proposed ? 'Fermer ce créneau' : 'Proposer ce créneau') + '">' + (proposed ? 'Oui' : 'Non') + '</button>'
