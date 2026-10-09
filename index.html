@@ -645,7 +645,6 @@
   .legend-pop li { display: flex; align-items: center; gap: .6rem; margin: .35rem 0; }
   .legend-t { margin: 0 0 .4rem; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .04em; font-size: .75rem; }
   .legend-n { margin: .4rem 0 0; color: var(--muted); }
-  .lg-pending { background: color-mix(in srgb, var(--blue) 14%, var(--bg)) repeating-linear-gradient(135deg, rgba(206, 5, 0, .35) 0 3px, transparent 3px 7px); }
   .lg-sw { flex: none; width: 1.6rem; height: 1rem; border: 1px solid var(--border-default-grey); border-radius: 3px; }
   .toolbar.qf-hidden { display: none; }
   .toolbar .count { align-self: center; padding: 0; background: none; color: var(--muted); font-size: .8125rem; font-weight: 400; white-space: nowrap; }
@@ -892,6 +891,7 @@
   tbody tr.row-open { cursor: pointer; }
   tbody tr.row-miss { --rt: var(--blue); } /* teinte de la ligne : bleu (à compléter), orange (doublon), rouge (déjà ESR) */
   tbody tr.row-dup { --rt: #d64d00; }
+  tbody tr.row-pend:not(.row-off) { --rt: #d64d00; }
   tbody tr.row-esr { --rt: #ce0500; }
   tbody tr.row-miss > td { background: color-mix(in srgb, var(--rt) 7%, var(--bg)); }
   tbody tr.row-miss:hover > td, tbody tr.row-miss:focus-visible > td { background: color-mix(in srgb, var(--rt) 13%, var(--bg)); }
@@ -928,8 +928,8 @@
   /* Non employable : ligne atténuée, sauf les tags d'état rouges (Tir, VMP, Contrat) qui justifient la mention */
   tbody tr.row-off > td { background: var(--bg-alt); }
   tbody tr.row-off:hover > td, tbody tr.row-off:focus-within > td { background: color-mix(in srgb, var(--blue) 13%, var(--bg)); } /* au survol, la ligne se teinte comme celles à renseigner */
-  /* Filigrane rouge hachuré : VMP dépassée mais rendez-vous programmé (réserviste employable, nouvelle date à renseigner) */
-  tbody tr.row-pend > td, tbody tr.row-pend:hover > td, tbody tr.row-pend:focus-within > td { background-image: repeating-linear-gradient(135deg, rgba(206, 5, 0, .13) 0 5px, transparent 5px 11px); background-attachment: fixed; } /* trame continue d'une cellule à l'autre */
+  /* VMP dépassée mais rendez-vous programmé (réserviste employable, nouvelle date à renseigner) : ligne orangée, message orange */
+  tbody tr.row-pend:not(.row-off) .miss-hint { color: #b34000; }
   tbody tr.row-off .name-line > span:first-child, tbody tr.row-off .fr-tag:not(.st-tag.tag-c-red), tbody tr.row-off .tag-sep, tbody tr.row-off .miss-line { opacity: .5; }
   tbody tr.row-off:hover :is(.name-line > span:first-child, .fr-tag:not(.st-tag.tag-c-red), .tag-sep, .miss-line), tbody tr.row-off:focus-visible :is(.name-line > span:first-child, .fr-tag:not(.st-tag.tag-c-red), .tag-sep, .miss-line) { opacity: .85; }
   tbody tr.row-open:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
@@ -2178,7 +2178,7 @@
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.9.17</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.9.20</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -2533,7 +2533,12 @@
     for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
     return null;
   }
+  var FC_MEMO = {}; // recherche de colonne mémorisée (la normalisation des libellés coûtait cher, répétée pour chaque ligne)
   function findCol(table, key) {
+    var l = state.colsByTable[table] || [], m = FC_MEMO[table]; if (!m || m.src !== l) m = FC_MEMO[table] = { src: l, v: {} };
+    var ck = String(key); if (ck in m.v) return m.v[ck]; return (m.v[ck] = findColRaw(table, key));
+  }
+  function findColRaw(table, key) {
     var k = norm(key), l = state.colsByTable[table] || [];
     for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
     // Variantes courantes de nom (ex. « Code postal » enregistré sous « CP » dans la table).
@@ -5390,8 +5395,8 @@
   // FAQ proposée avant toute configuration (modifiable en back office, rubrique « FAQ »).
   var DEFAULT_FAQ = [
     { q: "Qu'est-ce que SERVIR ?", a: "**SERVIR** est le nom de l'outil : **S**uivi de l'**E**mploi, du **R**ecrutement, des **V**isites médicales et de l'**I**nstruction dans la **R**éserve.\n\nIl rassemble en une seule page, organisée en onglets :\n\n- le suivi des **candidats** à une PMG ou à l'acculturation ([Candidats](#go:pmg)) ;\n- le suivi des **réservistes** opérationnels, spécialistes et citoyens ([Réservistes](#go:res)), avec les demandes de [renouvellement](#go:res-ren) et d'[avenant](#go:res-ave) ;\n- la validation des **rendez-vous** VMP, VEMI et tests psychométriques ([Réservations](#go:rsv)) ;\n- les statistiques de la population ([réservistes](#go:res-stat) et [candidats](#go:pmg-stat)).\n\nChaque personne a une **fiche en fenêtre (modale)** : les informations y sont regroupées par onglets (identité, renseignements militaires, médico-statutaire, qualifications, documents), sans avoir à naviguer entre des colonnes." },
-    { q: "Que signifient les lignes colorées dans les listes ?", a: "Les lignes des listes se colorent pour attirer l'attention. **Passez la souris sur une ligne** : le motif s'affiche sur sa partie droite. La petite icône **i**, à gauche du compteur, rappelle la légende.\n\n**Page [Réservistes](#go:res)**\n\n- **Grisée** : réserviste **non employable**, c'est-à-dire dont **au moins une échéance est dépassée** (contrat, visite médicale (VMP), tir PA ou tir HK). Les étiquettes Tir, VMP ou Contrat qui en sont la cause restent en rouge. La fiche porte aussi le badge rouge **NON EMPLOYABLE** à côté du nom. Au survol, la ligne propose l'action adaptée à chaque échéance dépassée, d'un clic : **Demander le renouvellement du contrat** (ou, si une demande est déjà en cours, l'affichage de cette demande avec son état), **Réserver un créneau** ou **Mettre à jour l'échéance de VMP** (deux liens), **Mettre à jour la date de validité du tir**.\n- **Bleutée** : **informations essentielles manquantes** (affectation, grade, NID, Nigend, civilité ou une date d'expiration ; les dates d'expiration du tir HK et du PPE ne sont pas comptées). Une **VMP dépassée dont le rendez-vous est déjà programmé** (aujourd'hui ou plus tard) ne rend pas le réserviste non employable : il passe en « À renseigner » (Expiration VMP), sa ligne étant **hachurée en rouge**, jusqu'à la saisie de la nouvelle date. Au survol, chaque champ manquant est un lien : un clic ouvre la fiche sur le bon onglet, avec le champ prêt à être complété.\n\n**Page [Candidats](#go:pmg)**\n\n- **Bleue** : en attente de pièces.\n- **Orange** : doublon.\n- **Rouge** : déjà ESR.\n\nSi plusieurs motifs s'appliquent, la couleur la plus urgente l'emporte (rouge, puis orange, puis bleu). Pour n'afficher que certaines lignes, cliquez dans le champ de recherche : les **affichages rapides** (données manquantes, non employables, échéances proches…) s'y trouvent." },
-    { q: "Que signifient les étiquettes Tir, VMP et Contrat ?", a: "Le suivi des échéances est **visuel** : chaque étiquette résume l'état des dates du réserviste par une couleur.\n\n- **Rouge** : échéance dépassée.\n- **Orange** : échéance dans moins de 60 jours.\n- **Vert** : à jour.\n- **Gris** : date non renseignée.\n\nUne VMP dépassée dont le **rendez-vous est programmé** reste en rouge (la date est échue), mais la **ligne** du réserviste prend un **filigrane rouge hachuré** : il reste employable et la nouvelle date est attendue.\n\nLe tag **Tir** ne tient compte que de l'échéance du **tir PA** (le tir HK s'affiche dans la fiche mais n'influence pas le tag). Le détail (états et dates) se lit en passant la souris sur l'étiquette, et dans les onglets « Médico-statutaire » et « Qualifications » de la fiche." },
+    { q: "Que signifient les lignes colorées dans les listes ?", a: "Les lignes des listes se colorent pour attirer l'attention. **Passez la souris sur une ligne** : le motif s'affiche sur sa partie droite. La petite icône **i**, à gauche du compteur, rappelle la légende.\n\n**Page [Réservistes](#go:res)**\n\n- **Grisée** : réserviste **non employable**, c'est-à-dire dont **au moins une échéance est dépassée** (contrat, visite médicale (VMP), tir PA ou tir HK). Les étiquettes Tir, VMP ou Contrat qui en sont la cause restent en rouge. La fiche porte aussi le badge rouge **NON EMPLOYABLE** à côté du nom. Au survol, la ligne propose l'action adaptée à chaque échéance dépassée, d'un clic : **Demander le renouvellement du contrat** (ou, si une demande est déjà en cours, l'affichage de cette demande avec son état), **Réserver un créneau** ou **Mettre à jour l'échéance de VMP** (deux liens), **Mettre à jour la date de validité du tir**.\n- **Bleutée** : **informations essentielles manquantes** (affectation, grade, NID, Nigend, civilité ou une date d'expiration ; les dates d'expiration du tir HK et du PPE ne sont pas comptées). Une **VMP dépassée dont le rendez-vous est déjà programmé** (aujourd'hui ou plus tard) ne rend pas le réserviste non employable : il passe en « À renseigner » (Expiration VMP), sa ligne étant **orangée**, jusqu'à la saisie de la nouvelle date. Au survol, chaque champ manquant est un lien : un clic ouvre la fiche sur le bon onglet, avec le champ prêt à être complété.\n\n**Page [Candidats](#go:pmg)**\n\n- **Bleue** : en attente de pièces.\n- **Orange** : doublon.\n- **Rouge** : déjà ESR.\n\nSi plusieurs motifs s'appliquent, la couleur la plus urgente l'emporte (rouge, puis orange, puis bleu). Pour n'afficher que certaines lignes, cliquez dans le champ de recherche : les **affichages rapides** (données manquantes, non employables, échéances proches…) s'y trouvent." },
+    { q: "Que signifient les étiquettes Tir, VMP et Contrat ?", a: "Le suivi des échéances est **visuel** : chaque étiquette résume l'état des dates du réserviste par une couleur.\n\n- **Rouge** : échéance dépassée.\n- **Orange** : échéance dans moins de 60 jours.\n- **Vert** : à jour.\n- **Gris** : date non renseignée.\n\nUne VMP dépassée dont le **rendez-vous est programmé** reste en rouge (la date est échue), mais la **ligne** du réserviste prend une **teinte orangée** : il reste employable et la nouvelle date est attendue.\n\nLe tag **Tir** ne tient compte que de l'échéance du **tir PA** (le tir HK s'affiche dans la fiche mais n'influence pas le tag). Le détail (états et dates) se lit en passant la souris sur l'étiquette, et dans les onglets « Médico-statutaire » et « Qualifications » de la fiche." },
     { q: "Comment inscrire un ou plusieurs candidats ?", a: "Sur la page [Candidats](#go:pmg), bouton **Créer une candidature**, pour une PMG ou une acculturation. Seules quelques informations initiales sont nécessaires : les champs marqués d'un astérisque (nom, prénom, date de naissance, mail, numéro de candidature, groupement et **origine**, par exemple CIV, AM ou VCA). Tout le reste se complète ensuite **sur la fiche du candidat**.\n\nLa fenêtre propose deux onglets :\n\n- **Un candidat** : remplissez le formulaire.\n- **Plusieurs candidats (.csv)** : téléchargez d'abord le **modèle .csv**, complétez-le puis importez-le. Les dates s'écrivent JJ/MM/AAAA, la ligne d'exemple du modèle n'est pas importée, et les lignes en erreur sont listées avec leur numéro sans bloquer les autres.\n\nCôté pièces, celles versées dans l'onglet **Documents** sont automatiquement rattachées à la bonne rubrique lorsqu'elles sont nommées selon la nomenclature habituelle. Le widget signale aussi un **doublon** si la personne est déjà inscrite (voir la question suivante)." },
     { q: "Que faire en cas de doublon ou de candidat « Déjà ESR » ?", a: "**Doublon** : les deux fiches s'ouvrent **côte à côte**, les différences surlignées. Pour chaque champ, vous choisissez l'information à conserver (« Reprendre cette valeur »), puis la fiche à garder (la plus récente ou la plus ancienne) :\n\n1. **Synchroniser les informations** : les champs vides de la fiche conservée sont complétés et les pièces jointes regroupées.\n2. **Supprimer la fiche en trop**, directement et avec confirmation.\n\n**Déjà ESR** : le candidat est déjà réserviste. Son rapprochement se fait par NID, à défaut par numéro d'ESR, puis par Nigend, et la fiche du réserviste s'affiche à côté (sans être modifiée). Si aucun réserviste ne correspond, le message indique ce qui a été cherché. Vous choisissez ensuite de **supprimer** ou de **conserver** la candidature.\n\nUne fiche **non marquée** dont un homonyme existe (même NID, ou même identité et même date de naissance) affiche une alerte avec le bouton **Comparer les deux fiches**." },
     { q: "Comment suivre l'ancienneté d'une candidature ?", a: "Le **pied de la fiche** du candidat indique : « Candidature créée le … (depuis N jours) », puis « Mise à jour le … par … ». La mention **depuis N jours** ne concerne que les dossiers **en cours** (ni admis, ni rejetés, ni abandonnés) et passe en **orange** au-delà d'un seuil réglé en back office (21 jours par défaut, dans les options avancées de Candidats, rubrique « Suivi des candidatures »).\n\nLa **date de création** se corrige d'un clic sur la date (sauf si la colonne est calculée par une formule dans Grist) ; la date de mise à jour n'est pas modifiable.\n\nLa page [Statistiques des candidats](#go:pmg-stat) affiche l'**ancienneté moyenne** des dossiers en cours." },
@@ -6399,7 +6404,12 @@
 
   /* ---------- Configuration effective ---------- */
   function colMeta(table, id) { var l = state.colsByTable[table] || []; for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
+  var FC_MEMO = {}; // recherche de colonne mémorisée (la normalisation des libellés coûtait cher, répétée pour chaque ligne)
   function findCol(table, key) {
+    var l = state.colsByTable[table] || [], m = FC_MEMO[table]; if (!m || m.src !== l) m = FC_MEMO[table] = { src: l, v: {} };
+    var ck = String(key); if (ck in m.v) return m.v[ck]; return (m.v[ck] = findColRaw(table, key));
+  }
+  function findColRaw(table, key) {
     var k = norm(key), l = state.colsByTable[table] || [];
     for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
     // Variantes courantes de nom (ex. « Code postal » enregistré sous « CP » dans la table).
@@ -6408,7 +6418,7 @@
     return null;
   }
   var COL_ALIASES = { 'code postal': ['cp', 'codepostal', 'code_postal', 'code postal (cp)', 'cp (code postal)'], 'cp': ['code postal', 'codepostal', 'code_postal'] };
-  function displayLabel(col) { return DISPLAY_LABELS[norm(col.label)] || DISPLAY_LABELS[norm(col.id)] || col.label; }
+  function displayLabel(col) { if (col.__dl === undefined) col.__dl = DISPLAY_LABELS[norm(col.label)] || DISPLAY_LABELS[norm(col.id)] || col.label; return col.__dl; }
   function colLabel(c) { return c.label + ' (' + c.id + ') · ' + typeFr(c.type); }
   function defaultTabs(table) {
     var out = {};
@@ -6514,7 +6524,9 @@
     return withTime ? s + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : s;
   }
   function todaySec() { return Math.floor(Date.now() / 86400000) * 86400; }
-  function isExpCol(col) { return /^exp\./.test(norm(col.label)) && typeBase(col.type) === 'Date'; }
+  function isExpCol(col) { if (col.__exp === undefined) col.__exp = /^exp\./.test(norm(col.label)) && typeBase(col.type) === 'Date'; return col.__exp; }
+  var EXPC_MEMO = {}; // colonnes d'échéance d'une table (calculées une seule fois, pas pour chaque ligne)
+  function expCols(c) { var l = state.colsByTable[c.table] || [], m = EXPC_MEMO[c.table]; if (!m || m.src !== l) m = EXPC_MEMO[c.table] = { src: l, list: l.filter(isExpCol) }; return m.list; }
   // Statut d'une date d'expiration : 'expired', 'soon' (moins de 60 jours) ou ''.
   function expiryState(v) {
     if (typeof v !== 'number') return '';
@@ -6523,23 +6535,24 @@
   }
   function soonLabels(raw, c) { // échéances proches (moins de SOON_DAYS jours)
     var out = [];
-    (state.colsByTable[c.table] || []).forEach(function (col) { if (isExpCol(col) && expiryState(raw[col.id]) === 'soon') out.push(displayLabel(col)); });
+    expCols(c).forEach(function (col) { if (expiryState(raw[col.id]) === 'soon') out.push(displayLabel(col)); });
     return out;
   }
   // Rendez-vous VMP programmé (aujourd'hui ou plus tard) : la VMP dépassée ne rend pas le réserviste non employable ; il attend la nouvelle date (donnée à renseigner).
   function vmpRdv(raw, c) {
-    var ng = findCol(c.table, 'Nigend'), info = ng && raw[ng.id] != null && window.RSV && window.RSV.vmpInfo ? window.RSV.vmpInfo(raw[ng.id]) : null;
-    return info && info.when != null && info.when >= todaySec() ? info : null;
+    var ng = findCol(c.table, 'Nigend'); if (!ng || raw[ng.id] == null || !window.RSV || !window.RSV.vmpRdvMap) return null;
+    var m = window.RSV.vmpRdvMap(), w = m ? m[norm(String(raw[ng.id]))] : null;
+    return w != null && w >= todaySec() ? { when: w } : null;
   }
   function vmpPending(raw, c) { // VMP dépassée mais rendez-vous programmé
     var def = STATUS_DEFS.filter(function (d) { return d.name === 'VMP'; })[0];
     return !!(def && statusOfDef(raw, c, def).pending);
   }
-  function isVmpCol(col) { return /\bvmp\b/.test(norm(col.label + ' ' + displayLabel(col))); }
+  function isVmpCol(col) { if (col.__vmp === undefined) col.__vmp = /\bvmp\b/.test(norm(col.label + ' ' + displayLabel(col))); return col.__vmp; }
   function expiredLabels(raw, c) {
     var out = [], rdv = null, rdvDone = false;
-    (state.colsByTable[c.table] || []).forEach(function (col) {
-      if (!isExpCol(col) || expiryState(raw[col.id]) !== 'expired') return;
+    expCols(c).forEach(function (col) {
+      if (expiryState(raw[col.id]) !== 'expired') return;
       if (isVmpCol(col)) { if (!rdvDone) { rdv = vmpRdv(raw, c); rdvDone = true; } if (rdv) return; }
       out.push(displayLabel(col));
     });
@@ -6642,14 +6655,17 @@
     if (savedUi.sortDir === 1 || savedUi.sortDir === -1) state.sortDir = savedUi.sortDir;
   }
   var MISSING_LABELS = ['Affectation', 'Grade', 'NID', 'Nigend', 'Civilité'];
+  var EXPECT_MEMO = {};
   function expectedCols(c) { // colonnes dont l'absence de valeur compte comme « donnée manquante »
-    var cols = MISSING_LABELS.map(function (l) { return findCol(c.table, l); }).filter(Boolean);
-    (state.colsByTable[c.table] || []).filter(isExpCol).forEach(function (col) { if (cols.indexOf(col) === -1 && !/\bppe\b|\bhk\b/.test(norm(col.label + ' ' + displayLabel(col)))) cols.push(col); });
+    var l = state.colsByTable[c.table] || [], m = EXPECT_MEMO[c.table]; if (m && m.src === l) return m.list;
+    var cols = MISSING_LABELS.map(function (x) { return findCol(c.table, x); }).filter(Boolean);
+    expCols(c).forEach(function (col) { if (cols.indexOf(col) === -1 && !/\bppe\b|\bhk\b/.test(norm(col.label + ' ' + displayLabel(col)))) cols.push(col); });
+    EXPECT_MEMO[c.table] = { src: l, list: cols };
     return cols;
   }
   function missingColsOf(raw, c) {
     var out = expectedCols(c).filter(function (col) { var v = raw[col.id]; return emptyVal(v) || (typeof v === 'string' && !v.trim()); });
-    var vc = (state.colsByTable[c.table] || []).filter(function (col) { return isExpCol(col) && isVmpCol(col) && expiryState(raw[col.id]) === 'expired'; })[0];
+    var vc = expCols(c).filter(function (col) { return isVmpCol(col) && expiryState(raw[col.id]) === 'expired'; })[0];
     if (vc && out.indexOf(vc) === -1 && vmpRdv(raw, c)) out.push(vc); // VMP dépassée mais rendez-vous programmé : en attente de la nouvelle date
     return out;
   }
@@ -6888,10 +6904,10 @@
     $('count').textContent = list.length + (list.length > 1 ? ' réservistes' : ' réserviste') + (list.length !== all.length ? ' sur ' + all.length : '');
     $('rows').innerHTML = list.map(function (r, i) {
       var off = expiredLabels(r.raw, c); // non employable : ligne grisée (au lieu d'un badge), mention « Non employable » au survol
-      var miss = missingFields(r.raw, c); // informations essentielles manquantes : ligne mise en évidence
-      var missCols = missingColsOf(r.raw, c), pend = vmpPending(r.raw, c); // pend : ligne hachurée en rouge (filigrane)
+      var missCols = missingColsOf(r.raw, c), miss = missCols.map(displayLabel); // informations essentielles manquantes : ligne mise en évidence
+      var pend = vmpPending(r.raw, c); // pend : ligne hachurée en rouge (filigrane)
       return '<tr class="row-open' + (off.length ? ' row-off' : '') + (miss.length ? ' row-miss' : '') + (pend ? ' row-pend' : '') + '" tabindex="0" data-i="' + i + '"' + '' + ' aria-label="Ouvrir la fiche de ' + esc(r.id ? formatName(r.id) : 'ce réserviste') + (off.length ? ' (non employable)' : '') + (miss.length ? ' (informations manquantes)' : '') + '"><td class="sel"><input type="checkbox" data-sel="' + r.raw.id + '"' + (sel[r.raw.id] ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(r.id ? formatName(r.id) : 'ce réserviste') + '"></td><td class="name"><div class="name-line"><span>' + (r.id ? esc(formatName(r.id)) : '—') + '</span>' +
-        rowTags(r, c) + '</div>' + (quick.missing ? '<div class="miss-line">À renseigner : ' + esc(miss.join(', ')) + '</div>' : '') + '</td><td class="end">' + ((off.length || miss.length) ? '<span class="miss-hint">' + (off.length ? '<strong class="off-hint">Non employable</strong>' + offActionsHtml(r, c, i) : '') + (off.length && miss.length ? ' · ' : '') + (miss.length ? 'À renseigner : ' + missCols.map(function (col) { return '<button type="button" class="miss-link" data-miss-col="' + esc(col.id) + '" data-miss-i="' + i + '" title="Compléter ce champ dans la fiche">' + esc(displayLabel(col)) + '</button>'; }).join(', ') : '') + '</span>' : '') + '</td></tr>';
+        rowTags(r, c) + '</div>' + (quick.missing ? '<div class="miss-line">À renseigner : ' + esc(miss.join(', ')) + '</div>' : '') + '</td><td class="end">' + ((off.length || miss.length) ? '<span class="miss-hint">' + (off.length ? '<strong class="off-hint">Non employable</strong>' + offActionsHtml(r, c, i) : '') + (miss.length && !off.length ? 'À renseigner : ' + missCols.map(function (col) { return '<button type="button" class="miss-link" data-miss-col="' + esc(col.id) + '" data-miss-i="' + i + '" title="Compléter ce champ dans la fiche">' + esc(displayLabel(col)) + '</button>'; }).join(', ') : '') + '</span>' : '') + '</td></tr>';
     }).join('');
     syncSel();
 
@@ -11616,6 +11632,18 @@
   }
   function bookVmpFor(personId, key) { return bookFor('vmp', personId, key); }
   // Dernière réservation VMP d'un réserviste (par Nigend) et état des deux confirmations (réserviste, antenne médicale).
+  // Dernier rendez-vous VMP de chaque réserviste (Nigend normalisé → date en secondes) : table recalculée seulement quand les réservations changent.
+  var rdvCache = { src: null, map: null };
+  function vmpRdvMap() {
+    var d = state.data.vmp; if (!d) return null;
+    if (rdvCache.src === d.rows) return rdvCache.map;
+    var kc = findCol(d.cols, SPECS.vmp.key), dc = findCol(d.cols, 'Date'), best = {}, map = {};
+    if (kc && dc) {
+      d.rows.forEach(function (r) { var k = norm(String(r[kc.id] == null ? '' : r[kc.id])); if (k && (!best[k] || r.id > best[k].id)) best[k] = r; });
+      Object.keys(best).forEach(function (k) { var v = best[k][dc.id]; map[k] = typeof v === 'number' ? v : null; });
+    }
+    rdvCache = { src: d.rows, map: map }; return map;
+  }
   function vmpInfo(nigend) {
     var d = state.data.vmp, spec = SPECS.vmp; if (!d || nigend == null || nigend === '') return null;
     var kc = findCol(d.cols, spec.key); if (!kc) return null;
@@ -11947,7 +11975,7 @@
     saveAdmin: saveAdmin, cancelAdmin: cancelAdmin,            // enregistrement global du back office (tables et modèles de courriels communs)
     setOpts: function (o) { state.opts = o || {}; },
     // Réservation VMP depuis la fiche d'un réserviste (page Réservistes)
-    bookVmp: bookVmpFor, bookFor: bookFor, vmpInfo: vmpInfo, sendVmp: sendVmpFor, inviteNigend: inviteNigend, prepareGroup: prepareGroup, prepareGroupCand: prepareGroupCand, inviteCand: inviteCand, openGroup: openGroup, lastMsg: function () { return state.msg; }, onChange: null
+    bookVmp: bookVmpFor, bookFor: bookFor, vmpInfo: vmpInfo, sendVmp: sendVmpFor, inviteNigend: inviteNigend, vmpRdvMap: vmpRdvMap, prepareGroup: prepareGroup, prepareGroupCand: prepareGroupCand, inviteCand: inviteCand, openGroup: openGroup, lastMsg: function () { return state.msg; }, onChange: null
   };
   if (!IN_GRIST) { $('demo').hidden = false; load(); }
 })();
@@ -11980,7 +12008,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     'r-count': { title: 'Couleurs de la liste', items: [
       [sw('var(--bg-alt)'), '<strong>Grisé</strong> : non employable (au moins une échéance dépassée, tags en rouge)'],
       [sw(tint('var(--blue)')), '<strong>Bleuté</strong> : informations essentielles manquantes'],
-      ['<span class="lg-sw lg-pending"></span>', '<strong>Hachurée en rouge</strong> : VMP dépassée mais rendez-vous programmé (le réserviste reste employable ; nouvelle date à renseigner)']
+      [sw(tint('#d64d00')), '<strong>Orangée</strong> : VMP dépassée mais rendez-vous programmé (le réserviste reste employable ; nouvelle date à renseigner)']
     ], notes: ['Le motif s’affiche à droite de la ligne au survol ; un clic sur un champ manquant ouvre la fiche pour le compléter, et un non employable propose l’action adaptée (renouveler le contrat, réserver ou mettre à jour la VMP, mettre à jour le tir).', 'Cochez des lignes pour exporter, mettre à jour en bloc ou relancer pour la VMP.'] }
   };
   Object.keys(LEGENDS).forEach(function (id) {
