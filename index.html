@@ -605,7 +605,7 @@
   .sp-tag { cursor: pointer; }
   /* Les filtres ne se règlent plus que depuis le champ de recherche (panneau de suggestions) : les contrôles d'origine restent dans la page, masqués, car le panneau les pilote. */
   #flt-status-wrap, #flt-pmg-wrap, #btn-filters, #flt-reset, #r-flt-a-wrap, #r-flt-b-wrap, #r-btn-filters, #r-flt-reset, #page-res .qf,
-  #r-v-ren-fst-wrap, #r-v-ren-freset, #r-v-ave-fst-wrap, #r-v-ave-freset, #page-rsv .toolbar > .tb-field:not(.tb-search) { display: none !important; }
+  #r-v-ren-fst-wrap, #r-v-ren-freset, #r-v-ave-fst-wrap, #r-v-ave-fty-wrap, #r-v-ave-freset, #page-rsv .toolbar > .tb-field:not(.tb-search) { display: none !important; }
   .sp-close:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .toolbar .tb-search .fr-search-bar { max-width: 100%; } /* champ de recherche du système de design (comme info.gouv.fr) : champ grisé, trait bleu, bouton loupe accolé */
   .toolbar .btn { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
@@ -904,6 +904,19 @@
   tbody tr:hover td.sel input, tbody tr:focus-within td.sel input, thead:hover th.sel input, table.has-sel .sel input, .sel input:focus-visible { opacity: 1; }
   .toolbar.selbar { margin: 0; padding: .3rem .75rem; align-items: center; gap: .35rem; border: 0; border-bottom: 1px solid var(--border-default-grey); border-radius: 0; background: color-mix(in srgb, var(--blue) 8%, var(--bg)); }
   .toolbar.selbar[hidden] { display: none; }
+  .modal-column.is-wide { width: min(90rem, 100%); }
+  .adm-common { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .75rem; align-items: end; }
+  .adm-table th, .adm-table td { vertical-align: top; }
+  .adm-table .input, .adm-table .select { min-width: 8rem; }
+  .adm-files .adm-f { display: block; font-size: .8125rem; overflow-wrap: anywhere; }
+  .adm-st { font-size: .8125rem; font-weight: 600; }
+  .adm-st.is-todo { color: #b34000; } .adm-st.is-ok { color: #18753c; }
+  .adm-flist { list-style: none; margin: .75rem 0 0; padding: 0; }
+  .adm-flist li { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .3rem 0; }
+  .adm-flist li.is-warn .hint { color: #b34000; }
+  .adm-fn { overflow-wrap: anywhere; }
+  .adm-summary { margin: 1rem 0 0; font-size: .875rem; color: #b34000; }
+  .adm-summary.is-ok { color: #18753c; font-weight: 600; }
   .inv-type { margin: 0 0 1rem; padding: 0; border: 0; }
   .inv-type legend { padding: 0; margin-bottom: .4rem; font-size: .8125rem; color: var(--muted); }
   .inv-type .bulk-mode { margin-right: 1.25rem; }
@@ -913,6 +926,11 @@
   .miss-link:hover, .miss-link:focus-visible { text-decoration: underline solid; }
   .miss-link:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
   tbody tr.row-miss:hover .miss-hint, tbody tr.row-miss:focus-within .miss-hint, tbody tr.row-off:hover .miss-hint, tbody tr.row-off:focus-within .miss-hint { pointer-events: auto; }
+  .btn.btn-ok { background: #18753c; border-color: #18753c; }
+  .btn.btn-ok:hover:not(:disabled) { background: #0f5a2b; border-color: #0f5a2b; }
+  .sgn-prints { list-style: none; margin: 0; padding: 0; }
+  .sgn-prints li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin: .4rem 0; }
+  .sgn-pn { min-width: 0; overflow-wrap: anywhere; }
   .age-btn { all: unset; cursor: pointer; font-size: .8125rem; color: var(--muted); border-bottom: 1px dotted currentColor; white-space: nowrap; }
   .age-btn:hover { color: var(--blue); }
   .age-since.is-late { color: #b34000; font-weight: 600; }
@@ -2150,7 +2168,7 @@
       <div class="modal-header">
         <div style="min-width:0">
           <h2 class="modal-title" id="bmodal-title">Mettre à jour en bloc</h2>
-          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois — un Nigend par ligne.</p>
+          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois, ou les admet dans la réserve — un identifiant par ligne.</p>
         </div>
         <div class="modal-actions"><button class="round-btn" id="bmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
@@ -2178,7 +2196,7 @@
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.9.20</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.10.3</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -2480,7 +2498,7 @@
     createRow: function (table, fields) { return grist.getTable(table).create({ fields: fields }).then(function (r) { return newRowId(r); }); }
   } : {
     listTables: function () { return Promise.resolve(Object.keys(DEMO_TABLES)); },
-    listColumns: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.cols : t === 'Antennes_medicales' ? DEMO_ANTENNES.cols : t === 'Reservistes_RO1_RS_RC' ? [{ id: 'NOM', label: 'NOM', type: 'Text' }, { id: 'Prenom', label: 'Prénom', type: 'Text' }, { id: 'Nigend', label: 'Nigend', type: 'Text' }, { id: 'NID', label: 'NID', type: 'Text' }, { id: 'Grade', label: 'Grade', type: 'Choice', choices: ['BRI', 'GAV', 'MDC', 'ADJ', 'MAJ'] }, { id: 'PJ', label: 'PJ', type: 'Attachments' }, { id: 'Nom_PJ', label: 'Nom PJ', type: 'Text' }] : [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }]); },
+    listColumns: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.cols : t === 'Antennes_medicales' ? DEMO_ANTENNES.cols : t === 'Reservistes_RO1_RS_RC' ? [{ id: 'NOM', label: 'NOM', type: 'Text' }, { id: 'Prenom', label: 'Prénom', type: 'Text' }, { id: 'Nigend', label: 'Nigend', type: 'Text' }, { id: 'NID', label: 'NID', type: 'Text' }, { id: 'Grade', label: 'Grade', type: 'Choice', choices: ['BRI', 'GAV', 'MDC', 'ADJ', 'MAJ'] }, { id: 'PJ', label: 'PJ', type: 'Attachments' }, { id: 'Nom_PJ', label: 'Nom PJ', type: 'Text' }, { id: 'N_ESR', label: 'N° ESR', type: 'Text' }, { id: 'Exp_contrat', label: 'Exp. contrat', type: 'Date' }, { id: 'Exp_tir_PA', label: 'Exp. tir PA', type: 'Date' }, { id: 'Qualite_jud', label: 'Qualité jud', type: 'Choice', choices: ['OPJ', 'APJ', 'Sans'] }] : [{ id: 'Nom', label: 'Nom', type: 'Text' }, { id: 'Etat', label: 'État', type: 'Choice' }]); },
     fetchRows: function (t) { return Promise.resolve(t === 'Candidats_PMG' ? DEMO.rows : t === 'Antennes_medicales' ? DEMO_ANTENNES.rows : []); },
     saveOptions: function () { return Promise.resolve(); },
     attachmentsMeta: function () { return Promise.resolve(JSON.parse(JSON.stringify(DEMO_ATT))); },
@@ -5079,7 +5097,7 @@
   }
   function openBulk(fromSel) { // true : la liste est préremplie avec les candidats sélectionnés (N° de candidature, à défaut NID)
     var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
-    state.bulk = { mode: 'psy', psyResult: '', psyDate: '', vemiResult: '', vemiDate: '', vemiValidity: '', nigends: '', busy: false, error: '', warn: '', confirm: false, result: null };
+    state.bulk = { mode: 'psy', psyResult: '', psyDate: '', vemiResult: '', vemiDate: '', vemiValidity: '', nigends: '', busy: false, error: '', warn: '', confirm: false, result: null, adm: null };
     if (fromSel === true) {
       var ids = selItems().map(function (it) { var k = invEntry(it); return k.cand || k.nid; }), ok = ids.filter(Boolean);
       state.bulk.nigends = ok.join('\n');
@@ -5098,10 +5116,11 @@
   }
   function renderBulkForm() {
     var c = cfg(), b = state.bulk; if (!b) return;
+    $('bmodal').querySelector('.modal-column').classList.toggle('is-wide', b.mode === 'adm' && !b.result); // tableau d'admission : fenêtre élargie
     if (b.result) {
       $('bmodal-form').innerHTML =
         '<div class="doc-alert ' + (b.result.failed.length ? 'error' : 'success') + '" role="' + (b.result.failed.length ? 'alert' : 'status') + '"><p>' +
-        esc(b.result.ok + ' candidat' + (b.result.ok > 1 ? 's' : '') + ' mis à jour (' + b.result.summary + ')' +
+        esc(b.result.ok + ' candidat' + (b.result.ok > 1 ? 's' : '') + (b.result.admit ? (b.result.ok > 1 ? ' admis' : ' admis') + ' dans la réserve' : ' mis à jour (' + b.result.summary + ')') +
           (b.result.failed.length ? ' · ' + b.result.failed.length + ' échec' + (b.result.failed.length > 1 ? 's' : '') + ' : ' +
             b.result.failed.map(function (f) { return f.nigend + ' (' + f.error + ')'; }).join(', ') : '') + '.') + '</p></div>' +
         '<div class="cf-actions"><button type="button" class="btn" id="bf-close2">Fermer</button><button type="button" class="btn secondary" id="bf-again">Nouvelle mise à jour</button></div>';
@@ -5113,7 +5132,10 @@
     html += '<section class="cf-section"><h3>Que mettre à jour</h3><div class="bulk-modes" role="radiogroup" aria-label="Que mettre à jour">' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="psy"' + (b.mode === 'psy' ? ' checked' : '') + '> Résultats des tests psychométriques</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="vemi"' + (b.mode === 'vemi' ? ' checked' : '') + '> Résultats de la VEMI</label>' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="adm"' + (b.mode === 'adm' ? ' checked' : '') + '> Admettre dans la réserve</label>' +
       '</div></section>';
+
+    if (b.mode === 'adm') { html += admFormHtml(c, b); $('bmodal-form').innerHTML = html; admRefreshUi(); return; }
 
     if (b.mode === 'psy') {
       var resCol = findCol(c.table, 'Tests psy');
@@ -5138,6 +5160,7 @@
   }
   function submitBulk() {
     var c = cfg(), b = state.bulk; if (!b || b.busy) return;
+    if (b.mode === 'adm') { submitAdm(); return; }
     var list = parseNigendList(b.nigends);
     if (!list.length) { b.error = 'Indiquez au moins un N° de candidature ou NID.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
 
@@ -5184,6 +5207,201 @@
     var b = state.bulk, k = el.getAttribute && el.getAttribute('data-bulk'); if (!b || !k) return;
     b[k] = el.value; b.error = ''; b.warn = ''; b.confirm = false; b.result = null;
   }
+  /* ----- Admettre dans la réserve (en lots) : une ligne par candidat, tous les contrats versés d'un coup ----- */
+  var ADM_GRADE = 'BRI';
+  function admResTable() { return window.RES && window.RES.table ? window.RES.table() : ''; }
+  function admInit(b) {
+    if (b.adm) return;
+    b.adm = { rows: {}, common: { grade: ADM_GRADE, contrat: '', tir: '', qual: '' }, files: [], choices: { grade: null, qual: null }, progress: null };
+    var rt = admResTable(); if (!rt) return;
+    Promise.resolve(state.colsByTable[rt] || api.listColumns(rt).then(function (cols) { state.colsByTable[rt] = cols; return cols; })).then(function () {
+      var g = findCol(rt, 'Grade'), q = findCol(rt, 'Qualité jud');
+      b.adm.choices.grade = g && g.choices && g.choices.length ? g.choices.slice() : null; b.adm.choices.qual = q && q.choices && q.choices.length ? q.choices.slice() : null;
+      if (state.bulk === b && b.mode === 'adm' && !b.busy && !b.result) renderBulkForm();
+    }).catch(function () {});
+  }
+  // Candidats concernés (identifiants saisis ou sélectionnés) avec leur ligne de saisie ; Nigend et N° ESR repris de la candidature s'ils existent.
+  function admCandidates(c, b) {
+    var m = matchByIdentifier(c, parseNigendList(b.nigends)), ng = findCol(c.table, 'Nigend'), esr = findCol(c.table, 'N° ESR'), rows = [], seen = {};
+    m.matched.forEach(function (it) {
+      var id = it.rec.raw.id; if (seen[id]) return; seen[id] = true;
+      var st = b.adm.rows[id]; if (!st) st = b.adm.rows[id] = { nigend: ng && it.rec.raw[ng.id] != null ? String(it.rec.raw[ng.id]).trim() : '', esr: esr && it.rec.raw[esr.id] != null ? String(it.rec.raw[esr.id]).trim() : '', grade: b.adm.common.grade, contrat: '', tir: '', qual: '' };
+      rows.push({ id: id, rec: it.rec, st: st });
+    });
+    return { rows: rows, notFound: m.notFound };
+  }
+  // Un contrat est reconnu par le Nigend qui figure dans le nom du fichier (mots entiers : « 2019-1120 » dans « ESR_2019-1120_Perrin.pdf »).
+  function admTok(t) { return ' ' + String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim() + ' '; }
+  function admMatch(rows, files) {
+    var byRow = {}, byFile = files.map(function (f) {
+      var ft = admTok(String(f.name).replace(/\.[^.]*$/, '')), hit = [];
+      rows.forEach(function (r) { var nt = admTok(r.st.nigend); if (nt.trim() && ft.indexOf(nt) !== -1) hit.push(r.id); });
+      hit.forEach(function (id) { (byRow[id] = byRow[id] || []).push(f); });
+      return { file: f, rows: hit };
+    });
+    return { byRow: byRow, byFile: byFile };
+  }
+  function admProblems(c, b) {
+    var cand = admCandidates(c, b), rows = cand.rows, mt = admMatch(rows, b.adm.files), glob = [], rowPb = {}, seenE = {}, seenN = {};
+    function add(id, msg) { var a = rowPb[id] = rowPb[id] || []; if (a.indexOf(msg) === -1) a.push(msg); }
+    if (!rows.length) glob.push('Indiquez au moins un candidat.');
+    rows.forEach(function (r) {
+      var s = r.st;
+      if (!s.nigend.trim()) add(r.id, 'Nigend'); if (!s.esr.trim()) add(r.id, 'N° ESR'); if (!s.grade.trim()) add(r.id, 'grade');
+      if (!s.contrat) add(r.id, 'échéance contrat'); // l'échéance du tir PA est facultative
+      var ke = norm(s.esr); if (ke) { if (seenE[ke]) { add(r.id, 'N° ESR en double'); add(seenE[ke], 'N° ESR en double'); } else seenE[ke] = r.id; }
+      var kn = norm(s.nigend); if (kn) { if (seenN[kn]) { add(r.id, 'Nigend en double'); add(seenN[kn], 'Nigend en double'); } else seenN[kn] = r.id; }
+      if (!(mt.byRow[r.id] || []).length) add(r.id, 'contrat à verser');
+    });
+    mt.byFile.forEach(function (x) { if (x.rows.length > 1) glob.push('Le fichier « ' + x.file.name + ' » correspond à plusieurs Nigend.'); });
+    return { rows: rows, notFound: cand.notFound, mt: mt, rowPb: rowPb, glob: glob, ok: rows.length > 0 && !Object.keys(rowPb).length && !glob.length };
+  }
+  function admFormHtml(c, b) {
+    var A = b.adm; if (!A) { admInit(b); A = b.adm; }
+    var P = admProblems(c, b), rt = admResTable();
+    function sel(opts, val, attr, aria) {
+      return opts ? '<select class="select" ' + attr + ' aria-label="' + esc(aria) + '"><option value=""></option>' + opts.concat(val && opts.indexOf(val) === -1 ? [val] : []).map(function (o) { return '<option value="' + esc(o) + '"' + (o === val ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>'
+        : '<input class="input" type="text" ' + attr + ' value="' + esc(val) + '" aria-label="' + esc(aria) + '" autocomplete="off">';
+    }
+    var h = (!rt ? '<div class="doc-alert error" role="alert"><p>Table des réservistes non configurée (back office) : l’admission est impossible.</p></div>' : '');
+    h += '<section class="cf-section"><h3>Candidats concernés</h3><div class="cf-field"><label for="bf-nigends">Par N° de candidature ou NID<span class="req" aria-hidden="true">*</span> — un par ligne</label>' +
+      '<textarea class="textarea" id="bf-nigends" data-bulk="nigends" rows="3" placeholder="PMG-2026-0451&#10;1042871">' + esc(b.nigends) + '</textarea></div>' +
+      (P.notFound.length ? '<p class="hint">Introuvable : ' + esc(P.notFound.join(', ')) + '.</p>' : '') + '</section>';
+    if (P.rows.length) {
+      h += '<section class="cf-section"><h3>Valeurs communes</h3><p class="hint">Facultatif : renseigne d’un coup les champs identiques pour tous (le N° ESR est propre à chaque candidat).</p><div class="adm-common">' +
+        '<div class="cf-field"><label for="adm-all-grade">Grade</label>' + sel(A.choices.grade, A.common.grade, 'id="adm-all-grade" data-admall="grade"', 'Grade pour tous') + '</div>' +
+        '<div class="cf-field"><label for="adm-all-contrat">Échéance contrat</label><input class="input" type="date" id="adm-all-contrat" data-admall="contrat" value="' + esc(A.common.contrat) + '"></div>' +
+        '<div class="cf-field"><label for="adm-all-tir">Échéance tir PA</label><input class="input" type="date" id="adm-all-tir" data-admall="tir" value="' + esc(A.common.tir) + '"></div>' +
+        '<div class="cf-field"><label for="adm-all-qual">Qualité judiciaire</label>' + sel(A.choices.qual, A.common.qual, 'id="adm-all-qual" data-admall="qual"', 'Qualité judiciaire pour tous') + '</div>' +
+        '<div class="cf-field adm-fill"><button type="button" class="btn secondary sm" id="adm-fill">Appliquer à tous</button></div></div></section>';
+      h += '<section class="cf-section"><h3>Informations de chaque candidat</h3><div class="table-wrap"><table class="doc-table adm-table"><caption class="fr-sr-only">Candidats à admettre dans la réserve</caption><thead><tr>' +
+        '<th scope="col">Candidat</th><th scope="col">Nigend<span class="req" aria-hidden="true">*</span></th><th scope="col">N° ESR<span class="req" aria-hidden="true">*</span></th><th scope="col">Grade<span class="req" aria-hidden="true">*</span></th>' +
+        '<th scope="col">Échéance contrat<span class="req" aria-hidden="true">*</span></th><th scope="col">Échéance tir PA</th><th scope="col">Qualité judiciaire</th><th scope="col">Contrat · état</th></tr></thead><tbody>' +
+        P.rows.map(function (r) {
+          var s = r.st, d = 'data-adm="' + r.id + '|';
+          return '<tr><th scope="row">' + esc(r.rec.identity ? formatName(r.rec.identity) : '—') + '</th>' +
+            '<td><input class="input" type="text" ' + d + 'nigend" value="' + esc(s.nigend) + '" aria-label="Nigend" autocomplete="off" inputmode="numeric"></td>' +
+            '<td><input class="input" type="text" ' + d + 'esr" value="' + esc(s.esr) + '" aria-label="N° ESR" autocomplete="off"></td>' +
+            '<td>' + sel(A.choices.grade, s.grade, d + 'grade"', 'Grade') + '</td>' +
+            '<td><input class="input" type="date" ' + d + 'contrat" value="' + esc(s.contrat) + '" aria-label="Échéance contrat"></td>' +
+            '<td><input class="input" type="date" ' + d + 'tir" value="' + esc(s.tir) + '" aria-label="Échéance tir PA"></td>' +
+            '<td>' + sel(A.choices.qual, s.qual, d + 'qual"', 'Qualité judiciaire') + '</td>' +
+            '<td><div id="adm-files-' + r.id + '" class="adm-files"></div><div id="adm-st-' + r.id + '" class="adm-st"></div></td></tr>';
+        }).join('') + '</tbody></table></div></section>';
+      h += '<section class="cf-section"><h3>Contrats signés<span class="req" aria-hidden="true">*</span></h3><p class="hint">Déposez tous les contrats : chaque fichier est rattaché au candidat dont le <strong>Nigend figure dans le nom du fichier</strong>. Ils seront versés dans les documents de sa fiche réserviste.</p>' +
+        '<div class="doc-drop doc-drop--sm" id="adm-drop" role="button" tabindex="0" aria-label="Déposer les contrats signés : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD + '<p><strong>Glissez-déposez les contrats ici</strong><br>ou cliquez pour parcourir (plusieurs fichiers)</p></div>' +
+        '<ul class="adm-flist" id="adm-flist"></ul></section>';
+    }
+    h += '<div id="adm-summary" class="adm-summary" aria-live="polite"></div>' +
+      (A.progress ? '<p class="hint" role="status" id="adm-progress">' + esc('Admission de ' + A.progress.name + ' (' + A.progress.i + '/' + A.progress.n + ')…') + '</p>' : '') +
+      '<div class="cf-actions"><button type="submit" class="btn' + (b.confirm ? ' danger' : '') + '" id="adm-submit"' + (b.busy ? ' disabled' : '') + '>' + (b.busy ? 'Admission…' : (b.confirm ? 'Confirmer l’admission' : 'Admettre dans la réserve')) + '</button>' +
+      '<button type="button" class="btn secondary" id="bf-cancel"' + (b.busy ? ' disabled' : '') + '>Annuler</button></div>';
+    return h;
+  }
+  // Met à jour, sans redessiner (le focus est conservé), l'état de chaque ligne, la liste des fichiers et le bouton de validation.
+  function admRefreshUi() {
+    var b = state.bulk; if (!b || b.mode !== 'adm' || !b.adm || b.result) return;
+    var c = cfg(), P = admProblems(c, b);
+    P.rows.forEach(function (r) {
+      var st = $('adm-st-' + r.id), fl = $('adm-files-' + r.id), pb = P.rowPb[r.id] || [], files = P.mt.byRow[r.id] || [];
+      if (st) { st.textContent = pb.length ? 'À compléter : ' + pb.join(', ') : '✓ Complet'; st.className = 'adm-st ' + (pb.length ? 'is-todo' : 'is-ok'); }
+      if (fl) fl.innerHTML = files.map(function (f) { return '<span class="adm-f">' + esc(f.name) + '</span>'; }).join('');
+    });
+    var ul = $('adm-flist');
+    if (ul) ul.innerHTML = P.mt.byFile.map(function (x, i) {
+      var who = x.rows.length === 1 ? '→ ' + esc((P.rows.filter(function (r) { return r.id === x.rows[0]; })[0].rec.identity ? formatName(P.rows.filter(function (r) { return r.id === x.rows[0]; })[0].rec.identity) : '')) : (x.rows.length > 1 ? '⚠ plusieurs Nigend reconnus' : '⚠ aucun Nigend reconnu (fichier ignoré)');
+      return '<li' + (x.rows.length === 1 ? '' : ' class="is-warn"') + '><span class="adm-fn">' + esc(x.file.name) + '</span> <span class="hint">' + who + '</span> <button type="button" class="btn secondary sm" data-adm-rm="' + i + '" title="Retirer ce fichier" aria-label="Retirer ' + esc(x.file.name) + '"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></li>';
+    }).join('');
+    var sm = $('adm-summary');
+    if (sm) {
+      var left = P.rows.filter(function (r) { return (P.rowPb[r.id] || []).length; }).length;
+      sm.className = 'adm-summary' + (P.ok ? ' is-ok' : '');
+      sm.innerHTML = P.ok ? '✓ ' + P.rows.length + ' candidat' + (P.rows.length > 1 ? 's prêts' : ' prêt') + ' à être admis dans la réserve.' :
+        (left ? left + ' candidat' + (left > 1 ? 's' : '') + ' à compléter (' + esc('*' + ' = obligatoire') + '). ' : '') + P.glob.map(esc).join(' ') + ' Les contrats de tous les candidats doivent être versés pour valider.';
+    }
+    var sb = $('adm-submit'); if (sb) sb.disabled = !P.ok || b.busy;
+  }
+  $('bmodal-form').addEventListener('input', function (e) {
+    var b = state.bulk, el = e.target, k = el.getAttribute && el.getAttribute('data-adm'); if (!b || !b.adm) return;
+    if (k) { var p = k.split('|'); if (b.adm.rows[p[0]]) b.adm.rows[p[0]][p[1]] = el.value; b.confirm = false; b.warn = ''; b.error = ''; var sb = $('adm-submit'); if (sb) { sb.classList.remove('danger'); sb.textContent = 'Admettre dans la réserve'; } admRefreshUi(); }
+    var ka = el.getAttribute && el.getAttribute('data-admall'); if (ka) b.adm.common[ka] = el.value;
+  });
+  $('bmodal-form').addEventListener('change', function (e) { // listes déroulantes et dates : même prise en compte que la saisie
+    var b = state.bulk, el = e.target; if (!b || !b.adm || !el.getAttribute) return;
+    var k = el.getAttribute('data-adm'), ka = el.getAttribute('data-admall');
+    if (k) { var p = k.split('|'); if (b.adm.rows[p[0]]) b.adm.rows[p[0]][p[1]] = el.value; admRefreshUi(); }
+    else if (ka) b.adm.common[ka] = el.value;
+  });
+  function admAddFiles(list) {
+    var b = state.bulk; if (!b || !b.adm || b.busy) return;
+    Array.prototype.forEach.call(list || [], function (f) { if (!b.adm.files.some(function (x) { return x.name === f.name && x.size === f.size; })) b.adm.files.push(f); });
+    b.confirm = false; b.warn = ''; b.error = ''; renderBulkForm();
+  }
+  $('bmodal-form').addEventListener('click', function (e) {
+    var b = state.bulk; if (!b || !b.adm || b.mode !== 'adm' || b.busy) return;
+    if (e.target.closest('#adm-fill')) { // applique les valeurs communes renseignées à toutes les lignes
+      var cm = b.adm.common; Object.keys(b.adm.rows).forEach(function (id) { var r = b.adm.rows[id]; ['grade', 'contrat', 'tir', 'qual'].forEach(function (k) { if (cm[k]) r[k] = cm[k]; }); });
+      b.confirm = false; renderBulkForm(); return;
+    }
+    var rm = e.target.closest('[data-adm-rm]'); if (rm) { var i = +rm.getAttribute('data-adm-rm'); if (b.adm.files[i]) b.adm.files.splice(i, 1); b.confirm = false; renderBulkForm(); return; }
+    if (e.target.closest('#adm-drop')) pickFiles(true, admAddFiles);
+  });
+  $('bmodal-form').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'adm-drop') { e.preventDefault(); pickFiles(true, admAddFiles); } });
+  ['dragenter', 'dragover'].forEach(function (t) { $('bmodal-form').addEventListener(t, function (e) { var z = e.target.closest('#adm-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } }); });
+  $('bmodal-form').addEventListener('dragleave', function (e) { var z = e.target.closest('#adm-drop'); if (z) z.classList.remove('is-over'); });
+  $('bmodal-form').addEventListener('drop', function (e) { var z = e.target.closest('#adm-drop'); if (!z) return; e.preventDefault(); z.classList.remove('is-over'); if (e.dataTransfer && e.dataTransfer.files.length) admAddFiles(e.dataTransfer.files); });
+  function submitAdm() {
+    var c = cfg(), b = state.bulk, A = b && b.adm; if (!b || b.busy || !A) return;
+    var P = admProblems(c, b), rt = admResTable();
+    if (!rt || !window.RES) { b.error = 'Table des réservistes non configurée (back office).'; renderBulkForm(); return; }
+    if (!P.ok) { b.error = 'Complétez les informations obligatoires et versez tous les contrats avant de valider.'; renderBulkForm(); return; }
+    if (!b.confirm) {
+      b.warn = 'Admettre ' + P.rows.length + ' candidat' + (P.rows.length > 1 ? 's' : '') + ' dans la réserve crée ' + P.rows.length + ' fiche' + (P.rows.length > 1 ? 's' : '') + ' réserviste et supprime définitivement ' + (P.rows.length > 1 ? 'les candidatures' : 'la candidature') + '. Cliquez de nouveau pour confirmer.';
+      b.confirm = true; b.error = ''; renderBulkForm(); return;
+    }
+    b.busy = true; b.error = ''; b.warn = ''; A.progress = { i: 0, n: P.rows.length, name: '' }; renderBulkForm();
+    var failed = [], done = 0;
+    function fieldsFor(r, cols) {
+      var rec = r.rec, s = r.st, fields = {};
+      CONVERT_MAP.forEach(function (pair) {
+        var fromCol = findCol(c.table, pair[0]), toCol = findCol(rt, pair[1]);
+        if (!fromCol || !toCol || toCol.formula) return;
+        var v = rec.raw[fromCol.id]; if (v == null || v === '') return; fields[toCol.id] = v;
+      });
+      function put(label, value, isDate) {
+        var col = findCol(rt, label); if (!col || col.formula) throw new Error('colonne « ' + label + ' » introuvable ou calculée dans la table des réservistes');
+        if (isDate) { var p = parseEdit(col, value); if (p.error) throw new Error(label + ' : ' + p.error); fields[col.id] = p.value; } else if (value !== '') fields[col.id] = value;
+      }
+      put('Grade', s.grade.trim()); put('Nigend', s.nigend.trim()); put('N° ESR', s.esr.trim());
+      put('Exp. contrat', s.contrat, true); if (s.tir) put('Exp. tir PA', s.tir, true);
+      if (s.qual) { var qc = findCol(rt, 'Qualité jud'); if (qc && !qc.formula) fields[qc.id] = s.qual; }
+      return fields;
+    }
+    Promise.resolve(state.colsByTable[rt] || api.listColumns(rt).then(function (cols) { state.colsByTable[rt] = cols; return cols; })).then(function () {
+      return P.rows.reduce(function (p0, r, idx) {
+        return p0.then(function () {
+          var nm = r.rec.identity ? formatName(r.rec.identity) : r.st.nigend; A.progress = { i: idx + 1, n: P.rows.length, name: nm };
+          var pg = $('adm-progress'); if (pg) pg.textContent = 'Admission de ' + nm + ' (' + A.progress.i + '/' + A.progress.n + ')…';
+          var fields = fieldsFor(r), nidCol = findCol(c.table, 'NID');
+          var m = window.RES.match ? window.RES.match({ nid: nidCol ? r.rec.raw[nidCol.id] : '', esr: r.st.esr, nigend: r.st.nigend }) : null;
+          if (m) throw new Error('déjà réserviste (rapprochement par ' + m.by + ', ligne n° ' + m.id + ')');
+          var pj = findCol(rt, 'PJ'); if (!pj || typeBase(pj.type) !== 'Attachments') pj = (state.colsByTable[rt] || []).filter(function (x) { return typeBase(x.type) === 'Attachments'; })[0];
+          if (!pj || pj.formula) throw new Error('aucune colonne « Pièces jointes » utilisable dans la table des réservistes');
+          var npj = findCol(rt, 'Nom PJ'); if (npj && npj.formula) npj = null;
+          var files = P.mt.byRow[r.id] || [];
+          return files.reduce(function (pf, f) { return pf.then(function (ids) { return api.uploadAttachment(f).then(function (id) { return ids.concat(id); }); }); }, Promise.resolve([])).then(function (ids) {
+            fields[pj.id] = ['L'].concat(ids); if (npj) fields[npj.id] = ids.map(function (x, k) { return 'ESR signé' + (ids.length > 1 ? ' (' + (k + 1) + ')' : ''); }).join(', ');
+            return api.createRow(rt, fields);
+          }).then(function () { return api.deleteRow(c.table, r.rec.raw.id); }).then(function () { done++; });
+        }).catch(function (e) { failed.push({ nigend: r.st.nigend || r.id, error: (e && e.message) || String(e) }); });
+      }, Promise.resolve());
+    }).catch(function (e) { failed.push({ nigend: '—', error: (e && e.message) || String(e) }); }).then(function () {
+      b.busy = false; b.confirm = false; b.warn = ''; A.progress = null;
+      b.result = { ok: done, failed: failed, summary: 'Admission dans la réserve', admit: true };
+      if (window.RES && window.RES.refresh) window.RES.refresh();
+      return load();
+    }).then(function () { if (!$('bmodal').hidden) renderBulkForm(); });
+  }
   $('btn-bulk').addEventListener('click', openBulk);
   $('bmodal-close').addEventListener('click', closeBulk);
   $('bmodal').addEventListener('mousedown', function (e) { if (e.target === $('bmodal') && !(state.bulk && state.bulk.busy)) closeBulk(); });
@@ -5196,7 +5414,9 @@
   $('bmodal-form').addEventListener('input', function (e) { readBulkField(e.target); });
   $('bmodal-form').addEventListener('change', function (e) {
     var el = e.target;
-    if (el.name === 'bulk-mode') { state.bulk.mode = el.value; state.bulk.error = ''; state.bulk.warn = ''; state.bulk.confirm = false; renderBulkForm(); return; }
+    if (el.name === 'bulk-mode') { state.bulk.mode = el.value; state.bulk.error = ''; state.bulk.warn = ''; state.bulk.confirm = false; if (el.value === 'adm') admInit(state.bulk); renderBulkForm(); return; }
+    if (el.id === 'bf-nigends' && state.bulk.mode === 'adm') { readBulkField(el); renderBulkForm(); return; } // la liste des candidats pilote le tableau
+    if (el.getAttribute && (el.getAttribute('data-adm') || el.getAttribute('data-admall'))) return; // saisies du tableau d'admission : voir plus bas
     readBulkField(el);
   });
   $('bmodal').addEventListener('keydown', function (e) {
@@ -5405,16 +5625,16 @@
     { q: "Comment confirmer une réservation, au candidat et à l'antenne médicale ?", a: "Dans le tableau de la page [Réservations](#go:rsv), chaque ligne propose deux icônes d'envoi :\n\n1. **Envoyer la convocation** au candidat ou au réserviste : en un clic, un courriel type s'ouvre dans votre messagerie, il ne reste qu'à l'envoyer.\n2. **Envoyer la convocation à l'antenne médicale** (VMP et VEMI) : en un deuxième clic, les pièces nécessaires à l'antenne sont **générées et téléchargées**, et un courriel (validé avec le SSA) s'ouvre : glissez-y les pièces téléchargées puis envoyez.\n\nUne icône change d'apparence quand l'envoi a déjà été fait, et une icône grisée précise en infobulle ce qui manque (adresse e-mail, date, antenne…)." },
     { q: "À quoi sert le point rouge clignotant dans le menu ?", a: "Le **voyant** signale qu'il y a des **actions à réaliser** sur une page ou un onglet : par exemple des demandes à traiter ou des réservations à confirmer. Il disparaît quand plus rien n'est en attente.\n\nLes voyants sont alimentés par des **compteurs** (nombre de lignes d'une table répondant à un critère) que l'équipe projet règle dans le back office." },
     { q: "Comment demander un renouvellement de contrat, un avenant, une mutation ou une suspension ?", a: "Ces démarches se font **directement depuis la fiche du réserviste** (onglet **Renseignements militaires**, groupe **Contrat**) : trois icônes ouvrent la demande de renouvellement, de mutation, ou de suspension / démission. L'icône prend la couleur de l'état de la dernière demande et propose **Éditer la demande** quand une demande est en cours. Depuis la liste, le survol d'un réserviste non employable (contrat dépassé) propose aussi **Demander le renouvellement du contrat**, ou affiche la demande déjà en cours avec son état.\n\nLes champs sont **pré-remplis** à partir de la fiche : il suffit de vérifier les informations, ou de les mettre à jour (cliquez sur une valeur pour la modifier), puis de valider. Tous les champs sont obligatoires, sauf les pièces jointes d'un renouvellement ; les pièces se déposent par glisser-déposer. Un message prévient s'il existe déjà une demande pour ce réserviste.\n\nLe suivi se fait dans les pages [Renouvellements](#go:res-ren) et [Avenants](#go:res-ave) (menu Réservistes) : on peut y **modifier** une demande (y compris son état) ou la **supprimer**." },
-    { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : bloc **Verser document contre-signé**. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
-    { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, les demandes **Rejet DRJ** et **Demande finalisée** sont masquées, pour ne laisser que le travail en cours. Le filtre **État de la demande** reste visible : cochez ces états pour les afficher. Sur la page Avenants, un second filtre sélectionne le **type de demande** (mutation interne ou externe, suspension, démission).\n\nLe bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » quand des demandes sont masquées." },
-    { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »)." },
+    { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : le panneau de droite affiche le **contrat signé par le réserviste** (versé à l'étape précédente) avec un bouton **Imprimer le contrat signé**, qui passe en **vert** une fois imprimé (il reste réimprimable) ; le bloc **Verser document contre-signé** vient ensuite. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
+    { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, les demandes **Rejet DRJ** et **Demande finalisée** sont masquées, pour ne laisser que le travail en cours. Cliquez dans le champ de recherche : la section **Par état de la demande** propose **tous** les états (les deux masqués par défaut sont signalés) ; cochez-les pour les afficher. Sur la page Avenants, la section **Par type de demande** filtre sur la mutation interne ou externe, la suspension ou la démission.\n\nLe bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » et rappelle le nombre de rejets et de demandes finalisées masqués." },
+    { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats, ou leur **admission dans la réserve** (voir ci-dessous).\n\n**Admettre dans la réserve** (Candidats) : pour chaque candidat, renseignez le **N° ESR** (différent pour chacun), le **grade** et l'**échéance du contrat** (obligatoires), et au besoin l'**échéance du tir PA** et la **qualité judiciaire** (facultatives) ; les « valeurs communes » évitent de saisir plusieurs fois la même information. Déposez ensuite **tous les contrats signés** : chaque fichier est rattaché au candidat dont le **Nigend figure dans le nom du fichier**. Le bouton ne s'active que lorsque tout est complet ; après confirmation, les fiches réservistes sont créées (contrats versés dans leurs documents) et les candidatures supprimées.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »)." },
     { q: "Comment agir sur plusieurs candidats ou réservistes à la fois ?", a: "Sur les pages [Candidats](#go:pmg) et [Réservistes](#go:res), une **case à cocher** apparaît au survol de chaque ligne ; celle de l'en-tête sélectionne toutes les lignes affichées. Dès qu'une sélection existe, une **barre d'actions** propose :\n\n- **Exporter la sélection (.csv)** ;\n- **Mettre à jour la sélection en bloc** : la liste des identifiants est préremplie (Nigend pour les réservistes ; N° de candidature, à défaut NID, pour les candidats) ;\n- **Relancer pour la VMP** (réservistes) ou **Inviter à réserver** (candidats, au choix **VEMI** ou **tests psychométriques**). Chaque ligne propose **Écrire**, qui ouvre un message individuel dans votre messagerie. **Envoyer à tous en Cci** prépare un **seul message** dont tous les destinataires sont en copie cachée : les variables propres à chacun (nom, civilité…) y restent vides et les personnes sans adresse valide sont ignorées. Si la liste est trop longue pour un seul message, elle est répartie en **lots** à envoyer l'un après l'autre ;\n- **Tout désélectionner**.\n\nAstuce : combinez avec les affichages rapides, par exemple « Échéances proches » puis le détail VMP, pour relancer d'un coup les réservistes concernés." },
     { q: "Comment rechercher, filtrer et exporter ?", a: "Sur chaque page, cliquez dans le **champ de recherche** (nom, prénom, NID, Nigend, téléphone, mail…) : un panneau propose des **affichages rapides** à cocher d'un clic et cumulables (par affectation, recrutement (CIV, AM, VCA), état du dossier ou PMG pour les candidats ; données manquantes, non employables, échéances proches, type de réserviste, affectation, et « Autres » (grade, corps, qualité judiciaire) pour les réservistes). Le détail d'une catégorie (par exemple les échéances concernées) n'apparaît que lorsqu'on clique dessus. **Réinitialiser les filtres** efface tout.\n\nVotre recherche et vos filtres sont **conservés pour la session** : vous les retrouvez en changeant de page ou en rechargeant.\n\nAu clavier, les **flèches** passent d'une ligne de la liste à l'autre et **Entrée** ouvre la fiche.\n\nLe bouton **Exporter (.csv)** exporte la **vue active**, c'est-à-dire la liste telle qu'elle est affichée avec la recherche et les filtres appliqués ; vous choisissez les colonnes à inclure. Pour n'exporter que certaines lignes, **cochez-les** d'abord." },
     { q: "Comment générer un plan prévisionnel d'emploi (PPE) ?", a: "Dans la fiche du réserviste, onglet **Renseignements militaires**, cliquez sur l'icône placée à côté de **Plan prévisionnel d'emploi**, puis choisissez la **date de début**. La fin est fixée automatiquement **un an plus tard, moins un jour**. Vous pouvez joindre, **facultativement**, la **signature de l'autorité d'emploi** (image déposée par glisser-déposer ou choisie d'un clic) : elle se place à l'emplacement prévu dans le modèle du PPE.\n\nLe PDF est téléchargé et une copie est rangée dans l'onglet **Documents** de la fiche. La carte « Plan prévisionnel d'emploi » affiche la date de fin du dernier PPE généré, avec une étiquette quand il est expiré." },
     { q: "Comment ajouter ou retrouver un document sur une fiche ?", a: "L'onglet **Documents** d'une fiche (candidat ou réserviste) liste les pièces jointes. Pour en ajouter, **glissez-déposez** un fichier ou cliquez dans la zone : le widget demande alors le **nom à afficher** de la pièce. Chaque document peut ensuite être renommé, remplacé ou supprimé.\n\nLes documents générés par le widget (PPE, lettres, ESR, contrats versés) y sont rangés automatiquement." },
     { q: "Comment obtenir les statistiques, et les exporter en PDF ?", a: "La page [Statistiques](#go:res-stat) présente, **en temps réel**, la population des réservistes pour anticiper les démarches : effectif, non employables, population à atteindre (jauge : réservistes et candidats en cours), demandes en cours, et les répartitions par affectation, type de réserviste, sexe, tranche d'âge et grade.\n\n- Cliquez sur une tuile de **demandes en cours** pour voir le détail par état.\n- Les **échéances** s'affichent en graphique (matrice affectation × échéance, avec infobulle) ; le PDF les présente sous forme de tableau.\n- Une réunion avec le commandement ? Le bouton **Extraire en PDF** produit en un clic une note A4 au format de la charte graphique de l'État, avec la vue d'échéances choisie.\n\nLes candidats ont leur page [Statistiques](#go:pmg-stat) : état des candidatures (barre unique, détail au clic sur « Sans suite » ou « En cours »), objectifs d'admis par PMG (jauges CIV et VCA, réglées en back office), répartitions par groupement, tranche d'âge et sexe, et **ancienneté moyenne** des dossiers en cours." },
     { q: "Pourquoi un champ n'est-il pas modifiable au clic ?", a: "Les champs **calculés par une formule dans Grist** ne peuvent pas être écrits par le widget : une infobulle sur la cellule l'indique. Pour la rendre modifiable, convertissez la colonne en colonne de données dans Grist (en gardant, si besoin, une formule déclenchée à la création).\n\nCertains types de colonnes (références, pièces jointes) ne sont pas non plus modifiables au clic : les pièces jointes se gèrent dans l'onglet Documents." },
-    { q: "Je n'ai pas trouvé ma réponse : comment contacter l'équipe projet ?", a: "Sous chaque réponse, répondez **Non** à « Cette réponse vous a-t-elle aidé ? » puis cliquez sur **Contacter l'équipe projet**. Le lien du même nom, en bas de page, ouvre la même fenêtre.\n\nIndiquez votre **Nigend**, ce que vous souhaitez (question, anomalie, amélioration…) et votre message : le **module** concerné est prérempli (la question de la FAQ ou la page affichée). Votre demande est transmise directement à l'équipe projet." }
+    { q: "Je n'ai pas trouvé ma réponse : comment contacter l'équipe projet ?", a: "Sous chaque réponse, répondez **Non** à « Cette réponse vous a-t-elle aidé ? » puis cliquez sur **Contacter l'équipe projet**. Le lien du même nom, en bas de page, ouvre la même fenêtre.\n\nIndiquez votre **Nigend**, ce que vous souhaitez (question, anomalie, amélioration…) et votre message : le **module** concerné est prérempli (la question de la FAQ ou la page affichée). Vous pouvez aussi joindre, **facultativement**, une **capture d'écran** (glissez-déposez, cliquez pour parcourir ou collez-la avec Ctrl+V) : elle est enregistrée dans la colonne **PJ** de la demande. Votre demande est transmise directement à l'équipe projet." }
   ];
   // Tutoriel (visite guidée) : étapes par défaut, modifiables en back office (rubrique « Tutoriel »). Texte en Markdown ; page : clé de page à ouvrir ; target : sélecteur CSS de l'élément mis en lumière.
   var DEFAULT_TUTO = [
@@ -5422,9 +5642,11 @@
     { icon: "🧭", title: "Le menu principal", page: "", target: "#header-navigation", body: "Toutes les pages sont accessibles depuis ce menu :\n\n- **Bienvenue** : les actualités du service ;\n- **Candidats** et **Réservistes** : menus déroulants avec leurs pages liées ;\n- **Réservations** et **FAQ**." },
     { icon: "🪖", title: "Candidats : inscrire", page: "pmg", target: "#btn-create", body: "Inscrivez un candidat à une **PMG** ou à l’**acculturation** : seules quelques informations sont nécessaires (dont l’origine), le reste se complète ensuite sur la fiche.\n\nPour plusieurs candidats à la fois, importez un fichier **.csv** à partir du modèle fourni." },
     { icon: "📄", title: "La fiche du candidat", page: "pmg", target: "#modal-tabs", body: "Cliquez sur une ligne pour ouvrir la **fiche** : les informations sont regroupées en onglets (candidat, renseignements militaires, médico-statutaire, documents).\n\n- Cliquez sur une valeur pour la **modifier** ;\n- déposez les pièces dans l’onglet **Documents** (glisser-déposer) ;\n- en pied de fiche : la **date de création** (modifiable d’un clic) et, pour un dossier en cours, son **ancienneté** ;\n- en cas de **doublon**, les deux fiches s’ouvrent côte à côte pour les fusionner." },
+    { icon: "🎯", title: "Candidats : repérer et agir", page: "pmg", target: "#rows tr", body: "Les lignes se colorent : **bleue** pour un dossier en attente de pièces, **orange** pour un doublon, **rouge** pour un « Déjà ESR ». Survolez une ligne pour lire le motif ; l’icône **i** près du compteur rappelle la légende.\n\nCochez des lignes pour **exporter**, **mettre à jour en bloc** ou **inviter à réserver** (VEMI ou tests psy, par message individuel ou envoi groupé en Cci). Dans la fiche d’un candidat admis, l’icône **Admettre comme réserviste** crée sa fiche réserviste (grade, Nigend et ESR signé demandés)." },
     { icon: "🫡", title: "Réservistes : repérer les lignes à traiter", page: "res", target: "#r-rows tr", body: "Les lignes se colorent : **grisée** pour un réserviste non employable (échéance dépassée), **bleutée** quand des informations essentielles manquent.\n\n**Survolez** une ligne : le motif s’affiche à droite, et un clic sur un champ manquant ouvre la fiche pour le compléter, et un non employable propose l’action adaptée (renouveler le contrat, réserver ou mettre à jour la VMP, mettre à jour le tir). La petite icône **i** près du compteur rappelle la légende.\n\nLes **affichages rapides** se trouvent dans le champ de recherche : cliquez-y." },
     { icon: "☑️", title: "Actions groupées", page: "res", target: "#r-rows tr", body: "Cochez des lignes (la case apparaît au survol, celle de l’en-tête coche tout) : une barre propose d’**exporter** la sélection, de la **mettre à jour en bloc** ou de **relancer pour la VMP**, par message individuel ou par un seul envoi en **Cci**.\n\nMême principe sur la page **Candidats**, avec l’invitation à réserver la **VEMI** ou les **tests psychométriques**." },
-    { icon: "📝", title: "Démarches sur le contrat", page: "res", target: "#r-rows tr", body: "Depuis la fiche d’un réserviste, groupe **Contrat** : demandes de renouvellement, de mutation ou de suspension, avec des champs **pré-remplis**.\n\nLeur suivi se fait dans les pages **Renouvellements** et **Avenants** du menu Réservistes, jusqu’à la signature du contrat et sa finalisation." },
+    { icon: "📝", title: "Démarches sur le contrat", page: "res", target: "#r-mt-mil", body: "Depuis la fiche d’un réserviste, groupe **Contrat** : demandes de renouvellement, de mutation ou de suspension, avec des champs **pré-remplis**.\n\nLeur suivi se fait dans les pages **Renouvellements** et **Avenants** du menu Réservistes, jusqu’à la signature du contrat et sa finalisation." },
+    { icon: "🔁", title: "Renouvellements et avenants", page: "res-ren", target: "#r-v-ren-q", body: "Les demandes de contrat se suivent ici (et dans **Avenants**). Cliquez dans le champ de recherche pour filtrer **par état** (les rejets et demandes finalisées sont masqués par défaut) et, pour les avenants, **par type**.\n\nQuand une demande passe **À la signature RO1**, générez le contrat et déposez-le signé ; à **À la signature DRJ**, imprimez le contrat signé par le réserviste (bouton vert une fois imprimé) puis versez le document contre-signé." },
     { icon: "⏱️", title: "« Dix-moi tout ! » : 10 minutes chrono", page: "res", target: "", body: "Dans le menu Réservistes, le bouton **Dix-moi tout !** lance une session de 10 minutes : une fiche aux informations majeures manquantes s’ouvre, puis une autre…\n\nChaque champ complété fait avancer le score. Un jeu pour mettre les données à jour !" },
     { icon: "📅", title: "Réservations", page: "rsv", target: "#x-tabs", body: "Les rendez-vous **VMP**, **VEMI** et **tests psychométriques** sont réunis ici, un onglet chacun.\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic." },
     { icon: "📊", title: "Statistiques", page: "res-stat", target: "#r-stats-pdf", body: "Les statistiques de la population se mettent à jour **en temps réel** : répartitions, échéances, demandes en cours. Les candidats ont aussi leur page (menu Candidats).\n\nUne réunion avec le commandement ? **Extraire en PDF** produit une note à la charte graphique de l’État." },
@@ -5435,11 +5657,11 @@
   ];
   var TUTO_PAGES = [['', '— Page courante —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes'], ['res-ren', 'Renouvellements'], ['res-ave', 'Avenants'], ['res-stat', 'Réservistes · Statistiques'], ['rsv', 'Réservations'], ['faq', 'FAQ']];
   var TUTO_TARGETS = [['', 'Aucun (carte centrée)'], ['#btn-tuto', 'Bouton Tutoriel'], ['#header-navigation', 'Menu principal'], ['#btn-create', 'Candidats : Créer une candidature'], ['#rows tr', 'Candidats : première ligne de la liste'],
-    ['.qf', 'Réservistes : filtres rapides'], ['#r-q', 'Réservistes : recherche'], ['#r-rows tr', 'Réservistes : première ligne de la liste'], ['#r-btn-bulk', 'Réservistes : Mettre à jour en bloc'], ['#view-list .legend-btn', 'Candidats : légende des couleurs'], ['#r-view-list .legend-btn', 'Réservistes : légende des couleurs'], ['#r-btn-export', 'Réservistes : Exporter (.csv)'],
+    ['#q', 'Candidats : recherche'], ['#btn-bulk', 'Candidats : Mettre à jour en bloc'], ['#btn-export', 'Candidats : Exporter (.csv)'], ['#r-q', 'Réservistes : recherche'], ['#r-rows tr', 'Réservistes : première ligne de la liste'], ['#r-btn-bulk', 'Réservistes : Mettre à jour en bloc'], ['#view-list .legend-btn', 'Candidats : légende des couleurs'], ['#r-view-list .legend-btn', 'Réservistes : légende des couleurs'], ['#r-btn-export', 'Réservistes : Exporter (.csv)'],
     ['#modal .modal-dialog', 'Candidats : fiche du candidat (modale)'], ['#modal-tabs', 'Candidats : onglets de la fiche'], ['#mt-info', 'Candidats : onglet Candidat'], ['#mt-mil', 'Candidats : onglet Renseignements militaires'], ['#mt-medico', 'Candidats : onglet Médico-statutaire'], ['#mt-docs', 'Candidats : onglet Documents'],
     ['#r-modal .modal-dialog', 'Réservistes : fiche du réserviste (modale)'], ['#r-modal-tabs', 'Réservistes : onglets de la fiche'], ['#r-mt-info', 'Réservistes : onglet Réserviste'], ['#r-mt-mil', 'Réservistes : onglet Renseignements militaires'], ['#r-mt-hab', 'Réservistes : onglet Médico-statutaire'], ['#r-mt-qual', 'Réservistes : onglet Qualifications'], ['#r-mt-docs', 'Réservistes : onglet Documents'],
     ['#x-rmodal .modal-dialog', 'Réservations : modale « Réserver »'], ['#x-rmodal [role=tablist]', 'Réservations : onglets de la modale « Réserver »'], ['#x-rmodal [role=tab]:nth-child(1)', 'Réservations : onglet Réserver un créneau'], ['#x-rmodal [role=tab]:nth-child(2)', 'Réservations : onglet Inviter à réserver'],
-    ['#x-tabs', 'Réservations : onglets'], ['#r-stats-pdf', 'Statistiques : Extraire en PDF'], ['#w-faq-q', 'FAQ : recherche'], ['.fr-header__tools button[aria-controls="fr-theme-modal"]', 'En-tête : Paramètres d’affichage']];
+    ['#x-tabs', 'Réservations : onglets'], ['#r-stats-pdf', 'Statistiques : Extraire en PDF'], ['#r-cstats-pdf', 'Statistiques candidats : Extraire en PDF'], ['#r-v-ren-q', 'Renouvellements : recherche'], ['#r-v-ave-q', 'Avenants : recherche'], ['#x-btn-slots', 'Réservations : Gérer les créneaux'], ['#x-btn-book', 'Réservations : Réserver'], ['#w-faq-q', 'FAQ : recherche'], ['.fr-header__tools button[aria-controls="fr-theme-modal"]', 'En-tête : Paramètres d’affichage']];
   var state = {
     opts: {}, draft: { intro: '', articles: [], counters: [], faq: [], tuto: [], sign: [] }, counts: {}, lastCM: null,
     openArticle: null, openCounter: null, openFaq: null, openTuto: null, openSign: null, introEditor: null, articleEditor: null // un seul éditeur Markdown monté à la fois
@@ -5571,13 +5793,15 @@
       cols.filter(function (c) { return /^Text$/.test(c.type) && [nig, typ, mod].indexOf(c) === -1; })[0] || null;
     var miss = [!nig && 'Nigend', !typ && 'Type', !mod && 'Module', !msg && 'zone de texte'].filter(Boolean);
     if (miss.length) return { error: 'colonne(s) introuvable(s) dans la table « ' + table + ' » : ' + miss.join(', ') };
-    return { table: table, cols: { nigend: nig, type: typ, module: mod, msg: msg }, choices: typ.choices || [] };
+    // Colonne « PJ » (pièces jointes) : sert à joindre une capture d'écran ; à défaut, la première colonne de pièces jointes. Absente : la zone de dépôt n'est pas proposée.
+    var att = cols.filter(function (c) { return /^Attachments/.test(c.type); }), pj = att.filter(function (c) { return loose(c.label) === 'pj' || loose(c.id) === 'pj'; })[0] || att[0] || null;
+    return { table: table, cols: { nigend: nig, type: typ, module: mod, msg: msg, pj: pj }, choices: typ.choices || [] };
   }
   function loadHelpdesk() {
     if (HD.loading) return HD.loading;
     if (!IN_GRIST) { // aperçu hors de Grist
       var dc = function (id, t, ch) { return { id: id, label: id, type: t, choices: ch || null }; };
-      HD.info = { table: 'Helpdesk', demo: true, cols: { nigend: dc('Nigend', 'Text'), type: dc('Type', 'Choice'), module: dc('Module', 'Text'), msg: dc('Message', 'Text') }, choices: ['Poser une question', 'Signaler une anomalie', 'Proposer une amélioration', 'Demander une évolution'] };
+      HD.info = { table: 'Helpdesk', demo: true, cols: { nigend: dc('Nigend', 'Text'), type: dc('Type', 'Choice'), module: dc('Module', 'Text'), msg: dc('Message', 'Text'), pj: dc('PJ', 'Attachments') }, choices: ['Poser une question', 'Signaler une anomalie', 'Proposer une amélioration', 'Demander une évolution'] };
       return (HD.loading = Promise.resolve(HD.info));
     }
     HD.loading = grist.docApi.listTables().then(function (l) {
@@ -5633,7 +5857,29 @@
       '</div>' +
       '<div class="cf-field" style="margin-top:1rem"><label for="w-hd-module">Module</label><input class="input" type="text" id="w-hd-module" value="' + esc(h.module) + '"></div>' +
       '<div class="cf-field" style="margin-top:1rem"><label for="w-hd-msg">Votre message<span class="req" aria-hidden="true">*</span></label><textarea class="textarea" rows="6" id="w-hd-msg" placeholder="Décrivez votre demande ou votre difficulté…">' + esc(h.msg) + '</textarea></div>' +
+      (info.cols.pj ? '<div class="cf-field" style="margin-top:1rem"><span class="ppe-sig-l" id="w-hd-shot-l">Capture d’écran <span class="hint">(facultatif)</span></span>' +
+        (h.shot ? '<div class="ppe-sig">' + (h.shot.url ? '<img alt="Aperçu de la capture jointe" src="' + esc(h.shot.url) + '">' : '') + '<span class="ppe-sig-n" style="color:var(--ink)">' + esc(h.shot.file.name) + '</span><button type="button" class="btn secondary sm" data-hd="unshot"' + (h.busy ? ' disabled' : '') + ' title="Retirer la capture" aria-label="Retirer la capture"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>'
+          : '<div class="doc-drop doc-drop--sm" id="w-hd-drop" data-hd="pickshot" role="button" tabindex="0" aria-labelledby="w-hd-shot-l"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg><p><strong>Glissez-déposez une capture d’écran</strong><br>ou cliquez pour parcourir (image ou PDF, 10 Mo max) — vous pouvez aussi la coller (Ctrl+V)</p></div>') + '</div>' : '') +
       '<div class="cf-actions"><button type="button" class="btn" data-hd="send"' + (h.busy ? ' disabled' : '') + '>' + (h.busy ? 'Envoi…' : 'Envoyer à l’équipe projet') + '</button><button type="button" class="btn secondary" data-hd="close"' + (h.busy ? ' disabled' : '') + '>Annuler</button></div>';
+  }
+  // Capture d'écran jointe (facultative) : un seul fichier, image ou PDF.
+  function hdKeep() { var h = HD.state; if (!h || !$('hd-msg')) return; h.nigend = $('hd-nigend').value; h.type = $('hd-type').value; h.module = $('hd-module').value; h.msg = $('hd-msg').value; } // la saisie survit au redessin
+  function hdSetShot(file) {
+    var h = HD.state; if (!h || h.busy || !file) return;
+    hdKeep();
+    if (!/^(image\/|application\/pdf)/i.test(file.type || '') && !/\.(png|jpe?g|gif|webp|pdf)$/i.test(file.name || '')) { h.error = 'La capture doit être une image (PNG, JPEG…) ou un PDF.'; renderHelpdesk(); return; }
+    if (file.size > 10 * 1024 * 1024) { h.error = 'Fichier trop volumineux (10 Mo maximum).'; renderHelpdesk(); return; }
+    hdDropShot(h); h.error = '';
+    h.shot = { file: file, url: /^image\//i.test(file.type || '') ? URL.createObjectURL(file) : '' }; renderHelpdesk();
+  }
+  function hdDropShot(h) { if (h && h.shot && h.shot.url) { try { URL.revokeObjectURL(h.shot.url); } catch (e) {} } if (h) h.shot = null; }
+  function hdPick() { var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*,application/pdf'; i.onchange = function () { if (i.files && i.files[0]) hdSetShot(i.files[0]); }; i.click(); }
+  function hdUpload(file) { // envoi dans les pièces jointes du document Grist ; renvoie l'identifiant de la pièce
+    if (!IN_GRIST) return Promise.resolve(1);
+    return grist.docApi.getAccessToken({ readOnly: false }).then(function (t) {
+      var fd = new FormData(); fd.append('upload', file, file.name);
+      return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) { if (!r.ok) throw new Error('envoi de la capture refusé (' + r.status + ')'); return r.json(); }).then(function (ids) { return ids[0]; });
+    });
   }
   function openHelpdesk(module, opener, opts) {
     HD.opener = opener || null;
@@ -5645,7 +5891,7 @@
   }
   function closeHelpdesk() {
     var ov = $('hdmodal'); if (ov.hidden || (HD.state && HD.state.busy)) return;
-    ov.classList.remove('is-open'); HD.state = null; document.body.style.overflow = '';
+    ov.classList.remove('is-open'); hdDropShot(HD.state); HD.state = null; document.body.style.overflow = '';
     setTimeout(function () { ov.hidden = true; }, 200);
     if (HD.opener && document.body.contains(HD.opener)) HD.opener.focus();
   }
@@ -5658,7 +5904,9 @@
     var fields = {}, num = /^(Int|Numeric)$/.test(info.cols.nigend.type) && /^\d+$/.test(h.nigend);
     fields[info.cols.nigend.id] = num ? Number(h.nigend) : h.nigend; fields[info.cols.type.id] = h.type; fields[info.cols.module.id] = h.module; fields[info.cols.msg.id] = h.msg;
     h.error = ''; h.busy = true; renderHelpdesk();
-    Promise.resolve(info.demo ? (window.__lastHelpdesk = { table: info.table, fields: fields }) : grist.getTable(info.table).create({ fields: fields })).then(function () {
+    Promise.resolve(h.shot && info.cols.pj ? hdUpload(h.shot.file).then(function (id) { fields[info.cols.pj.id] = ['L', id]; }) : null).then(function () {
+      return info.demo ? (window.__lastHelpdesk = { table: info.table, fields: fields, shot: h.shot ? h.shot.file.name : null }) : grist.getTable(info.table).create({ fields: fields });
+    }).then(function () {
       try { localStorage.setItem('hdNigend', h.nigend); } catch (e) {}
       h.busy = false; h.done = 'Votre demande a bien été transmise à l’équipe projet. Merci !'; renderHelpdesk();
     }).catch(function (e) { h.busy = false; h.error = 'Envoi impossible : ' + ((e && e.message) || e) + '.'; renderHelpdesk(); });
@@ -5667,11 +5915,23 @@
     var b = e.target.closest('[data-hd]'); if (!b) return; var a = b.getAttribute('data-hd');
     if (a === 'send') sendHelpdesk();
     else if (a === 'goform') { HD.state.stage = 'form'; renderHelpdesk(); var f = $('hdmodal-body').querySelector(HD.state.nigend ? '#w-hd-type' : '#w-hd-nigend'); if (f) f.focus(); }
+    else if (a === 'pickshot') { if (HD.state && !HD.state.busy) hdPick(); }
+    else if (a === 'unshot') { hdKeep(); hdDropShot(HD.state); renderHelpdesk(); }
     else if (a === 'faqopen') openFaqQuestion(+b.getAttribute('data-i'));
     else if (a === 'faqall') { closeHelpdesk(); if (window.__showPage) window.__showPage('faq'); }
     else closeHelpdesk();
   });
   $('hdmodal-body').addEventListener('input', function (e) { if (e.target.id !== 'w-hd-faqq' || !HD.state) return; HD.state.q = e.target.value; $('hd-faqres').innerHTML = hdFaqResultsHtml(HD.state.q); });
+  $('hdmodal-body').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'w-hd-drop') { e.preventDefault(); if (HD.state && !HD.state.busy) hdPick(); } });
+  ['dragenter', 'dragover'].forEach(function (t) { $('hdmodal-body').addEventListener(t, function (e) { var z = e.target.closest('#w-hd-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } }); });
+  $('hdmodal-body').addEventListener('dragleave', function (e) { var z = e.target.closest('#w-hd-drop'); if (z) z.classList.remove('is-over'); });
+  $('hdmodal-body').addEventListener('drop', function (e) { var z = e.target.closest('#w-hd-drop'); if (!z) return; e.preventDefault(); z.classList.remove('is-over'); if (e.dataTransfer && e.dataTransfer.files.length) hdSetShot(e.dataTransfer.files[0]); });
+  ['dragover', 'drop'].forEach(function (t) { $('hdmodal').addEventListener(t, function (e) { if (!e.target.closest('#w-hd-drop')) e.preventDefault(); }); }); // un fichier lâché à côté n'ouvre pas la page
+  $('hdmodal').addEventListener('paste', function (e) { // capture d'écran collée (Ctrl+V)
+    var h = HD.state; if (!h || h.busy || !HD.info || !HD.info.cols || !HD.info.cols.pj || !e.clipboardData) return;
+    var f = [].slice.call(e.clipboardData.files || []).filter(function (x) { return /^image\//i.test(x.type); })[0];
+    if (f) { e.preventDefault(); hdSetShot(f.name && f.name !== 'image.png' ? f : new File([f], 'capture-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.png', { type: f.type })); }
+  });
   $('hdmodal-close').addEventListener('click', closeHelpdesk);
   $('hdmodal').addEventListener('mousedown', function (e) { if (e.target === $('hdmodal')) closeHelpdesk(); });
   $('hdmodal').addEventListener('keydown', function (e) {
@@ -6282,7 +6542,7 @@
   ].map(function (c) { return { id: makeId(c[0]), label: c[0], type: c[1], formula: !!c[2], choices: DEMO_RENEW_CHOICES[c[0]] || null, choiceOptions: c[0] === 'Etat demande' ? DEMO_RENEW_OPTIONS : null }; }),
     rows: [{ id: 1, Etat_demande: 'En cours', Nigend: '2019-1120', Ref_Nigend: 2, Affectation_demandee: 'GD 38' },
       { id: 4, Etat_demande: 'Rejet DRJ', Nigend: '2024-0999', Ref_Nigend: 5, Affectation_demandee: 'GD 74' },
-      { id: 3, Etat_demande: 'À la signature DRJ', Nigend: '2008-0210', Ref_Nigend: 4, Affectation_demandee: 'GD 01', Date_de_debut_nouveau_contrat: d(2026, 11, 1), Date_de_fin_nouveau_contrat: d(2027, 10, 31) },
+      { id: 3, Etat_demande: 'À la signature DRJ', Nigend: '2008-0210', Ref_Nigend: 4, Contrat_signe_RO: ['L', 62], Affectation_demandee: 'GD 01', Date_de_debut_nouveau_contrat: d(2026, 11, 1), Date_de_fin_nouveau_contrat: d(2027, 10, 31) },
       { id: 2, Etat_demande: 'À la signature RO1', Nigend: '2022-0555', Ref_Nigend: 3, Affectation_demandee: 'GD 74', Date_de_debut_nouveau_contrat: d(2026, 12, 1) }] }; // demande existante pour Camille Perrin
   // Table « Modifications contrats » (structure réelle).
   var DEMO_MUT_TABLE = 'Modifications_contrats';
@@ -6299,7 +6559,7 @@
     { id: 2, Etat_demande: 'En cours', Ref_Nigend: 2, Nigend: '2019-1120', Type: 'Suspension', Date_effet: d(2026, 10, 15), Suspension_jusqu_au: d(2027, 1, 15) }
   ] };
   var DEMO_EXTRA = {}; DEMO_EXTRA[DEMO_RENEW_TABLE] = DEMO_RENEW; DEMO_EXTRA[DEMO_MUT_TABLE] = DEMO_MUT;
-  var demoAttSeq = 100, DEMO_ATT = { 60: { name: 'Fiche_de_poste.pdf', size: 142000 }, 61: { name: 'Attestation_formation.pdf', size: 96000 } };
+  var demoAttSeq = 100, DEMO_ATT = { 60: { name: 'Fiche_de_poste.pdf', size: 142000 }, 61: { name: 'Attestation_formation.pdf', size: 96000 }, 62: { name: 'Contrat_renouvellement_signe_RO.pdf', size: 188000 } };
 
   /* ---------- Accès aux données ---------- */
   var tokenCache = null;
@@ -8364,9 +8624,49 @@
       return null;
     }
     function finalLabel(R) { var ec = findCol(R.table, 'Etat demande'), ch = ec && ec.choices || []; return ch.filter(function (x) { return norm(x) === 'demande finalisee'; })[0] || 'Demande finalisée'; }
+    /* ----- Impression du contrat signé par le réserviste (versé à l'étape « À la signature RO1 ») ; le bouton passe au vert une fois imprimé ----- */
+    function printKey(R, attId) { return R.table + ':' + (R.editRow ? R.editRow.id : '') + ':' + attId; }
+    function printedAt(R, attId) { var m = state.opts.sent && state.opts.sent._p; return (m && m[printKey(R, attId)]) || ''; }
+    function markPrinted(R, attId) { // mémorisé dans les options du widget (historique des actions effectuées)
+      var sent = JSON.parse(JSON.stringify(state.opts.sent || {})); sent._p = sent._p || {}; sent._p[printKey(R, attId)] = new Date().toISOString();
+      var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.sent = sent;
+      if (window.__pushOpts) window.__pushOpts(o); else state.opts = o;
+      Promise.resolve(api.saveOptions(o)).catch(function () {}); // sans droit d'écriture, l'état reste valable pour la session
+    }
+    function signedPrintHtml(R) {
+      var sc = signedCol(R), ids = sc ? existingIds(R, sc) : [], busy = R.side.busy ? ' disabled' : '';
+      var h = '<section class="cf-section"><h3>Contrat signé par le réserviste</h3>';
+      if (!ids.length) return h + '<p class="hint">Aucun contrat signé n’a été versé à l’étape « À la signature RO1 ».</p></section>';
+      h += '<ul class="sgn-prints">' + ids.map(function (id) {
+        var m = R.att[id], at = printedAt(R, id), d = at ? new Date(at) : null, done = d && !isNaN(d.getTime());
+        return '<li><span class="sgn-pn">' + esc(m ? m.name : 'Fichier n° ' + id) + (m && m.size ? ' <span class="hint">(' + fmtSize(m.size) + ')</span>' : '') + '</span>' +
+          '<button type="button" class="btn sm' + (done ? ' btn-ok' : '') + '" data-sprint="' + id + '"' + busy + (done ? ' title="Déjà imprimé le ' + esc(d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })) + '"' : '') + '>' +
+          (done ? '✓ Imprimé le ' + esc(d.toLocaleDateString('fr-FR')) + ' · Réimprimer' : 'Imprimer le contrat signé') + '</button></li>';
+      }).join('') + '</ul></section>';
+      return h;
+    }
+    function printSigned(R, attId) {
+      var S = R.side; if (S.printing) return;
+      var w = window.open('', '_blank'); // ouverte tout de suite (clic de l'utilisateur) pour ne pas être bloquée
+      if (!w) { S.msg = { zone: 'gen', type: 'error', text: 'Le navigateur a bloqué la fenêtre d’impression : autorisez les fenêtres pop-up pour ce site.' }; renderSide(); return; }
+      try { w.document.write('<!doctype html><title>Contrat signé</title><p style="font-family:sans-serif">Préparation de l’impression…</p>'); } catch (e) {}
+      S.printing = true; S.msg = null;
+      api.attachmentUrl(attId).then(function (url) {
+        return fetch(url).then(function (r) { if (!r.ok) throw new Error('lecture du document impossible (' + r.status + ')'); return r.blob(); }).then(function (b) {
+          var u = URL.createObjectURL(new Blob([b], { type: b.type || 'application/pdf' }));
+          w.location.href = u; // même origine que la fenêtre : l'impression peut être lancée
+          var fired = false; function go() { if (fired) return; fired = true; try { w.focus(); w.print(); } catch (e) {} }
+          w.onload = go; setTimeout(go, 1500);
+          markPrinted(R, attId);
+          S.msg = { zone: 'gen', type: 'success', text: 'Document ouvert pour impression : choisissez votre imprimante dans la fenêtre qui s’affiche.' };
+        }, function () { w.location.href = url; markPrinted(R, attId); S.msg = { zone: 'gen', type: 'success', text: 'Document ouvert dans une nouvelle fenêtre : imprimez-le depuis la visionneuse.' }; });
+      }).catch(function (e) { try { w.close(); } catch (x) {} S.msg = { zone: 'gen', type: 'error', text: 'Impression impossible : ' + ((e && e.message) || e) + '.' }; })
+        .then(function () { S.printing = false; if (st === R) renderSide(); });
+    }
     function drjHtml(R) {
       var S = R.side, cc = counterCol(R), ids = cc ? existingIds(R, cc) : [], busy = S.busy ? ' disabled' : '';
       var h = '<div class="modal-header"><div style="min-width:0"><h2 class="modal-title">Verser document contre-signé</h2><p class="modal-sub">Demande à la signature DRJ</p></div></div>';
+      h += signedPrintHtml(R); // contrat signé par le réserviste (versé à l'étape « À la signature RO1 ») : impression
       h += '<section class="cf-section"><p class="hint">Au versement, la demande passe à « ' + esc(finalLabel(R)) + ' », le document est ajouté aux Documents de la fiche du réserviste et les informations du contrat sont mises à jour (Renseignements militaires).</p>' + sideAlert(S.msg);
       if (S.final) h += '<p class="hint">Demande finalisée.</p>';
       else h += '<div class="doc-drop" data-sdrop="1" role="button" tabindex="0" style="padding:0.9rem" aria-label="Verser le document contre-signé : glisser-déposer ou cliquer pour parcourir"' + busy + '>' + ICON_UPLOAD_SIDE +
@@ -8449,6 +8749,7 @@
         el = document.createElement('div'); el.id = M('').id + '-side'; el.className = 'modal-dialog'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Contrat'); col.appendChild(el);
         el.addEventListener('click', function (e) {
           var R2 = st; if (!R2 || R2.side.busy) return;
+          var pr = e.target.closest('[data-sprint]'); if (pr) { printSigned(R2, +pr.getAttribute('data-sprint')); return; }
           var a = e.target.closest('[data-sact]'); if (a) { genContract(R2, a.getAttribute('data-sact') === 'genmail'); return; }
           if (e.target.closest('[data-sdrop]')) pickSigned(R2);
         });
@@ -8905,7 +9206,8 @@
     var sc = V.col && cols.filter(function (c) { return c.id === V.col; })[0];
     function sortVal(r) { var v = sc ? r[sc.id] : r.id; return typeof v === 'number' ? v : norm(String(v == null ? '' : v)); }
     list.sort(function (a, b) { var x = sortVal(a), y = sortVal(b); return (x < y ? -1 : x > y ? 1 : 0) * V.dir; });
-    cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '');
+    var hiddenDef = V.st === null && ec ? d.rows.filter(function (r) { return HIDDEN_BY_DEFAULT.indexOf(norm(r[ec.id] == null ? '' : String(r[ec.id]))) !== -1; }).length : 0;
+    cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '') + (hiddenDef ? ' · ' + hiddenDef + ' rejet' + (hiddenDef > 1 ? 's' : '') + '/finalisée' + (hiddenDef > 1 ? 's' : '') + ' masqué' + (hiddenDef > 1 ? 's' : '') : '');
     thead.innerHTML = '<tr>' + dcols.map(function (c) {
       if (!c.sort) return '<th scope="col" class="v-actions">' + esc(c.title) + '</th>';
       var on = sc && sc.id === c.sort.id;
@@ -12041,9 +12343,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function sameSet(a, b) { return a.length === b.length && a.every(function (x) { return b.indexOf(x) !== -1; }); }
   function defSet(id) { return DEFSET[id] || (DEFSET[id] = checkedVals(id)); }
   function cumStates(id, wanted) {
-    var def = defSet(id), have = valuesOf(id);
-    return wanted.filter(function (v) { return have.indexOf(v) !== -1; }).map(function (v) {
-      return { sec: 'États', l: v, keep: true,
+    var def = defSet(id), have = valuesOf(id), nzs = function (t) { return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+    return (wanted || have).filter(function (v) { return have.indexOf(v) !== -1; }).map(function (v) {
+      var hid = /^(rejet drj|demande finalisee)$/.test(nzs(v)); // masqués tant qu'aucun état n'est choisi
+      return { sec: 'Par état de la demande', l: (v || 'Non renseigné') + (hid ? ' (masqué par défaut)' : ''), keep: true,
         run: function () { var ck = checkedVals(id), cur = sameSet(ck, def) ? [] : ck, next = cur.indexOf(v) !== -1 ? cur.filter(function (x) { return x !== v; }) : cur.concat([v]); only(id, next.length ? next : def); },
         on: function () { var ck = checkedVals(id); return !sameSet(ck, def) && ck.indexOf(v) !== -1; } };
     });
@@ -12097,8 +12400,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       return out;
     },
     'x-q': function () { return [{ l: 'Action attendue', run: sel('x-flt-action', 'action'), on: selOn('x-flt-action', 'action') }, { l: 'Doublons', run: sel('x-flt-action', 'dup'), on: selOn('x-flt-action', 'dup') }, { l: 'Conflits de créneau', run: sel('x-flt-action', 'conflict'), on: selOn('x-flt-action', 'conflict') }, { l: 'Toutes les réservations', run: sel('x-flt-action', 'all'), on: selOn('x-flt-action', 'all') }]; },
-    'r-v-ren-q': function () { return cumStates('r-v-ren-fst-panel', ['À traiter', 'En cours', 'À la signature RO1', 'À la signature DRJ', 'Demande finalisée', 'Rejet DRJ']); },
-    'r-v-ave-q': function () { return cumStates('r-v-ave-fst-panel', ['À traiter', 'En cours', 'À la signature RO1', 'À la signature DRJ', 'Demande finalisée', 'Rejet DRJ']); },
+    'r-v-ren-q': function () { return cumStates('r-v-ren-fst-panel'); }, // tous les états de la colonne ; rejets et demandes finalisées masqués par défaut
+    'r-v-ave-q': function () { // avenants : états (comme ci-dessus), puis type de demande (aucun type coché = tous)
+      var out = cumStates('r-v-ave-fst-panel'), tid = 'r-v-ave-fty-panel';
+      valuesOf(tid).forEach(function (v) {
+        function box() { return panelInputs(tid).filter(function (i) { return i.value === v; })[0]; }
+        out.push({ sec: 'Par type de demande', l: v || 'Non renseigné', keep: true, run: function () { var b = box(); if (b) b.click(); }, on: function () { var b = box(); return !!b && b.checked; } });
+      });
+      return out;
+    },
     'w-faq-q': function () { return ['contrat', 'créneau', 'doublon', 'objectif'].map(function (t) { return { l: t, run: function () { var i = document.getElementById('w-faq-q'); i.value = t; i.dispatchEvent(new Event('input', { bubbles: true })); } }; }); }
   };
   Array.prototype.forEach.call(document.querySelectorAll('.tb-search .fr-search-bar'), function (bar) {
@@ -12208,6 +12518,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       else if (e.key === 'Tab') { var f = card.querySelectorAll('button'); if (!f.length) return; if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); } }
     }, true);
     window.addEventListener('resize', function () { if (active) place(); });
+    var scrollT = 0; window.addEventListener('scroll', function () { if (active && !scrollT) scrollT = requestAnimationFrame(function () { scrollT = 0; place(); }); }, true); // l'élément a pu bouger (défilement d'une modale)
   }
   var curTarget = null;
   // Cibles dans une modale : la visite ouvre elle-même la modale (première ligne de la liste, ou bouton « Réserver ») et clique l'onglet visé.
@@ -12237,8 +12548,27 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       var r = curTarget.getBoundingClientRect(), pad = 8;
       hole.hidden = false; hole.style.left = (r.left - pad) + 'px'; hole.style.top = (r.top - pad) + 'px'; hole.style.width = (r.width + pad * 2) + 'px'; hole.style.height = (r.height + pad * 2) + 'px';
       root.querySelector('.tuto-shade').style.display = 'none';
-      var top = r.bottom + pad + 14; if (top + ch > vh - 10) { top = r.top - pad - 14 - ch; if (top < 10) top = Math.max(10, vh - ch - 12); }
-      card.style.top = top + 'px'; card.style.left = Math.max(12, Math.min(r.left + r.width / 2 - cw / 2, vw - cw - 12)) + 'px';
+      // Positions candidates : dessous, dessus, à droite, à gauche. On retient la première qui tient dans la fenêtre sans toucher l'élément ;
+      // sinon celle qui le recouvre le moins (et la carte est alors réduite en hauteur pour laisser l'élément visible).
+      var hx0 = r.left - pad, hy0 = r.top - pad, hx1 = r.right + pad, hy1 = r.bottom + pad, gap = 14;
+      function clampX(x) { return Math.max(12, Math.min(x, vw - cw - 12)); }
+      function clampY(y) { return Math.max(10, Math.min(y, vh - ch - 10)); }
+      var cands = [
+        { t: hy1 + gap, l: clampX(r.left + r.width / 2 - cw / 2) },
+        { t: hy0 - gap - ch, l: clampX(r.left + r.width / 2 - cw / 2) },
+        { t: clampY(r.top + r.height / 2 - ch / 2), l: hx1 + gap },
+        { t: clampY(r.top + r.height / 2 - ch / 2), l: hx0 - gap - cw }
+      ];
+      function overlap(c) { var w = Math.min(c.l + cw, hx1) - Math.max(c.l, hx0), h = Math.min(c.t + ch, hy1) - Math.max(c.t, hy0); return w > 0 && h > 0 ? w * h : 0; }
+      function fits(c) { return c.t >= 10 && c.t + ch <= vh - 10 && c.l >= 12 && c.l + cw <= vw - 12; }
+      var pick = null, best = null;
+      cands.forEach(function (c) { if (!pick && fits(c) && overlap(c) === 0) pick = c; });
+      if (!pick) { // aucune position libre : coins de la fenêtre les plus éloignés de l'élément
+        var corners = [{ t: 10, l: 12 }, { t: 10, l: vw - cw - 12 }, { t: vh - ch - 10, l: 12 }, { t: vh - ch - 10, l: vw - cw - 12 }];
+        corners.concat(cands).forEach(function (c) { var o = overlap(c); if (!best || o < best.o) best = { c: c, o: o }; });
+        pick = best.c;
+      }
+      card.style.top = Math.max(10, pick.t) + 'px'; card.style.left = Math.max(12, pick.l) + 'px';
     } else {
       hole.hidden = true; root.querySelector('.tuto-shade').style.display = '';
       card.style.top = Math.max(12, (vh - ch) / 2) + 'px'; card.style.left = Math.max(12, (vw - cw) / 2) + 'px';
@@ -12275,7 +12605,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     (function find() {
       if (my !== token || !active) return;
       var el = st.target ? document.querySelector(st.target) : null;
-      if (el && visible(el)) { curTarget = el; if (el.getAttribute('role') === 'tab' && el.getAttribute('aria-selected') !== 'true') el.click(); /* onglet visé : on l'affiche */ try { el.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {} setTimeout(function () { if (my === token) { place(); var nb = card.querySelector('.tuto-btn--next'); if (nb) nb.focus({ preventScroll: true }); } }, 120); return; }
+      if (el && visible(el)) { curTarget = el; if (el.getAttribute('role') === 'tab' && el.getAttribute('aria-selected') !== 'true') el.click(); /* onglet visé : on l'affiche */ try { el.scrollIntoView({ block: window.innerWidth <= 640 ? 'start' : 'center', inline: 'nearest' }); } catch (e) {} setTimeout(function () { if (my === token) { place(); var nb = card.querySelector('.tuto-btn--next'); if (nb) nb.focus({ preventScroll: true }); } }, 120); return; }
       if (++tries < 8 && st.target) { setTimeout(find, 150); return; }
       curTarget = null; place(); var nb2 = card.querySelector('.tuto-btn--next'); if (nb2) nb2.focus({ preventScroll: true });
     })();
