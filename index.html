@@ -93,6 +93,24 @@
   .alert .t { font-weight: 700; color: var(--ink); }
 
   /* Rappel des sources */
+  /* Back office : suivi des demandes Helpdesk et des accès */
+  .sv-row { cursor: pointer; }
+  .sv-row:hover td { background: var(--row-hover); }
+  .sv-row:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+  .sv-row.is-done td { color: var(--muted); }
+  .sv-delay { margin-left: .5rem; }
+  .sv-dl { display: grid; grid-template-columns: minmax(6.5rem, 10rem) 1fr; gap: .45rem 1rem; margin: 0; }
+  .sv-dl dt { color: var(--muted); }
+  .sv-dl dd { margin: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .sv-msg { white-space: pre-wrap; margin: 0; padding: .75rem 1rem; background: var(--bg-alt); border-radius: .5rem; font-weight: 400; color: var(--ink); }
+  .sv-atts a { display: inline-block; margin: 0 .75rem .5rem 0; }
+  .sv-atts img { display: block; max-width: 100%; max-height: 14rem; margin-top: .25rem; border: 1px solid var(--border-default-grey); border-radius: .5rem; }
+  .sv-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+  .x-soon-when { margin: 0 0 .5rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .art-pic { flex: 0 0 auto; width: 4rem; height: 4rem; }
+  .modal-header > .art-pic + div { flex: 1; }
+  .art-pic .fr-artwork { width: 100%; height: 100%; }
+  .wel-body .fr-callout, .faq-a .fr-callout { margin: 1.25rem 0; }
   .callout { margin-left: 56px; padding: 16px 24px; background: var(--bg-alt); border-left: 4px solid var(--blue); margin-bottom: 24px; }
   .callout p { margin: 0; font-size: .9375rem; }
   .callout .t { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
@@ -569,6 +587,7 @@
   #page-bo .badge-num { display: none; } /* les rubriques structurent déjà le back office : plus de numéros d'étape */
   .bo-tab-hint { margin: -.75rem 0 1.25rem; color: var(--muted); font-size: .875rem; }
   #page-bo[data-tab] [data-grp] { display: none; }
+  #page-bo[data-tab="helpdesk"] [data-grp="helpdesk"], #page-bo[data-tab="acces"] [data-grp="acces"], #page-bo[data-tab="apercu"] [data-grp="apercu"] { display: block; }
   #page-bo[data-tab="faq"] [data-grp="faq"], #page-bo[data-tab="tuto"] [data-grp="tuto"], #page-bo[data-tab="accueil"] [data-grp="accueil"], #page-bo[data-tab="courriels"] [data-grp="courriels"], #page-bo[data-tab="documents"] [data-grp="documents"], #page-bo[data-tab="reglages"] [data-grp="reglages"] { display: block; }
   .miss-line { margin-top: .15rem; font-size: .8125rem; color: var(--muted); }
   .ms { position: relative; }
@@ -798,6 +817,20 @@
   .bo-sources, .bo-advanced { border: 1px solid var(--border-default-grey); border-radius: 0.5rem; padding: 0.75rem 1.25rem; margin-bottom: 32px; background: var(--bg); }
   .bo-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border-default-grey); }
   .bo-page-head h1 { font-size: 1.75rem; }
+  .bo-search { position: relative; flex: 1 1 auto; max-width: 30rem; margin-left: auto; }
+  .bo-search .fr-search-bar { max-width: 100%; }
+  .bo-results { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0; max-height: 26rem; overflow-y: auto; margin: 0; padding: .25rem; list-style: none; background: var(--bg); border: 1px solid var(--border-default-grey); border-radius: .5rem; box-shadow: 0 .75rem 2rem rgba(20, 10, 30, .25); }
+  .bo-results li { margin: 0; padding: 0; }
+  .bo-res { display: block; width: 100%; padding: .55rem .75rem; border: 0; border-radius: .375rem; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+  .bo-res:hover, .bo-res.is-active { background: var(--row-hover); }
+  .bo-res__top { display: flex; align-items: center; gap: .5rem; }
+  .bo-res__top .fr-tag { flex: none; white-space: nowrap; }
+  .bo-res__title { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bo-res__snip { display: block; margin-top: .15rem; color: var(--muted); font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bo-res mark { background: var(--blue-tint); color: inherit; border-radius: 2px; }
+  .bo-none { padding: .75rem; color: var(--muted); }
+  .bo-hit { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: .5rem; }
+  @media (max-width: 640px) { .bo-page-head { flex-wrap: wrap; } .bo-search { order: 3; flex-basis: 100%; max-width: none; } }
   .bo-sources summary, .bo-advanced summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 0.25rem 0; }
   .bo-sources summary:focus-visible, .bo-advanced summary:focus-visible, .mail-block summary:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
   .bo-sources[open] summary, .bo-advanced[open] summary { margin-bottom: 0.75rem; }
@@ -817,6 +850,53 @@
   .bo-bar__saved { font-size: 0.875rem; color: var(--text-default-success); font-weight: 700; }
   .bo-bar__actions { display: flex; gap: 0.75rem; margin-left: auto; }
   .bo-vars { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px 56px; }
+  /* ===== Back office : mise en page professionnelle (navigation latérale, cartes, vue d'ensemble) ===== */
+  .bo-shell { display: grid; grid-template-columns: 17rem minmax(0, 1fr); gap: 2rem; align-items: start; }
+  .bo-tabs { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: .125rem; margin: 0; padding: .75rem; border: 1px solid var(--border-default-grey); border-radius: .5rem; background: var(--bg); }
+  .bo-nav__grp { margin: 1rem .5rem .25rem; font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .bo-tab { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; text-align: left; margin: 0; padding: .55rem .75rem; border: 0; border-left: 3px solid transparent; border-radius: .25rem; font-weight: 500; }
+  .bo-tab[aria-selected="true"] { background: var(--blue-tint); color: var(--blue); border-left-color: var(--blue); font-weight: 700; }
+  .bo-main { min-width: 0; }
+  .bo-title { margin: 0 0 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-default-grey); }
+  .bo-title h2 { font-size: 1.75rem; }
+  .bo-title p { margin: .35rem 0 0; color: var(--muted); }
+  #page-bo section.step { margin-bottom: 1.25rem; padding: 1.5rem 1.75rem; border: 1px solid var(--border-default-grey); border-radius: .5rem; background: var(--bg); }
+  #page-bo section.step.bo-plain { padding: 0; border: 0; background: none; }
+  #page-bo section.step > .head h2 { font-size: 1.125rem; }
+  #w-sv-hd > .head, #w-sv-ac > .head { display: none; }
+  #page-bo section.step > .head { margin-bottom: .5rem; }
+  #page-bo .lead, #page-bo .fields, #page-bo .callout, #page-bo .mail-block, #page-bo .mail-group, #page-bo .bo-vars { margin-left: 0; }
+  #page-bo section.step .actions { margin-left: 0; }
+  #page-bo .bo-bar { bottom: .75rem; margin: 1.5rem 0 0; border: 1px solid var(--border-default-grey); border-radius: .5rem; box-shadow: 0 .5rem 1.5rem rgba(20, 10, 30, .18); }
+  #page-bo .bo-bar__state::before { content: ""; display: inline-block; width: .5rem; height: .5rem; margin-right: .5rem; border-radius: 50%; background: var(--text-default-success); vertical-align: middle; }
+  #page-bo .bo-bar__state.is-dirty::before { background: var(--text-default-warning); }
+  .bo-h3 { margin: 1.5rem 0 .75rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .bo-h3:first-child { margin-top: 0; }
+  .bo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+  .bo-tile, .bo-link { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: .2rem; padding: 1rem 1.25rem; border: 1px solid var(--border-default-grey); border-radius: .5rem; background: var(--bg); cursor: pointer; }
+  .bo-tile { border-top: 4px solid var(--blue); }
+  .bo-tile.is-warn { border-top-color: var(--text-default-warning); }
+  .bo-tile.is-ok { border-top-color: var(--text-default-success); }
+  .bo-tile:hover, .bo-link:hover { background: var(--row-hover); }
+  .bo-tile:focus-visible, .bo-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .bo-tile__n { font-size: 2rem; font-weight: 700; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .bo-tile__l, .bo-link__t { font-weight: 700; color: var(--ink); }
+  .bo-tile__s, .bo-link__s { color: var(--muted); font-size: .8125rem; }
+  .bo-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .75rem; }
+  .bo-status { margin: 0; padding: 0; list-style: none; }
+  .bo-status li { display: flex; align-items: baseline; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid var(--border-default-grey); }
+  .bo-status__t { color: var(--muted); }
+  .bo-dot { flex: none; width: .6rem; height: .6rem; border-radius: 50%; background: var(--border-default-grey); }
+  .bo-dot.is-ok { background: var(--text-default-success); }
+  .bo-dot.is-ko { background: var(--text-default-error); }
+  @media (max-width: 900px) {
+    .bo-shell { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .bo-tabs { position: static; flex-direction: row; overflow-x: auto; padding: .5rem; }
+    .bo-nav__grp { display: none; }
+    .bo-tab { width: auto; flex: none; border-left: 0; border-bottom: 3px solid transparent; }
+    .bo-tab[aria-selected="true"] { border-bottom-color: var(--blue); }
+    #page-bo section.step { padding: 1rem; }
+  }
   .cfg-var-btn { font-family: ui-monospace, Menlo, monospace; font-size: 0.8125rem; padding: 2px 8px; border: 1px solid var(--border-default-grey); border-radius: 4px; background: var(--bg-alt); color: var(--ink); cursor: pointer; }
   .cfg-var-btn:hover:not(:disabled) { background: var(--blue-tint); }
   details.mail-block { padding: 0; }
@@ -1076,6 +1156,12 @@
 </style>
 </head>
 <body>
+<!-- Pictogrammes du système de design (calendrier, contrat), intégrés pour être utilisables avec <use href="#art-…"> -->
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden"><symbol id="art-calendar-decorative" viewBox="0 0 80 80"><path d="M77,24c-0.5514,0-1-0.4486-1-1s0.4486-1,1-1s1,0.4486,1,1S77.5514,24,77,24z M29,80c-0.5514,0-1-0.4486-1-1 s0.4486-1,1-1s1,0.4486,1,1S29.5514,80,29,80z M15,10c-0.5514,0-1-0.4486-1-1c0-0.55145,0.4486-1,1-1s1,0.44855,1,1 C16,9.5514,15.5514,10,15,10z"/></symbol><symbol id="art-calendar-minor" viewBox="0 0 80 80"><path d="M69.55188,69.32581c-5.15045,4.17072-12.70685,3.37646-16.87756-1.77399 c-4.17084-5.15039-3.37659-12.70685,1.77386-16.87762c5.15051-4.17072,12.70685-3.37653,16.87762,1.77399 c0.34747,0.4292,0.28137,1.0589-0.14783,1.40643c-0.4292,0.3476-1.0589,0.28137-1.40649-0.14783 c-3.47559-4.29211-9.77258-4.95392-14.0647-1.47827c-4.29199,3.47571-4.95386,9.77258-1.47821,14.0647 c3.47565,4.29205,9.77264,4.95386,14.06464,1.47827c2.72748-2.20868,4.0639-5.63489,3.62592-9.05298 c-0.07025-0.54779,0.31696-1.04883,0.86475-1.11902c0.54785-0.07019,1.04883,0.31702,1.11902,0.86481 C74.4281,62.56329,72.82391,66.67621,69.55188,69.32581z M66.4389,55.50873l-6.06793,7.10229l-2.32977-2.7547l-0.05908-0.06403 c-0.43073-0.41663-1.07574-0.42407-1.49774-0.03003c-0.43909,0.41016-0.47797,1.10522-0.08948,1.56445l2.82959,3.34436 c0.05219,0.06171,0.10931,0.11914,0.17084,0.17169c0.62988,0.53802,1.57678,0.46362,2.11481-0.16626l6.5683-7.68939l0.05377-0.06873 c0.3327-0.47809,0.27112-1.11218-0.13611-1.49609C67.54498,54.99689,66.84198,55.03693,66.4389,55.50873z"/></symbol><symbol id="art-calendar-major" viewBox="0 0 80 80"><path d="M70,19v26c0,0.55231-0.44769,1-1,1c-0.51282,0-0.93549-0.38599-0.99329-0.88342L68,45V28h-5 c-0.55231,0-1-0.44769-1-1c0-0.51282,0.38599-0.93549,0.88342-0.99329L63,26h5v-7c0-1.59772-1.2489-2.90369-2.82367-2.99487L65,16 h-7v3c0,0.55231-0.44769,1-1,1c-0.51282,0-0.93549-0.38599-0.99329-0.88342L56,19v-3H24v3c0,0.55231-0.44769,1-1,1 c-0.51282,0-0.93549-0.38599-0.99329-0.88342L22,19v-3h-7c-1.59772,0-2.90369,1.2489-2.99487,2.82367L12,19v7h10v-1 c0-0.55231,0.44769-1,1-1c0.51282,0,0.93549,0.38599,0.99329,0.88342L24,25v1h33c0.55231,0,1,0.44769,1,1 c0,0.51282-0.38599,0.93549-0.88342,0.99329L57,28H24v1c0,0.55231-0.44769,1-1,1c-0.51282,0-0.93549-0.38599-0.99329-0.88342L22,29 v-1H12v33c0,1.59772,1.2489,2.90369,2.82373,2.99487L15,64h28c0.55231,0,1,0.44769,1,1c0,0.51282-0.38599,0.93549-0.88342,0.99329 L43,66H15c-2.68878,0-4.88177-2.12231-4.99542-4.78308L10,61V19c0-2.68878,2.12231-4.88177,4.78308-4.99542L15,14h7v-3 c0-0.55231,0.44769-1,1-1c0.51282,0,0.93549,0.38599,0.99329,0.88342L24,11v3h32v-3c0-0.55231,0.44769-1,1-1 c0.51282,0,0.93549,0.38599,0.99329,0.88342L58,11v3h7c2.68878,0,4.88177,2.12231,4.99542,4.78308L70,19z M47,64 c-0.55231,0-1,0.44769-1,1s0.44769,1,1,1s1-0.44769,1-1S47.55231,64,47,64z M30,41c0,1.65692-1.34308,3-3,3h-6 c-1.65692,0-3-1.34308-3-3v-4c0-1.65692,1.34308-3,3-3h6c1.65692,0,3,1.34308,3,3V41z M28,37c0-0.55231-0.44769-1-1-1h-6 c-0.55231,0-1,0.44769-1,1v4c0,0.55231,0.44769,1,1,1h6c0.55231,0,1-0.44769,1-1V37z M62,37v4c0,1.65692-1.34308,3-3,3h-6 c-1.65692,0-3-1.34308-3-3v-4c0-1.65692,1.34308-3,3-3h6C60.65692,34,62,35.34308,62,37z M60,37c0-0.55231-0.44769-1-1-1h-6 c-0.55231,0-1,0.44769-1,1v4c0,0.55231,0.44769,1,1,1h6c0.55231,0,1-0.44769,1-1V37z M34,41v-4c0-1.65692,1.34308-3,3-3h6 c1.65692,0,3,1.34308,3,3v4c0,1.65692-1.34308,3-3,3h-6C35.34308,44,34,42.65692,34,41z M36,41c0,0.55231,0.44769,1,1,1h6 c0.55231,0,1-0.44769,1-1v-4c0-0.55231-0.44769-1-1-1h-6c-0.55231,0-1,0.44769-1,1V41z M30,51v4c0,1.65692-1.34308,3-3,3h-6 c-1.65692,0-3-1.34308-3-3v-4c0-1.65692,1.34308-3,3-3h6C28.65692,48,30,49.34308,30,51z M28,51c0-0.55231-0.44769-1-1-1h-6 c-0.55231,0-1,0.44769-1,1v4c0,0.55231,0.44769,1,1,1h6c0.55231,0,1-0.44769,1-1V51z M34,51c0-1.65692,1.34308-3,3-3h6 c1.65692,0,3,1.34308,3,3v4c0,1.65692-1.34308,3-3,3h-6c-1.65692,0-3-1.34308-3-3V51z M36,55c0,0.55231,0.44769,1,1,1h6 c0.55231,0,1-0.44769,1-1v-4c0-0.55231-0.44769-1-1-1h-6c-0.55231,0-1,0.44769-1,1V55z"/></symbol><symbol id="art-contract-decorative" viewBox="0 0 80 80"><path d="M76,70c-0.5514,0-1-0.4486-1-1s0.4486-1,1-1s1,0.4486,1,1S76.5514,70,76,70z M39,4c-0.5514,0-1-0.4486-1-1 c0-0.55145,0.4486-1,1-1s1,0.44855,1,1C40,3.5514,39.5514,4,39,4z M4,62c-0.5514,0-1-0.4486-1-1s0.4486-1,1-1s1,0.4486,1,1 S4.5514,62,4,62z"/></symbol><symbol id="art-contract-minor" viewBox="0 0 80 80"><path d="M65.94873,57.68378L64,51.83771v-3.66199c0.0639-0.08801,0.12122-0.18201,0.17078-0.28131l1.51855-3.03699 c0.2605-0.52081,0.28088-1.12933,0.05615-1.6665L61.82739,33.828c-0.20361-0.48669-0.59131-0.87323-1.07861-1.07532 c-1.0202-0.42328-2.19037,0.06073-2.61365,1.08093l-3.88373,9.36127c-0.22241,0.53589-0.20099,1.14191,0.05841,1.66089 l1.51941,3.03864c0.04956,0.0993,0.10687,0.1933,0.17078,0.28131v3.66199l-1.94867,5.84607l-0.03052,0.11273 c-0.10242,0.49011,0.17651,0.98999,0.66296,1.15216l0.11273,0.03052c0.49011,0.10254,0.98999-0.17639,1.15222-0.66296L57.72003,53 h4.55896l1.70099,5.10303L62.69598,69h-5.39301l-0.3598-3.0545l-0.02039-0.11511c-0.11548-0.48706-0.58051-0.82098-1.08978-0.76099 c-0.54852,0.06458-0.94073,0.56158-0.8761,1.11011l0.46399,3.9375l0.02002,0.11389C55.54633,70.6767,55.94598,71,56.414,71h7.172 l0.11548-0.00659c0.45502-0.05249,0.82294-0.41162,0.87762-0.8764l1.414-12L66,58.00739 C66.00079,57.89771,65.98352,57.78827,65.94873,57.68378z M62,51h-4v-2h4V51z M62.38202,47h-4.76404l-1.51929-3.0387L59,36.96802V42 l0.00671,0.11658C59.06451,42.61401,59.48718,43,60,43c0.55231,0,1-0.44769,1-1v-4.96832l2.90051,6.93134L62.38202,47z M50,56 c0,0.08179-0.01001,0.16321-0.02991,0.24249c-0.50531,2.02142-2.75232,3.33521-6.7619,4.05951l-0.64771,0.1095 c-0.22076,0.03491-0.44647,0.06812-0.677,0.09979l-0.70636,0.09021c-0.12024,0.01428-0.24164,0.02808-0.3642,0.04163 l-0.75043,0.07599l-0.77979,0.06671l-0.8092,0.05737l-0.83862,0.0484c-0.14227,0.00732-0.28571,0.01422-0.43036,0.02069 l-0.88275,0.03491l-0.91217,0.026l-0.94171,0.01721L33,61c-0.55231,0-1-0.44769-1-1s0.44769-1,1-1l0.95001-0.00427 c0.15576-0.00153,0.3103-0.00323,0.4635-0.00543l0.90387-0.01709l0.87323-0.02551l0.84241-0.03381l0.81171-0.04181l0.78076-0.04987 l0.75-0.05768l0.71912-0.06555c0.11731-0.0116,0.23328-0.0235,0.34802-0.03558l0.67279-0.0769 c0.32867-0.04028,0.64581-0.08337,0.95129-0.12921l0.59552-0.09515l0.56445-0.10229l0.53363-0.10944 c2.41748-0.52618,3.82208-1.27667,4.20349-2.19391l0.0332-0.09149l-0.00671-0.11792 c-0.04626-0.53815-0.26849-0.7226-0.85822-0.74475L47,55c-1.03882,0-2.13281,0.547-3.29291,1.70709 c-0.6026,0.6026-1.61432,0.22058-1.70111-0.59351L42,56c0-0.78101-0.21899-1-1-1c-1.03882,0-2.13281,0.547-3.29291,1.70709 c-0.3905,0.3905-1.02368,0.3905-1.41418,0s-0.3905-1.02368,0-1.41418C37.79938,53.78638,39.37213,53,41,53 c1.14478,0,2.00543,0.41083,2.50482,1.15558l0.03918,0.06342l0.19562-0.1358c0.97717-0.6601,1.97937-1.02448,3.00378-1.07672L47,53 C48.88562,53,50,54.11438,50,56z"/></symbol><symbol id="art-contract-major" viewBox="0 0 80 80"><path d="M55.99329,11.88342L56,12v20c0,0.55231-0.44769,1-1,1c-0.51282,0-0.93549-0.38599-0.99329-0.88342L54,32V13H18 v52h31c0.51282,0,0.93549,0.38599,0.99329,0.88342L50,66c0,0.51282-0.38599,0.93549-0.88342,0.99329L49,67H17 c-0.51282,0-0.93549-0.38599-0.99329-0.88342L16,66V12c0-0.51282,0.38599-0.93549,0.88342-0.99329L17,11h38 C55.51282,11,55.93549,11.38599,55.99329,11.88342z M23,19h16l0.11658-0.00671C39.61401,18.93549,40,18.51282,40,18 c0-0.55231-0.44769-1-1-1H23l-0.11658,0.00671C22.38599,17.06451,22,17.48718,22,18C22,18.55231,22.44769,19,23,19z M23,25h26 l0.11658-0.00671C49.61401,24.93549,50,24.51282,50,24c0-0.55231-0.44769-1-1-1H23l-0.11658,0.00671 C22.38599,23.06451,22,23.48718,22,24C22,24.55231,22.44769,25,23,25z M23,31h20l0.11658-0.00671 C43.61401,30.93549,44,30.51282,44,30c0-0.55231-0.44769-1-1-1H23l-0.11658,0.00671C22.38599,29.06451,22,29.48718,22,30 C22,30.55231,22.44769,31,23,31z M49.11658,36.99329C49.61401,36.93549,50,36.51282,50,36c0-0.55231-0.44769-1-1-1H23 l-0.11658,0.00671C22.38599,35.06451,22,35.48718,22,36c0,0.55231,0.44769,1,1,1h26L49.11658,36.99329z M59.99329,19.88342 C59.93549,19.38599,59.51282,19,59,19c-0.55231,0-1,0.44769-1,1v8l0.00671,0.11658C58.06451,28.61401,58.48718,29,59,29 c0.55231,0,1-0.44769,1-1v-8L59.99329,19.88342z M51,69H25l-0.11658,0.00671C24.38599,69.06451,24,69.48718,24,70 c0,0.55231,0.44769,1,1,1h26l0.11658-0.00671C51.61401,70.93549,52,70.51282,52,70C52,69.44769,51.55231,69,51,69z M23,41 l-0.11658,0.00671C22.38599,41.06451,22,41.48718,22,42c0,0.55231,0.44769,1,1,1h20l0.11658-0.00671 C43.61401,42.93549,44,42.51282,44,42c0-0.55231-0.44769-1-1-1H23z"/></symbol></svg>
+<script>
+function artworkSvg(n) { return '<svg aria-hidden="true" class="fr-artwork" viewBox="0 0 80 80" width="80" height="80">' + ['decorative', 'minor', 'major'].map(function (k) { return '<use class="fr-artwork-' + k + '" href="#art-' + n + '-' + k + '"></use>'; }).join('') + '</svg>'; }
+var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('calendar');
+</script>
 <header role="banner" class="fr-header">
   <div class="fr-header__body">
     <div class="fr-container">
@@ -1339,6 +1425,22 @@
 <p class="fr-sr-only" id="r-sprint-live" role="status" aria-live="polite"></p>
 
 <!-- Contacter l'équipe projet : crée une ligne dans la table Helpdesk (Nigend, Je souhaite = colonne Type, Module, message) -->
+<!-- ===== Back office : détail d'une demande Helpdesk ou d'une demande d'accès ===== -->
+<div class="modal-overlay" id="w-svmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="w-svmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="w-svmodal-title"></h2>
+          <p class="modal-sub" id="w-svmodal-sub"></p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="w-svmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="w-svmodal-body"></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="w-hdmodal" hidden>
   <div class="modal-column">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="w-hdmodal-title">
@@ -2007,6 +2109,24 @@
   </div>
 </div>
 
+<!-- ===== Rendez-vous à moins de 72 h non confirmés (affichée à l'ouverture du widget) ===== -->
+<div class="modal-overlay" id="x-soonmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="x-soonmodal-title">
+      <div class="modal-header">
+        <span class="art-pic" id="x-soonmodal-pic"></span>
+        <div style="min-width:0;flex:1">
+          <h2 class="modal-title" id="x-soonmodal-title">Rendez-vous à confirmer</h2>
+          <p class="modal-sub" id="x-soonmodal-sub"></p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="x-soonmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="x-soon-msg"></div>
+      <div id="x-soonmodal-body"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Doublons de réservation ===== -->
 <div class="modal-overlay" id="x-dmodal" hidden>
   <div class="modal-column">
@@ -2196,7 +2316,7 @@
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.10.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.13.1</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -5582,7 +5702,16 @@
   }
   // Texte et encadré des articles : rédigés en Markdown (éditeur WYSIWYG EasyMDE en back office), convertis en HTML à l'affichage.
   // Le HTML brut passe aussi tel quel (marked ne l'échappe pas) : compatible avec les articles écrits avant ce changement.
-  function mdToHtml(md) { var text = applyCounters(md); return window.marked ? marked.parse(text) : esc(text); }
+  // Citation Markdown (> …) = mise en exergue du système de design ; un premier paragraphe entièrement en gras en devient le titre.
+  function calloutize(html) {
+    return html.replace(/<blockquote>([\s\S]*?)<\/blockquote>/g, function (m, inner) {
+      var title = '';
+      inner = inner.replace(/^\s*<p>\s*<strong>([^<]*)<\/strong>\s*<\/p>/, function (x, t) { title = t; return ''; });
+      inner = inner.replace(/<p>/g, '<p class="fr-callout__text">');
+      return '<div class="fr-callout">' + (title ? '<h3 class="fr-callout__title">' + title + '</h3>' : '') + inner.trim() + '</div>';
+    });
+  }
+  function mdToHtml(md) { var text = applyCounters(md); return window.marked ? calloutize(marked.parse(text)) : esc(text); }
   // Tag de date : composant DSFR « Badge » (fr-badge), petite taille (fr-badge--sm) ; variante de couleur optionnelle (statut,
   // avec l'icône DSFR associée, incluse automatiquement par fr-badge--{variante}) + texte libre avant/après la date
   // (ex. « À LA UNE · 29/09/2026 » ou « 29/09/2026 · NOUVEAUTÉ » — fr-badge met déjà le texte en gras et en majuscules).
@@ -5622,7 +5751,7 @@
     { q: "Comment suivre l'ancienneté d'une candidature ?", a: "Le **pied de la fiche** du candidat indique : « Candidature créée le … (depuis N jours) », puis « Mise à jour le … par … ». La mention **depuis N jours** ne concerne que les dossiers **en cours** (ni admis, ni rejetés, ni abandonnés) et passe en **orange** au-delà d'un seuil réglé en back office (21 jours par défaut, dans les options avancées de Candidats, rubrique « Suivi des candidatures »).\n\nLa **date de création** se corrige d'un clic sur la date (sauf si la colonne est calculée par une formule dans Grist) ; la date de mise à jour n'est pas modifiable.\n\nLa page [Statistiques des candidats](#go:pmg-stat) affiche l'**ancienneté moyenne** des dossiers en cours." },
     { q: "Comment admettre un candidat comme réserviste ?", a: "Dans la fiche du candidat, onglet **Renseignements militaires**, cliquez sur l'icône **Admettre comme réserviste** placée à côté de **Contrat** (au survol, elle se déplie).\n\n- Le candidat est **ajouté à la table des réservistes** : les champs qui ont un équivalent (identité, date de naissance, coordonnées, NID, affectation, grade, corps, dates du contrat, validité de la VEMI reprise comme échéance VMP…) sont repris.\n- Sa **candidature est supprimée** de la table des candidats.\n\nLe **grade** (proposé : BRI), le **Nigend** et l'**ESR signé** sont **obligatoires** : ils se saisissent dans la fenêtre qui s'ouvre à droite de la fiche (le fichier se glisse-dépose ou se choisit d'un clic) ; cliquez enfin sur **Confirmer l'admission**. L'ESR signé est versé dans l'onglet **Documents** de la fiche du réserviste. Vérifiez ensuite la fiche du réserviste : les autres informations propres aux réservistes (échéances…) sont à compléter." },
     { q: "Comment réserver un créneau, ou envoyer le lien de réservation ?", a: "Toutes les réservations (**VMP, VEMI, tests psychométriques**) sont réunies sur la page [Réservations](#go:rsv), dans trois onglets. Depuis cette page, bouton **Réserver**, vous pouvez :\n\n- **réserver un créneau pour un administré** : choisissez un créneau proposé (date, heure et antenne médicale se remplissent ; seuls les créneaux **libres** sont proposés ; s'il n'y en a plus, la fenêtre le précise), puis la personne, par nom ou par NID / Nigend ;\n- **envoyer le lien de réservation** : onglet « Inviter à réserver » (VMP, VEMI et tests psy), qui prépare le message d'invitation dans votre messagerie.\n\nPour les tests psy, l'heure se choisit parmi 10:00, 11:00 et 15:00. Si la personne a déjà une réservation, une confirmation est demandée et la nouvelle est marquée comme **doublon**. Les réservations se **modifient** et se **suppriment** depuis le tableau. L'icône de réservation de la fiche du candidat ou du réserviste ouvre la même fenêtre.\n\nL'icône d'engrenage **Gérer les créneaux** permet de créer, modifier ou supprimer les créneaux proposés (à l'unité, par lot ou par import .csv), avec des filtres par **état du créneau**, **mois** et **antenne** ; les créneaux passés sont masqués par défaut." },
-    { q: "Comment confirmer une réservation, au candidat et à l'antenne médicale ?", a: "Dans le tableau de la page [Réservations](#go:rsv), chaque ligne propose deux icônes d'envoi :\n\n1. **Envoyer la convocation** au candidat ou au réserviste : en un clic, un courriel type s'ouvre dans votre messagerie, il ne reste qu'à l'envoyer.\n2. **Envoyer la convocation à l'antenne médicale** (VMP et VEMI) : en un deuxième clic, les pièces nécessaires à l'antenne sont **générées et téléchargées**, et un courriel (validé avec le SSA) s'ouvre : glissez-y les pièces téléchargées puis envoyez.\n\nUne icône change d'apparence quand l'envoi a déjà été fait, et une icône grisée précise en infobulle ce qui manque (adresse e-mail, date, antenne…)." },
+    { q: "Comment confirmer une réservation, au candidat et à l'antenne médicale ?", a: "Dans le tableau de la page [Réservations](#go:rsv), chaque ligne propose deux icônes d'envoi :\n\n1. **Envoyer la convocation** au candidat ou au réserviste : en un clic, un courriel type s'ouvre dans votre messagerie, il ne reste qu'à l'envoyer.\n2. **Envoyer la convocation à l'antenne médicale** (VMP et VEMI) : en un deuxième clic, les pièces nécessaires à l'antenne sont **générées et téléchargées**, et un courriel (validé avec le SSA) s'ouvre : glissez-y les pièces téléchargées puis envoyez.\n\nUne icône change d'apparence quand l'envoi a déjà été fait, et une icône grisée précise en infobulle ce qui manque (adresse e-mail, date, antenne…).\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
     { q: "À quoi sert le point rouge clignotant dans le menu ?", a: "Le **voyant** signale qu'il y a des **actions à réaliser** sur une page ou un onglet : par exemple des demandes à traiter ou des réservations à confirmer. Il disparaît quand plus rien n'est en attente.\n\nLes voyants sont alimentés par des **compteurs** (nombre de lignes d'une table répondant à un critère) que l'équipe projet règle dans le back office." },
     { q: "Comment demander un renouvellement de contrat, un avenant, une mutation ou une suspension ?", a: "Ces démarches se font **directement depuis la fiche du réserviste** (onglet **Renseignements militaires**, groupe **Contrat**) : trois icônes ouvrent la demande de renouvellement, de mutation, ou de suspension / démission. L'icône prend la couleur de l'état de la dernière demande et propose **Éditer la demande** quand une demande est en cours. Depuis la liste, le survol d'un réserviste non employable (contrat dépassé) propose aussi **Demander le renouvellement du contrat**, ou affiche la demande déjà en cours avec son état.\n\nLes champs sont **pré-remplis** à partir de la fiche : il suffit de vérifier les informations, ou de les mettre à jour (cliquez sur une valeur pour la modifier), puis de valider. Tous les champs sont obligatoires, sauf les pièces jointes d'un renouvellement ; les pièces se déposent par glisser-déposer. Un message prévient s'il existe déjà une demande pour ce réserviste.\n\nLe suivi se fait dans les pages [Renouvellements](#go:res-ren) et [Avenants](#go:res-ave) (menu Réservistes) : on peut y **modifier** une demande (y compris son état) ou la **supprimer**." },
     { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : le panneau de droite affiche le **contrat signé par le réserviste** (versé à l'étape précédente) avec un bouton **Imprimer le contrat signé**, qui passe en **vert** une fois imprimé (il reste réimprimable) ; le bloc **Verser document contre-signé** vient ensuite. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
@@ -5648,7 +5777,7 @@
     { icon: "📝", title: "Démarches sur le contrat", page: "res", target: "#r-mt-mil", body: "Depuis la fiche d’un réserviste, groupe **Contrat** : demandes de renouvellement, de mutation ou de suspension, avec des champs **pré-remplis**.\n\nLeur suivi se fait dans les pages **Renouvellements** et **Avenants** du menu Réservistes, jusqu’à la signature du contrat et sa finalisation." },
     { icon: "🔁", title: "Renouvellements et avenants", page: "res-ren", target: "#r-v-ren-q", body: "Les demandes de contrat se suivent ici (et dans **Avenants**). Cliquez dans le champ de recherche pour filtrer **par état** (les rejets et demandes finalisées sont masqués par défaut) et, pour les avenants, **par type**.\n\nQuand une demande passe **À la signature RO1**, générez le contrat et déposez-le signé ; à **À la signature DRJ**, imprimez le contrat signé par le réserviste (bouton vert une fois imprimé) puis versez le document contre-signé." },
     { icon: "⏱️", title: "« Dix-moi tout ! » : 10 minutes chrono", page: "res", target: "", body: "Dans le menu Réservistes, le bouton **Dix-moi tout !** lance une session de 10 minutes : une fiche aux informations majeures manquantes s’ouvre, puis une autre…\n\nChaque champ complété fait avancer le score. Un jeu pour mettre les données à jour !" },
-    { icon: "📅", title: "Réservations", page: "rsv", target: "#x-tabs", body: "Les rendez-vous **VMP**, **VEMI** et **tests psychométriques** sont réunis ici, un onglet chacun.\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic." },
+    { icon: "📅", title: "Réservations", page: "rsv", target: "#x-tabs", body: "Les rendez-vous **VMP**, **VEMI** et **tests psychométriques** sont réunis ici, un onglet chacun.\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic.\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
     { icon: "📊", title: "Statistiques", page: "res-stat", target: "#r-stats-pdf", body: "Les statistiques de la population se mettent à jour **en temps réel** : répartitions, échéances, demandes en cours. Les candidats ont aussi leur page (menu Candidats).\n\nUne réunion avec le commandement ? **Extraire en PDF** produit une note à la charte graphique de l’État." },
     { icon: "🔎", title: "Rechercher, filtrer, exporter", page: "res", target: "#r-q", body: "Cliquez dans le champ de **recherche** : le panneau propose des **affichages rapides** cumulables. Votre vue est **conservée pour la session**, et les **flèches** parcourent la liste (Entrée ouvre la fiche).\n\nLe bouton **Exporter (.csv)** exporte la vue affichée, ou seulement les lignes cochées, avec les colonnes de votre choix." },
     { icon: "❓", title: "FAQ et aide", page: "faq", target: "#w-faq-q", body: "La **FAQ** répond aux questions fréquentes.\n\nVous n’avez pas trouvé votre réponse ? Répondez « Non » sous la question : vous pourrez contacter l’équipe projet directement." },
@@ -5674,6 +5803,7 @@
       counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '', page: c.page || '' }; }),
       faq: (o && Array.isArray(o.faq) ? o.faq : DEFAULT_FAQ).map(function (f) { return { q: f.q || '', a: f.a || '' }; }),
       sign: normSign(o && o.signataires),
+      suivi: svTpl(o && o.suivi),
       tuto: (o && Array.isArray(o.tuto) ? o.tuto : DEFAULT_TUTO).map(function (t) { return { icon: t.icon || '', title: t.title || '', page: t.page || '', target: t.target || '', body: t.body || '' }; })
     };
   }
@@ -6316,7 +6446,7 @@
     var openIdx = arts.indexOf(state.openArticle); // -1 si aucun (ou si l'article ouvert vient d'être supprimé)
     if (openIdx !== -1) mountArticleEditor(openIdx);
   }
-  function renderAdminForm() { renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); } // le bloc d'introduction se monte à l'ouverture de son détail
+  function renderAdminForm() { renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); svRenderTpl(); } // le bloc d'introduction se monte à l'ouverture de son détail
   function setDirty(d) {
     $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
     $('bo-state').classList.toggle('is-dirty', d);
@@ -6361,10 +6491,10 @@
     var f = first && first.querySelector('input[data-wf=title]'); if (f) f.focus();
   });
   function cancelWel() {
-    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign };
+    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign, suivi: cfg().suivi };
     state.openArticle = null; state.openCounter = null; state.openFaq = null; state.openTuto = null; state.openSign = null;
     $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut, y compris après Annuler
-    renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); setDirty(false);
+    renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); svRenderTpl(); setDirty(false);
   }
   function saveWel() {
     var arts = state.draft.articles, cnt = state.draft.counters, i;
@@ -6400,6 +6530,7 @@
       counters: cnt.map(function (c) { return { name: c.name.trim(), table: c.table.trim(), column: c.column.trim(), mode: c.mode || 'contains', value: c.value.trim(), page: c.page || '' }; }),
       faq: fq.map(function (f) { return { q: f.q.trim(), a: f.a }; }),
       signataires: normSign(sg),
+      suivi: svTpl(state.draft.suivi),
       tuto: tt.map(function (t) { return { icon: (t.icon || '').trim(), title: t.title.trim(), page: t.page || '', target: (t.target || '').trim(), body: t.body }; })
     };
     return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return refreshCounters(); }).then(function () { render(); renderFaq(); setDirty(false); $('saved').hidden = false; });
@@ -6407,18 +6538,370 @@
   $('btn-cancel').addEventListener('click', cancelWel);
   $('btn-save').addEventListener('click', function () { saveWel().catch(function () {}); });
 
+  /* ---------- Back office : suivi des demandes Helpdesk et des accès ---------- */
+  // Deux tableaux (rubriques « Demandes Helpdesk » et « Gestion des accès ») : date et délai, état, bouton « traité », fiche détaillée
+  // au clic sur la ligne, courriel au demandeur rédigé en back office (modèle avec variables). Tables repérées par leur nom, colonnes par leur libellé.
+  var SV = {
+    hd: {
+      grp: 'helpdesk', title: 'Demandes Helpdesk', word: 'demande', tableRe: /helpdesk/, doneLabel: 'Traité', doneTitle: 'Marquer la demande comme traitée',
+      cols: { nigend: ['nigend'], who: ['demandeur'], aff: ['affectation'], type: ['type'], module: ['module'], msg: ['demande', 'message'], email: ['email', 'mail', 'courriel', 'e mail'], pj: ['pj'], done: ['traite'], created: ['cree le', 'creee le'], doneAt: ['traite le'] },
+      vars: ['DEMANDEUR', 'NIGEND', 'AFFECTATION', 'TYPE', 'MODULE', 'DEMANDE', 'DATE_DEMANDE', 'DATE_TRAITEMENT', 'DATE_DU_JOUR'],
+      hint: 'Le tableau relit la table Helpdesk (colonnes Nigend, Demandeur, Affectation, Type, Module, Demande, Email, PJ, Traité, Créé le, Traité le). Cliquez sur une ligne pour voir la demande et les coordonnées du demandeur.'
+    },
+    ac: {
+      grp: 'acces', title: 'Gestion des accès', word: 'demande d’accès', tableRe: /gestion.*acces/, doneLabel: 'Droits ouverts', doneTitle: 'Marquer les droits comme ouverts',
+      cols: { nigend: ['nigend'], grade: ['grade'], nom: ['nom'], prenom: ['prenom'], email: ['email', 'mail', 'courriel', 'e mail'], choix: ['choix affectation'], aff: ['affectation'], fonction: ['fonction'], done: ['droits ouverts'] },
+      vars: ['GRADE', 'NOM', 'PRENOM', 'IDENTITE', 'NIGEND', 'EMAIL', 'AFFECTATION', 'FONCTION', 'DATE_DU_JOUR'],
+      hint: 'Le tableau relit la table Gestion des acces ; la colonne « Droits ouverts » indique si la demande est traitée. Cliquez sur une ligne pour voir la demande et les coordonnées du demandeur.'
+    }
+  };
+  var SV_TPL = {
+    hd: { subject: 'Votre demande « {{MODULE}} » a été traitée', body: 'Bonjour {{DEMANDEUR}},\n\nVotre demande du {{DATE_DEMANDE}} concernant « {{MODULE}} » a été traitée.\n\n[Précisez ici la réponse apportée.]\n\nN’hésitez pas à nous recontacter si besoin.\n\nCordialement,\nL’équipe projet SERVIR' },
+    ac: { subject: 'Vos droits d’accès à SERVIR sont ouverts', body: 'Bonjour {{GRADE}} {{NOM}},\n\nVos droits d’accès à SERVIR (fonction : {{FONCTION}}, affectation : {{AFFECTATION}}) viennent d’être ouverts : vous pouvez vous connecter dès à présent.\n\nCordialement,\nL’équipe projet SERVIR' }
+  };
+  function svTpl(v) {
+    var out = {};
+    ['hd', 'ac'].forEach(function (k) { var t = v && v[k] || {}; out[k] = { subject: typeof t.subject === 'string' ? t.subject : SV_TPL[k].subject, body: typeof t.body === 'string' ? t.body : SV_TPL[k].body }; });
+    return out;
+  }
+  var SVS = { hd: { q: '', f: 'todo', rows: [], meta: null, loading: false, error: '', msg: '' }, ac: { q: '', f: 'todo', rows: [], meta: null, loading: false, error: '', msg: '' } };
+  var SVM = null, svLastField = null;
+  function svPick(all, names) { return all.filter(function (c) { return names.indexOf(loose(c.label)) !== -1 || names.indexOf(loose(c.id)) !== -1; })[0] || null; }
+  function svMeta(k, table, all) {
+    var cols = {}; Object.keys(SV[k].cols).forEach(function (key) { cols[key] = svPick(all, SV[k].cols[key]); });
+    if (!cols.done) throw new Error('colonne « ' + (k === 'hd' ? 'Traité' : 'Droits ouverts') + ' » introuvable dans la table « ' + table + ' »');
+    return { table: table, cols: cols };
+  }
+  function svFetch(k) {
+    var re = SV[k].tableRe;
+    return grist.docApi.listTables().then(function (l) {
+      var t = l.filter(function (x) { return re.test(loose(x)); })[0]; if (!t) throw new Error('table « ' + SV[k].title + ' » introuvable dans ce document');
+      return Promise.all([t, grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column'), grist.docApi.fetchTable(t)]);
+    }).then(function (r) {
+      var T = r[1], C = r[2], tbl = r[3], tid = T.id[T.tableId.indexOf(r[0])], all = [];
+      for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) all.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], formula: !!C.isFormula[i], choices: choicesOf(C.widgetOptions && C.widgetOptions[i]) });
+      var rows = (tbl.id || []).map(function (id, n) { var row = { id: id }; Object.keys(tbl).forEach(function (c) { if (c !== 'id' && Array.isArray(tbl[c])) row[c] = tbl[c][n]; }); return row; });
+      return { meta: svMeta(k, r[0], all), rows: rows };
+    });
+  }
+  function svDemo(k) {
+    var now = Math.floor(Date.now() / 86400000) * 86400, c = function (id, t) { return { id: id, label: id, type: t || 'Text', formula: false, choices: null }; };
+    if (k === 'hd') {
+      var all = [c('Nigend'), c('Demandeur'), c('Affectation'), c('Type'), c('Module'), c('Demande'), c('Email'), c('PJ', 'Attachments'), c('Traité', 'Bool'), c('Créé le', 'DateTime:Europe/Paris'), c('Traité le', 'DateTime:Europe/Paris')];
+      var R = function (id, nig, who, aff, type, mod, msg, mail, done, cr, dn) { return { id: id, Nigend: nig, Demandeur: who, Affectation: aff, Type: type, Module: mod, Demande: msg, Email: mail, PJ: null, 'Traité': done, 'Créé le': now - cr * 86400 + 32400, 'Traité le': dn == null ? null : now - dn * 86400 + 50000 }; };
+      return { meta: svMeta(k, 'Helpdesk', all), rows: [
+        R(1, '2019-1120', 'PERRIN Camille', 'GD 38', 'Signaler une anomalie', 'Réservistes RO1/RS/RC', 'Impossible d’ouvrir la fiche d’un réserviste : la fenêtre se fige après le clic sur « Modifier ».', 'camille.perrin@example.fr', false, 6),
+        R(2, '2011-0384', 'LEFÈVRE Antoine', 'GD 74', 'Poser une question', 'Réservations', 'Comment annuler un créneau VMP déjà confirmé à l’antenne médicale ?', 'antoine.lefevre@example.fr', false, 1),
+        R(3, '2022-0555', 'GARNIER Lucas', 'GD 73', 'Proposer une amélioration', 'Candidats', 'Pourrait-on filtrer les candidats par département d’origine ?', 'lucas.garnier@example.fr', true, 9, 5),
+        R(4, '2008-0210', 'ROBIN Sophie', 'GD 01', 'Poser une question', 'Statistiques', 'Les effectifs affichés incluent-ils les réservistes suspendus ?', 'sophie.robin@example.fr', true, 3, 3),
+        R(5, '2015-0999', 'DUPONT Marc', 'GD 38', 'Signaler une anomalie', 'Candidats', 'Le bouton Admettre comme réserviste ne répond pas.', '', false, 0)
+      ] };
+    }
+    var all2 = [c('Nigend'), c('Grade'), c('NOM'), c('Prénom'), c('Email'), c('Choix affectation'), c('Affectation'), c('Fonction'), c('Droits ouverts', 'Bool')];
+    var A = function (id, nig, gr, nom, pre, mail, aff, fn, done) { return { id: id, Nigend: nig, Grade: gr, NOM: nom, 'Prénom': pre, Email: mail, 'Choix affectation': aff, Affectation: aff, Fonction: fn, 'Droits ouverts': done }; };
+    return { meta: svMeta(k, 'Gestion_des_acces', all2), rows: [
+      A(1, '2016-0420', 'BRI', 'MARTIN', 'Julie', 'julie.martin@example.fr', 'GD 38', 'Gestionnaire réserve', false),
+      A(2, '2012-0871', 'ADJ', 'BERNARD', 'Karim', 'karim.bernard@example.fr', 'GD 73', 'Référent VMP', false),
+      A(3, '2009-0133', 'MDL', 'ROUX', 'Élise', '', 'GD 74', 'Officier de réserve', true)
+    ] };
+  }
+  function svLoad(k) {
+    var S = SVS[k]; S.loading = true; S.error = ''; svRenderList(k);
+    return (IN_GRIST ? svFetch(k) : Promise.resolve(S.meta ? { meta: S.meta, rows: S.rows } : svDemo(k))).then(function (r) { S.meta = r.meta; S.rows = r.rows; }) // aperçu hors Grist : jeu de démonstration conservé
+      .catch(function (e) { S.error = (e && e.message) || String(e); S.rows = []; })
+      .then(function () { S.loading = false; svRenderList(k); svRefreshOpen(k); });
+  }
+  // Accesseurs
+  function svCol(k, key) { var m = SVS[k].meta; return m && m.cols[key] || null; }
+  function svRaw(k, row, key) { var c = svCol(k, key); return c ? row[c.id] : undefined; }
+  function svStr(v) { if (v == null || v === false) return ''; if (Array.isArray(v)) return v[0] === 'L' ? v.slice(1).join(', ') : v.join(', '); return String(v).trim(); }
+  function svT(k, row, key) { return svStr(svRaw(k, row, key)); }
+  function svSecs(v) { if (typeof v === 'number') return v > 1e11 ? v / 1000 : v; if (typeof v === 'string' && v) { var t = Date.parse(v); return isNaN(t) ? null : t / 1000; } return null; }
+  function svFmt(sec, time) { return sec == null ? '' : new Date(sec * 1000).toLocaleString('fr-FR', time ? { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' } : { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric' }); }
+  function svHasTime(k, key) { var c = svCol(k, key); return !!c && /^DateTime/.test(c.type); }
+  function svIsDone(k, row) {
+    var v = svRaw(k, row, 'done'); if (v === true) return true; if (!v) return false;
+    return !/^(non|no|false|0|faux)$/.test(loose(svStr(v)));
+  }
+  function svWho(k, row) {
+    if (k === 'hd') return svT(k, row, 'who') || svT(k, row, 'nigend') || 'Demandeur inconnu';
+    return [svT(k, row, 'grade'), svT(k, row, 'nom'), svT(k, row, 'prenom')].filter(Boolean).join(' ') || svT(k, row, 'nigend') || 'Demandeur inconnu';
+  }
+  function svAff(k, row) { return svT(k, row, 'aff') || svT(k, row, 'choix'); }
+  // Délai : « depuis x j » tant que la demande n'est pas traitée, « traitée en y j » une fois traitée (colonnes Créé le / Traité le).
+  function svDelay(k, row) {
+    var cr = svSecs(svRaw(k, row, 'created')); if (cr == null) return null;
+    if (svIsDone(k, row)) {
+      var dn = svSecs(svRaw(k, row, 'doneAt')); if (dn == null) return { text: 'traitée', cls: 'success' };
+      var y = Math.max(0, Math.floor((dn - cr) / 86400)); return { text: y < 1 ? 'traitée le jour même' : 'traitée en ' + y + ' j', cls: 'success' };
+    }
+    var x = Math.max(0, Math.floor((Date.now() / 1000 - cr) / 86400));
+    return { text: x < 1 ? 'reçue aujourd’hui' : 'depuis ' + x + ' j', cls: x >= 7 ? 'error' : x >= 3 ? 'warning' : 'info' };
+  }
+  function svBadge(d) { return d ? '<span class="fr-badge fr-badge--sm fr-badge--' + d.cls + ' sv-delay">' + esc(d.text) + '</span>' : ''; }
+  function svRowsView(k) {
+    var S = SVS[k], terms = fold(S.q).split(/\s+/).filter(Boolean), keys = Object.keys(SV[k].cols);
+    var list = S.rows.filter(function (r) {
+      var d = svIsDone(k, r); if (S.f === 'todo' && d) return false; if (S.f === 'done' && !d) return false;
+      if (!terms.length) return true;
+      var hay = fold(keys.map(function (key) { return svT(k, r, key); }).join(' '));
+      return terms.every(function (t) { return hay.indexOf(t) !== -1; });
+    });
+    var cr = function (r) { var v = svSecs(svRaw(k, r, 'created')); return v == null ? r.id : v; };
+    return list.sort(function (a, b) {
+      var da = svIsDone(k, a), db = svIsDone(k, b); if (da !== db) return da ? 1 : -1;
+      return da ? cr(b) - cr(a) : cr(a) - cr(b); // à traiter : les plus anciennes d'abord ; traitées : les plus récentes d'abord
+    });
+  }
+  function svPending(k) { return SVS[k].rows.filter(function (r) { return !svIsDone(k, r); }).length; }
+  function svRenderList(k) {
+    var S = SVS[k], el = function (x) { return $('sv-' + k + '-' + x); }; if (!el('rows')) return;
+    var heads = k === 'hd' ? ['Date', 'Demandeur', 'Module', ''] : ['Demandeur', 'Nigend', 'Affectation', 'Fonction', ''];
+    el('thead').innerHTML = '<tr>' + heads.map(function (h) { return '<th' + (h ? '' : ' class="v-actions"') + ' scope="col">' + (h ? esc(h) : '<span class="fr-sr-only">Action</span>') + '</th>'; }).join('') + '</tr>';
+    var list = S.meta ? svRowsView(k) : [];
+    el('rows').innerHTML = list.map(function (r) {
+      var done = svIsDone(k, r), mail = validMail(svT(k, r, 'email')), act = done
+        ? (mail ? '<button type="button" class="icon-btn" data-svact="mail" data-k="' + k + '" data-id="' + r.id + '" title="Écrire au demandeur" aria-label="Écrire au demandeur"><span class="fr-icon-mail-line" aria-hidden="true"></span></button>' : '<span class="fr-badge fr-badge--sm fr-badge--success">' + (k === 'hd' ? 'Traitée' : 'Ouverts') + '</span>')
+        : '<button type="button" class="btn secondary sm" data-svact="done" data-k="' + k + '" data-id="' + r.id + '" title="' + esc(SV[k].doneTitle + (mail ? ' et préparer le courriel au demandeur' : '')) + '">' + esc(SV[k].doneLabel) + '</button>';
+      var cells = k === 'hd'
+        ? '<td>' + (esc(svFmt(svSecs(svRaw(k, r, 'created')))) || '—') + svBadge(svDelay(k, r)) + '</td><td>' + esc(svWho(k, r)) + '</td><td>' + esc(svT(k, r, 'module') || '—') + '</td>'
+        : '<td>' + esc(svWho(k, r)) + '</td><td>' + esc(svT(k, r, 'nigend') || '—') + '</td><td>' + esc(svAff(k, r) || '—') + '</td><td>' + esc(svT(k, r, 'fonction') || '—') + '</td>';
+      return '<tr class="sv-row' + (done ? ' is-done' : '') + '" tabindex="0" data-svopen="' + r.id + '" data-k="' + k + '">' + cells + '<td class="v-actions">' + act + '</td></tr>';
+    }).join('');
+    var st = el('state');
+    if (S.loading && !S.meta) { st.hidden = false; st.innerHTML = 'Chargement…'; }
+    else if (S.error) { st.hidden = false; st.innerHTML = '<strong>Source inaccessible</strong>' + esc(S.error); }
+    else if (!list.length) { st.hidden = false; st.innerHTML = S.rows.length ? '<strong>Aucun résultat</strong>Aucune ' + SV[k].word + ' ne correspond à votre recherche.' : '<strong>Aucune ' + SV[k].word + '</strong>La table est vide.'; }
+    else st.hidden = true;
+    var n = svPending(k);
+    el('count').textContent = S.meta ? list.length + (list.length > 1 ? ' lignes' : ' ligne') + ' · ' + n + ' à traiter' : '';
+    el('msg').innerHTML = S.msg ? '<div class="doc-alert success" role="status" style="margin:0 0 1rem"><p>' + esc(S.msg) + '</p></div>' : '';
+    window.__svCounts = window.__svCounts || {}; window.__svCounts[SV[k].grp] = S.meta ? n : 0;
+    if (window.__refreshBoTabs) window.__refreshBoTabs();
+  }
+  function validMail(e) { return /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(String(e || '').trim()); }
+  // Valeur à écrire pour « traité » selon le type de la colonne (case à cocher le plus souvent).
+  function svDoneValue(col, done) {
+    if (/^Bool/.test(col.type)) return done;
+    if (/^(Int|Numeric)/.test(col.type)) return done ? 1 : 0;
+    if (!done) return '';
+    var yes = (col.choices || []).filter(function (c) { return /^(oui|ouvert|ok|fait|traite|true)/.test(loose(c)); })[0];
+    return yes || (col.choices && col.choices.length ? col.choices[0] : 'Oui');
+  }
+  function svNowFor(col) { var now = Math.floor(Date.now() / 1000); return /^Date$/.test(col.type) ? Math.floor(now / 86400) * 86400 : now; }
+  function svUpdate(k, id, fields) {
+    var S = SVS[k];
+    if (!IN_GRIST) { S.rows.forEach(function (r) { if (r.id === id) Object.keys(fields).forEach(function (f) { r[f] = fields[f]; }); }); return Promise.resolve(); }
+    return grist.getTable(S.meta.table).update({ id: id, fields: fields });
+  }
+  function svRow(k, id) { return SVS[k].rows.filter(function (r) { return r.id === id; })[0] || null; }
+  // Marque traité (ou rouvre) ; à la clôture, prépare le courriel au demandeur si demandé.
+  function svMark(k, id, done, withMail) {
+    var S = SVS[k], row = svRow(k, id), dc = svCol(k, 'done'), ac = svCol(k, 'doneAt'); if (!row || !dc) return Promise.resolve();
+    if (dc.formula) { S.msg = ''; return Promise.reject(new Error('la colonne « ' + dc.label + ' » est une formule : elle ne peut pas être modifiée ici')); }
+    var f = {}; f[dc.id] = svDoneValue(dc, done);
+    if (ac && !ac.formula) f[ac.id] = done ? svNowFor(ac) : null;
+    return svUpdate(k, id, f).then(function () { return svLoad(k); }).then(function () {
+      var who = svWho(k, svRow(k, id) || row);
+      if (done) {
+        var r2 = svRow(k, id) || row, mail = validMail(svT(k, r2, 'email'));
+        if (withMail && mail) { svMail(k, id); S.msg = (k === 'hd' ? 'Demande' : 'Accès') + ' de ' + who + ' marqué' + (k === 'hd' ? 'e' : '') + ' comme ' + (k === 'hd' ? 'traité' : 'ouvert') + (k === 'hd' ? 'e' : '') + ' ; courriel préparé dans votre messagerie : vérifiez-le puis envoyez-le.'; }
+        else S.msg = (k === 'hd' ? 'Demande' : 'Accès') + ' de ' + who + ' enregistré' + (k === 'hd' ? 'e' : '') + ' comme ' + (k === 'hd' ? 'traité' : 'ouvert') + (k === 'hd' ? 'e' : '') + (withMail && !mail ? ' (aucune adresse mail valide : pas de courriel).' : '.');
+      } else S.msg = 'Demande de ' + who + ' rouverte.';
+      svRenderList(k);
+    });
+  }
+  /* Courriel au demandeur : modèle du back office (objet et message) + variables {{…}} ; mailto, texte brut. */
+  function svTplOf(k) { return (state.draft.suivi || cfg().suivi)[k]; }
+  function svCtx(k, row) {
+    var today = svFmt(Math.floor(Date.now() / 1000));
+    if (k === 'hd') return { DEMANDEUR: svWho(k, row), NIGEND: svT(k, row, 'nigend'), AFFECTATION: svT(k, row, 'aff'), TYPE: svT(k, row, 'type'), MODULE: svT(k, row, 'module'), DEMANDE: svT(k, row, 'msg'), DATE_DEMANDE: svFmt(svSecs(svRaw(k, row, 'created'))), DATE_TRAITEMENT: svFmt(svSecs(svRaw(k, row, 'doneAt'))) || today, DATE_DU_JOUR: today };
+    return { GRADE: svT(k, row, 'grade'), NOM: svT(k, row, 'nom'), PRENOM: svT(k, row, 'prenom'), IDENTITE: svWho(k, row), NIGEND: svT(k, row, 'nigend'), EMAIL: svT(k, row, 'email'), AFFECTATION: svAff(k, row), FONCTION: svT(k, row, 'fonction'), DATE_DU_JOUR: today };
+  }
+  function svFill(text, ctx) { return String(text || '').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, function (m, v) { return ctx[v] != null ? ctx[v] : m; }).replace(/ {2,}/g, ' '); }
+  function svMail(k, id) {
+    var row = svRow(k, id); if (!row) return false;
+    var to = svT(k, row, 'email'); if (!validMail(to)) return false;
+    var t = svTplOf(k), ctx = svCtx(k, row);
+    var url = 'mailto:' + to + '?subject=' + encodeURIComponent(svFill(t.subject, ctx)) + '&body=' + encodeURIComponent(svFill(t.body, ctx).replace(/\r?\n/g, '\r\n'));
+    var a = document.createElement('a'); a.href = url; a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    return true;
+  }
+  /* Fiche détaillée : la demande, puis les coordonnées du demandeur. */
+  function svKv(label, html) { return html ? '<dt>' + esc(label) + '</dt><dd>' + html + '</dd>' : ''; }
+  function svAttsLoad(ids) {
+    if (!IN_GRIST || !ids.length) return Promise.resolve([]);
+    return Promise.all([grist.docApi.getAccessToken({ readOnly: true }), grist.docApi.fetchTable('_grist_Attachments').catch(function () { return null; })]).then(function (r) {
+      var t = r[0], A = r[1];
+      return ids.map(function (id) {
+        var i = A ? A.id.indexOf(id) : -1, name = i >= 0 ? A.fileName[i] : 'Fichier n° ' + id, type = i >= 0 ? String(A.fileType[i] || '') : '';
+        return { id: id, name: name, image: /^image\//.test(type), url: t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token) };
+      });
+    });
+  }
+  function svRefreshOpen(k) { if (SVM && SVM.k === k) { if (!svRow(k, SVM.id)) svCloseModal(); else svRenderModal(); } }
+  function svRenderModal() {
+    var M = SVM; if (!M) return;
+    var k = M.k, row = svRow(k, M.id); if (!row) return;
+    var done = svIsDone(k, row), mail = svT(k, row, 'email'), ok = validMail(mail), d = svDelay(k, row), cr = svSecs(svRaw(k, row, 'created')), dn = svSecs(svRaw(k, row, 'doneAt'));
+    $('svmodal-title').textContent = k === 'hd' ? 'Demande Helpdesk' + (svT(k, row, 'module') ? ' · ' + svT(k, row, 'module') : '') : 'Demande d’accès · ' + svWho(k, row);
+    $('svmodal-sub').innerHTML = esc(k === 'hd' ? (cr != null ? 'Reçue le ' + svFmt(cr, svHasTime(k, 'created')) : 'Date de réception inconnue') : 'Ouverture des droits d’accès') + svBadge(d);
+    var demande, demandeur;
+    if (k === 'hd') {
+      demande = svKv('Type', esc(svT(k, row, 'type'))) + svKv('Module', esc(svT(k, row, 'module'))) +
+        svKv('État', done ? 'Traitée' + (dn != null ? ' le ' + esc(svFmt(dn, svHasTime(k, 'doneAt'))) : '') : 'En attente de traitement') +
+        svKv('Message', svT(k, row, 'msg') ? '<p class="sv-msg">' + esc(svT(k, row, 'msg')) + '</p>' : '') +
+        (svCol(k, 'pj') ? '<dt>Pièces jointes</dt><dd class="sv-atts" id="w-sv-atts">' + (M.atts ? svAttsHtml(M.atts) : (M.attIds && M.attIds.length ? 'Chargement…' : '<span class="hint" style="font-weight:400">Aucune</span>')) + '</dd>' : '');
+      demandeur = svKv('Nom', esc(svWho(k, row))) + svKv('Nigend', esc(svT(k, row, 'nigend'))) + svKv('Affectation', esc(svT(k, row, 'aff')));
+    } else {
+      demande = svKv('Fonction', esc(svT(k, row, 'fonction'))) + svKv('Affectation', esc(svT(k, row, 'aff'))) + (svT(k, row, 'choix') && svT(k, row, 'choix') !== svT(k, row, 'aff') ? svKv('Choix d’affectation', esc(svT(k, row, 'choix'))) : '') +
+        svKv('Droits ouverts', done ? 'Oui' : 'Non, à ouvrir');
+      demandeur = svKv('Grade', esc(svT(k, row, 'grade'))) + svKv('Nom', esc([svT(k, row, 'nom'), svT(k, row, 'prenom')].filter(Boolean).join(' '))) + svKv('Nigend', esc(svT(k, row, 'nigend')));
+    }
+    demandeur += svKv('Courriel', ok ? '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>' : '<span class="hint" style="font-weight:400">' + (mail ? esc(mail) + ' (adresse invalide)' : 'non renseigné') + '</span>');
+    var act = done
+      ? '<button type="button" class="btn" data-svm="mail"' + (ok ? '' : ' disabled title="Aucune adresse mail valide"') + '>Écrire au demandeur</button> <button type="button" class="btn secondary" data-svm="reopen"' + (M.busy ? ' disabled' : '') + '>Rouvrir la demande</button>'
+      : '<label class="x-check" style="margin:0 1rem 0 0"><input type="checkbox" id="w-sv-mailck"' + (M.mail && ok ? ' checked' : '') + (ok ? '' : ' disabled') + '> Préparer le courriel au demandeur</label>' +
+        '<button type="button" class="btn" data-svm="done"' + (M.busy ? ' disabled' : '') + '>' + (M.busy ? 'Enregistrement…' : esc(k === 'hd' ? 'Marquer comme traitée' : 'Marquer les droits comme ouverts')) + '</button>';
+    $('svmodal-body').innerHTML = (M.err ? '<div class="doc-alert error" role="alert" style="margin:0 0 1rem"><p>' + esc(M.err) + '</p></div>' : '') +
+      '<section class="cf-section"><h3>' + (k === 'hd' ? 'La demande' : 'La demande d’accès') + '</h3><dl class="sv-dl">' + demande + '</dl></section>' +
+      '<section class="cf-section"><h3>Le demandeur</h3><dl class="sv-dl">' + demandeur + '</dl></section>' +
+      '<div class="cf-actions" style="align-items:center;flex-wrap:wrap">' + act + ' <button type="button" class="btn secondary" data-svm="close">Fermer</button></div>';
+  }
+  function svAttsHtml(list) { return list.length ? list.map(function (a) { return '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">' + esc(a.name) + (a.image ? '<img alt="Aperçu de ' + esc(a.name) + '" src="' + esc(a.url) + '">' : '') + '</a>'; }).join('') : 'Aucune'; }
+  function svOpenModal(k, id) {
+    var row = svRow(k, id); if (!row) return;
+    var pj = svRaw(k, row, 'pj'), ids = Array.isArray(pj) ? pj.filter(function (x) { return typeof x === 'number'; }) : [];
+    SVM = { k: k, id: id, mail: true, busy: false, err: '', attIds: ids, atts: null };
+    svRenderModal();
+    var ov = $('svmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var b = $('svmodal-body').querySelector('button:not(:disabled)'); if (b) b.focus(); }); });
+    if (ids.length) svAttsLoad(ids).then(function (l) { if (SVM && SVM.id === id) { SVM.atts = l; var el = $('sv-atts'); if (el) el.innerHTML = svAttsHtml(l); } }).catch(function () { if (SVM && SVM.id === id) { SVM.atts = []; var el = $('sv-atts'); if (el) el.innerHTML = 'Pièces jointes illisibles.'; } });
+  }
+  function svCloseModal() {
+    var ov = $('svmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; SVM = null;
+    setTimeout(function () { ov.hidden = true; }, 200);
+  }
+  $('svmodal').addEventListener('click', function (e) {
+    if (e.target === $('svmodal') || e.target.closest('#w-svmodal-close')) { svCloseModal(); return; }
+    var b = e.target.closest('[data-svm]'); if (!b || b.disabled || !SVM) return;
+    var a = b.getAttribute('data-svm'), M = SVM;
+    if (a === 'close') svCloseModal();
+    else if (a === 'mail') svMail(M.k, M.id);
+    else if (a === 'done' || a === 'reopen') {
+      var ck = $('sv-mailck'); M.mail = ck ? ck.checked : false; M.busy = true; M.err = ''; svRenderModal();
+      svMark(M.k, M.id, a === 'done', M.mail).then(function () { M.busy = false; if (SVM === M) { M.err = ''; svRenderModal(); } })
+        .catch(function (err) { M.busy = false; M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; if (SVM === M) svRenderModal(); });
+    }
+  });
+  $('svmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); svCloseModal(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('svmodal').querySelectorAll('button:not(:disabled), input:not(:disabled), a[href]'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  /* Sections du back office : tableau, puis modèle du courriel. */
+  function svBuild() {
+    var host = $('view-admin'), bar = host && host.querySelector('.bo-bar'); if (!host || !bar) return;
+    ['hd', 'ac'].forEach(function (k) {
+      var sec = document.createElement('section'); sec.className = 'step'; sec.setAttribute('data-grp', SV[k].grp); sec.id = 'w-sv-' + k;
+      sec.innerHTML = '<div class="head"><h2>' + esc(SV[k].title) + '</h2></div><p class="lead" style="margin-left:0">' + esc(SV[k].hint) + '</p>' +
+        '<div id="w-sv-' + k + '-msg" aria-live="polite"></div>' +
+        '<div class="toolbar"><div class="tb-field"><label for="w-sv-' + k + '-q">Rechercher</label><input class="input" id="w-sv-' + k + '-q" type="search" style="min-width:16rem" placeholder="Nom, Nigend, ' + (k === 'hd' ? 'module, message' : 'affectation, fonction') + '…" autocomplete="off"></div>' +
+        '<div class="tb-field"><label for="w-sv-' + k + '-f">Afficher</label><select class="select" id="w-sv-' + k + '-f"><option value="todo">À traiter</option><option value="done">' + (k === 'hd' ? 'Traitées' : 'Droits ouverts') + '</option><option value="all">Toutes</option></select></div>' +
+        '<button type="button" class="btn secondary btn-iconly ico-refresh" data-svact="refresh" data-k="' + k + '" title="Actualiser le tableau">Actualiser</button>' +
+        '<div class="count" id="w-sv-' + k + '-count" aria-live="polite"></div></div>' +
+        '<div class="table-wrap"><table><thead id="w-sv-' + k + '-thead"></thead><tbody id="w-sv-' + k + '-rows"></tbody></table><div id="w-sv-' + k + '-state" class="state" hidden></div></div>' +
+        '<details class="mail-block" style="margin-left:0" id="w-sv-' + k + '-tpl"><summary>Courriel au demandeur</summary><div class="mail-body"></div></details>';
+      bar.parentNode.insertBefore(sec, bar);
+    });
+  }
+  function svRenderTpl() {
+    var T = state.draft.suivi || cfg().suivi;
+    ['hd', 'ac'].forEach(function (k) {
+      var d = $('sv-' + k + '-tpl'); if (!d) return;
+      var body = d.querySelector('.mail-body'), p = 'w-sv-' + k + '-t';
+      body.innerHTML = '<p class="hint">Message préparé dans la messagerie du gestionnaire quand ' + (k === 'hd' ? 'une demande est traitée' : 'les droits d’accès sont ouverts') + ' (bouton « ' + esc(SV[k].doneLabel) + ' » du tableau ou fiche de la demande). Texte brut ; le gestionnaire le relit avant l’envoi. Cliquez sur une variable pour l’insérer dans le champ en cours.</p>' +
+        '<div class="bo-vars" style="margin-left:0" role="group" aria-label="Variables disponibles">' + SV[k].vars.map(function (v) { return '<button type="button" class="cfg-var-btn" data-svvar="{{' + v + '}}" data-k="' + k + '">{{' + v + '}}</button>'; }).join('') + '</div>' +
+        '<div class="cf-field"><label for="' + p + 's">Objet</label><input class="input" type="text" id="' + p + 's" data-svt="subject" data-k="' + k + '" value="' + esc(T[k].subject) + '"></div>' +
+        '<div class="cf-field"><label for="' + p + 'b">Message</label><textarea class="textarea tall" id="' + p + 'b" data-svt="body" data-k="' + k + '" spellcheck="true">' + esc(T[k].body) + '</textarea></div>' +
+        '<button type="button" class="btn secondary sm" data-svact="tplreset" data-k="' + k + '">Rétablir le modèle par défaut</button>';
+    });
+  }
+  svBuild();
+  (function () {
+    var host = $('view-admin'); if (!host) return;
+    host.addEventListener('input', function (e) {
+      var t = e.target, k = t.getAttribute && t.getAttribute('data-k');
+      if (t.id && /^w-sv-(hd|ac)-q$/.test(t.id)) { var kk = t.id.split('-')[2]; SVS[kk].q = t.value; svRenderList(kk); return; }
+      if (t.getAttribute && t.getAttribute('data-svt')) { if (!state.draft.suivi) state.draft.suivi = cfg().suivi; state.draft.suivi[k][t.getAttribute('data-svt')] = t.value; setDirty(true); }
+    });
+    host.addEventListener('change', function (e) { var t = e.target; if (t.id && /^w-sv-(hd|ac)-f$/.test(t.id)) { var kk = t.id.split('-')[2]; SVS[kk].f = t.value; svRenderList(kk); } });
+    host.addEventListener('focusin', function (e) { if (e.target.getAttribute && e.target.getAttribute('data-svt')) svLastField = e.target; });
+    host.addEventListener('mousedown', function (e) { if (e.target.closest('[data-svvar]')) e.preventDefault(); });
+    host.addEventListener('click', function (e) {
+      var v = e.target.closest('[data-svvar]');
+      if (v) {
+        var f = svLastField && svLastField.getAttribute('data-k') === v.getAttribute('data-k') && document.body.contains(svLastField) ? svLastField : $('sv-' + v.getAttribute('data-k') + '-tb');
+        if (!f) return; var tok = v.getAttribute('data-svvar'), s0 = f.selectionStart == null ? f.value.length : f.selectionStart, s1 = f.selectionEnd == null ? s0 : f.selectionEnd;
+        f.value = f.value.slice(0, s0) + tok + f.value.slice(s1); f.focus(); f.selectionStart = f.selectionEnd = s0 + tok.length;
+        f.dispatchEvent(new Event('input', { bubbles: true })); return;
+      }
+      var b = e.target.closest('[data-svact]');
+      if (b) {
+        var a = b.getAttribute('data-svact'), k = b.getAttribute('data-k'), id = Number(b.getAttribute('data-id'));
+        if (a === 'refresh') { SVS[k].msg = ''; svLoad(k); }
+        else if (a === 'done') { b.disabled = true; svMark(k, id, true, true).catch(function (err) { SVS[k].msg = ''; SVS[k].error = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; svRenderList(k); }); }
+        else if (a === 'mail') svMail(k, id);
+        else if (a === 'tplreset') { if (!state.draft.suivi) state.draft.suivi = cfg().suivi; state.draft.suivi[k] = { subject: SV_TPL[k].subject, body: SV_TPL[k].body }; svRenderTpl(); setDirty(true); }
+        return;
+      }
+      var tr = e.target.closest('tr[data-svopen]'); if (tr) svOpenModal(tr.getAttribute('data-k'), Number(tr.getAttribute('data-svopen')));
+    });
+    host.addEventListener('keydown', function (e) { var tr = e.target.closest && e.target.closest('tr[data-svopen]'); if (tr && e.target === tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); svOpenModal(tr.getAttribute('data-k'), Number(tr.getAttribute('data-svopen'))); } });
+  })();
+
   window.WEL = {
     // Signataire en vigueur (par défaut : aujourd'hui) : { nom, qualite } ; utilisé par les variables {{SIGNATAIRE}} des modèles de contrat.
     signataire: function (iso) { return currentSigner(cfg().sign, iso); },
+    // Chiffres de la vue d'ensemble du back office.
+    stats: function () {
+      var d = state.draft, arts = d.articles || [];
+      function sv(k) { return { ok: !!SVS[k].meta && !SVS[k].error, error: SVS[k].error, pending: svPending(k), total: SVS[k].rows.length }; }
+      return { articles: arts.length, live: arts.filter(function (a) { return !isExpired(a) && !isScheduled(a); }).length, faq: (d.faq || []).length, tuto: (d.tuto || []).length, sign: (d.sign || []).length, sv: { hd: sv('hd'), ac: sv('ac') } };
+    },
+    // Recherche du back office : éléments pilotés par le brouillon (rubriques Bienvenue, FAQ, tutoriel, signataires, demandes) avec leur bloc à ouvrir.
+    searchItems: function () {
+      var d = state.draft, out = [];
+      function el(id, i) { var h = $(id); return h ? h.querySelector('details[data-i="' + i + '"]') : null; }
+      out.push({ grp: 'accueil', kind: 'Introduction', title: 'Introduction de la page Bienvenue', text: d.intro || '', el: $('intro-details') });
+      (d.counters || []).forEach(function (c, i) { out.push({ grp: 'accueil', kind: 'Compteur', title: c.name || 'Compteur', text: [c.name, c.table, c.column, c.value].join(' '), el: el('counters', i) }); });
+      (d.articles || []).forEach(function (a, i) { out.push({ grp: 'accueil', kind: 'Article', title: a.title || 'Article', text: [a.title, a.date, a.before, a.after, a.body].join(' '), el: el('articles', i) }); });
+      (d.faq || []).forEach(function (f, i) { out.push({ grp: 'faq', kind: 'Question', title: f.q || 'Question', text: f.q + ' ' + f.a, el: el('faq-admin', i) }); });
+      (d.tuto || []).forEach(function (t, i) { out.push({ grp: 'tuto', kind: 'Étape', title: t.title || 'Étape', text: [t.title, t.page, t.target, t.body].join(' '), el: el('tuto-admin', i) }); });
+      (d.sign || []).forEach(function (g, i) { out.push({ grp: 'documents', kind: 'Signataire', title: g.nom || 'Signataire', text: [g.nom, g.qualite].join(' '), el: el('sign-admin', i) }); });
+      ['hd', 'ac'].forEach(function (k) {
+        SVS[k].rows.forEach(function (r) {
+          out.push({ grp: SV[k].grp, kind: k === 'hd' ? 'Demande' : 'Accès', title: svWho(k, r) + (k === 'hd' && svT(k, r, 'module') ? ' · ' + svT(k, r, 'module') : ''), text: Object.keys(SV[k].cols).map(function (key) { return svT(k, r, key); }).join(' '), run: function () { svOpenModal(k, r.id); } });
+        });
+      });
+      return out;
+    },
     tutoSteps: function (draft) { return tutoStepsFrom(draft ? state.draft.tuto : cfg().tuto); }, // étapes du tutoriel (brouillon du back office pour l'aperçu)
     setOptions: function (o) { state.opts = o || {}; render(); renderFaq(); refreshCounters(); },
     refresh: function () { render(); renderFaq(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
     openAdmin: function () {
-      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign };
+      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign, suivi: cfg().suivi };
       state.openArticle = null; state.openCounter = null; state.openFaq = null; state.openTuto = null; state.openSign = null;
       $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut
       $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false);
+      svLoad('hd'); svLoad('ac'); // suivi des demandes : tables relues à chaque ouverture du back office
+      if (window.__refreshBoTabs) window.__refreshBoTabs();
     },
     closeAdmin: function () { $('view-admin').hidden = true; },
     save: function () { return saveWel(); },
@@ -8665,7 +9148,7 @@
     }
     function drjHtml(R) {
       var S = R.side, cc = counterCol(R), ids = cc ? existingIds(R, cc) : [], busy = S.busy ? ' disabled' : '';
-      var h = '<div class="modal-header"><div style="min-width:0"><h2 class="modal-title">Verser document contre-signé</h2><p class="modal-sub">Demande à la signature DRJ</p></div></div>';
+      var h = '<div class="modal-header"><span class="art-pic">' + ARTWORK_CONTRACT + '</span><div style="min-width:0;flex:1"><h2 class="modal-title">Verser document contre-signé</h2><p class="modal-sub">Demande à la signature DRJ</p></div></div>';
       h += signedPrintHtml(R); // contrat signé par le réserviste (versé à l'étape « À la signature RO1 ») : impression
       h += '<section class="cf-section"><p class="hint">Au versement, la demande passe à « ' + esc(finalLabel(R)) + ' », le document est ajouté aux Documents de la fiche du réserviste et les informations du contrat sont mises à jour (Renseignements militaires).</p>' + sideAlert(S.msg);
       if (S.final) h += '<p class="hint">Demande finalisée.</p>';
@@ -8727,7 +9210,7 @@
     function sideHtml(R) {
       if (R.signKind === 'drj') return drjHtml(R);
       var S = R.side, sc = signedCol(R), ids = sc ? existingIds(R, sc) : [], busy = S.busy ? ' disabled' : '';
-      var h = '<div class="modal-header"><div style="min-width:0"><h2 class="modal-title">Contrat</h2><p class="modal-sub">Génération et dépôt du contrat signé</p></div></div>';
+      var h = '<div class="modal-header"><span class="art-pic">' + ARTWORK_CONTRACT + '</span><div style="min-width:0;flex:1"><h2 class="modal-title">Contrat</h2><p class="modal-sub">Génération et dépôt du contrat signé</p></div></div>';
       h += '<section class="cf-section"><h3>Générer le contrat</h3>' + (S.msg && S.msg.zone === 'gen' ? sideAlert(S.msg) : '') +
         '<div class="cf-actions" style="flex-wrap:wrap"><button type="button" class="btn" data-sact="gen"' + busy + '>' + (S.busy === 'gen' ? 'Génération…' : 'Générer le contrat') + '</button>' +
         '<button type="button" class="btn secondary" data-sact="genmail"' + busy + '>' + (S.busy === 'genmail' ? 'Génération…' : 'Générer le contrat et l’envoyer par courriel') + '</button></div></section>';
@@ -10612,6 +11095,7 @@
         state.slots.vmp = r[5]; state.slots.vemi = r[6]; state.slots.psy = r[7]; state.res = r[8];
         state.error = ''; state.read = { at: new Date() };
         renderAll();
+        if (state.soon) renderSoon(); else if (!state.soonShown) { state.soonShown = true; if (soonRows().length) openSoon(); } // une seule fois, à l'ouverture du widget
         if (state.slotAdmin) renderSlots();
         if (state.book) renderBook();
         if (window.RES && window.RES.rerender) window.RES.rerender();
@@ -10893,6 +11377,7 @@
   }
   function showMsg(type, text) {
     state.msg = text ? { type: type, text: text } : null;
+    if (state.soon) renderSoonMsg();
     $('msg-zone').innerHTML = state.msg ? '<div class="doc-alert ' + type + '" role="' + (type === 'error' ? 'alert' : 'status') + '" style="margin-left:0"><p>' + esc(text) + '</p></div>' : '';
   }
   // Marque la convocation comme envoyée dans la table (colonne « Convoc… » / « Envoyé AM » : case cochée).
@@ -12267,6 +12752,91 @@
     if (state.dup) renderDup();
   }
 
+  /* ---------- Rendez-vous à moins de 72 h non confirmés : modale affichée une fois à l'ouverture du widget ---------- */
+  var SOON_H = 72;
+  // Début (secondes UTC) du rendez-vous : jour + heure de Paris ; sans heure, début ou fin de journée selon le besoin.
+  function startSec(tab, row, endOfDay) {
+    var day = rowDate(tab, row); if (day == null) return null;
+    var h = String(val(tab, row, 'Heure') || '').trim();
+    return localToUtcSec(day, h || (endOfDay ? '23:59' : '00:00'), 'Europe/Paris');
+  }
+  // Non confirmé = convocation pas encore envoyée à la personne, ou (VMP, VEMI) pas encore transmise à l'antenne médicale.
+  function soonRows() {
+    var now = Date.now() / 1000, lim = now + SOON_H * 3600, out = [];
+    TAB_ORDER.forEach(function (tab) {
+      var d = state.data[tab], spec = SPECS[tab]; if (!d) return;
+      var groups = groupsOf(tab);
+      d.rows.forEach(function (r) {
+        var t = startSec(tab, r, false), te = startSec(tab, r, true); if (t == null || te < now || t > lim) return;
+        var p = !isYes(val(tab, r, spec.sentPerson)), sv = !!spec.service && !isYes(val(tab, r, spec.sentService));
+        if (p || sv) out.push({ tab: tab, row: r, t: t, p: p, s: sv, dup: isDup(tab, r, groups) });
+      });
+    });
+    return out.sort(function (a, b) { return a.t - b.t; });
+  }
+  function soonDelay(t) {
+    var h = (t - Date.now() / 1000) / 3600;
+    if (h <= 0) return 'aujourd’hui, en cours';
+    if (h < 1) return 'dans moins d’1 h';
+    if (h < 48) return 'dans ' + Math.floor(h) + ' h';
+    return 'dans ' + Math.floor(h / 24) + ' j ' + Math.floor(h % 24) + ' h';
+  }
+  function renderSoon() {
+    var list = soonRows(), spec;
+    $('soonmodal-sub').textContent = list.length
+      ? list.length + (list.length > 1 ? ' rendez-vous commencent' : ' rendez-vous commence') + ' dans moins de ' + SOON_H + ' h sans avoir été confirmé' + (list.length > 1 ? 's' : '') + '.'
+      : 'Tous les rendez-vous des ' + SOON_H + ' prochaines heures sont confirmés.';
+    $('soonmodal-body').innerHTML = '<div class="x-cards">' + list.map(function (it) {
+      var tab = it.tab, r = it.row, d = state.data[tab], sp = SPECS[tab];
+      var email = personEmail(tab, r), miss = missingFields(tab, r, 'convocation');
+      var why = it.dup ? 'doublon à traiter d’abord' : (!validEmail(email) ? 'aucune adresse mail' : (miss.length ? 'à renseigner : ' + miss.join(', ') : ''));
+      var addrs = sp.service ? antenneAddrs(tab, r) : [];
+      var why2 = it.dup ? 'doublon à traiter d’abord' : (miss.length ? 'à renseigner : ' + miss.join(', ') : (!state.ant ? 'table Antennes medicales introuvable' : (!addrs.length ? 'aucune adresse pour cette antenne' : '')));
+      var kv = ['Date', 'Heure', sp.antenne, 'Affectation'].filter(Boolean).map(function (l) { var c = findCol(d.cols, l); return c && r[c.id] != null && r[c.id] !== '' ? '<div class="x-kv"><span>' + esc(c.label) + '</span><strong>' + cellHtml(c, r[c.id]) + '</strong></div>' : ''; }).join('');
+      var btns = '';
+      if (it.p) btns += '<button type="button" class="btn sm" data-soon="person" data-tab="' + tab + '" data-id="' + r.id + '"' + (why ? ' disabled title="' + esc(why) + '"' : '') + '>Confirmer au ' + esc(sp.personWord) + '</button>';
+      if (it.s) btns += '<button type="button" class="btn secondary sm" data-soon="service" data-tab="' + tab + '" data-id="' + r.id + '"' + (why2 ? ' disabled title="' + esc(why2) + '"' : '') + '>Confirmer à l’antenne médicale</button>';
+      btns += '<button type="button" class="btn secondary sm" data-soon="open" data-tab="' + tab + '">Voir dans Réservations</button>';
+      return '<div class="x-card"><p class="x-soon-when"><span class="fr-badge fr-badge--sm fr-badge--info">' + esc(sp.title) + '</span><strong>' + esc(txt(tab, r, sp.person) || sp.personWord) + '</strong>' +
+        '<span class="fr-badge fr-badge--sm fr-badge--warning">' + esc(soonDelay(it.t)) + '</span></p><div class="x-card__grid">' + kv + '</div>' +
+        ((it.p && why) || (it.s && why2) ? '<p class="hint" style="margin:.5rem 0 0">' + esc([it.p && why ? 'Au ' + sp.personWord + ' : ' + why : '', it.s && why2 ? 'À l’antenne : ' + why2 : ''].filter(Boolean).join(' · ')) + '.</p>' : '') +
+        '<div class="x-card__btns">' + btns + '</div></div>';
+    }).join('') + '</div><div class="cf-actions"><button type="button" class="btn secondary" data-soon="close">Fermer</button></div>';
+    renderSoonMsg();
+  }
+  function renderSoonMsg() {
+    var el = $('soon-msg'); if (!el) return;
+    el.innerHTML = state.soon && state.msg ? '<div class="doc-alert ' + state.msg.type + '" role="status" style="margin:0 0 1rem"><p>' + esc(state.msg.text) + '</p></div>' : '';
+  }
+  function openSoon() {
+    var ov = $('soonmodal'); if (!ov.hidden) return;
+    $('soonmodal-pic').innerHTML = ARTWORK_CALENDAR; state.soon = true; state.msg = null; renderSoon();
+    ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var b = $('soonmodal-body').querySelector('button:not(:disabled)'); if (b) b.focus(); }); });
+  }
+  function closeSoon() {
+    var ov = $('soonmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; state.soon = false;
+    setTimeout(function () { ov.hidden = true; }, 200);
+  }
+  $('soonmodal').addEventListener('click', function (e) {
+    if (e.target === $('soonmodal') || e.target.closest('#x-soonmodal-close')) { closeSoon(); return; }
+    var b = e.target.closest('[data-soon]'); if (!b || b.disabled) return;
+    var a = b.getAttribute('data-soon'), tab = b.getAttribute('data-tab');
+    if (a === 'close') closeSoon();
+    else if (a === 'open') { closeSoon(); if (window.__showPage) window.__showPage('rsv'); showTab(tab); }
+    else send(tab, a === 'service' ? 'service' : 'convocation', Number(b.getAttribute('data-id')));
+  });
+  $('soonmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeSoon(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('soonmodal').querySelectorAll('button:not(:disabled)'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
   /* ---------- Démarrage : les options du widget sont pilotées par la première page ---------- */
   window.RSV = {
     setOptions: function (o) { state.opts = o || {}; if (window.__page === 'rsv' || !state.data.vmp) load(); },
@@ -12645,6 +13215,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   var head = document.createElement('div'); head.className = 'bo-page-head';
   head.innerHTML = '<h1 style="margin:0">Back office</h1>' +
     '<button type="button" class="btn secondary" id="bo-close"><span class="fr-icon-arrow-left-line" aria-hidden="true"></span> Retour</button>';
+  var boSearch = document.createElement('div'); boSearch.className = 'bo-search';
+  boSearch.innerHTML = '<div class="fr-search-bar" role="search"><label class="fr-label fr-sr-only" for="bo-q">Rechercher dans le back office</label>' +
+    '<input class="fr-input" id="bo-q" type="search" placeholder="Rechercher dans le back office…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="bo-results" aria-autocomplete="list">' +
+    '<button class="fr-btn" type="button" id="bo-q-btn" title="Rechercher">Rechercher</button></div><ul class="bo-results" id="bo-results" role="listbox" aria-label="Résultats de la recherche" hidden></ul>';
+  head.insertBefore(boSearch, head.lastChild);
   wrap.appendChild(head);
   pmgAdmin.hidden = false;
   wrap.appendChild(pmgAdmin);
@@ -12734,29 +13309,174 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     setGrp(d, 'reglages');
     if (sm) sm.textContent = t.replace(/^Options avancées · /, '').replace(/Réservistes RO1\/RS\/RC : source, colonnes de la fiche/, 'Réservistes · source et colonnes de la fiche').replace(/^Candidats : /, 'Candidats · ').replace(/^Réservations : tables/, 'Réservations · tables');
   });
-  var TABS = [['accueil', 'Accueil', 'Introduction, compteurs et articles de la page Bienvenue.'], ['faq', 'FAQ', 'Questions et réponses de la page FAQ.'], ['tuto', 'Tutoriel', 'Étapes de la visite guidée (bouton « Tutoriel » de l’en-tête).'], ['courriels', 'Courriels', 'Modèles et réglages des courriels préparés depuis les fiches et les réservations.'],
-    ['documents', 'Documents et contrats', 'Modèles HTML convertis en PDF : lettres, ESR, PPE, contrats et avenants.'], ['reglages', 'Réglages avancés', 'Sources de données et colonnes : à modifier seulement si une colonne est introuvable.']];
-  var tabsEl = document.createElement('div'); tabsEl.className = 'bo-tabs'; tabsEl.setAttribute('role', 'tablist'); tabsEl.setAttribute('aria-label', 'Rubriques du back office');
-  tabsEl.innerHTML = TABS.map(function (t) { return '<button type="button" class="bo-tab" role="tab" id="bo-tab-' + t[0] + '" data-botab="' + t[0] + '" aria-selected="false">' + t[1] + '</button>'; }).join('');
-  var tabHint = document.createElement('p'); tabHint.className = 'bo-tab-hint'; tabHint.id = 'bo-tab-hint';
-  head.insertAdjacentElement('afterend', tabsEl); tabsEl.insertAdjacentElement('afterend', tabHint);
+  // Rubriques regroupées par usage : suivi (à traiter), contenu publié, modèles, configuration. [id, libellé, description, groupe]
+  var TABS = [
+    ['apercu', 'Vue d’ensemble', 'Synthèse du back office : demandes en attente, contenus publiés et accès rapides.', ''],
+    ['helpdesk', 'Demandes Helpdesk', 'Suivi des demandes adressées à l’équipe projet : à traiter, traitées, courriel au demandeur.', 'Suivi'],
+    ['acces', 'Gestion des accès', 'Suivi des demandes d’accès : droits à ouvrir, droits ouverts, courriel au demandeur.', 'Suivi'],
+    ['accueil', 'Page Bienvenue', 'Introduction, compteurs et articles de la page Bienvenue.', 'Contenu'],
+    ['faq', 'FAQ', 'Questions et réponses de la page FAQ.', 'Contenu'],
+    ['tuto', 'Tutoriel', 'Étapes de la visite guidée (bouton « Tutoriel » de l’en-tête).', 'Contenu'],
+    ['courriels', 'Courriels', 'Modèles et réglages des courriels préparés depuis les fiches et les réservations.', 'Modèles'],
+    ['documents', 'Documents et contrats', 'Modèles HTML convertis en PDF : lettres, ESR, PPE, contrats et avenants, signataires.', 'Modèles'],
+    ['reglages', 'Réglages avancés', 'Sources de données et colonnes : à modifier seulement si une colonne est introuvable.', 'Configuration']
+  ];
+  var tabsEl = document.createElement('nav'); tabsEl.className = 'bo-tabs'; tabsEl.setAttribute('role', 'tablist'); tabsEl.setAttribute('aria-orientation', 'vertical'); tabsEl.setAttribute('aria-label', 'Rubriques du back office');
+  var lastGrp = null;
+  tabsEl.innerHTML = TABS.map(function (t) {
+    var grp = t[3] !== lastGrp && t[3] ? '<p class="bo-nav__grp" role="presentation">' + t[3] + '</p>' : ''; lastGrp = t[3];
+    return grp + '<button type="button" class="bo-tab" role="tab" id="bo-tab-' + t[0] + '" data-botab="' + t[0] + '" aria-selected="false"><span>' + t[1] + '</span></button>';
+  }).join('');
+  // Mise en page : navigation à gauche, contenu à droite (titre de la rubrique, blocs en cartes, barre d'enregistrement en bas).
+  var shell = document.createElement('div'); shell.className = 'bo-shell';
+  var main = document.createElement('div'); main.className = 'bo-main';
+  var titleEl = document.createElement('div'); titleEl.className = 'bo-title'; titleEl.innerHTML = '<h2 id="bo-title"></h2><p id="bo-tab-hint"></p>';
+  var tabHint = titleEl.querySelector('p'), titleH = titleEl.querySelector('h2');
+  var rest = Array.prototype.slice.call(wrap.children).filter(function (c) { return c !== head; });
+  var overview = document.createElement('section'); overview.className = 'step bo-plain'; overview.id = 'bo-overview'; overview.setAttribute('data-grp', 'apercu');
+  main.appendChild(titleEl); main.appendChild(overview); rest.forEach(function (c) { main.appendChild(c); }); main.appendChild(gbar);
+  shell.appendChild(tabsEl); shell.appendChild(main); wrap.appendChild(shell);
+
+  /* Vue d'ensemble : chiffres clés (demandes à traiter, contenus publiés), accès rapides aux rubriques, état des sources de suivi. */
+  function renderOverview() {
+    var st = window.WEL && window.WEL.stats ? window.WEL.stats() : null, sv = st && st.sv || {};
+    function tile(n, label, sub, tab, tone) { return '<button type="button" class="bo-tile' + (tone ? ' is-' + tone : '') + '" data-botab="' + tab + '"><span class="bo-tile__n">' + n + '</span><span class="bo-tile__l">' + label + '</span><span class="bo-tile__s">' + sub + '</span></button>'; }
+    function pend(k, ok) { return ok ? sv[k].pending : '—'; }
+    var hd = sv.hd || {}, ac = sv.ac || {};
+    var html = '<h3 class="bo-h3">À traiter</h3><div class="bo-tiles">' +
+      tile(pend('hd', hd.ok), 'Demandes Helpdesk', hd.ok ? hd.total + ' au total' : 'table non lue', 'helpdesk', hd.ok && hd.pending ? 'warn' : (hd.ok ? 'ok' : '')) +
+      tile(pend('ac', ac.ok), 'Accès à ouvrir', ac.ok ? ac.total + ' au total' : 'table non lue', 'acces', ac.ok && ac.pending ? 'warn' : (ac.ok ? 'ok' : '')) + '</div>' +
+      '<h3 class="bo-h3">Contenus</h3><div class="bo-tiles">' +
+      tile(st ? st.live + ' / ' + st.articles : '—', 'Articles affichés', 'publiés sur la page Bienvenue', 'accueil') +
+      tile(st ? st.faq : '—', 'Questions de la FAQ', 'page FAQ', 'faq') +
+      tile(st ? st.tuto : '—', 'Étapes du tutoriel', 'visite guidée', 'tuto') +
+      tile(st ? st.sign : '—', 'Signataires', 'contrats et avenants', 'documents') + '</div>' +
+      '<h3 class="bo-h3">Rubriques</h3><div class="bo-links">' + TABS.filter(function (t) { return t[0] !== 'apercu'; }).map(function (t) {
+        return '<button type="button" class="bo-link" data-botab="' + t[0] + '"><span class="bo-link__t">' + t[1] + '</span><span class="bo-link__s">' + t[2] + '</span></button>'; }).join('') + '</div>' +
+      '<h3 class="bo-h3">Sources du suivi</h3><ul class="bo-status">' + [['Helpdesk', hd], ['Gestion des accès', ac]].map(function (x) {
+        var o = x[1]; return '<li><span class="bo-dot ' + (o.ok ? 'is-ok' : (o.error ? 'is-ko' : '')) + '" aria-hidden="true"></span><strong>' + x[0] + '</strong> <span class="bo-status__t">' + (o.ok ? 'table lue · ' + o.total + ' ligne' + (o.total > 1 ? 's' : '') : (o.error ? 'inaccessible : ' + o.error : 'pas encore lue')) + '</span></li>'; }).join('') + '</ul>';
+    overview.innerHTML = html;
+  }
+  overview.addEventListener('click', function (e) { var b = e.target.closest('[data-botab]'); if (b) showBoTab(b.getAttribute('data-botab')); });
+
   function showBoTab(g, focus) {
-    if (!TABS.some(function (t) { return t[0] === g; })) g = 'accueil';
+    if (!TABS.some(function (t) { return t[0] === g; })) g = 'apercu';
     pageBo.setAttribute('data-tab', g);
     Array.prototype.forEach.call(tabsEl.querySelectorAll('.bo-tab'), function (b) { var on = b.getAttribute('data-botab') === g; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
-    tabHint.textContent = TABS.filter(function (t) { return t[0] === g; })[0][2];
+    var cur = TABS.filter(function (t) { return t[0] === g; })[0];
+    titleH.textContent = cur[1]; tabHint.textContent = cur[2];
+    if (g === 'apercu') renderOverview();
     // Numérotation des étapes : reprend à 1 dans chaque rubrique.
     var n = 0; Array.prototype.forEach.call(wrap.querySelectorAll('[data-grp="' + g + '"] .badge-num'), function (b) { b.textContent = String(++n); });
     Array.prototype.forEach.call(wrap.querySelectorAll('.CodeMirror'), function (c) { if (c.CodeMirror) c.CodeMirror.refresh(); }); // éditeurs Markdown montés pendant que leur bloc était masqué
+    window.scrollTo(0, 0);
   }
+  // Pastille du nombre de demandes à traiter sur les rubriques de suivi (renseignée par la page Bienvenue à l'ouverture du back office) et vue d'ensemble.
+  window.__refreshBoTabs = function () {
+    var c = window.__svCounts || {};
+    TABS.forEach(function (t) { if (t[0] !== 'helpdesk' && t[0] !== 'acces') return; var el = document.getElementById('bo-tab-' + t[0]); if (el) el.innerHTML = '<span>' + t[1] + '</span>' + (c[t[0]] ? '<span class="fr-badge fr-badge--sm fr-badge--warning" title="' + c[t[0]] + ' à traiter">' + c[t[0]] + '</span>' : ''); });
+    if (pageBo.getAttribute('data-tab') === 'apercu') renderOverview();
+  };
+  window.__refreshBoTabs();
   tabsEl.addEventListener('click', function (e) { var b = e.target.closest('[data-botab]'); if (b) showBoTab(b.getAttribute('data-botab')); });
   tabsEl.addEventListener('keydown', function (e) {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var next = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : (e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0); if (!next) return;
     var ids = TABS.map(function (t) { return t[0]; }), i = ids.indexOf(pageBo.getAttribute('data-tab')); e.preventDefault();
-    showBoTab(ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length], true);
+    showBoTab(ids[(i + next + ids.length) % ids.length], true);
   });
   window.__showBoTab = showBoTab;
-  showBoTab('accueil');
+  showBoTab('apercu');
+
+  /* Recherche dans tout le back office : blocs du formulaire (titre, libellés, textes, valeurs saisies) et éléments du brouillon (articles, FAQ, étapes, signataires, demandes). */
+  (function () {
+    var qEl = document.getElementById('bo-q'), list = document.getElementById('bo-results'), hits = [], active = -1, hitTimer;
+    function fold(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    var tabLabel = {}; TABS.forEach(function (t) { tabLabel[t[0]] = t[1]; });
+    var SKIP = '#bo-overview, .table-wrap, #w-articles, #w-faq-admin, #w-tuto-admin, #w-sign-admin, #w-counters, .CodeMirror, .editor-toolbar, script, style, .bo-bar';
+    // Blocs du formulaire : chaque <details> ou section porte son propre texte (hors blocs imbriqués), rattaché à sa rubrique.
+    function formItems() {
+      var map = new Map();
+      function own(node) { var u = node.closest('details, section.step'); return u && u.closest('[data-grp]') ? u : null; }
+      function add(u, txt) { if (!txt) return; var e = map.get(u); if (!e) map.set(u, e = []); e.push(txt); }
+      var tw = document.createTreeWalker(wrap, NodeFilter.SHOW_TEXT, null), n;
+      while ((n = tw.nextNode())) {
+        var par = n.parentElement; if (!par || par.closest(SKIP) || !/\S/.test(n.nodeValue)) continue;
+        var u = own(par); if (u) add(u, n.nodeValue.replace(/\s+/g, ' ').trim());
+      }
+      Array.prototype.forEach.call(wrap.querySelectorAll('input, textarea, select'), function (c) {
+        if (c.closest(SKIP) || c.type === 'checkbox' || c.type === 'radio' || c.type === 'button' || c.type === 'search') return;
+        var u = own(c); if (!u) return;
+        add(u, c.tagName === 'SELECT' ? (c.selectedOptions[0] ? c.selectedOptions[0].textContent : '') : c.value);
+      });
+      var out = [];
+      map.forEach(function (parts, u) {
+        var head = u.matches('details') ? u.querySelector(':scope > summary') : u.querySelector('h2');
+        var title = head ? head.textContent.replace(/\s+/g, ' ').trim() : '';
+        out.push({ grp: u.closest('[data-grp]').getAttribute('data-grp'), kind: u.matches('details') ? 'Bloc' : 'Rubrique', title: title || 'Sans titre', text: parts.join(' · '), el: u });
+      });
+      return out;
+    }
+    function build(q) {
+      var terms = fold(q).split(/\s+/).filter(Boolean); if (!terms.length) return [];
+      var all = formItems().concat(window.WEL && window.WEL.searchItems ? window.WEL.searchItems() : []), order = TABS.map(function (t) { return t[0]; });
+      var res = [];
+      all.forEach(function (it) {
+        var ft = fold(it.title), fx = fold(it.text), hay = ft + ' ' + fx;
+        if (!terms.every(function (t) { return hay.indexOf(t) !== -1; })) return;
+        var inTitle = terms.every(function (t) { return ft.indexOf(t) !== -1; }), pos = fx.indexOf(terms[0]), snip = '';
+        if (!inTitle && pos >= 0) { var raw = String(it.text), a = Math.max(0, pos - 30); snip = (a > 0 ? '…' : '') + raw.slice(a, pos + 70).replace(/\s+/g, ' '); }
+        else snip = String(it.text).replace(/\s+/g, ' ').slice(0, 90);
+        res.push({ it: it, score: (inTitle ? 0 : 1) * 1000 + order.indexOf(it.grp) * 10, snip: snip, terms: terms });
+      });
+      res.sort(function (a, b) { return a.score - b.score; });
+      return res.slice(0, 40);
+    }
+    function mark(text, terms) {
+      var out = esc(text);
+      terms.forEach(function (t) { if (t.length < 2) return; var re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'); out = out.replace(re, function (m) { return m.length ? '<mark>' + m + '</mark>' : m; }); });
+      return out;
+    }
+    function render() {
+      var q = qEl.value.trim();
+      if (!q) { hide(); return; }
+      hits = build(q); active = hits.length ? 0 : -1;
+      list.innerHTML = hits.length ? hits.map(function (h, i) {
+        return '<li role="presentation"><button type="button" class="bo-res' + (i === 0 ? ' is-active' : '') + '" role="option" data-hit="' + i + '" id="bo-res-' + i + '"><span class="bo-res__top"><span class="fr-tag fr-tag--sm">' + esc(tabLabel[h.it.grp] || h.it.grp) + '</span><span class="bo-res__title">' + mark(h.it.title, h.terms) + '</span></span>' +
+          (h.snip ? '<span class="bo-res__snip">' + mark(h.snip, h.terms) + '</span>' : '') + '</button></li>';
+      }).join('') : '<li class="bo-none" role="presentation">Aucun résultat pour « ' + esc(q) + ' ».</li>';
+      list.hidden = false; qEl.setAttribute('aria-expanded', 'true');
+    }
+    function hide() { list.hidden = true; qEl.setAttribute('aria-expanded', 'false'); qEl.removeAttribute('aria-activedescendant'); }
+    function setActive(i) {
+      if (!hits.length) return; active = (i + hits.length) % hits.length;
+      Array.prototype.forEach.call(list.querySelectorAll('.bo-res'), function (b, j) { b.classList.toggle('is-active', j === active); });
+      var cur = document.getElementById('bo-res-' + active); if (cur) { qEl.setAttribute('aria-activedescendant', cur.id); cur.scrollIntoView({ block: 'nearest' }); }
+    }
+    function go(i) {
+      var h = hits[i]; if (!h) return;
+      hide(); showBoTab(h.it.grp);
+      if (h.it.run) { h.it.run(); return; }
+      var el = h.it.el; if (!el || !document.body.contains(el)) return;
+      for (var d = el; d; d = d.parentElement && d.parentElement.closest('details')) { if (d.matches('details')) d.open = true; if (!d.parentElement) break; }
+      setTimeout(function () {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.classList.add('bo-hit'); clearTimeout(hitTimer); hitTimer = setTimeout(function () { el.classList.remove('bo-hit'); }, 2500);
+      }, 60);
+    }
+    var timer; qEl.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(render, 120); });
+    qEl.addEventListener('focus', function () { if (qEl.value.trim()) render(); });
+    qEl.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) render(); else setActive(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (list.hidden) render(); else go(active); }
+      else if (e.key === 'Escape') { if (!list.hidden) { e.preventDefault(); hide(); } else if (qEl.value) { qEl.value = ''; } }
+    });
+    document.getElementById('bo-q-btn').addEventListener('click', function () { render(); qEl.focus(); });
+    list.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    list.addEventListener('click', function (e) { var b = e.target.closest('[data-hit]'); if (b) go(Number(b.getAttribute('data-hit'))); });
+    document.addEventListener('click', function (e) { if (!boSearch.contains(e.target)) hide(); });
+  })();
 
   var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
   document.querySelector('.fr-header').addEventListener('click', function (e) {
