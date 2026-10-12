@@ -2326,7 +2326,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <div class="modal-header">
         <div style="min-width:0">
           <h2 class="modal-title" id="bmodal-title">Mettre à jour en bloc</h2>
-          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois, ou les admet dans la réserve — un identifiant par ligne.</p>
+          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois, les admet dans la réserve, ou met à jour les colonnes de votre choix depuis un fichier .csv.</p>
         </div>
         <div class="modal-actions"><button class="round-btn" id="bmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
@@ -2354,7 +2354,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.17.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.18.0</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -5111,14 +5111,90 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var v = Date.UTC(year, month - 1, day);
     return new Date(v).getUTCMonth() === month - 1 ? v / 1000 : null;
   }
-  // Colonnes retrouvées par leur libellé affiché (l'éventuel « *» des obligatoires est ignoré), insensible aux accents/majuscules.
-  function parseCandidatesCsv(c, text) {
+
+  /* ---------- Reconnaissance automatique des colonnes d'un .csv (ajout et mise à jour en bloc) ---------- */
+  function csvKey(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+  function csvP2(n) { return (n < 10 ? '0' : '') + n; }
+  // Synonymes courants des en-têtes, par nom de colonne (clés sans accents ni ponctuation).
+  var CSV_ALIASES = {
+    ddn: ['datedenaissance', 'datenaissance', 'naissance', 'nele', 'dn'], numerodetelephone: ['telephone', 'tel', 'tele', 'portable', 'mobile', 'gsm', 'numerotelephone', 'numerotel', 'telephoneportable'], tel: ['telephone', 'numerodetelephone', 'portable', 'mobile', 'gsm'],
+    email: ['mail', 'courriel', 'adresseemail', 'adressemail', 'adresseelectronique', 'emailperso'], mail: ['email', 'courriel', 'adresseemail', 'adressemail'], codepostal: ['cp', 'codepost'], cp: ['codepostal'],
+    ncandidature: ['numerodecandidature', 'numerocandidature', 'candidature', 'refcandidature', 'ncandidature'], nid: ['numeroid', 'identifiant', 'numerodidentification', 'idcandidat'], nigend: ['matricule', 'numigend'],
+    nom: ['nomdefamille', 'nomnaissance', 'nomdenaissance', 'nomusuel'], prenom: ['prenoms', 'prenomusuel'], civilite: ['titre', 'genre'], lieudenaissance: ['lieunaissance', 'villedenaissance', 'communedenaissance', 'lieunais'],
+    dpt: ['departement', 'departementdenaissance', 'dptnaissance', 'depnaissance'], adresse: ['rue', 'adressepostale', 'adressepostal', 'adressepersonnelle'], ville: ['commune', 'localite'], affectation: ['groupement', 'gd', 'groupementdegendarmerie'],
+    etatcandidature: ['etat', 'statut', 'etatdelacandidature', 'etatducandidat', 'statutcandidature'], commentaires: ['commentaire', 'observations', 'observation', 'remarques', 'remarque', 'notes'],
+    origine: ['recrutement', 'voie', 'voiederecrutement'], datetestspsy: ['datetests', 'datepsy', 'datetestpsy', 'datetestspsychometriques'], testspsy: ['resultatpsy', 'resultattestspsy', 'resultatdestestspsy'],
+    datevemi: ['datevisitemedicale', 'datevisite'], vemi: ['resultatvemi'], validitevemi: ['validite', 'validitedelavemi']
+  };
+  function csvNames(col) { var o = {}; [col.label, displayLabel(col), col.id].forEach(function (n) { var k = csvKey(n); if (k) o[k] = true; }); return Object.keys(o); }
+  // Associe chaque en-tête du fichier à une colonne de la table : nom identique, puis synonyme, puis nom contenu dans l'en-tête (ou l'inverse). Une colonne n'est associée qu'une fois.
+  function csvAutoMap(headers, cols) {
+    var used = {}, res = headers.map(function () { return null; }), hk = headers.map(function (h) { return csvKey(String(h).replace(/\*/g, '')); });
+    function take(i, col) { res[i] = col; used[col.id] = true; }
+    hk.forEach(function (k, i) { if (!k || res[i]) return; var col = cols.filter(function (c) { return !used[c.id] && csvNames(c).indexOf(k) !== -1; })[0]; if (col) take(i, col); });
+    hk.forEach(function (k, i) { if (!k || res[i]) return; var col = cols.filter(function (c) { return !used[c.id] && csvNames(c).some(function (n) { return (CSV_ALIASES[n] || []).indexOf(k) !== -1; }); })[0]; if (col) take(i, col); });
+    hk.forEach(function (k, i) {
+      if (k.length < 4 || res[i]) return; var best = null, bl = 0;
+      cols.forEach(function (c) { if (used[c.id]) return; csvNames(c).forEach(function (n) { if (n.length >= 4 && n.length > bl && (k.indexOf(n) !== -1 || n.indexOf(k) !== -1)) { best = c; bl = n.length; } }); });
+      if (best) take(i, best);
+    });
+    return res;
+  }
+  function csvDateParts(s) {
+    var m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})(?:[ T]+(\d{1,2})[:hH](\d{2}))?/.exec(s), p;
+    if (m) p = { y: +m[3], mo: +m[2], d: +m[1], h: m[4] != null ? +m[4] : 0, mi: m[5] != null ? +m[5] : 0 };
+    else { m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T]+(\d{1,2})[:hH](\d{2}))?/.exec(s); if (!m) return null; p = { y: +m[1], mo: +m[2], d: +m[3], h: m[4] != null ? +m[4] : 0, mi: m[5] != null ? +m[5] : 0 }; }
+    if (p.mo < 1 || p.mo > 12 || p.d < 1 || p.d > 31 || new Date(Date.UTC(p.y, p.mo - 1, p.d)).getUTCMonth() !== p.mo - 1) return null;
+    return p;
+  }
+  // Valeur d'une cellule selon le type de la colonne : { value } ou { error }.
+  function csvParseValue(col, raw) {
+    var s = String(raw == null ? '' : raw).trim(), t = typeBase(col.type), lab = displayLabel(col);
+    if (t === 'Date' || t === 'DateTime') {
+      var p = csvDateParts(s); if (!p) return { error: 'date invalide (' + lab + ', format attendu JJ/MM/AAAA)' };
+      var iso = p.y + '-' + csvP2(p.mo) + '-' + csvP2(p.d) + (t === 'DateTime' ? 'T' + csvP2(p.h) + ':' + csvP2(p.mi) : ''), r = parseEdit(col, iso);
+      return r.error ? { error: lab + ' : ' + r.error } : { value: r.value };
+    }
+    if (t === 'Choice' && col.choices && col.choices.length) {
+      var match = col.choices.filter(function (o) { return norm(o) === norm(s); })[0];
+      return match ? { value: match } : { error: 'valeur invalide (' + lab + ') : choisir parmi ' + col.choices.join(', ') };
+    }
+    if (t === 'ChoiceList') {
+      var parts = s.split(/[;,|]/).map(function (x) { return x.trim(); }).filter(Boolean), out = [];
+      for (var i = 0; i < parts.length; i++) { var mt = (col.choices || []).filter(function (o) { return norm(o) === norm(parts[i]); })[0]; if (!mt) return { error: 'valeur invalide (' + lab + ') : ' + parts[i] }; out.push(mt); }
+      return { value: ['L'].concat(out) };
+    }
+    if (t === 'Bool') {
+      if (/^(oui|o|true|vrai|1|x|yes)$/i.test(s)) return { value: true };
+      if (/^(non|n|false|faux|0|no)$/i.test(s)) return { value: false };
+      return { error: 'valeur invalide (' + lab + ') : oui ou non attendu' };
+    }
+    if (t === 'Int' || t === 'Numeric') { var q = parseEdit(col, s); return q.error ? { error: lab + ' : ' + q.error } : { value: q.value }; }
+    return { value: s };
+  }
+  // Tableau d'association : en-tête du fichier, exemple de valeur, colonne reconnue (modifiable) ; cases « mettre à jour » facultatives.
+  function csvMapTableHtml(rows, map, cols, o) {
+    var sample = function (i) { for (var r = 1; r < Math.min(rows.length, 6); r++) { var v = String(rows[r][i] == null ? '' : rows[r][i]).trim(); if (v) return v; } return ''; };
+    return '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Colonnes du fichier et colonnes reconnues</caption><thead><tr>' + (o.use ? '<th scope="col">Mettre à jour</th>' : '') +
+      '<th scope="col">Colonne du fichier</th><th scope="col">Exemple</th><th scope="col">Colonne reconnue</th></tr></thead><tbody>' +
+      rows[0].map(function (h, i) {
+        var cur = map[i] || '', isKey = o.keyIdx === i;
+        return '<tr>' + (o.use ? '<td>' + (isKey ? '<span class="hint">Identifiant</span>' : '<input type="checkbox" data-' + o.pre + '-use="' + i + '"' + (o.use[i] ? ' checked' : '') + (cur ? '' : ' disabled') + ' aria-label="Mettre à jour la colonne ' + esc(h) + '">') + '</td>' : '') +
+          '<th scope="row">' + esc(String(h).replace(/\*/g, '').trim() || '(sans nom)') + '</th><td>' + (sample(i) ? esc(sample(i).slice(0, 40)) : '<span class="hint">—</span>') + '</td>' +
+          '<td><select class="select" data-' + o.pre + '-map="' + i + '" aria-label="Colonne reconnue pour ' + esc(h) + '"><option value="">— Ignorer —</option>' +
+          cols.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === cur ? ' selected' : '') + '>' + esc(displayLabel(c)) + (o.req && o.req.indexOf(c.id) !== -1 ? ' *' : '') + '</option>'; }).join('') + '</select></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  // Une colonne du tableau n'est associée qu'à un en-tête : choisir une colonne déjà prise la libère de l'autre.
+  function csvSetMap(map, i, id) { if (id) map.forEach(function (x, j) { if (j !== i && x === id) map[j] = ''; }); map[i] = id; }
+  // Colonnes reconnues automatiquement (ou associées à la main : map = identifiants de colonne par en-tête) ; l'éventuel « * » des obligatoires est ignoré.
+  function parseCandidatesCsv(c, text, map) {
     var cols = importColumns(c), req = requiredIds(c);
     var rows = parseCsvText(text); if (!rows.length) return { error: 'Fichier vide ou illisible.' };
-    var header = rows[0].map(function (h) { return norm(String(h).replace(/\*/g, '').trim()); });
-    var colIdx = cols.map(function (col) { return { col: col, idx: header.indexOf(norm(displayLabel(col))) }; });
+    map = map || csvAutoMap(rows[0], cols).map(function (col) { return col ? col.id : ''; });
+    var colIdx = cols.map(function (col) { return { col: col, idx: map.indexOf(col.id) }; });
     var missingCols = colIdx.filter(function (x) { return req.indexOf(x.col.id) !== -1 && x.idx === -1; }).map(function (x) { return displayLabel(x.col); });
-    if (missingCols.length) return { error: 'Colonne(s) obligatoire(s) introuvable(s) dans le fichier : ' + missingCols.join(', ') + '.' };
+    if (missingCols.length) return { error: 'Colonne(s) obligatoire(s) non reconnue(s) dans le fichier : ' + missingCols.join(', ') + '. Associez-les ci-dessus.', missing: missingCols, rows: rows };
 
     var comCol = colIdx.filter(function (x) { return norm(displayLabel(x.col)) === 'commentaires'; })[0];
     var items = [], errors = [], skipped = 0;
@@ -5129,14 +5205,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       colIdx.forEach(function (x) {
         if (rowErr || x.idx === -1) return;
         var raw = (r[x.idx] || '').trim(); if (!raw) return;
-        var col = x.col, t = typeBase(col.type);
-        if (t === 'Date') { var dv = parseCsvDateFr(raw); if (dv == null) { rowErr = 'date invalide (' + displayLabel(col) + ', format attendu JJ/MM/AAAA)'; return; } fields[col.id] = dv; }
-        else if (t === 'Choice' && col.choices && col.choices.length) {
-          var match = col.choices.filter(function (o) { return norm(o) === norm(raw); })[0];
-          if (!match) { rowErr = 'valeur invalide (' + displayLabel(col) + ') : choisir parmi ' + col.choices.join(', '); return; }
-          fields[col.id] = match;
-        }
-        else fields[col.id] = raw;
+        var pv = csvParseValue(x.col, raw); if (pv.error) { rowErr = pv.error; return; } fields[x.col.id] = pv.value;
       });
       if (rowErr) { errors.push('ligne ' + line + ' : ' + rowErr); return; }
       var missing = req.filter(function (rid) { return emptyVal(fields[rid]) || (typeof fields[rid] === 'string' && !fields[rid].trim()); })
@@ -5146,7 +5215,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       if (em && fields[em.id] && !validEmail(String(fields[em.id]).trim())) { errors.push('ligne ' + line + ' : adresse e-mail invalide'); return; }
       items.push({ line: line, fields: fields });
     });
-    return { items: items, errors: errors, skipped: skipped };
+    return { items: items, errors: errors, skipped: skipped, rows: rows };
   }
   function pickCsvFile(cb) {
     var i = document.createElement('input');
@@ -5157,20 +5226,41 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function showImportMsg(type, text) { state.importState.msg = { type: type, text: text }; renderImportSection(); }
   function renderImportSection() {
     var c = cfg(), st = state.importState, host = $('imp-body'); if (!host) return;
-    var req = requiredIds(c).map(function (rid) { var col = colMeta(c.table, rid); return col ? displayLabel(col) : rid; });
+    var req = requiredIds(c), reqNames = req.map(function (rid) { var col = colMeta(c.table, rid); return col ? displayLabel(col) : rid; });
+    if (st.csv && !st.busy && !st.msg) { // fichier lu : colonnes reconnues automatiquement, à vérifier avant l'import
+      var cols = importColumns(c), r = parseCandidatesCsv(c, st.csv.text, st.csv.map), n = r.items ? r.items.length : 0;
+      host.innerHTML = '<p class="hint"><strong>' + esc(st.csv.name) + '</strong> · ' + (st.csv.rows.length - 1) + ' ligne' + (st.csv.rows.length - 1 > 1 ? 's' : '') + '. Les colonnes ont été reconnues automatiquement : vérifiez ou corrigez l’association. Obligatoires : ' + esc(reqNames.join(', ')) + '.</p>' +
+        csvMapTableHtml(st.csv.rows, st.csv.map, cols, { pre: 'imp', req: req }) +
+        (r.error ? '<div class="doc-alert error" role="alert"><p>' + esc(r.error) + '</p></div>' : '<p class="hint" style="margin-top:.75rem">' + n + ' candidat' + (n > 1 ? 's prêts' : ' prêt') + ' à être importé' + (n > 1 ? 's' : '') + (r.skipped ? ' · ligne d’exemple ignorée' : '') + (r.errors.length ? ' · ' + r.errors.length + ' ligne(s) ignorée(s) : ' + esc(r.errors.slice(0, 5).join(' ; ')) + (r.errors.length > 5 ? '…' : '') : '') + '.</p>') +
+        '<div class="cf-actions"><button type="button" class="btn" id="imp-go"' + (r.error || !n ? ' disabled' : '') + '>Importer ' + (n ? n + ' candidat' + (n > 1 ? 's' : '') : '') + '</button><button type="button" class="btn secondary" id="imp-change">Changer de fichier</button></div>';
+      $('imp-msg').innerHTML = '';
+      return;
+    }
     host.innerHTML =
-      '<span class="hint">Mêmes colonnes que la création individuelle. Obligatoires : ' + esc(req.join(', ')) + '. ' +
+      '<span class="hint">Mêmes colonnes que la création individuelle, reconnues automatiquement quel que soit leur ordre ou leur intitulé exact. Obligatoires : ' + esc(reqNames.join(', ')) + '. ' +
       '<button type="button" class="btn secondary sm" id="imp-template">Télécharger un modèle .csv</button></span>' +
       '<div class="doc-drop' + (st.busy ? ' is-busy' : '') + '" id="imp-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (st.busy ? 'true' : 'false') + '">' +
       ICON_UPLOAD + '<p><strong>' + (st.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ici') + '</strong>' + (st.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
     $('imp-msg').innerHTML = st.msg ? '<div class="doc-alert ' + st.msg.type + '" role="' + (st.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(st.msg.text) + '</p></div>' : '';
   }
+  // Lecture du fichier : les colonnes sont reconnues automatiquement, l'import se lance après vérification.
   function importCandidatesFile(file) {
     var c = cfg(), st = state.importState; if (st.busy) return;
     var reader = new FileReader();
     reader.onload = function () {
-      var r = parseCandidatesCsv(c, String(reader.result || ''));
-      if (r.error) { showImportMsg('error', r.error); return; }
+      var text = String(reader.result || ''), rows = parseCsvText(text);
+      if (rows.length < 2) { showImportMsg('error', rows.length ? 'Le fichier ne contient aucune ligne de données sous l’en-tête.' : 'Fichier vide ou illisible.'); return; }
+      st.msg = null; st.csv = { name: file.name, text: text, rows: rows, map: csvAutoMap(rows[0], importColumns(c)).map(function (col) { return col ? col.id : ''; }) };
+      renderImportSection();
+    };
+    reader.onerror = function () { st.busy = false; showImportMsg('error', 'Lecture du fichier impossible.'); };
+    reader.readAsText(file, 'UTF-8');
+  }
+  function runCandidatesImport() {
+    var c = cfg(), st = state.importState; if (!st.csv || st.busy) return;
+    var r = parseCandidatesCsv(c, st.csv.text, st.csv.map);
+    if (r.error) { renderImportSection(); return; }
+    {
       if (!r.items.length) {
         showImportMsg('error', r.skipped && !r.errors.length ? 'Le fichier ne contient que la ligne d’exemple (ignorée) : ajoutez vos candidats en dessous.'
           : 'Aucune ligne valide dans le fichier' + (r.errors.length ? ' (' + r.errors.join(' ; ') + ')' : '') + '.');
@@ -5191,7 +5281,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
             .catch(function (e) { failed.push('ligne ' + it.line + ' : ' + ((e && e.message) || e)); });
         });
       }, Promise.resolve()).then(function () {
-        st.busy = false;
+        st.busy = false; st.csv = null;
         var parts = [created + ' candidat' + (created > 1 ? 's' : '') + ' importé' + (created > 1 ? 's' : '')];
         if (dupCount) parts.push(dupCount + ' marqué' + (dupCount > 1 ? 's' : '') + ' doublon' + (dupCount > 1 ? 's' : ''));
         if (r.skipped) parts.push('ligne d’exemple ignorée');
@@ -5201,12 +5291,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         renderImportSection();
         return load();
       });
-    };
-    reader.onerror = function () { st.busy = false; showImportMsg('error', 'Lecture du fichier impossible.'); };
-    reader.readAsText(file, 'UTF-8');
+    }
   }
+  $('imp-body') && $('imp-body').addEventListener('change', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-imp-map'), st = state.importState; if (k == null || !st.csv) return;
+    csvSetMap(st.csv.map, Number(k), e.target.value); renderImportSection();
+  });
   $('imp-body') && $('imp-body').addEventListener('click', function (e) {
     if (e.target.id === 'imp-template') { downloadCandidateTemplate(); return; }
+    if (e.target.id === 'imp-go') { runCandidatesImport(); return; }
+    if (e.target.id === 'imp-change') { state.importState.csv = null; state.importState.msg = null; renderImportSection(); return; }
     if (e.target.closest('#imp-drop') && !state.importState.busy) pickCsvFile(importCandidatesFile);
   });
   ['dragenter', 'dragover'].forEach(function (t) {
@@ -5298,7 +5392,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function renderBulkForm() {
     var c = cfg(), b = state.bulk; if (!b) return;
-    $('bmodal').querySelector('.modal-column').classList.toggle('is-wide', b.mode === 'adm' && !b.result); // tableau d'admission : fenêtre élargie
+    $('bmodal').querySelector('.modal-column').classList.toggle('is-wide', (b.mode === 'adm' || b.mode === 'csv') && !b.result); // tableau d'admission : fenêtre élargie
     if (b.result) {
       $('bmodal-form').innerHTML =
         '<div class="doc-alert ' + (b.result.failed.length ? 'error' : 'success') + '" role="' + (b.result.failed.length ? 'alert' : 'status') + '"><p>' +
@@ -5315,8 +5409,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="psy"' + (b.mode === 'psy' ? ' checked' : '') + '> Résultats des tests psychométriques</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="vemi"' + (b.mode === 'vemi' ? ' checked' : '') + '> Résultats de la VEMI</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="adm"' + (b.mode === 'adm' ? ' checked' : '') + '> Admettre dans la réserve</label>' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="csv"' + (b.mode === 'csv' ? ' checked' : '') + '> Mettre à jour depuis un fichier .csv</label>' +
       '</div></section>';
 
+    if (b.mode === 'csv') { html += csvFormHtml(c, b); $('bmodal-form').innerHTML = html; return; }
     if (b.mode === 'adm') { html += admFormHtml(c, b); $('bmodal-form').innerHTML = html; admRefreshUi(); return; }
 
     if (b.mode === 'psy') {
@@ -5343,6 +5439,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function submitBulk() {
     var c = cfg(), b = state.bulk; if (!b || b.busy) return;
     if (b.mode === 'adm') { submitAdm(); return; }
+    if (b.mode === 'csv') { submitCsvUpdate(); return; }
     var list = parseNigendList(b.nigends);
     if (!list.length) { b.error = 'Indiquez au moins un N° de candidature ou NID.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
 
@@ -5385,6 +5482,118 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       return load();
     }).then(function () { if (!$('bmodal').hidden) renderBulkForm(); });
   }
+
+  /* ----- Mise à jour depuis un fichier .csv : identifiant des candidats et colonnes reconnus automatiquement, choix de ce qui est mis à jour ----- */
+  function csvUpdTargets(c) {
+    var cols = state.colsByTable[c.table] || [], keys = ['N° candidature', 'NID', 'Nigend', 'Email'].map(function (l) { return findCol(c.table, l); }).filter(Boolean);
+    var out = cols.filter(isEditableCol); keys.forEach(function (k) { if (out.indexOf(k) === -1) out.push(k); });
+    return out;
+  }
+  // Identifiant par défaut : l'en-tête reconnu comme N° de candidature, à défaut NID, Nigend ou Email.
+  function csvAutoKey(c, map) {
+    var order = ['N° candidature', 'NID', 'Nigend', 'Email'];
+    for (var i = 0; i < order.length; i++) { var col = findCol(c.table, order[i]); if (col) { var j = map.indexOf(col.id); if (j !== -1) return j; } }
+    return -1;
+  }
+  function csvPlan(c, b) {
+    var C = b.csv, targets = csvUpdTargets(c), byId = {}; targets.forEach(function (t) { byId[t.id] = t; });
+    var out = { keyCol: C.key >= 0 && C.map[C.key] ? byId[C.map[C.key]] || null : null, matched: [], notFound: [], errors: [], unchanged: 0, used: [] };
+    if (!out.keyCol) return out;
+    var index = {}; state.records.forEach(function (r) { var v = r.raw[out.keyCol.id], k = norm(String(v == null ? '' : v).trim()); if (k && !index[k]) index[k] = r; });
+    out.used = C.rows[0].map(function (h, i) { return i; }).filter(function (i) { var col = C.map[i] && byId[C.map[i]]; return i !== C.key && C.use[i] && col && isEditableCol(col); });
+    C.rows.slice(1).forEach(function (r, n) {
+      var line = n + 2, kv = String(r[C.key] == null ? '' : r[C.key]).trim(); if (!kv) return;
+      var rec = index[norm(kv)]; if (!rec) { out.notFound.push(kv); return; }
+      var fields = {}, err = null;
+      out.used.forEach(function (i) {
+        if (err) return; var raw = String(r[i] == null ? '' : r[i]).trim(); if (raw === '') return; // cellule vide : champ inchangé
+        var col = byId[C.map[i]], pv = csvParseValue(col, raw); if (pv.error) err = pv.error; else fields[col.id] = pv.value;
+      });
+      if (err) { out.errors.push('ligne ' + line + ' (' + kv + ') : ' + err); return; }
+      if (!Object.keys(fields).length) { out.unchanged++; return; }
+      out.matched.push({ line: line, key: kv, rec: rec, fields: fields });
+    });
+    return out;
+  }
+  function csvFormHtml(c, b) {
+    var C = b.csv;
+    if (!C) {
+      return '<section class="cf-section"><h3>Fichier .csv</h3><p class="hint">Une ligne par candidat, avec un identifiant (N° de candidature, NID, Nigend ou Email) et les colonnes à mettre à jour. Les colonnes sont reconnues automatiquement, quel que soit leur ordre ou leur intitulé exact ; vous choisissez ensuite ce qui est mis à jour.</p>' +
+        '<div class="doc-drop" id="bcsv-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD + '<p><strong>Glissez-déposez un fichier .csv ici</strong><br>ou cliquez pour parcourir vos fichiers</p></div></section>' +
+        '<div class="cf-actions"><button type="button" class="btn secondary" id="bf-cancel">Annuler</button></div>';
+    }
+    var targets = csvUpdTargets(c), P = csvPlan(c, b), nrows = C.rows.length - 1;
+    var keyOpts = C.rows[0].map(function (h, i) { var col = targets.filter(function (t) { return t.id === C.map[i]; })[0]; return '<option value="' + i + '"' + (i === C.key ? ' selected' : '') + '>' + esc(String(h).replace(/\*/g, '').trim() || '(sans nom)') + (col ? ' → ' + esc(displayLabel(col)) : '') + '</option>'; }).join('');
+    var nUp = P.used.length, ready = P.keyCol && P.matched.length && nUp;
+    return '<section class="cf-section"><h3>Fichier .csv</h3><p class="hint"><strong>' + esc(C.name) + '</strong> · ' + nrows + ' ligne' + (nrows > 1 ? 's' : '') + '. <button type="button" class="btn secondary sm" id="bcsv-change">Changer de fichier</button></p></section>' +
+      '<section class="cf-section"><h3>Identifiant des candidats</h3><div class="cf-field" style="max-width:32rem"><label for="bcsv-key">Colonne qui identifie chaque candidat<span class="req" aria-hidden="true">*</span></label>' +
+      '<select class="select" id="bcsv-key" data-bcsv-key><option value="-1"' + (C.key < 0 ? ' selected' : '') + '>— Choisir —</option>' + keyOpts + '</select></div>' +
+      (P.keyCol ? '<p class="hint">' + P.matched.length + ' candidat' + (P.matched.length > 1 ? 's trouvés' : ' trouvé') + ' sur ' + esc(displayLabel(P.keyCol)) + (P.notFound.length ? ' · ' + P.notFound.length + ' introuvable' + (P.notFound.length > 1 ? 's' : '') + ' : ' + esc(P.notFound.slice(0, 8).join(', ')) + (P.notFound.length > 8 ? '…' : '') : '') + '.</p>' : '<p class="hint">Choisissez la colonne du fichier qui contient le N° de candidature, le NID, le Nigend ou l’email.</p>') + '</section>' +
+      '<section class="cf-section"><h3>Que mettre à jour</h3><p class="hint">Cochez les colonnes à mettre à jour ; corrigez l’association si une colonne a été mal reconnue. Une cellule vide ne modifie pas le champ.</p>' +
+      csvMapTableHtml(C.rows, C.map, targets, { pre: 'bcsv', use: C.use, keyIdx: C.key }) + '</section>' +
+      (P.errors.length ? '<div class="cf-warn" role="alert"><p>' + P.errors.length + ' ligne' + (P.errors.length > 1 ? 's' : '') + ' ignorée' + (P.errors.length > 1 ? 's' : '') + ' : ' + esc(P.errors.slice(0, 5).join(' ; ')) + (P.errors.length > 5 ? '…' : '') + '</p></div>' : '') +
+      (b.error ? '<div class="doc-alert error" role="alert"><p>' + esc(b.error) + '</p></div>' : '') + (b.warn ? '<div class="cf-warn" role="alert"><p>' + esc(b.warn) + '</p></div>' : '') +
+      '<div class="cf-actions"><button type="submit" class="btn"' + (b.busy || !ready ? ' disabled' : '') + '>' + (b.busy ? 'Mise à jour…' : (b.confirm ? 'Mettre à jour quand même' : 'Mettre à jour' + (P.matched.length ? ' ' + P.matched.length + ' candidat' + (P.matched.length > 1 ? 's' : '') : ''))) + '</button>' +
+      '<button type="button" class="btn secondary" id="bf-cancel"' + (b.busy ? ' disabled' : '') + '>Annuler</button></div>';
+  }
+  function csvLoadFile(file) {
+    var c = cfg(), b = state.bulk; if (!b) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var rows = parseCsvText(String(reader.result || ''));
+      if (rows.length < 2) { b.error = rows.length ? 'Le fichier ne contient aucune ligne de données sous l’en-tête.' : 'Fichier vide ou illisible.'; renderBulkForm(); return; }
+      var map = csvAutoMap(rows[0], csvUpdTargets(c)).map(function (col) { return col ? col.id : ''; }), key = csvAutoKey(c, map);
+      b.csv = { name: file.name, rows: rows, map: map, key: key, use: map.map(function (id, i) { return !!id && i !== key; }) };
+      b.error = ''; b.warn = ''; b.confirm = false; b.result = null; renderBulkForm();
+    };
+    reader.onerror = function () { b.error = 'Lecture du fichier impossible.'; renderBulkForm(); };
+    reader.readAsText(file, 'UTF-8');
+  }
+  function submitCsvUpdate() {
+    var c = cfg(), b = state.bulk; if (!b || !b.csv || b.busy) return;
+    var P = csvPlan(c, b);
+    if (!P.keyCol) { b.error = 'Choisissez la colonne qui identifie les candidats.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (!P.used.length) { b.error = 'Cochez au moins une colonne à mettre à jour.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (!P.matched.length) { b.error = 'Aucun candidat du fichier ne correspond (ou aucune cellule à mettre à jour).'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if ((P.notFound.length || P.errors.length) && !b.confirm) {
+      b.warn = [P.notFound.length ? P.notFound.length + ' identifiant' + (P.notFound.length > 1 ? 's introuvables' : ' introuvable') : '', P.errors.length ? P.errors.length + ' ligne(s) avec une valeur invalide' : ''].filter(Boolean).join(' · ') + '. ' +
+        P.matched.length + ' candidat' + (P.matched.length > 1 ? 's seront mis à jour' : ' sera mis à jour') + '.';
+      b.confirm = true; b.error = ''; renderBulkForm(); return;
+    }
+    b.busy = true; b.error = ''; renderBulkForm();
+    var failed = [], names = P.used.map(function (i) { var col = csvUpdTargets(c).filter(function (t) { return t.id === b.csv.map[i]; })[0]; return col ? displayLabel(col) : ''; }).filter(Boolean);
+    P.matched.reduce(function (p, it) {
+      return p.then(function () { return api.updateFields(c.table, it.rec.raw.id, it.fields).catch(function (e) { failed.push({ nigend: it.key, error: (e && e.message) || String(e) }); }); });
+    }, Promise.resolve()).then(function () {
+      b.busy = false; b.confirm = false; b.warn = '';
+      b.result = { ok: P.matched.length - failed.length, failed: failed, summary: names.join(', ') };
+      return load();
+    }).then(function () { if (!$('bmodal').hidden) renderBulkForm(); });
+  }
+  $('bmodal-form').addEventListener('click', function (e) {
+    var b = state.bulk; if (!b || b.mode !== 'csv' || b.busy) return;
+    if (e.target.closest('#bcsv-drop')) { pickCsvFile(csvLoadFile); return; }
+    if (e.target.id === 'bcsv-change') { b.csv = null; b.error = ''; b.warn = ''; b.confirm = false; renderBulkForm(); }
+  });
+  $('bmodal-form').addEventListener('keydown', function (e) {
+    var b = state.bulk; if (!b || b.mode !== 'csv' || b.busy) return;
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('#bcsv-drop')) { e.preventDefault(); pickCsvFile(csvLoadFile); }
+  });
+  ['dragenter', 'dragover'].forEach(function (t) { $('bmodal-form').addEventListener(t, function (e) { var z = e.target.closest && e.target.closest('#bcsv-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } }); });
+  $('bmodal-form').addEventListener('dragleave', function (e) { var z = e.target.closest && e.target.closest('#bcsv-drop'); if (z) z.classList.remove('is-over'); });
+  $('bmodal-form').addEventListener('drop', function (e) {
+    var z = e.target.closest && e.target.closest('#bcsv-drop'); if (!z) return; e.preventDefault(); z.classList.remove('is-over');
+    if (state.bulk && !state.bulk.busy && e.dataTransfer && e.dataTransfer.files.length) csvLoadFile(e.dataTransfer.files[0]);
+  });
+  $('bmodal-form').addEventListener('change', function (e) {
+    var b = state.bulk, el = e.target; if (!b || b.mode !== 'csv' || !b.csv || !el.getAttribute) return;
+    var m = el.getAttribute('data-bcsv-map'), u = el.getAttribute('data-bcsv-use');
+    if (el.hasAttribute('data-bcsv-key')) { var old = b.csv.key; b.csv.key = Number(el.value); if (old >= 0 && b.csv.map[old]) b.csv.use[old] = true; if (b.csv.key >= 0) b.csv.use[b.csv.key] = false; }
+    else if (m != null) { var i = Number(m); csvSetMap(b.csv.map, i, el.value); b.csv.map.forEach(function (id, j) { if (!id) b.csv.use[j] = false; }); if (el.value && i !== b.csv.key) b.csv.use[i] = true; if (i === b.csv.key && !el.value) b.csv.key = -1; }
+    else if (u != null) b.csv.use[Number(u)] = el.checked;
+    else return;
+    b.error = ''; b.warn = ''; b.confirm = false; renderBulkForm();
+  });
   function readBulkField(el) {
     var b = state.bulk, k = el.getAttribute && el.getAttribute('data-bulk'); if (!b || !k) return;
     b[k] = el.value; b.error = ''; b.warn = ''; b.confirm = false; b.result = null;
@@ -5821,7 +6030,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { q: "Comment demander un renouvellement de contrat, un avenant, une mutation ou une suspension ?", a: "Ces démarches se font **directement depuis la fiche du réserviste** (onglet **Renseignements militaires**, groupe **Contrat**) : trois icônes ouvrent la demande de renouvellement, de mutation, ou de suspension / démission. L'icône prend la couleur de l'état de la dernière demande et propose **Éditer la demande** quand une demande est en cours. Depuis la liste, le survol d'un réserviste non employable (contrat dépassé) propose aussi **Demander le renouvellement du contrat**, ou affiche la demande déjà en cours avec son état.\n\nLes champs sont **pré-remplis** à partir de la fiche : il suffit de vérifier les informations, ou de les mettre à jour (cliquez sur une valeur pour la modifier), puis de valider. Tous les champs sont obligatoires, sauf les pièces jointes d'un renouvellement ; les pièces se déposent par glisser-déposer. Un message prévient s'il existe déjà une demande pour ce réserviste.\n\nLe suivi se fait dans les pages [Renouvellements](#go:res-ren) et [Avenants](#go:res-ave) (menu Réservistes) : on peut y **modifier** une demande (y compris son état) ou la **supprimer**." },
     { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : le panneau de droite affiche le **contrat signé par le réserviste** (versé à l'étape précédente) avec un bouton **Imprimer le contrat signé**, qui passe en **vert** une fois imprimé (il reste réimprimable) ; le bloc **Verser document contre-signé** vient ensuite. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
     { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, les demandes **Rejet DRJ** et **Demande finalisée** sont masquées, pour ne laisser que le travail en cours. Cliquez dans le champ de recherche : la section **Par état de la demande** propose **tous** les états ; cochez-les pour les afficher. Sur la page Avenants, la section **Par type de demande** filtre sur la mutation interne ou externe, la suspension ou la démission.\n\nLes **filtres actifs** s’affichent sous la barre de recherche : un clic sur une étiquette retire le filtre. Le bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » et rappelle le nombre de rejets et de demandes finalisées masqués." },
-    { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats, ou leur **admission dans la réserve** (voir ci-dessous).\n\n**Admettre dans la réserve** (Candidats) : pour chaque candidat, renseignez le **N° ESR** (différent pour chacun), le **grade** et l'**échéance du contrat** (obligatoires), et au besoin l'**échéance du tir PA** et la **qualité judiciaire** (facultatives) ; les « valeurs communes » évitent de saisir plusieurs fois la même information. Déposez ensuite **tous les contrats signés** : chaque fichier est rattaché au candidat dont le **Nigend figure dans le nom du fichier**. Le bouton ne s'active que lorsque tout est complet ; après confirmation, les fiches réservistes sont créées (contrats versés dans leurs documents) et les candidatures supprimées.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »)." },
+    { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats, ou leur **admission dans la réserve** (voir ci-dessous).\n\n**Admettre dans la réserve** (Candidats) : pour chaque candidat, renseignez le **N° ESR** (différent pour chacun), le **grade** et l'**échéance du contrat** (obligatoires), et au besoin l'**échéance du tir PA** et la **qualité judiciaire** (facultatives) ; les « valeurs communes » évitent de saisir plusieurs fois la même information. Déposez ensuite **tous les contrats signés** : chaque fichier est rattaché au candidat dont le **Nigend figure dans le nom du fichier**. Le bouton ne s'active que lorsque tout est complet ; après confirmation, les fiches réservistes sont créées (contrats versés dans leurs documents) et les candidatures supprimées.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »).\n\n**Depuis un fichier .csv.** Choisissez « Mettre à jour depuis un fichier .csv » et déposez votre fichier : l’identifiant (N° de candidature, NID, Nigend ou email) et les colonnes sont **reconnus automatiquement**, quel que soit leur ordre ou leur intitulé exact. Vous cochez ce qui doit être mis à jour (une cellule vide ne modifie rien) et pouvez corriger une association avant de valider. L’ajout de plusieurs candidats (bouton **Créer**, onglet « Plusieurs candidats ») reconnaît lui aussi les colonnes automatiquement." },
     { q: "Comment agir sur plusieurs candidats ou réservistes à la fois ?", a: "Sur les pages [Candidats](#go:pmg) et [Réservistes](#go:res), une **case à cocher** apparaît au survol de chaque ligne ; celle de l'en-tête sélectionne toutes les lignes affichées. Dès qu'une sélection existe, une **barre d'actions** propose :\n\n- **Exporter la sélection (.csv)** ;\n- **Mettre à jour la sélection en bloc** : la liste des identifiants est préremplie (Nigend pour les réservistes ; N° de candidature, à défaut NID, pour les candidats) ;\n- **Relancer pour la VMP** (réservistes) ou **Inviter à réserver** (candidats, au choix **VEMI** ou **tests psychométriques**). Chaque ligne propose **Écrire**, qui ouvre un message individuel dans votre messagerie. **Envoyer à tous en Cci** prépare un **seul message** dont tous les destinataires sont en copie cachée : les variables propres à chacun (nom, civilité…) y restent vides et les personnes sans adresse valide sont ignorées. Si la liste est trop longue pour un seul message, elle est répartie en **lots** à envoyer l'un après l'autre ;\n- **Tout désélectionner**.\n\nAstuce : combinez avec les affichages rapides, par exemple « Échéances proches » puis le détail VMP, pour relancer d'un coup les réservistes concernés." },
     { q: "Comment rechercher, filtrer et exporter ?", a: "Sur chaque page, cliquez dans le **champ de recherche** (nom, prénom, NID, Nigend, téléphone, mail…) : un panneau propose des **affichages rapides** à cocher d'un clic et cumulables (par affectation, recrutement (CIV, AM, VCA), état du dossier ou PMG pour les candidats ; données manquantes, non employables, échéances proches, type de réserviste, affectation, et « Autres » (grade, corps, qualité judiciaire) pour les réservistes). Le détail d'une catégorie (par exemple les échéances concernées) n'apparaît que lorsqu'on clique dessus. **Réinitialiser les filtres** efface tout.\n\nVotre recherche et vos filtres sont **conservés pour la session** : vous les retrouvez en changeant de page ou en rechargeant.\n\nAu clavier, les **flèches** passent d'une ligne de la liste à l'autre et **Entrée** ouvre la fiche.\n\nLe bouton **Exporter (.csv)** exporte la **vue active**, c'est-à-dire la liste telle qu'elle est affichée avec la recherche et les filtres appliqués ; vous choisissez les colonnes à inclure. Pour n'exporter que certaines lignes, **cochez-les** d'abord." },
     { q: "Comment générer un plan prévisionnel d'emploi (PPE) ?", a: "Dans la fiche du réserviste, onglet **Renseignements militaires**, cliquez sur l'icône placée à côté de **Plan prévisionnel d'emploi**, puis choisissez la **date de début**. La fin est fixée automatiquement **un an plus tard, moins un jour**. Vous pouvez joindre, **facultativement**, la **signature de l'autorité d'emploi** (image déposée par glisser-déposer ou choisie d'un clic) : elle se place à l'emplacement prévu dans le modèle du PPE.\n\nLe PDF est téléchargé et une copie est rangée dans l'onglet **Documents** de la fiche. La carte « Plan prévisionnel d'emploi » affiche la date de fin du dernier PPE généré, avec une étiquette quand il est expiré." },
