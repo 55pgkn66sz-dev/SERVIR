@@ -2354,7 +2354,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.16.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.17.0</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -5780,16 +5780,19 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var STATUS_OPTS = [['', '— Aucun (gris)'], ['success', 'Succès'], ['warning', 'Avertissement'], ['error', 'Erreur'], ['info', 'Information'], ['new', 'Nouveauté']];
   // Pages du widget pouvant recevoir le point rouge clignotant d'un compteur (mêmes clés que le script de navigation en fin de fichier).
   var NAV_PAGE_OPTS = [
-    ['', '— Aucune —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['res', 'Réservistes RO1/RS/RC'], ['rsv', 'Réservations'],
-    ['rsv:vmp', 'Réservations · onglet VMP'], ['rsv:vemi', 'Réservations · onglet VEMI'], ['rsv:psy', 'Réservations · onglet Tests psy']
+    ['', '— Aucune —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes RO1/RS/RC'], ['res-ren', 'Réservistes · Renouvellements'], ['res-ave', 'Réservistes · Avenants'],
+    ['res-stat', 'Réservistes · Statistiques'], ['rsv', 'Réservations'], ['rsv:vmp', 'Réservations · onglet VMP'], ['rsv:vemi', 'Réservations · onglet VEMI'], ['rsv:psy', 'Réservations · onglet Tests psy']
   ];
   // Élément DOM recevant le point pour chaque cible ci-dessus : les quatre pages du menu, plus les trois onglets internes de la page
   // Réservations (id stables, toujours dans le DOM même si la page n'est pas affichée pour l'instant).
+  // Le point apparaît à chaque niveau : l'onglet, le lien du menu et la catégorie du menu déroulant qui contient ce lien (cf. DOT_PARENTS).
   var DOT_TARGETS = {
-    welcome: '#header-navigation [data-page="welcome"]', pmg: '#header-navigation [data-page="pmg"], #header-navigation [aria-controls="menu-pmg"]',
-    res: '#header-navigation [data-page="res"], #header-navigation [aria-controls="menu-res"]', rsv: '#header-navigation [data-page="rsv"]',
-    'rsv:vmp': '#x-tab-vmp', 'rsv:vemi': '#x-tab-vemi', 'rsv:psy': '#x-tab-psy'
+    welcome: '#header-navigation [data-page="welcome"]',
+    pmg: '#header-navigation [data-page="pmg"]', 'pmg-stat': '#header-navigation [data-page="pmg-stat"]', 'cat:pmg': '#header-navigation [aria-controls="menu-pmg"]',
+    res: '#header-navigation [data-page="res"]', 'res-ren': '#header-navigation [data-page="res-ren"]', 'res-ave': '#header-navigation [data-page="res-ave"]', 'res-stat': '#header-navigation [data-page="res-stat"]', 'cat:res': '#header-navigation [aria-controls="menu-res"]',
+    rsv: '#header-navigation [data-page="rsv"]', 'rsv:vmp': '#x-tab-vmp', 'rsv:vemi': '#x-tab-vemi', 'rsv:psy': '#x-tab-psy'
   };
+  var DOT_PARENTS = { pmg: 'cat:pmg', 'pmg-stat': 'cat:pmg', res: 'cat:res', 'res-ren': 'cat:res', 'res-ave': 'cat:res', 'res-stat': 'cat:res', 'rsv:vmp': 'rsv', 'rsv:vemi': 'rsv', 'rsv:psy': 'rsv' };
   function dateTagHtml(a) {
     if (!a.date) return '';
     var parts = [a.before, fmtArtDate(a.date), a.after].filter(function (s) { return s && String(s).trim(); }).map(esc).join(' · ');
@@ -5901,14 +5904,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var n = state.counts[c.name];
       if (typeof n === 'number' && n > 0) active[c.page] = true;
     });
-    // Un point sur un onglet de Réservations (VMP/VEMI/psy) se répercute aussi sur le bouton « Réservations » du menu.
-    if (active['rsv:vmp'] || active['rsv:vemi'] || active['rsv:psy']) active.rsv = true;
+    // Le point se répercute sur le niveau supérieur : onglet de Réservations → lien « Réservations » ; lien d'un menu déroulant → bouton de sa catégorie.
+    Object.keys(active).forEach(function (key) { if (DOT_PARENTS[key]) active[DOT_PARENTS[key]] = true; });
     Object.keys(DOT_TARGETS).forEach(function (key) {
       var els = document.querySelectorAll(DOT_TARGETS[key]);
       Array.prototype.forEach.call(els, function (el) {
         var dot = el.querySelector('.wel-nav-dot');
         if (active[key]) {
-          if (!dot) { dot = document.createElement('span'); dot.className = 'wel-nav-dot'; dot.setAttribute('aria-hidden', 'true'); el.appendChild(dot); }
+          if (!dot) { dot = document.createElement('span'); dot.className = 'wel-nav-dot'; dot.setAttribute('aria-hidden', 'true'); var ic = el.classList.contains('nav-row') ? el.querySelector('[class^="fr-icon-"]') : null; if (ic) el.insertBefore(dot, ic); else el.appendChild(dot); } // ligne du menu : point avant la flèche
         } else if (dot) { dot.remove(); }
       });
     });
@@ -11782,7 +11785,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     TAB_ORDER.forEach(function (t) {
       var b = $('tab-' + t), n = conflictsOf(t).groups.length, dn = dupPersons(t).n; if (!b) return;
       var tip = [n ? n + ' créneau(x) réservé(s) au-delà de leur capacité' : '', dn ? dn + ' doublon(s)' : ''].filter(Boolean).join(' · ');
+      var dot = b.querySelector('.wel-nav-dot'); // le point d'un compteur (page Bienvenue) survit à la réécriture de l'onglet
       b.innerHTML = esc(SPECS[t].title) + (n || dn ? ' <span class="x-tab-warn" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">⚠</span>' : '');
+      if (dot) b.appendChild(dot);
     });
   }
   function openConflict(rowId) {
