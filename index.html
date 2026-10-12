@@ -102,6 +102,9 @@
   .sv-dl { display: grid; grid-template-columns: minmax(6.5rem, 10rem) 1fr; gap: .45rem 1rem; margin: 0; }
   .sv-dl dt { color: var(--muted); }
   .sv-dl dd { margin: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .req-sign-badge { border: 0; cursor: pointer; font: inherit; }
+  .req-sign-badge:hover { filter: brightness(.95); text-decoration: underline; }
+  .req-sign-badge:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .sv-edit { cursor: pointer; border-radius: .25rem; margin: -.15rem -.4rem; padding: .15rem .4rem; }
   .sv-edit:hover, .sv-edit:focus-visible { background: var(--blue-tint); outline: none; box-shadow: inset 0 0 0 1px var(--blue); }
   .sv-pen { margin-left: .5rem; opacity: 0; color: var(--blue); }
@@ -628,6 +631,10 @@
   .sp-sep { margin: 1rem 0 .75rem; border-top: 1px solid var(--border-default-grey); }
   .sp-list { display: flex; flex-wrap: wrap; gap: .6rem .85rem; margin: 0; padding: 0; list-style: none; }
   .sp-tag { cursor: pointer; }
+  .sp-active { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; margin: -.5rem 0 1rem; }
+  .sp-active[hidden] { display: none; }
+  .sp-active__t { margin-right: .25rem; font-size: .8125rem; font-weight: 700; color: var(--muted); }
+  .sp-act-tag { cursor: pointer; }
   /* Les filtres ne se règlent plus que depuis le champ de recherche (panneau de suggestions) : les contrôles d'origine restent dans la page, masqués, car le panneau les pilote. */
   #flt-status-wrap, #flt-pmg-wrap, #btn-filters, #flt-reset, #r-flt-a-wrap, #r-flt-b-wrap, #r-btn-filters, #r-flt-reset, #page-res .qf,
   #r-v-ren-fst-wrap, #r-v-ren-freset, #r-v-ave-fst-wrap, #r-v-ave-fty-wrap, #r-v-ave-freset, #page-rsv .toolbar > .tb-field:not(.tb-search) { display: none !important; }
@@ -2347,7 +2354,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.15.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.16.1</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -2709,7 +2716,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function findColRaw(table, key) {
     var k = norm(key), l = state.colsByTable[table] || [];
-    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
+    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key)) || norm(makeId(l[i].label)) === norm(makeId(key))) return l[i];
     // Variantes courantes de nom (ex. « Code postal » enregistré sous « CP » dans la table).
     var al = COL_ALIASES[k] || [];
     for (var j = 0; j < al.length; j++) for (var m = 0; m < l.length; m++) if (norm(l[m].label) === al[j] || norm(l[m].id) === al[j]) return l[m];
@@ -5810,7 +5817,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { q: "À quoi sert le point rouge clignotant dans le menu ?", a: "Le **voyant** signale qu'il y a des **actions à réaliser** sur une page ou un onglet : par exemple des demandes à traiter ou des réservations à confirmer. Il disparaît quand plus rien n'est en attente.\n\nLes voyants sont alimentés par des **compteurs** (nombre de lignes d'une table répondant à un critère) que l'équipe projet règle dans le back office." },
     { q: "Comment demander un renouvellement de contrat, un avenant, une mutation ou une suspension ?", a: "Ces démarches se font **directement depuis la fiche du réserviste** (onglet **Renseignements militaires**, groupe **Contrat**) : trois icônes ouvrent la demande de renouvellement, de mutation, ou de suspension / démission. L'icône prend la couleur de l'état de la dernière demande et propose **Éditer la demande** quand une demande est en cours. Depuis la liste, le survol d'un réserviste non employable (contrat dépassé) propose aussi **Demander le renouvellement du contrat**, ou affiche la demande déjà en cours avec son état.\n\nLes champs sont **pré-remplis** à partir de la fiche : il suffit de vérifier les informations, ou de les mettre à jour (cliquez sur une valeur pour la modifier), puis de valider. Tous les champs sont obligatoires, sauf les pièces jointes d'un renouvellement ; les pièces se déposent par glisser-déposer. Un message prévient s'il existe déjà une demande pour ce réserviste.\n\nLe suivi se fait dans les pages [Renouvellements](#go:res-ren) et [Avenants](#go:res-ave) (menu Réservistes) : on peut y **modifier** une demande (y compris son état) ou la **supprimer**." },
     { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : le panneau de droite affiche le **contrat signé par le réserviste** (versé à l'étape précédente) avec un bouton **Imprimer le contrat signé**, qui passe en **vert** une fois imprimé (il reste réimprimable) ; le bloc **Verser document contre-signé** vient ensuite. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
-    { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, les demandes **Rejet DRJ** et **Demande finalisée** sont masquées, pour ne laisser que le travail en cours. Cliquez dans le champ de recherche : la section **Par état de la demande** propose **tous** les états (les deux masqués par défaut sont signalés) ; cochez-les pour les afficher. Sur la page Avenants, la section **Par type de demande** filtre sur la mutation interne ou externe, la suspension ou la démission.\n\nLe bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » et rappelle le nombre de rejets et de demandes finalisées masqués." },
+    { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, les demandes **Rejet DRJ** et **Demande finalisée** sont masquées, pour ne laisser que le travail en cours. Cliquez dans le champ de recherche : la section **Par état de la demande** propose **tous** les états ; cochez-les pour les afficher. Sur la page Avenants, la section **Par type de demande** filtre sur la mutation interne ou externe, la suspension ou la démission.\n\nLes **filtres actifs** s’affichent sous la barre de recherche : un clic sur une étiquette retire le filtre. Le bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » et rappelle le nombre de rejets et de demandes finalisées masqués." },
     { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats, ou leur **admission dans la réserve** (voir ci-dessous).\n\n**Admettre dans la réserve** (Candidats) : pour chaque candidat, renseignez le **N° ESR** (différent pour chacun), le **grade** et l'**échéance du contrat** (obligatoires), et au besoin l'**échéance du tir PA** et la **qualité judiciaire** (facultatives) ; les « valeurs communes » évitent de saisir plusieurs fois la même information. Déposez ensuite **tous les contrats signés** : chaque fichier est rattaché au candidat dont le **Nigend figure dans le nom du fichier**. Le bouton ne s'active que lorsque tout est complet ; après confirmation, les fiches réservistes sont créées (contrats versés dans leurs documents) et les candidatures supprimées.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »)." },
     { q: "Comment agir sur plusieurs candidats ou réservistes à la fois ?", a: "Sur les pages [Candidats](#go:pmg) et [Réservistes](#go:res), une **case à cocher** apparaît au survol de chaque ligne ; celle de l'en-tête sélectionne toutes les lignes affichées. Dès qu'une sélection existe, une **barre d'actions** propose :\n\n- **Exporter la sélection (.csv)** ;\n- **Mettre à jour la sélection en bloc** : la liste des identifiants est préremplie (Nigend pour les réservistes ; N° de candidature, à défaut NID, pour les candidats) ;\n- **Relancer pour la VMP** (réservistes) ou **Inviter à réserver** (candidats, au choix **VEMI** ou **tests psychométriques**). Chaque ligne propose **Écrire**, qui ouvre un message individuel dans votre messagerie. **Envoyer à tous en Cci** prépare un **seul message** dont tous les destinataires sont en copie cachée : les variables propres à chacun (nom, civilité…) y restent vides et les personnes sans adresse valide sont ignorées. Si la liste est trop longue pour un seul message, elle est répartie en **lots** à envoyer l'un après l'autre ;\n- **Tout désélectionner**.\n\nAstuce : combinez avec les affichages rapides, par exemple « Échéances proches » puis le détail VMP, pour relancer d'un coup les réservistes concernés." },
     { q: "Comment rechercher, filtrer et exporter ?", a: "Sur chaque page, cliquez dans le **champ de recherche** (nom, prénom, NID, Nigend, téléphone, mail…) : un panneau propose des **affichages rapides** à cocher d'un clic et cumulables (par affectation, recrutement (CIV, AM, VCA), état du dossier ou PMG pour les candidats ; données manquantes, non employables, échéances proches, type de réserviste, affectation, et « Autres » (grade, corps, qualité judiciaire) pour les réservistes). Le détail d'une catégorie (par exemple les échéances concernées) n'apparaît que lorsqu'on clique dessus. **Réinitialiser les filtres** efface tout.\n\nVotre recherche et vos filtres sont **conservés pour la session** : vous les retrouvez en changeant de page ou en rechargeant.\n\nAu clavier, les **flèches** passent d'une ligne de la liste à l'autre et **Entrée** ouvre la fiche.\n\nLe bouton **Exporter (.csv)** exporte la **vue active**, c'est-à-dire la liste telle qu'elle est affichée avec la recherche et les filtres appliqués ; vous choisissez les colonnes à inclure. Pour n'exporter que certaines lignes, **cochez-les** d'abord." },
@@ -7269,7 +7276,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function findColRaw(table, key) {
     var k = norm(key), l = state.colsByTable[table] || [];
-    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
+    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key)) || norm(makeId(l[i].label)) === norm(makeId(key))) return l[i];
     // Variantes courantes de nom (ex. « Code postal » enregistré sous « CP » dans la table).
     var al = COL_ALIASES[k] || [];
     for (var j = 0; j < al.length; j++) for (var m = 0; m < l.length; m++) if (norm(l[m].label) === al[j] || norm(l[m].id) === al[j]) return l[m];
@@ -7924,22 +7931,23 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       // Si une demande existe, l'icône prend la couleur de l'étiquette de son « Etat demande ».
       var renew = '', reqTag = '';
       if (tabDef.key === 'mil' && g.title === 'Contrat') {
-        // Dès qu'une demande existe, son icône prend la couleur de l'étiquette de son état ; les icônes des autres demandes sont inopérantes.
+        // Tant qu'une demande est en cours, son icône prend la couleur de l'étiquette de son état (« Éditer la demande ») et les icônes des autres demandes sont inopérantes.
+        // Une demande close (acceptée, refusée, finalisée, rejetée) ne bloque plus rien. À la signature, l'étiquette ouvre la fenêtre de signature.
         var reqs = [['ren', 'Demander le renouvellement du contrat', ICON_RENEW, 'renouvellement'], ['mut', 'Demander une mutation', ICON_MUTATION, 'mutation'], ['sus', 'Suspendre le contrat', ICON_SUSPEND, 'suspension']];
-        var sts = {}, active = [];
-        reqs.forEach(function (b) { sts[b[0]] = REQ[b[0]].status(item, c); if (sts[b[0]]) active.push(b[3]); });
-        // Tag à côté du titre : type et état de la demande en cours.
-        reqs.some(function (b) {
-          var rs = sts[b[0]]; if (!rs) return false;
-          reqTag = ' ' + reqStateTagHtml(b[3].charAt(0).toUpperCase() + b[3].slice(1) + (rs.state ? ' · ' + rs.state : ''), rs.state);
-          return true;
-        });
+        var sts = {}, active = [], last = null;
+        reqs.forEach(function (b) { var st0 = REQ[b[0]].status(item, c); if (st0) { if (st0.open) { sts[b[0]] = st0; active.push(b[3]); } else if (!last) last = { b: b, st: st0 }; } });
+        // Étiquette à côté du titre : type et état de la demande en cours (à défaut, de la dernière demande close).
+        var shown = reqs.filter(function (b) { return sts[b[0]]; })[0], shownSt = shown ? sts[shown[0]] : last && last.st; if (!shown && last) shown = last.b;
+        if (shown) {
+          var lab = shown[3].charAt(0).toUpperCase() + shown[3].slice(1) + (shownSt.state ? ' · ' + shownSt.state : ''), sk = /^a la signature (ro1|drj)$/.exec(norm(shownSt.state));
+          reqTag = ' ' + (sk && shownSt.open && !ro ? reqSignTagHtml(lab, shownSt.state, shown[0], sk[1]) : reqStateTagHtml(lab, shownSt.state));
+        }
       }
       if (!ro && tabDef.key === 'mil' && g.title === 'Contrat') {
         renew = '<span class="detail-actions">' + reqs.map(function (b) {
           var rs = sts[b[0]], off = !rs && active.length > 0;
-          var rt = (rs ? 'Éditer la demande' : b[1]) + (off ? ' (indisponible : demande de ' + active.join(' / ') + ' existante)' : '');
-          return '<button type="button" class="icon-btn" data-req="' + b[0] + '"' + (rs && rs.color ? ' style="color:' + esc(rs.color) + '"' : '') + ' title="' + esc(rt) + '" aria-label="' + esc(rt) + '"' + (off ? ' disabled' : '') + '>' + b[2] + '</button>';
+          var rt = (rs ? 'Éditer la demande' : b[1]) + (off ? ' (indisponible : demande de ' + active.join(' / ') + ' en cours)' : '');
+          return '<button type="button" class="icon-btn" data-req="' + b[0] + '"' + (rs && rs.color ? ' style="color:' + esc(rs.color) + '"' : '') + ' title="' + esc(rt) + '" aria-label="' + esc(rt) + '"' + (off ? ' disabled aria-disabled="true"' : '') + '>' + b[2] + '</button>';
         }).join('') + '</span>';
       }
       if (!ro && tabDef.key === 'hab' && g.title === 'VMP') renew = vmpActionsHtml(item, c);
@@ -9173,7 +9181,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         var ecl = findCol(R.table, 'Etat demande'), eopts = ecl && ecl.choices ? ecl.choices.slice() : [];
         if (R.etat && eopts.indexOf(R.etat) === -1) eopts.push(R.etat);
         if (ecl) html += '<div class="cf-field" style="margin-bottom:1rem"><label for="r-' + K.id + '-etat">État de la demande</label><select class="select" id="r-' + K.id + '-etat" data-retat>' +
-          '<option value=""></option>' + eopts.map(function (x) { return '<option value="' + esc(x) + '"' + (x === R.etat ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
+          '<option value=""></option>' + eopts.map(function (x) { return '<option value="' + esc(x) + '"' + (x === R.etat ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>' + sigHtml(R);
       }
       html += '<p class="hint">Cliquez sur une valeur pour la modifier' + (R.signMode ? ' : cette demande est à la signature (' + (R.signKind === 'drj' ? 'DRJ' : 'RO1') + '), seul son état est modifiable.' : R.editRow ? '. Les champs laissés vides ne sont pas modifiés.' : ' : tous les champs sont obligatoires.') + (K.hint ? ' ' + esc(K.hint) : '') + '</p>';
       K.sections.forEach(function (s) {
@@ -9428,6 +9436,44 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     // Passage à l'état « À la signature RO1 » : les données complétées dans la demande (Corps, coordonnées, profession…) alimentent la fiche du réserviste
     // (colonne d'origine du champ), sauf le groupement demandé. Rien n'est reporté avant ce passage.
     function isRo1(v) { return /signature.*ro1/.test(norm(String(v == null ? '' : v))); }
+    // Passage à « À la signature RO1 » : N° chrono (N_ESR / N_avenant) et date du contrat (Date_contrat / Date_avenant, aujourd'hui par défaut) obligatoires.
+    // Colonne cherchée dans la table de la demande (si elle n'est pas une formule), à défaut dans la fiche du réserviste (cas du renouvellement : N_ESR et Date_contrat y sont saisis).
+    function sigCol(R, names) {
+      var c = cfg(), i, col;
+      for (i = 0; i < names.length; i++) { col = findCol(R.table, names[i]); if (col && !col.formula) return { col: col, where: 'rq' }; }
+      for (i = 0; i < names.length; i++) { col = findCol(c.table, names[i]); if (col && !col.formula) return { col: col, where: 'res' }; }
+      return null;
+    }
+    function sigNeeded(R) {
+      if (!R || !R.editRow || !isRo1(R.etat) || isRo1(stateOf(R.editRow, R))) return null;
+      var ren = K.id === 'ren', num = sigCol(R, ren ? ['N_ESR', 'N° ESR'] : ['N_avenant', 'N° avenant']), dat = sigCol(R, ren ? ['Date_contrat', 'Date contrat'] : ['Date_avenant', 'Date avenant']);
+      if (!num && !dat) return null;
+      if (!R.sig) R.sig = {
+        num: num && num.where === 'rq' && R.editRow[num.col.id] != null ? String(R.editRow[num.col.id]) : '', // un N° déjà inscrit sur la fiche est celui de l'ancien contrat : jamais pré-rempli
+        date: dat && dat.where === 'rq' && typeof R.editRow[dat.col.id] === 'number' ? editInitial(dat.col, R.editRow[dat.col.id]) : secToIso(todaySec())
+      };
+      return { num: num, dat: dat, labelNum: 'N° chrono', labelDat: ren ? 'Date du contrat' : 'Date de l’avenant' };
+    }
+    function sigHtml(R) {
+      var g = sigNeeded(R); if (!g) return '';
+      return '<section class="cf-section"><h3>Passage à la signature RO1</h3><p class="hint">Ces deux informations sont obligatoires pour passer la demande « À la signature RO1 » : elles figureront sur le contrat.</p><div class="cf-grid">' +
+        (g.num ? '<div class="cf-field"><label for="r-' + K.id + '-sig-num">' + g.labelNum + '<span class="req" aria-hidden="true">*</span></label><input class="input" type="text" id="r-' + K.id + '-sig-num" data-rsig="num" value="' + esc(R.sig.num) + '" autocomplete="off" required></div>' : '') +
+        (g.dat ? '<div class="cf-field"><label for="r-' + K.id + '-sig-date">' + g.labelDat + '<span class="req" aria-hidden="true">*</span></label><input class="input" type="date" id="r-' + K.id + '-sig-date" data-rsig="date" value="' + esc(R.sig.date) + '" required></div>' : '') + '</div></section>';
+    }
+    // Valeurs à enregistrer avec le nouvel état : fields (table de la demande) et res (fiche du réserviste), ou message d'erreur si une information manque.
+    function sigFields(R) {
+      var g = sigNeeded(R), out = { fields: {}, res: {}, error: '', msg: '' }; if (!g) return out;
+      function put(item, label, raw) {
+        var v = String(raw || '').trim(); if (!v) { out.error = label + ' : à renseigner pour passer la demande à la signature RO1.'; return; }
+        var pr = parseEdit(item.col, v); if (pr.error) { out.error = label + ' : ' + pr.error; return; }
+        (item.where === 'res' ? out.res : out.fields)[item.col.id] = pr.value;
+      }
+      if (g.num) put(g.num, g.labelNum, R.sig.num);
+      if (!out.error && g.dat) put(g.dat, g.labelDat, R.sig.date);
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(R.sig.date || ''));
+      if (!out.error && g.num && g.dat && m) out.msg = (K.id === 'ren' ? 'Le contrat' : 'L’avenant') + ' a été généré sous le n° ' + String(R.sig.num).trim() + '/GEND/RGIF/EM/DRJ/SGR en date du ' + m[3] + '/' + m[2] + '/' + m[1] + '.';
+      return out;
+    }
     function stateOf(row, R) { var ec = findCol(R.table, 'Etat demande'); return ec && row ? String(row[ec.id] == null ? '' : row[ec.id]) : ''; }
     function ficheFromRow(R, row, c) {
       var out = {}, names = [];
@@ -9455,12 +9501,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       commit(); // éditeur encore ouvert
       if (R.signMode) { // demande à la signature : seul l'état est enregistré
         var esc2 = findCol(R.table, 'Etat demande'), f2 = {}; if (esc2 && !esc2.formula) f2[esc2.id] = R.etat;
-        R.busy = true; render();
-        Promise.resolve(esc2 && !esc2.formula ? api.updateFields(R.table, R.editRow.id, f2) : null).then(function () {
-          var after = {}; Object.keys(R.editRow).forEach(function (k) { after[k] = R.editRow[k]; }); if (esc2) after[esc2.id] = R.etat;
+        var sgf = sigFields(R); if (sgf.error) { R.error = sgf.error; render(); return; }
+        Object.keys(sgf.fields).forEach(function (k) { f2[k] = sgf.fields[k]; });
+        R.error = ''; R.busy = true; render();
+        Promise.resolve(Object.keys(f2).length ? api.updateFields(R.table, R.editRow.id, f2) : null).then(function () {
+          return Object.keys(sgf.res).length ? api.updateFields(c.table, R.rowId, sgf.res).then(function () { Object.keys(sgf.res).forEach(function (k) { R.item.raw[k] = sgf.res[k]; }); }) : null; // N° et date inscrits sur la fiche du réserviste
+        }).then(function () {
+          var after = {}; Object.keys(R.editRow).forEach(function (k) { after[k] = R.editRow[k]; }); if (esc2) after[esc2.id] = R.etat; Object.keys(sgf.fields).forEach(function (k) { after[k] = sgf.fields[k]; });
           return syncFicheOnRo1(R, after, prevEtat, c);
         }).then(function (extra) {
-          R.busy = false; R.done = 'L’état de la demande a été mis à jour.' + extra; render(); loadData().then(onRequestsChanged); if (extra) load();
+          R.busy = false; R.done = 'L’état de la demande a été mis à jour.' + (sgf.msg ? ' ' + sgf.msg : '') + extra; render(); loadData().then(onRequestsChanged); if (extra || Object.keys(sgf.res).length) load();
         }).catch(function (e) { R.busy = false; R.error = 'Enregistrement impossible : ' + ((e && e.message) || e) + '.'; render(); });
         return;
       }
@@ -9487,6 +9537,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       if (!R.editRow && refCol && !refCol.formula) fields[refCol.id] = R.rowId;
       if (!R.editRow && ngCol && !ngCol.formula && ngSrc && !emptyVal(R.item.raw[ngSrc.id])) fields[ngCol.id] = R.item.raw[ngSrc.id];
       var etCol = R.editRow && findCol(R.table, 'Etat demande'); if (etCol && !etCol.formula) fields[etCol.id] = R.etat;
+      var sgf2 = sigFields(R); if (sgf2.error) { R.error = sgf2.error; R.warn = ''; render(); return; }
+      Object.keys(sgf2.fields).forEach(function (k) { fields[k] = sgf2.fields[k]; });
+      Object.keys(sgf2.res).forEach(function (k) { resFields[k] = sgf2.res[k]; }); // enregistrés sur la fiche du réserviste avec le reste
       // Demande déjà existante pour ce réserviste : confirmation demandée.
       var etatCol = findCol(R.table, 'Etat demande');
       var dups = R.rows.filter(function (r) {
@@ -9508,11 +9561,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         return R.editRow ? api.updateFields(R.table, R.editRow.id, fields) : api.createRow(R.table, fields);
       }).then(function () {
         var msg = R.editRow ? 'La demande a été mise à jour.' : K.doneMsg(R.table, nFiles, R.mode);
-        var p = Promise.resolve(msg), resNames = Object.keys(resFields).map(function (id) { var cc = (state.colsByTable[c.table] || []).filter(function (x) { return x.id === id; })[0]; return cc ? displayLabel(cc) : id; });
-        if (resNames.length) p = p.then(function (m) { // grade : sans colonne dans la table de la demande, il n'existe que sur la fiche (enregistré tout de suite)
-          return api.updateFields(c.table, R.rowId, resFields).then(function () { return m + ' Le ' + resNames.join(', ').toLowerCase() + ' a été mis à jour sur la fiche du réserviste.'; })
+        var p = Promise.resolve(msg), resNames = Object.keys(resFields).filter(function (id) { return !(id in sgf2.res); }).map(function (id) { var cc = (state.colsByTable[c.table] || []).filter(function (x) { return x.id === id; })[0]; return cc ? displayLabel(cc) : id; });
+        if (Object.keys(resFields).length) p = p.then(function (m) { // grade : sans colonne dans la table de la demande, il n'existe que sur la fiche (enregistré tout de suite)
+          return api.updateFields(c.table, R.rowId, resFields).then(function () { return resNames.length ? m + ' Le ' + resNames.join(', ').toLowerCase() + ' a été mis à jour sur la fiche du réserviste.' : m; })
             .catch(function (e) { return m + ' Attention : la fiche du réserviste n’a pas pu être mise à jour (' + ((e && e.message) || e) + ').'; });
         });
+        if (sgf2.msg) p = p.then(function (m) { return m + ' ' + sgf2.msg; }); // contrat / avenant généré sous le n° chrono, à la date indiquée
         if (R.editRow) p = p.then(function (m) { // passage à « À la signature RO1 » : report des données de la demande sur la fiche
           var after = {}; Object.keys(R.editRow).forEach(function (k) { after[k] = R.editRow[k]; }); Object.keys(fields).forEach(function (k) { after[k] = fields[k]; });
           return syncFicheOnRo1(R, after, prevEtat, c).then(function (extra) { if (extra) ficheTouched = true; return m + extra; });
@@ -9542,7 +9596,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       if (!mine.length) return null;
       var last = mine.reduce(function (a, b) { return b.id > a.id ? b : a; });
       var val = etat && last[etat.id] != null ? String(last[etat.id]) : '', opt = etat && etat.choiceOptions && etat.choiceOptions[val];
-      return { state: val, color: opt ? optColor(opt) : '' };
+      return { state: val, color: opt ? optColor(opt) : '', row: last, open: CLOSED_STATES.indexOf(norm(val)) === -1 }; // open : demande en cours (ni acceptée, ni refusée, ni finalisée, ni rejetée)
     }
     function loadData() {
       var t = table(); if (!t) { data = null; return Promise.resolve(); }
@@ -9609,7 +9663,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       commit();
     });
     function remove(rowId) { var t = data && data.table; if (!t) return Promise.reject(new Error('table introuvable')); return Promise.resolve(api.deleteRow(t, rowId)).then(loadData); }
-    M('-body').addEventListener('change', function (e) { if (st && e.target.matches('[data-retat]')) st.etat = e.target.value; });
+    M('-body').addEventListener('change', function (e) {
+      if (st && e.target.matches('[data-retat]')) { st.etat = e.target.value; st.error = ''; render(); var sl = M('-body').querySelector('[data-retat]'); if (sl) sl.focus(); } // le passage à « À la signature RO1 » demande N° chrono et date du contrat
+    });
+    M('-body').addEventListener('input', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-rsig'); if (k && st && st.sig) st.sig[k] = e.target.value; });
     function owns(row) { return !!data && typeOk(row, data.table); } // la demande relève-t-elle de ce type (colonne « Type ») ?
     return { owns: owns, open: open, openWith: openWith, remove: remove, status: status, loadData: loadData, data: function () { return data; } };
   }
@@ -9687,7 +9744,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   };
   function viewCols(V, all) {
     var out = [], names = {};
-    (V.show || []).forEach(function (s) { var k = norm(s[0]), c = all.filter(function (x) { return norm(x.label) === k; })[0]; if (c && out.indexOf(c) === -1) { out.push(c); names[c.id] = s[1] || c.label; } });
+    (V.show || []).forEach(function (s) { var k = norm(s[0]), kid = norm(makeId(s[0])), c = all.filter(function (x) { return norm(x.label) === k || norm(x.id) === kid || norm(makeId(x.label)) === kid; })[0]; if (c && out.indexOf(c) === -1) { out.push(c); names[c.id] = s[1] || (norm(c.label) === k ? c.label : s[0]); } }); // libellé ou identifiant (ex. « Avis SRJ » = colonne Avis_SRJ)
     if (!out.length) all.forEach(function (c) { out.push(c); names[c.id] = c.label; });
     return { cols: out, names: names };
   }
@@ -9696,6 +9753,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // « État de la demande » dans les tableaux de suivi : étiquette (fr-tag) colorée selon l'état.
   var STATE_TAG = { 'a traiter': 'orange', 'en cours': 'blue', 'a la signature ro1': 'purple', 'a la signature drj': 'purple', 'demande finalisee': 'green', 'acceptee': 'green', 'refusee': 'red', 'rejet drj': 'red' };
   function reqStateChipHtml(label) { return '<span class="fr-tag fr-tag--sm tag-c-' + (STATE_TAG[norm(label || '')] || 'grey') + '">' + esc(label) + '</span>'; }
+  // Étiquette cliquable d'une demande à la signature : ouvre la fenêtre de signature du renouvellement / de l'avenant.
+  function reqSignTagHtml(label, state, key, kind) {
+    var v = STATE_BADGE[norm(state || '')];
+    return '<button type="button" class="fr-badge fr-badge--sm' + (v ? ' fr-badge--' + v : '') + ' req-sign-badge" data-reqsign="' + key + '" data-kind="' + kind + '" title="Ouvrir la fenêtre de signature" aria-label="' + esc(label) + ' : ouvrir la fenêtre de signature">' + esc(label) + '</button>';
+  }
   function reqStateTagHtml(label, state) {
     var v = STATE_BADGE[norm(state || '')];
     return '<span class="fr-badge fr-badge--sm' + (v ? ' fr-badge--' + v : '') + '">' + esc(label) + '</span>';
@@ -10503,7 +10565,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   document.addEventListener('mousedown', function (e) {
     ['ren', 'ave'].forEach(function (key) { ['st', 'ty'].forEach(function (n) { var pn = $('v-' + key + '-f' + n + '-panel'); if (pn && !pn.hidden && !e.target.closest('#r-v-' + key + '-f' + n)) { pn.hidden = true; $('v-' + key + '-f' + n + '-btn').setAttribute('aria-expanded', 'false'); } }); });
   });
-  $('modal-panels').addEventListener('click', function (e) { var b = e.target.closest('[data-req]'); if (b && REQ[b.getAttribute('data-req')]) REQ[b.getAttribute('data-req')].open(); });
+  $('modal-panels').addEventListener('click', function (e) { var b = e.target.closest('[data-req]'); if (b && !b.disabled && REQ[b.getAttribute('data-req')]) REQ[b.getAttribute('data-req')].open(); });
+  // Étiquette « À la signature » de la fiche : ouvre la fenêtre de signature de la demande en cours (renouvellement, mutation ou suspension).
+  $('modal-panels').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-reqsign]'); if (!b) return;
+    var req = REQ[b.getAttribute('data-reqsign')], item = state.view[state.modal.index], c = cfg(), st0 = req && item ? req.status(item, c) : null;
+    if (req && st0 && st0.row) req.openWith(item, st0.row, b.getAttribute('data-kind') || 'ro1');
+  });
   // Réservation VMP : réserver (modale de la page Réservations) puis confirmer au réserviste / à l'antenne médicale.
   $('modal-panels').addEventListener('click', function (e) {
     var b = e.target.closest('[data-vmp]'); if (!b || b.disabled || !window.RSV) return;
@@ -11068,7 +11136,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function fmtDateTime(v) { return typeof v === 'number' ? fmtDate(v) + ' ' + new Date(v * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : ''; }
   function findCol(cols, key) {
     var k = norm(key), l = cols || [];
-    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key))) return l[i];
+    for (var i = 0; i < l.length; i++) if (norm(l[i].label) === k || norm(l[i].id) === k || norm(l[i].id) === norm(makeId(key)) || norm(makeId(l[i].label)) === norm(makeId(key))) return l[i];
     // Variantes courantes de nom (ex. « Code postal » enregistré sous « CP » dans la table).
     var al = COL_ALIASES[k] || [];
     for (var j = 0; j < al.length; j++) for (var m = 0; m < l.length; m++) if (norm(l[m].label) === al[j] || norm(l[m].id) === al[j]) return l[m];
@@ -13066,7 +13134,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function checkedOnly(id, v) { var c = panelInputs(id).filter(function (i) { return i.checked; }).map(function (i) { return i.value; }); return c.length === 1 && c[0] === v; }
   // Sélection cumulative sur une liste d'états à cases (Renouvellements, Avenants) : la valeur par défaut est mémorisée à la première ouverture.
   var EXP = {}; // rubriques « Autres » dépliées (clé : champ + rubrique)
-  function expTag(key, label, sec) { return { sec: sec, l: label, keep: true, run: function () { EXP[key] = !EXP[key]; }, on: function () { return !!EXP[key]; } }; }
+  function expTag(key, label, sec) { return { ui: true, sec: sec, l: label, keep: true, run: function () { EXP[key] = !EXP[key]; }, on: function () { return !!EXP[key]; } }; }
   var DEFSET = {};
   function checkedVals(id) { return panelInputs(id).filter(function (i) { return i.checked; }).map(function (i) { return i.value; }); }
   function sameSet(a, b) { return a.length === b.length && a.every(function (x) { return b.indexOf(x) !== -1; }); }
@@ -13074,8 +13142,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function cumStates(id, wanted) {
     var def = defSet(id), have = valuesOf(id), nzs = function (t) { return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
     return (wanted || have).filter(function (v) { return have.indexOf(v) !== -1; }).map(function (v) {
-      var hid = /^(rejet drj|demande finalisee)$/.test(nzs(v)); // masqués tant qu'aucun état n'est choisi
-      return { sec: 'Par état de la demande', l: (v || 'Non renseigné') + (hid ? ' (masqué par défaut)' : ''), keep: true,
+      return { sec: 'Par état de la demande', l: v || 'Non renseigné', keep: true,
         run: function () { var ck = checkedVals(id), cur = sameSet(ck, def) ? [] : ck, next = cur.indexOf(v) !== -1 ? cur.filter(function (x) { return x !== v; }) : cur.concat([v]); only(id, next.length ? next : def); },
         on: function () { var ck = checkedVals(id); return !sameSet(ck, def) && ck.indexOf(v) !== -1; } };
     });
@@ -13086,6 +13153,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function reset(id, label) { return { l: label, run: click(id) }; }
   function sel(id, v) { return function () { var e = document.getElementById(id); if (e) { e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); } }; }
   function selOn(id, v) { return function () { var e = document.getElementById(id); return !!e && e.value === v; }; }
+  var ACTIVE = []; // fonctions de mise à jour des lignes de filtres actifs (une par champ de recherche)
   var RESETS = { 'q': click('flt-reset'), 'r-q': click('r-flt-reset'), 'r-v-ren-q': click('r-v-ren-freset'), 'r-v-ave-q': click('r-v-ave-freset'), 'x-q': sel('x-flt-action', 'action') };
   var SUGG = {
     'q': function () { // cumulatif : états (groupes puis détail des dossiers en cours), affectations, PMG
@@ -13144,6 +13212,23 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var inp = bar.querySelector('input'), build = SUGG[inp.id]; if (!build) return;
     var host = bar.parentNode, panel = document.createElement('div'); panel.className = 'sp-panel'; panel.hidden = true; panel.id = inp.id + '-suggest';
     inp.setAttribute('aria-controls', panel.id); inp.setAttribute('aria-haspopup', 'dialog'); bar.appendChild(panel);
+    // Filtres actifs : une ligne d'étiquettes sous la barre (panneau fermé compris) ; un clic sur une étiquette retire le filtre.
+    var act = document.createElement('div'); act.className = 'sp-active'; act.hidden = true; act.setAttribute('role', 'group'); act.setAttribute('aria-label', 'Filtres actifs'); act._sig = null;
+    var tbar = bar.closest('.toolbar'); if (tbar) tbar.insertAdjacentElement('afterend', act);
+    function escA(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function renderActive() {
+      if (!bar.offsetParent) return; // page non affichée : recalculé à son affichage
+      var list; try { list = build().filter(function (x) { return x.on && !x.ui && x.on() && !(inp.id === 'x-q' && x.l === 'Action attendue'); }); } catch (e) { list = []; }
+      var sig = list.map(function (x) { return (x.sec || '') + '|' + x.l; }).join('§'); if (act._sig !== null && sig === act._sig) return; act._sig = sig; act._items = list;
+      act.hidden = !list.length;
+      act.innerHTML = list.length ? '<span class="sp-active__t">Filtres actifs</span>' + list.map(function (x, i) { return '<button type="button" class="fr-tag fr-tag--sm fr-tag--dismiss sp-act-tag" data-spx="' + i + '"' + (x.sec ? ' title="' + escA(x.sec) + '"' : '') + ' aria-label="Retirer le filtre ' + escA(x.l) + '">' + escA(x.l) + '</button>'; }).join('') : '';
+    }
+    ACTIVE.push(renderActive);
+    act.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-spx]'); if (!b || !act._items) return; var it = act._items[Number(b.getAttribute('data-spx'))]; if (!it) return;
+      if (it.keep) it.run(); else if (RESETS[inp.id]) RESETS[inp.id]();
+      setTimeout(function () { act._sig = null; renderActive(); if (!panel.hidden) open(); }, 0);
+    });
     function close() { panel.hidden = true; inp.setAttribute('aria-expanded', 'false'); }
     function open() {
       var items = build(); if (!items.length || inp.value.trim()) { close(); return; }
@@ -13167,6 +13252,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     host.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { e.preventDefault(); e.stopPropagation(); close(); } });
     host.addEventListener('focusout', function (e) { setTimeout(function () { if (!panel.hidden && !host.contains(document.activeElement)) close(); }, 0); });
   });
+  // Mise à jour des filtres actifs : après chaque interaction, à l'affichage d'une page et en tâche de fond (chargement des données, réinitialisations).
+  var actTimer; function refreshActive() { clearTimeout(actTimer); actTimer = setTimeout(function () { ACTIVE.forEach(function (f) { f(); }); }, 60); }
+  ['click', 'change', 'input'].forEach(function (t) { document.addEventListener(t, refreshActive, true); });
+  setInterval(function () { ACTIVE.forEach(function (f) { f(); }); }, 1500);
+  window.__refreshActiveFilters = refreshActive;
 })();
 // Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
@@ -13190,6 +13280,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (p === 'res-stat' && window.RES) window.RES.refreshStats();
     if (p === 'pmg-stat' && window.RES) window.RES.refreshCandStats();
     if (p === 'rsv' && window.RSV) window.RSV.refresh();
+    if (window.__refreshActiveFilters) window.__refreshActiveFilters();
     window.scrollTo(0, 0);
   }
   document.addEventListener('click', function (e) {
