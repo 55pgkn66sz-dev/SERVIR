@@ -102,6 +102,12 @@
   .sv-dl { display: grid; grid-template-columns: minmax(6.5rem, 10rem) 1fr; gap: .45rem 1rem; margin: 0; }
   .sv-dl dt { color: var(--muted); }
   .sv-dl dd { margin: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .sv-edit { cursor: pointer; border-radius: .25rem; margin: -.15rem -.4rem; padding: .15rem .4rem; }
+  .sv-edit:hover, .sv-edit:focus-visible { background: var(--blue-tint); outline: none; box-shadow: inset 0 0 0 1px var(--blue); }
+  .sv-pen { margin-left: .5rem; opacity: 0; color: var(--blue); }
+  .sv-edit:hover .sv-pen, .sv-edit:focus-visible .sv-pen { opacity: 1; }
+  .sv-empty { color: var(--muted); font-weight: 400; font-style: italic; }
+  .sv-dl dd .input, .sv-dl dd .select { width: 100%; }
   .sv-msg { white-space: pre-wrap; margin: 0; padding: .75rem 1rem; background: var(--bg-alt); border-radius: .5rem; font-weight: 400; color: var(--ink); }
   .sv-atts a { display: inline-block; margin: 0 .75rem .5rem 0; }
   .sv-atts img { display: block; max-width: 100%; max-height: 14rem; margin-top: .25rem; border: 1px solid var(--border-default-grey); border-radius: .5rem; }
@@ -868,8 +874,18 @@
   #page-bo .lead, #page-bo .fields, #page-bo .callout, #page-bo .mail-block, #page-bo .mail-group, #page-bo .bo-vars { margin-left: 0; }
   #page-bo section.step .actions { margin-left: 0; }
   #page-bo .bo-bar { bottom: .75rem; margin: 1.5rem 0 0; border: 1px solid var(--border-default-grey); border-radius: .5rem; box-shadow: 0 .5rem 1.5rem rgba(20, 10, 30, .18); }
-  #page-bo .bo-bar__state::before { content: ""; display: inline-block; width: .5rem; height: .5rem; margin-right: .5rem; border-radius: 50%; background: var(--text-default-success); vertical-align: middle; }
-  #page-bo .bo-bar__state.is-dirty::before { background: var(--text-default-warning); }
+  #page-bo .bo-bar__state:not(.is-dirty)::before { content: ""; display: inline-block; width: .5rem; height: .5rem; margin-right: .5rem; border-radius: 50%; background: var(--text-default-success); vertical-align: middle; }
+  .tpl-shadow { display: none !important; }
+  .bo-tpl-vars { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 1rem; }
+  .bo-vartag { font-family: ui-monospace, Menlo, monospace; cursor: pointer; }
+  .bo-var { display: flex; align-items: baseline; gap: .5rem; min-width: 0; }
+  .bo-var button { flex: none; }
+  .bo-var span { color: var(--muted); font-size: .8125rem; }
+  .bo-tpl-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+  .bo-tpl textarea { min-height: 18rem; }
+  .bo-mailprev { padding: 1rem 1.25rem; border: 1px solid var(--border-default-grey); border-radius: .5rem; background: var(--bg-alt); }
+  .bo-mailprev__subj { margin: 0 0 .75rem; font-weight: 700; color: var(--ink); }
+  .bo-mailprev pre { margin: 0; white-space: pre-wrap; font: inherit; color: var(--ink); }
   .bo-h3 { margin: 1.5rem 0 .75rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .bo-h3:first-child { margin-top: 0; }
   .bo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
@@ -1161,6 +1177,9 @@
 <script>
 function artworkSvg(n) { return '<svg aria-hidden="true" class="fr-artwork" viewBox="0 0 80 80" width="80" height="80">' + ['decorative', 'minor', 'major'].map(function (k) { return '<use class="fr-artwork-' + k + '" href="#art-' + n + '-' + k + '"></use>'; }).join('') + '</svg>'; }
 var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('calendar');
+// Champ d'un modèle édité dans l'éditeur unique du back office : lecture / écriture d'un champ de formulaire d'une page (l'événement « input » met à jour son brouillon).
+function tplCtl(el) { return el ? { read: function () { return el.value; }, write: function (v) { if (el.value !== v) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); } } } : null; }
+function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); }
 </script>
 <header role="banner" class="fr-header">
   <div class="fr-header__body">
@@ -1345,7 +1364,7 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
 
     <section class="step" data-grp="documents">
       <div class="head"><h2>Signataires des contrats</h2></div>
-      <p class="lead" style="margin-left:0">Un signataire par défaut, les autres programmés par dates. À la génération d’un contrat (ESR, renouvellement, avenant), c’est le signataire en vigueur à la date du jour qui est utilisé : un signataire programmé dont la période contient cette date l’emporte sur le signataire par défaut (si plusieurs périodes se recoupent, la priorité va au suppléant, puis au délégataire, puis aux autres signataires programmés, le plus récent l’emportant à égalité ; à défaut, le signataire par défaut). Dans le contrat, la signature s’affiche ainsi : le <strong>NOM</strong> en gras et en majuscules, puis la fonction à la ligne (retours à la ligne respectés). Variable à insérer dans les modèles : <code>{{SIGNATAIRE_BLOC}}</code> ; <code>{{SIGNATAIRE}}</code> (nom en majuscules) et <code>{{SIGNATAIRE_QUALITE}}</code> (fonction) sont aussi disponibles séparément.</p>
+      <p class="lead" style="margin-left:0">Un signataire par défaut, les autres programmés par dates. À la génération d’un contrat (ESR, renouvellement, avenant), c’est le signataire en vigueur à la date du jour qui est utilisé : un signataire programmé dont la période contient cette date l’emporte sur le signataire par défaut (si plusieurs périodes se recoupent, la priorité va au suppléant, puis au délégataire, puis aux autres signataires programmés, le plus récent l’emportant à égalité ; à défaut, le signataire par défaut). Dans le contrat, la signature s’affiche ainsi : le <strong>nom</strong> en gras (tel que saisi), puis la fonction à la ligne (retours à la ligne respectés). Variable à insérer dans les modèles : <code>{{SIGNATAIRE_BLOC}}</code> ; <code>{{SIGNATAIRE}}</code> (nom tel que saisi) et <code>{{SIGNATAIRE_QUALITE}}</code> (fonction) sont aussi disponibles séparément.</p>
       <div id="w-sign-admin"></div>
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-sign-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un signataire</button></div>
     </section>
@@ -1738,21 +1757,33 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
 
     <details class="bo-advanced">
       <summary>Réservistes · modèles des contrats et courriels (renouvellements, avenants)</summary>
-      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, <code>{{SIGNATAIRE_BLOC}}</code> (signature : nom en gras et majuscules, puis fonction), <code>{{SIGNATAIRE}}</code> et <code>{{SIGNATAIRE_QUALITE}}</code> (signataire en vigueur, voir « Signataires des contrats »), ou toute colonne de la demande ou du réserviste par son libellé.</p>
+      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, <code>{{SIGNATAIRE_BLOC}}</code> (signature : nom en gras, puis fonction), <code>{{SIGNATAIRE}}</code> et <code>{{SIGNATAIRE_QUALITE}}</code> (signataire en vigueur, voir « Signataires des contrats »), ou toute colonne de la demande ou du réserviste par son libellé.</p>
       <h3>Renouvellement de contrat</h3>
-      <label for="r-f-ctr-ren-html">Contrat (HTML)</label>
-      <textarea id="r-f-ctr-ren-html" class="textarea tall mono" spellcheck="false" data-ctr="ren.html"></textarea>
-      <label for="r-f-ctr-ren-subject" style="margin-top:12px">Courriel : objet</label>
-      <input id="r-f-ctr-ren-subject" class="input" type="text" data-ctr="ren.subject">
-      <label for="r-f-ctr-ren-body" style="margin-top:12px">Courriel : message</label>
-      <textarea id="r-f-ctr-ren-body" class="textarea mono" rows="7" spellcheck="false" data-ctr="ren.body"></textarea>
+      <details class="mail-block" style="margin-left:0"><summary>Renouvellement de contrat · Document PDF</summary><div class="mail-body">
+        <p class="hint">Modèle HTML converti en PDF A4 ; styles en ligne ; images en base64. Téléchargé par « Générer le contrat », puis rangé dans le document à signer.</p>
+        <label for="r-f-ctr-ren-html">Contrat (HTML)</label>
+        <textarea id="r-f-ctr-ren-html" class="textarea tall mono" spellcheck="false" data-ctr="ren.html"></textarea>
+      </div></details>
+      <details class="mail-block" style="margin-left:0"><summary>Renouvellement de contrat · Courriel</summary><div class="mail-body">
+        <p class="hint">Courriel en texte brut ouvert par « Générer le contrat et l’envoyer par courriel » : le PDF téléchargé est à joindre au message.</p>
+        <label for="r-f-ctr-ren-subject">Objet du courriel</label>
+        <input id="r-f-ctr-ren-subject" class="input" type="text" data-ctr="ren.subject">
+        <label for="r-f-ctr-ren-body" style="margin-top:12px">Message du courriel</label>
+        <textarea id="r-f-ctr-ren-body" class="textarea mono" rows="7" spellcheck="false" data-ctr="ren.body"></textarea>
+      </div></details>
       <h3 style="margin-top:24px">Avenant</h3>
-      <label for="r-f-ctr-ave-html">Avenant (HTML)</label>
-      <textarea id="r-f-ctr-ave-html" class="textarea tall mono" spellcheck="false" data-ctr="ave.html"></textarea>
-      <label for="r-f-ctr-ave-subject" style="margin-top:12px">Courriel : objet</label>
-      <input id="r-f-ctr-ave-subject" class="input" type="text" data-ctr="ave.subject">
-      <label for="r-f-ctr-ave-body" style="margin-top:12px">Courriel : message</label>
-      <textarea id="r-f-ctr-ave-body" class="textarea mono" rows="7" spellcheck="false" data-ctr="ave.body"></textarea>
+      <details class="mail-block" style="margin-left:0"><summary>Avenant · Document PDF</summary><div class="mail-body">
+        <p class="hint">Modèle HTML converti en PDF A4 ; styles en ligne ; images en base64. Téléchargé par « Générer le contrat », puis rangé dans le document à signer.</p>
+        <label for="r-f-ctr-ave-html">Avenant (HTML)</label>
+        <textarea id="r-f-ctr-ave-html" class="textarea tall mono" spellcheck="false" data-ctr="ave.html"></textarea>
+      </div></details>
+      <details class="mail-block" style="margin-left:0"><summary>Avenant · Courriel</summary><div class="mail-body">
+        <p class="hint">Courriel en texte brut ouvert par « Générer le contrat et l’envoyer par courriel » : le PDF téléchargé est à joindre au message.</p>
+        <label for="r-f-ctr-ave-subject">Objet du courriel</label>
+        <input id="r-f-ctr-ave-subject" class="input" type="text" data-ctr="ave.subject">
+        <label for="r-f-ctr-ave-body" style="margin-top:12px">Message du courriel</label>
+        <textarea id="r-f-ctr-ave-body" class="textarea mono" rows="7" spellcheck="false" data-ctr="ave.body"></textarea>
+      </div></details>
       <div class="actions" style="margin-top:12px"><button class="btn secondary sm" id="r-ctr-reset" type="button">Rétablir les modèles par défaut</button></div>
     </details>
 
@@ -2316,7 +2347,7 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.13.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.15.2</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -2711,6 +2742,20 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
     // Back office unifié (page à part, cf. script de navigation) : initialise et affiche le formulaire de réglages de cette page.
     openAdmin: function () { state.draft = JSON.parse(JSON.stringify(cfg())); $('saved').hidden = true; renderAdminForm(); setDirty(false); },
     closeAdmin: function () {},
+    // Modèles de courriel et de document (éditeur unique du back office) : champs du formulaire de cette page, avec réinitialisation et aperçu.
+    templates: function () {
+      var out = [], rec = state.records[0], item = rec ? { raw: rec.raw, id: rec.identity, st: rec.status } : { raw: {}, id: '', st: null }, none = 'Aucune candidature dans la table : aperçu indisponible.';
+      [['stage', 'lettre'], ['stage', 'rejet'], ['contrat', 'esr']].forEach(function (bk) {
+        var b = bk[0], kind = bk[1], k = MAIL_KINDS[kind], p = 'mf-' + b + '-' + kind + '-', rs = '[data-reset-b="' + b + '"][data-reset-k="' + kind + '"]';
+        if (k.mailHint) out.push({ id: 'pmg:' + b + ':' + kind + ':mail', group: 'Candidats', type: 'mail', title: k.title, hint: k.mailHint, subject: tplCtl($(p + 'subject')), body: tplCtl($(p + 'body')), vars: BO_VARS,
+          reset: function () { tplClick(rs + '[data-reset-p="mail"]'); },
+          preview: function (s, t) { if (!rec) return { empty: none }; var c = cfg(); return { subject: fillTemplate(s, item, c, false), text: fillTemplate(t, item, c, false) }; } });
+        out.push({ id: 'pmg:' + b + ':' + kind + ':doc', group: 'Candidats', type: 'doc', title: k.title, hint: k.docHint || k.hint, body: tplCtl($(p + 'template')), vars: BO_VARS,
+          reset: function () { tplClick(rs + (k.mailHint ? '[data-reset-p="doc"]' : '')); },
+          preview: function (s, t) { if (!rec) return { empty: none }; return { html: sanitizeHtml(fillTemplate(t, item, cfg(), true)) }; } });
+      });
+      return out;
+    },
     save: function () { return savePmg(); },   // enregistrement global du back office (une seule barre pour les trois pages)
     cancel: function () { cancelPmg(); },
     setOpts: function (o) { state.opts = o || {}; }
@@ -3072,16 +3117,14 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
   }
   // Signataire en vigueur (gestionnaire de signataires du back office) pour les variables {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}.
   function signerOf() { return window.WEL && window.WEL.signataire ? window.WEL.signataire() : { nom: '', qualite: '' }; }
-  // Rendu de la signature : nom en majuscules (en gras dans {{SIGNATAIRE_BLOC}}), puis la fonction en respectant ses retours à la ligne (<br> en HTML).
+  // Rendu de la signature : nom tel que saisi en back office (en gras dans {{SIGNATAIRE_BLOC}}), puis la fonction en respectant ses retours à la ligne (<br> en HTML).
   function signerText(key, html) {
-    var g = signerOf(), nom = g.nom.toUpperCase(), q = g.qualite, e = function (t) { return html ? esc(t).replace(/\r?\n/g, '<br>') : t; };
+    var g = signerOf(), nom = g.nom, q = g.qualite, e = function (t) { return html ? esc(t).replace(/\r?\n/g, '<br>') : t; };
     if (key === 'SIGNATAIRE') return e(nom);
     if (key === 'SIGNATAIRE_QUALITE') return e(q);
     var blk = function (n, f) { return html ? (n ? '<strong>' + esc(n) + '</strong>' : '') + (n && f ? '<br>' : '') + e(f) : [n, f].filter(Boolean).join('\n'); };
-    // chaîne : [délégant, « Par délégation », ] [suppléé, « Par suppléance », ] signataire (la délégation s'applique au suppléé s'il y en a un)
-    var parts = [], sep = html ? '<br>' : '\n';
-    if (g.deleg && g.dnom) parts.push(blk(g.dnom.toUpperCase(), g.dqualite), 'Par délégation');
-    if (g.suppl && g.snom) parts.push(blk(g.snom.toUpperCase(), g.squalite), 'Par suppléance');
+    // chaîne : [délégant du suppléé, « Par délégation », ] [suppléé, « Par suppléance », ] signataire (voir currentSigner)
+    var sep = html ? '<br>' : '\n', parts = (g.chain || []).map(function (c) { return typeof c === 'string' ? c : blk(c.nom, c.qualite); });
     parts.push(blk(nom, q));
     return parts.join(sep);
   }
@@ -4623,25 +4666,35 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
   var TPL_HINT = 'Modèle HTML converti en PDF (A4). Styles en ligne uniquement ; images uniquement en base64 (data:). Les valeurs des variables sont insérées sans balises.';
   var MAIL_KINDS = {
     lettre: { title: 'Lettre d’incorporation', hint: 'Icône disponible uniquement si l’état de la candidature est « Admis PMG ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
+      mailHint: 'Courriel adressé au candidat (texte brut) quand la lettre est générée : le PDF est téléchargé à part, à glisser dans le message avant l’envoi.',
+      docHint: 'Icône disponible uniquement si l’état de la candidature est « Admis PMG ». La lettre est téléchargée en PDF et une copie est rangée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre (HTML)', 'textarea tall']] },
     rejet: { title: 'Lettre de rejet', hint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». Courriel adressé au candidat avec la lettre en PDF, copiée dans Documents. ' + TPL_HINT,
+      mailHint: 'Courriel adressé au candidat (texte brut) quand la lettre de rejet est générée : le PDF est téléchargé à part, à glisser dans le message avant l’envoi.',
+      docHint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». La lettre est téléchargée en PDF et une copie est rangée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre de rejet (HTML)', 'textarea tall']] },
-    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{SIGNATAIRE_BLOC}} : signature du signataire en vigueur (nom en gras et majuscules, puis sa fonction ; rubrique « Signataires des contrats »), ou séparément {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}. Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « X » ici et {{RENOUVELLEMENT}} reste vide.',
+    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{SIGNATAIRE_BLOC}} : signature du signataire en vigueur (nom en gras, puis sa fonction ; rubrique « Signataires des contrats »), ou séparément {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}. Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « X » ici et {{RENOUVELLEMENT}} reste vide.',
       fields: [['template', 'Modèle de l’ESR (HTML)', 'textarea tall']] }
   };
-  function kindBlockHtml(bKey, kind) {
+  // Un bloc replié par partie : le courriel (objet, message) et le document PDF (modèle HTML) se rédigent séparément.
+  function kindPartHtml(bKey, kind, title, hint, fields, part) {
     var k = MAIL_KINDS[kind];
-    return '<details class="mail-block"><summary>' + esc(k.title) + '</summary><div class="mail-body"><div class="mail-head">' +
-      '<span class="hint">' + esc(k.hint) + '</span>' +
-      '<button type="button" class="btn secondary sm" data-reset-b="' + bKey + '" data-reset-k="' + kind + '">Rétablir le texte par défaut</button></div>' + k.fields.map(function (f) {
+    return '<details class="mail-block"><summary>' + esc(title) + '</summary><div class="mail-body"><div class="mail-head">' +
+      '<span class="hint">' + esc(hint) + '</span>' +
+      '<button type="button" class="btn secondary sm" data-reset-b="' + bKey + '" data-reset-k="' + kind + '"' + (part ? ' data-reset-p="' + part + '"' : '') + '>Rétablir le texte par défaut</button></div>' + fields.map(function (f) {
         var id = 'mf-' + bKey + '-' + kind + '-' + f[0], attrs = ' id="' + id + '" data-b="' + bKey + '" data-k="' + kind + '" data-f="' + f[0] + '"';
         if (f[0] === 'template' || (k.html && f[0] === 'body')) {
           return '<div class="mail-tpl-head"><label for="' + id + '">' + esc(f[1]) + '</label><button type="button" class="btn secondary sm" data-preview-b="' + bKey + '" data-preview-k="' + kind + '">Aperçu</button></div>' +
             '<textarea class="textarea tall mono"' + attrs + ' spellcheck="false"></textarea>' +
             '<iframe class="tpl-preview" id="pv-' + bKey + '-' + kind + '" title="Aperçu du modèle" sandbox hidden></iframe>';
         }
-        return '<label for="' + id + '">' + esc(f[1]) + '</label>' + (f[2].indexOf('textarea') === 0 ? '<textarea class="textarea' + (f[2].indexOf('tall') !== -1 ? ' tall' : '') + '"' + attrs + ' spellcheck="true"></textarea>' : '<input class="input" type="' + (f[0] === 'to' ? 'text' : 'text') + '"' + attrs + ' autocomplete="off"' + (f[0] === 'to' ? ' placeholder="service@exemple.fr (plusieurs adresses : séparées par une virgule)"' : '') + '>');
+        return '<label for="' + id + '">' + esc(f[1]) + '</label>' + (f[2].indexOf('textarea') === 0 ? '<textarea class="textarea' + (f[2].indexOf('tall') !== -1 ? ' tall' : '') + '"' + attrs + ' spellcheck="true"></textarea>' : '<input class="input" type="text"' + attrs + ' autocomplete="off"' + (f[0] === 'to' ? ' placeholder="service@exemple.fr (plusieurs adresses : séparées par une virgule)"' : '') + '>');
       }).join('') + '</div></details>';
+  }
+  function kindBlockHtml(bKey, kind) {
+    var k = MAIL_KINDS[kind], mailF = k.fields.filter(function (f) { return f[0] !== 'template'; }), docF = k.fields.filter(function (f) { return f[0] === 'template'; });
+    if (!mailF.length || !docF.length || !k.mailHint) return kindPartHtml(bKey, kind, k.title, k.hint, k.fields, '');
+    return kindPartHtml(bKey, kind, k.title + ' · Courriel', k.mailHint, mailF, 'mail') + kindPartHtml(bKey, kind, k.title + ' · Document PDF', k.docHint, docF, 'doc');
   }
   function renderMailForms() {
     var host = $('mail-forms'), dr = state.draft;
@@ -4843,7 +4896,9 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
     }
     var b = e.target.closest('[data-reset-b]'); if (!b) return;
     var blk = b.getAttribute('data-reset-b'), kind = b.getAttribute('data-reset-k'), keepTo = state.draft.mail[blk][kind].to;
-    state.draft.mail[blk][kind] = JSON.parse(JSON.stringify(DEFAULT_MAIL[blk][kind]));
+    var part = b.getAttribute('data-reset-p'), def = JSON.parse(JSON.stringify(DEFAULT_MAIL[blk][kind]));
+    if (part) Object.keys(def).forEach(function (f) { if ((f === 'template') === (part === 'doc')) state.draft.mail[blk][kind][f] = def[f]; }); // courriel ou document seulement
+    else state.draft.mail[blk][kind] = def;
     if (keepTo !== undefined) state.draft.mail[blk][kind].to = keepTo; // l'adresse du service n'est pas un texte par défaut
     renderMailForms();
     refreshPreview(blk, kind);
@@ -6104,9 +6159,17 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
     });
     var r = best || def, tr = function (t) { return String(t || '').replace(/^\s+|\s+$/g, ''); };
     var by = function (id) { var y = (list || []).filter(function (z) { return z.id === id; })[0]; return y ? { nom: y.nom.trim(), qualite: tr(y.qualite) } : { nom: '', qualite: '' }; };
-    if (!r) return { nom: '', qualite: '', deleg: false, dnom: '', dqualite: '', suppl: false, snom: '', squalite: '' };
+    if (!r) return { nom: '', qualite: '', deleg: false, dnom: '', dqualite: '', suppl: false, snom: '', squalite: '', chain: [] };
     var dl = r.deleg ? by(r.dref) : { nom: '', qualite: '' }, sp = r.suppl ? by(r.sref) : { nom: '', qualite: '' };
-    return { nom: r.nom.trim(), qualite: tr(r.qualite), deleg: !!r.deleg, dnom: dl.nom, dqualite: dl.qualite, suppl: !!r.suppl, snom: sp.nom, squalite: sp.qualite };
+    // Chaîne de signature au-dessus du signataire : { nom, qualite } ou libellé (« Par délégation », « Par suppléance »).
+    // Suppléant : bloc complet du suppléé, avec sa propre délégation (à défaut, celle indiquée sur le suppléant) ; délégataire seul : son délégant.
+    var chain = [], sy = r.suppl ? (list || []).filter(function (z) { return z.id === r.sref; })[0] : null;
+    if (sy && sp.nom) {
+      var sd = sy.deleg ? by(sy.dref) : dl;
+      if (sd.nom) chain.push(sd, 'Par délégation');
+      chain.push(sp, 'Par suppléance');
+    } else if (dl.nom) chain.push(dl, 'Par délégation');
+    return { nom: r.nom.trim(), qualite: tr(r.qualite), deleg: !!r.deleg, dnom: dl.nom, dqualite: dl.qualite, suppl: !!r.suppl, snom: sp.nom, squalite: sp.qualite, chain: chain };
   }
   function fmtIso(iso) { return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : ''; }
   function signPeriod(x) { return x.def ? 'Par défaut' : (!x.from ? 'Délégant / suppléé uniquement' : x.from ? 'Du ' + fmtIso(x.from) : '') + (x.to ? ' au ' + fmtIso(x.to) : x.from ? ' (sans fin)' : ''); }
@@ -6143,7 +6206,7 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
         '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-qual">Fonction (les retours à la ligne sont conservés dans le contrat)</label><textarea class="textarea" rows="3" id="' + p + '-qual" data-sf="qualite" data-i="' + i + '" spellcheck="true" placeholder="ex. Le chef de la division&#10;des réserves jeunesse">' + esc(x.qualite) + '</textarea></div>' +
         (x.def ? '' : '<div class="cf-field"><label for="' + p + '-from">En vigueur à partir du</label><input class="input" type="date" id="' + p + '-from" data-sf="from" data-i="' + i + '" value="' + esc(x.from) + '"></div>' +
         '<div class="cf-field"><label for="' + p + '-to">Jusqu’au (inclus, facultatif)</label><input class="input" type="date" id="' + p + '-to" data-sf="to" data-i="' + i + '" value="' + esc(x.to) + '"></div>') +
-        '<div class="cf-field" style="grid-column:1/-1"><div class="fr-checkbox-group"><input type="checkbox" id="' + p + '-suppl" data-sf="suppl" data-i="' + i + '"' + (x.suppl ? ' checked' : '') + '><label class="fr-label" for="' + p + '-suppl">Par suppléance <span class="hint">(la signature du suppléé, à choisir dans la liste, s’affiche d’abord, puis « Par suppléance », puis ce signataire, le suppléant)</span></label></div></div>' +
+        '<div class="cf-field" style="grid-column:1/-1"><div class="fr-checkbox-group"><input type="checkbox" id="' + p + '-suppl" data-sf="suppl" data-i="' + i + '"' + (x.suppl ? ' checked' : '') + '><label class="fr-label" for="' + p + '-suppl">Par suppléance <span class="hint">(le bloc complet du suppléé, à choisir dans la liste, s’affiche d’abord, avec sa propre délégation si elle est renseignée sur sa fiche, puis « Par suppléance », puis ce signataire, le suppléant)</span></label></div></div>' +
         (x.suppl ? '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-sref">Suppléé<span class="req" aria-hidden="true">*</span></label>' + signSelect(list, i, 'sref', p + '-sref') + '</div>' : '') +
         '<div class="cf-field" style="grid-column:1/-1"><div class="fr-checkbox-group"><input type="checkbox" id="' + p + '-deleg" data-sf="deleg" data-i="' + i + '"' + (x.deleg ? ' checked' : '') + '><label class="fr-label" for="' + p + '-deleg">Par délégation <span class="hint">(la signature du délégant, à choisir dans la liste, s’affiche d’abord, puis « Par délégation », puis ' + (x.suppl ? 'le suppléé, délégataire' : 'ce signataire, le délégataire') + ')</span></label></div></div>' +
         (x.deleg ? '<div class="cf-field" style="grid-column:1/-1"><label for="' + p + '-dref">Délégant<span class="req" aria-hidden="true">*</span></label>' + signSelect(list, i, 'dref', p + '-dref') + '</div>' : '') +
@@ -6565,7 +6628,7 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
     return out;
   }
   var SVS = { hd: { q: '', f: 'todo', rows: [], meta: null, loading: false, error: '', msg: '' }, ac: { q: '', f: 'todo', rows: [], meta: null, loading: false, error: '', msg: '' } };
-  var SVM = null, svLastField = null;
+  var SVM = null;
   function svPick(all, names) { return all.filter(function (c) { return names.indexOf(loose(c.label)) !== -1 || names.indexOf(loose(c.id)) !== -1; })[0] || null; }
   function svMeta(k, table, all) {
     var cols = {}; Object.keys(SV[k].cols).forEach(function (key) { cols[key] = svPick(all, SV[k].cols[key]); });
@@ -6579,9 +6642,18 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
       return Promise.all([t, grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column'), grist.docApi.fetchTable(t)]);
     }).then(function (r) {
       var T = r[1], C = r[2], tbl = r[3], tid = T.id[T.tableId.indexOf(r[0])], all = [];
-      for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) all.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], formula: !!C.isFormula[i], choices: choicesOf(C.widgetOptions && C.widgetOptions[i]) });
+      for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) all.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], formula: !!C.isFormula[i], choices: choicesOf(C.widgetOptions && C.widgetOptions[i]), ref: /^Ref(List)?:/.test(C.type[i]) ? C.type[i].split(':')[1] : '', visible: C.visibleCol ? C.visibleCol[i] : 0 });
       var rows = (tbl.id || []).map(function (id, n) { var row = { id: id }; Object.keys(tbl).forEach(function (c) { if (c !== 'id' && Array.isArray(tbl[c])) row[c] = tbl[c][n]; }); return row; });
-      return { meta: svMeta(k, r[0], all), rows: rows };
+      var meta = svMeta(k, r[0], all), refs = [];
+      Object.keys(meta.cols).forEach(function (key) { var c = meta.cols[key]; if (c && c.ref && refs.indexOf(c) === -1) refs.push(c); });
+      // Colonnes référence (ex. Demandeur) : la valeur stockée est un numéro de ligne ; on lit la colonne affichée de la table liée pour montrer le nom.
+      return Promise.all(refs.map(function (c) {
+        var j = c.visible ? C.id.indexOf(c.visible) : -1, vid = j >= 0 ? C.colId[j] : '';
+        return grist.docApi.fetchTable(c.ref).then(function (t) {
+          if (!vid || !t[vid]) vid = ['Nom', 'NOM', 'Name', 'Identite', 'Identité', 'Nom complet', 'Nigend'].filter(function (x) { return t[x]; })[0] || '';
+          var map = {}; (t.id || []).forEach(function (id, n) { map[id] = vid ? t[vid][n] : ''; }); c.map = map;
+        }).catch(function () { c.map = {}; });
+      })).then(function () { return { meta: meta, rows: rows }; });
     });
   }
   function svDemo(k) {
@@ -6615,7 +6687,11 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
   function svCol(k, key) { var m = SVS[k].meta; return m && m.cols[key] || null; }
   function svRaw(k, row, key) { var c = svCol(k, key); return c ? row[c.id] : undefined; }
   function svStr(v) { if (v == null || v === false) return ''; if (Array.isArray(v)) return v[0] === 'L' ? v.slice(1).join(', ') : v.join(', '); return String(v).trim(); }
-  function svT(k, row, key) { return svStr(svRaw(k, row, key)); }
+  function svT(k, row, key) {
+    var c = svCol(k, key), v = c ? row[c.id] : undefined; if (!c || !c.ref) return svStr(v);
+    var m = c.map || {}; // référence : nom lu dans la table liée (jamais le numéro de ligne)
+    return (Array.isArray(v) ? v.filter(function (x) { return typeof x === 'number'; }) : [v]).filter(function (x) { return typeof x === 'number' && x > 0; }).map(function (x) { return svStr(m[x]); }).filter(Boolean).join(', ');
+  }
   function svSecs(v) { if (typeof v === 'number') return v > 1e11 ? v / 1000 : v; if (typeof v === 'string' && v) { var t = Date.parse(v); return isNaN(t) ? null : t / 1000; } return null; }
   function svFmt(sec, time) { return sec == null ? '' : new Date(sec * 1000).toLocaleString('fr-FR', time ? { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' } : { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric' }); }
   function svHasTime(k, key) { var c = svCol(k, key); return !!c && /^DateTime/.test(c.type); }
@@ -6740,9 +6816,30 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
     });
   }
   function svRefreshOpen(k) { if (SVM && SVM.k === k) { if (!svRow(k, SVM.id)) svCloseModal(); else svRenderModal(); } }
+  /* Champs modifiables au clic (Gestion des accès) : valeur affichée (« Non renseigné » si vide), puis champ de saisie adapté au type de la colonne. */
+  function svEditable(k, key) { var c = svCol(k, key); return !!c && !c.formula && !/^(Attachments|RefList)/.test(c.type); }
+  function svShown(k, row, key) {
+    if (key === 'done') return svIsDone(k, row) ? 'Oui' : 'Non, à ouvrir';
+    return svT(k, row, key);
+  }
+  function svControlHtml(k, row, key) {
+    var c = svCol(k, key), cur = svRaw(k, row, key), id = 'w-sv-in', h = ' id="' + id + '" data-svin="' + key + '" aria-label="' + esc(key) + '"';
+    function opts(list, sel) { return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(sel) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
+    if (key === 'done' || /^Bool/.test(c.type)) return '<select class="select"' + h + '>' + opts([['1', 'Oui'], ['0', 'Non']], svIsDone(k, row) ? '1' : '0') + '</select>';
+    if (c.ref) { var m = c.map || {}, list = Object.keys(m).map(function (x) { return [x, svStr(m[x])]; }).filter(function (o) { return o[1]; }).sort(function (a, b) { return a[1].localeCompare(b[1], 'fr'); }); return '<select class="select"' + h + '><option value="">— Aucun —</option>' + opts(list, typeof cur === 'number' ? cur : '') + '</select>'; }
+    if (c.choices && c.choices.length) { var val = svStr(cur); return '<select class="select"' + h + '><option value=""></option>' + opts(c.choices.map(function (x) { return [x, x]; }).concat(val && c.choices.indexOf(val) === -1 ? [[val, val]] : []), val) + '</select>'; }
+    return '<input class="input" type="' + (/^(Int|Numeric)/.test(c.type) ? 'number' : 'text') + '"' + h + ' value="' + esc(svStr(cur)) + '" autocomplete="off">';
+  }
   function svRenderModal() {
     var M = SVM; if (!M) return;
     var k = M.k, row = svRow(k, M.id); if (!row) return;
+    function svEdKv(label, key) {
+      var c = svCol(k, key); if (!c) return '';
+      var ed = svEditable(k, key), v = svShown(k, row, key), body;
+      if (M.edit === key && ed) body = svControlHtml(k, row, key);
+      else body = (v ? esc(v) : '<span class="sv-empty">Non renseigné</span>') + (ed ? '<span class="fr-icon-edit-line sv-pen" aria-hidden="true"></span>' : '');
+      return '<dt>' + esc(label) + '</dt><dd' + (ed && M.edit !== key ? ' class="sv-edit" role="button" tabindex="0" data-svedit="' + key + '" title="Cliquer pour modifier" aria-label="Modifier ' + esc(label) + ' : ' + esc(v || 'non renseigné') + '"' : '') + '>' + body + '</dd>';
+    }
     var done = svIsDone(k, row), mail = svT(k, row, 'email'), ok = validMail(mail), d = svDelay(k, row), cr = svSecs(svRaw(k, row, 'created')), dn = svSecs(svRaw(k, row, 'doneAt'));
     $('svmodal-title').textContent = k === 'hd' ? 'Demande Helpdesk' + (svT(k, row, 'module') ? ' · ' + svT(k, row, 'module') : '') : 'Demande d’accès · ' + svWho(k, row);
     $('svmodal-sub').innerHTML = esc(k === 'hd' ? (cr != null ? 'Reçue le ' + svFmt(cr, svHasTime(k, 'created')) : 'Date de réception inconnue') : 'Ouverture des droits d’accès') + svBadge(d);
@@ -6753,12 +6850,11 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
         svKv('Message', svT(k, row, 'msg') ? '<p class="sv-msg">' + esc(svT(k, row, 'msg')) + '</p>' : '') +
         (svCol(k, 'pj') ? '<dt>Pièces jointes</dt><dd class="sv-atts" id="w-sv-atts">' + (M.atts ? svAttsHtml(M.atts) : (M.attIds && M.attIds.length ? 'Chargement…' : '<span class="hint" style="font-weight:400">Aucune</span>')) + '</dd>' : '');
       demandeur = svKv('Nom', esc(svWho(k, row))) + svKv('Nigend', esc(svT(k, row, 'nigend'))) + svKv('Affectation', esc(svT(k, row, 'aff')));
-    } else {
-      demande = svKv('Fonction', esc(svT(k, row, 'fonction'))) + svKv('Affectation', esc(svT(k, row, 'aff'))) + (svT(k, row, 'choix') && svT(k, row, 'choix') !== svT(k, row, 'aff') ? svKv('Choix d’affectation', esc(svT(k, row, 'choix'))) : '') +
-        svKv('Droits ouverts', done ? 'Oui' : 'Non, à ouvrir');
-      demandeur = svKv('Grade', esc(svT(k, row, 'grade'))) + svKv('Nom', esc([svT(k, row, 'nom'), svT(k, row, 'prenom')].filter(Boolean).join(' '))) + svKv('Nigend', esc(svT(k, row, 'nigend')));
+    } else { // Gestion des accès : tous les champs sont affichés (vides compris) et modifiables au clic
+      demande = svEdKv('Fonction', 'fonction') + svEdKv('Choix d’affectation', 'choix') + svEdKv('Affectation', 'aff') + svEdKv('Droits ouverts', 'done');
+      demandeur = svEdKv('Grade', 'grade') + svEdKv('Nom', 'nom') + svEdKv('Prénom', 'prenom') + svEdKv('Nigend', 'nigend') + svEdKv('Courriel', 'email');
     }
-    demandeur += svKv('Courriel', ok ? '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>' : '<span class="hint" style="font-weight:400">' + (mail ? esc(mail) + ' (adresse invalide)' : 'non renseigné') + '</span>');
+    if (k === 'hd') demandeur += svKv('Courriel', ok ? '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>' : '<span class="hint" style="font-weight:400">' + (mail ? esc(mail) + ' (adresse invalide)' : 'non renseigné') + '</span>');
     var act = done
       ? '<button type="button" class="btn" data-svm="mail"' + (ok ? '' : ' disabled title="Aucune adresse mail valide"') + '>Écrire au demandeur</button> <button type="button" class="btn secondary" data-svm="reopen"' + (M.busy ? ' disabled' : '') + '>Rouvrir la demande</button>'
       : '<label class="x-check" style="margin:0 1rem 0 0"><input type="checkbox" id="w-sv-mailck"' + (M.mail && ok ? ' checked' : '') + (ok ? '' : ' disabled') + '> Préparer le courriel au demandeur</label>' +
@@ -6785,6 +6881,7 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
   }
   $('svmodal').addEventListener('click', function (e) {
     if (e.target === $('svmodal') || e.target.closest('#w-svmodal-close')) { svCloseModal(); return; }
+    var ed = e.target.closest('[data-svedit]'); if (ed && SVM && !SVM.saving) { SVM.edit = ed.getAttribute('data-svedit'); svRenderModal(); svFocusInput(); return; }
     var b = e.target.closest('[data-svm]'); if (!b || b.disabled || !SVM) return;
     var a = b.getAttribute('data-svm'), M = SVM;
     if (a === 'close') svCloseModal();
@@ -6795,7 +6892,36 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
         .catch(function (err) { M.busy = false; M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; if (SVM === M) svRenderModal(); });
     }
   });
+  function svFocusInput() { setTimeout(function () { var i = $('sv-in'); if (i) { i.focus(); if (i.select && i.tagName === 'INPUT') i.select(); } }, 0); }
+  // Enregistre le champ modifié (type de la colonne respecté), puis relit la table.
+  function svCommitField(M, key, raw) {
+    if (!M || M.edit !== key) return; // déjà validé ou annulé
+    var k = M.k, row = svRow(k, M.id), c = svCol(k, key); M.edit = null;
+    if (!row || !c) { svRenderModal(); return; }
+    var out;
+    if (key === 'done') out = svDoneValue(c, raw === '1');
+    else if (/^Bool/.test(c.type)) out = raw === '1' || raw === true;
+    else if (/^Int/.test(c.type)) out = raw === '' ? null : parseInt(raw, 10);
+    else if (/^Numeric/.test(c.type)) out = raw === '' ? null : parseFloat(raw);
+    else if (c.ref) out = raw === '' ? 0 : Number(raw);
+    else out = String(raw).trim();
+    var before = row[c.id], same = key === 'done' ? (svIsDone(k, row) === (raw === '1')) : (before == null ? '' : before) === (out == null ? '' : out) || (c.ref && Number(before || 0) === out);
+    if (same) { svRenderModal(); return; }
+    var f = {}; f[c.id] = out; M.saving = true; M.err = ''; svRenderModal();
+    Promise.resolve(svUpdate(k, M.id, f)).then(function () { return svLoad(k); })
+      .catch(function (err) { M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; })
+      .then(function () { M.saving = false; if (SVM === M) svRenderModal(); });
+  }
+  $('svmodal').addEventListener('change', function (e) { var t = e.target; if (t.getAttribute && t.getAttribute('data-svin') && t.tagName === 'SELECT') svCommitField(SVM, t.getAttribute('data-svin'), t.value); });
+  $('svmodal').addEventListener('focusout', function (e) { var t = e.target; if (t.getAttribute && t.getAttribute('data-svin') && t.tagName === 'INPUT') svCommitField(SVM, t.getAttribute('data-svin'), t.value); else if (t.getAttribute && t.getAttribute('data-svin') && SVM && SVM.edit) { SVM.edit = null; svRenderModal(); } });
   $('svmodal').addEventListener('keydown', function (e) {
+    var ed = e.target.closest && e.target.closest('[data-svedit]');
+    if (ed && (e.key === 'Enter' || e.key === ' ') && SVM && !SVM.saving) { e.preventDefault(); SVM.edit = ed.getAttribute('data-svedit'); svRenderModal(); svFocusInput(); return; }
+    var inp = e.target.getAttribute && e.target.getAttribute('data-svin');
+    if (inp && SVM && SVM.edit) {
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); svCommitField(SVM, inp, e.target.value); return; }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); SVM.edit = null; svRenderModal(); return; } // annule la saisie sans fermer la fiche
+    }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); svCloseModal(); return; }
     if (e.key === 'Tab') {
       var f = Array.prototype.filter.call($('svmodal').querySelectorAll('button:not(:disabled), input:not(:disabled), a[href]'), function (n) { return n.offsetParent !== null; });
@@ -6816,48 +6942,26 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
         '<button type="button" class="btn secondary btn-iconly ico-refresh" data-svact="refresh" data-k="' + k + '" title="Actualiser le tableau">Actualiser</button>' +
         '<div class="count" id="w-sv-' + k + '-count" aria-live="polite"></div></div>' +
         '<div class="table-wrap"><table><thead id="w-sv-' + k + '-thead"></thead><tbody id="w-sv-' + k + '-rows"></tbody></table><div id="w-sv-' + k + '-state" class="state" hidden></div></div>' +
-        '<details class="mail-block" style="margin-left:0" id="w-sv-' + k + '-tpl"><summary>Courriel au demandeur</summary><div class="mail-body"></div></details>';
+        '<p class="hint" style="margin-top:.75rem">Le courriel au demandeur se rédige dans la rubrique « Courriels » (modèle « ' + (k === 'hd' ? 'Helpdesk · demande traitée' : 'Gestion des accès · droits ouverts') + ' »).</p>';
       bar.parentNode.insertBefore(sec, bar);
     });
   }
-  function svRenderTpl() {
-    var T = state.draft.suivi || cfg().suivi;
-    ['hd', 'ac'].forEach(function (k) {
-      var d = $('sv-' + k + '-tpl'); if (!d) return;
-      var body = d.querySelector('.mail-body'), p = 'w-sv-' + k + '-t';
-      body.innerHTML = '<p class="hint">Message préparé dans la messagerie du gestionnaire quand ' + (k === 'hd' ? 'une demande est traitée' : 'les droits d’accès sont ouverts') + ' (bouton « ' + esc(SV[k].doneLabel) + ' » du tableau ou fiche de la demande). Texte brut ; le gestionnaire le relit avant l’envoi. Cliquez sur une variable pour l’insérer dans le champ en cours.</p>' +
-        '<div class="bo-vars" style="margin-left:0" role="group" aria-label="Variables disponibles">' + SV[k].vars.map(function (v) { return '<button type="button" class="cfg-var-btn" data-svvar="{{' + v + '}}" data-k="' + k + '">{{' + v + '}}</button>'; }).join('') + '</div>' +
-        '<div class="cf-field"><label for="' + p + 's">Objet</label><input class="input" type="text" id="' + p + 's" data-svt="subject" data-k="' + k + '" value="' + esc(T[k].subject) + '"></div>' +
-        '<div class="cf-field"><label for="' + p + 'b">Message</label><textarea class="textarea tall" id="' + p + 'b" data-svt="body" data-k="' + k + '" spellcheck="true">' + esc(T[k].body) + '</textarea></div>' +
-        '<button type="button" class="btn secondary sm" data-svact="tplreset" data-k="' + k + '">Rétablir le modèle par défaut</button>';
-    });
-  }
+  function svRenderTpl() {} // les modèles de courriel du suivi sont édités dans la rubrique « Courriels »
   svBuild();
   (function () {
     var host = $('view-admin'); if (!host) return;
     host.addEventListener('input', function (e) {
-      var t = e.target, k = t.getAttribute && t.getAttribute('data-k');
+      var t = e.target;
       if (t.id && /^w-sv-(hd|ac)-q$/.test(t.id)) { var kk = t.id.split('-')[2]; SVS[kk].q = t.value; svRenderList(kk); return; }
-      if (t.getAttribute && t.getAttribute('data-svt')) { if (!state.draft.suivi) state.draft.suivi = cfg().suivi; state.draft.suivi[k][t.getAttribute('data-svt')] = t.value; setDirty(true); }
     });
     host.addEventListener('change', function (e) { var t = e.target; if (t.id && /^w-sv-(hd|ac)-f$/.test(t.id)) { var kk = t.id.split('-')[2]; SVS[kk].f = t.value; svRenderList(kk); } });
-    host.addEventListener('focusin', function (e) { if (e.target.getAttribute && e.target.getAttribute('data-svt')) svLastField = e.target; });
-    host.addEventListener('mousedown', function (e) { if (e.target.closest('[data-svvar]')) e.preventDefault(); });
     host.addEventListener('click', function (e) {
-      var v = e.target.closest('[data-svvar]');
-      if (v) {
-        var f = svLastField && svLastField.getAttribute('data-k') === v.getAttribute('data-k') && document.body.contains(svLastField) ? svLastField : $('sv-' + v.getAttribute('data-k') + '-tb');
-        if (!f) return; var tok = v.getAttribute('data-svvar'), s0 = f.selectionStart == null ? f.value.length : f.selectionStart, s1 = f.selectionEnd == null ? s0 : f.selectionEnd;
-        f.value = f.value.slice(0, s0) + tok + f.value.slice(s1); f.focus(); f.selectionStart = f.selectionEnd = s0 + tok.length;
-        f.dispatchEvent(new Event('input', { bubbles: true })); return;
-      }
       var b = e.target.closest('[data-svact]');
       if (b) {
         var a = b.getAttribute('data-svact'), k = b.getAttribute('data-k'), id = Number(b.getAttribute('data-id'));
         if (a === 'refresh') { SVS[k].msg = ''; svLoad(k); }
         else if (a === 'done') { b.disabled = true; svMark(k, id, true, true).catch(function (err) { SVS[k].msg = ''; SVS[k].error = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; svRenderList(k); }); }
         else if (a === 'mail') svMail(k, id);
-        else if (a === 'tplreset') { if (!state.draft.suivi) state.draft.suivi = cfg().suivi; state.draft.suivi[k] = { subject: SV_TPL[k].subject, body: SV_TPL[k].body }; svRenderTpl(); setDirty(true); }
         return;
       }
       var tr = e.target.closest('tr[data-svopen]'); if (tr) svOpenModal(tr.getAttribute('data-k'), Number(tr.getAttribute('data-svopen')));
@@ -6868,6 +6972,17 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
   window.WEL = {
     // Signataire en vigueur (par défaut : aujourd'hui) : { nom, qualite } ; utilisé par les variables {{SIGNATAIRE}} des modèles de contrat.
     signataire: function (iso) { return currentSigner(cfg().sign, iso); },
+    // Modèles de courriel du suivi des demandes (éditeur unique du back office) : texte du brouillon.
+    templates: function () {
+      return ['hd', 'ac'].map(function (k) {
+        function ctl(f) { return { read: function () { return (state.draft.suivi || cfg().suivi)[k][f]; }, write: function (v) { if (!state.draft.suivi) state.draft.suivi = cfg().suivi; if (state.draft.suivi[k][f] !== v) { state.draft.suivi[k][f] = v; setDirty(true); } } }; }
+        return { id: 'wel:' + k, group: 'Suivi des demandes', type: 'mail', title: k === 'hd' ? 'Helpdesk · demande traitée' : 'Gestion des accès · droits ouverts',
+          hint: 'Message préparé dans la messagerie du gestionnaire quand ' + (k === 'hd' ? 'une demande est traitée' : 'les droits d’accès sont ouverts') + ' (bouton « ' + SV[k].doneLabel + ' » du tableau ou fiche de la demande). Texte brut ; le gestionnaire le relit avant l’envoi.',
+          subject: ctl('subject'), body: ctl('body'), vars: SV[k].vars,
+          reset: function () { if (!state.draft.suivi) state.draft.suivi = cfg().suivi; state.draft.suivi[k] = { subject: SV_TPL[k].subject, body: SV_TPL[k].body }; setDirty(true); },
+          preview: function (sj, bd) { var r = SVS[k].rows[0]; if (!r) return { empty: 'Aucune ligne dans la table : aperçu indisponible.' }; var ctx = svCtx(k, r); return { subject: svFill(sj, ctx), text: svFill(bd, ctx) }; } };
+      });
+    },
     // Chiffres de la vue d'ensemble du back office.
     stats: function () {
       var d = state.draft, arts = d.articles || [];
@@ -8017,14 +8132,12 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
         var sgi = extra && extra.SIGNATURE_AUTORITE_IMG; if (!sgi) return '';
         return plain ? '' : '<img alt="Signature de l’autorité d’emploi" src="' + esc(sgi) + '" style="display: block; max-width: 220px; max-height: 90px;">';
       }
-      if (key === 'SIGNATAIRE' || key === 'SIGNATAIRE_QUALITE' || key === 'SIGNATAIRE_BLOC') { // signature : nom en majuscules (gras dans le bloc), puis la fonction avec ses retours à la ligne
-        var sg = window.WEL && window.WEL.signataire ? window.WEL.signataire() : { nom: '', qualite: '' }, nm = sg.nom.toUpperCase(), ql = sg.qualite, br = function (t) { return plain ? t : E(t).replace(/\r?\n/g, '<br>'); };
+      if (key === 'SIGNATAIRE' || key === 'SIGNATAIRE_QUALITE' || key === 'SIGNATAIRE_BLOC') { // signature : nom tel que saisi (gras dans le bloc), puis la fonction avec ses retours à la ligne
+        var sg = window.WEL && window.WEL.signataire ? window.WEL.signataire() : { nom: '', qualite: '' }, nm = sg.nom, ql = sg.qualite, br = function (t) { return plain ? t : E(t).replace(/\r?\n/g, '<br>'); };
         if (key === 'SIGNATAIRE') return br(nm);
         if (key === 'SIGNATAIRE_QUALITE') return br(ql);
         var blk = function (n, f) { return plain ? [n, f].filter(Boolean).join('\n') : (n ? '<strong>' + E(n) + '</strong>' : '') + (n && f ? '<br>' : '') + br(f); };
-        var parts = []; // chaîne : [délégant, « Par délégation », ] [suppléé, « Par suppléance », ] signataire
-        if (sg.deleg && sg.dnom) parts.push(blk(sg.dnom.toUpperCase(), sg.dqualite), 'Par délégation');
-        if (sg.suppl && sg.snom) parts.push(blk(sg.snom.toUpperCase(), sg.squalite), 'Par suppléance');
+        var parts = (sg.chain || []).map(function (c) { return typeof c === 'string' ? c : blk(c.nom, c.qualite); }); // chaîne : [délégant du suppléé, « Par délégation », ] [suppléé, « Par suppléance », ] signataire
         parts.push(blk(nm, ql));
         return parts.join(plain ? '\n' : '<br>');
       }
@@ -10752,6 +10865,26 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
   /* ---------- Démarrage ---------- */
   // Les options du widget et le chargement Grist sont pilotés par la première page (grist.ready) : elle nous transmet les options.
   window.RES = {
+    // Modèles de contrat, d'avenant et de PPE (éditeur unique du back office).
+    templates: function () {
+      var out = [], rec = state.records[0], c = cfg(), none = 'Aucun réserviste dans la table : aperçu indisponible.';
+      var ctrVars = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'GRADE', 'NIGEND', 'AFFECTATION', 'AFFECTATION_DEMANDEE', 'DATE_DEBUT', 'DATE_FIN', 'DATE_EFFET', 'JUSQUAU', 'TYPE_DEMANDE', 'TYPE_CONTRAT', 'RENOUVELLEMENT', 'INITIAL', 'DATE_DU_JOUR', 'SIGNATAIRE_BLOC', 'SIGNATAIRE', 'SIGNATAIRE_QUALITE'];
+      function extra(kind) { var s = todaySec(), e = fmtDate(ppeEndSec(s)); return { DATE_DEBUT: fmtDate(s), DATE_FIN: e, DATE_EFFET: fmtDate(s), JUSQUAU: e, TYPE_DEMANDE: kind === 'ren' ? 'Renouvellement' : 'Mutation', AFFECTATION_DEMANDEE: 'GD 74', TYPE_CONTRAT: kind === 'ren' ? 'RENOUVELLEMENT' : 'AVENANT', INITIAL: '', RENOUVELLEMENT: kind === 'ren' ? 'X' : '' }; }
+      function item() { return { raw: rec.raw, id: rec.identity == null ? '' : String(rec.identity) }; }
+      [['ren', 'Renouvellement de contrat', 'Renouvellements'], ['ave', 'Avenant', 'Avenants']].forEach(function (k) {
+        function field(f) { return tplCtl($('f-ctr-' + k[0] + '-' + f)); }
+        function reset(fields) { return function () { var ct = state.draft.ctrTpl = normCtr(state.draft.ctrTpl); fields.forEach(function (f) { ct[k[0]][f] = ''; var el = $('f-ctr-' + k[0] + '-' + f); if (el) el.value = DEFAULT_CTR[k[0]][f]; }); setDirty(true); }; }
+        out.push({ id: 'res:' + k[0] + ':mail', group: 'Réservistes · ' + k[2].toLowerCase(), type: 'mail', title: k[1], hint: 'Courriel en texte brut ouvert par « Générer le contrat et l’envoyer par courriel » (fenêtre de signature RO1) : le PDF téléchargé est à joindre au message.', subject: field('subject'), body: field('body'), vars: ctrVars,
+          reset: reset(['subject', 'body']), preview: function (sj, bd) { if (!rec) return { empty: none }; var x = extra(k[0]); return { subject: fillTemplate(sj, item(), c, x, true), text: fillTemplate(bd, item(), c, x, true) }; } });
+        out.push({ id: 'res:' + k[0] + ':doc', group: 'Réservistes · ' + k[2].toLowerCase(), type: 'doc', title: k[1], hint: 'Modèle HTML converti en PDF A4 par « Générer le contrat » (fenêtre de signature RO1) ; styles en ligne, images en base64 uniquement.', body: field('html'), vars: ctrVars,
+          reset: reset(['html']), preview: function (sj, bd) { if (!rec) return { empty: none }; return { html: sanitizeHtml(fillTemplate(bd, item(), c, extra(k[0]))) }; } });
+      });
+      out.push({ id: 'res:ppe:doc', group: 'Réservistes · plan prévisionnel d’emploi', type: 'doc', title: 'Plan prévisionnel d’emploi (PPE)', hint: 'Modèle HTML converti en PDF A4 par l’icône « Générer un PPE » de la fiche du réserviste (groupe Contrat) ; styles en ligne, images en base64 uniquement.', body: tplCtl($('f-ppe')),
+        vars: ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'GRADE', 'NIGEND', 'AFFECTATION', 'DATE_DEBUT', 'DATE_FIN', 'DATE_DU_JOUR', 'SIGNATURE_AUTORITE'],
+        reset: function () { tplClick('#r-ppe-reset'); },
+        preview: function (sj, bd) { if (!rec) return { empty: none }; var s = todaySec(); return { html: sanitizeHtml(fillTemplate(bd, item(), c, { DATE_DEBUT: fmtDate(s), DATE_FIN: fmtDate(ppeEndSec(s)), SIGNATURE_AUTORITE_IMG: SIG_PLACEHOLDER })) }; } });
+      return out;
+    },
     setOptions: function (o) { state.opts = o || {}; if (window.__page === 'res' || state.records.length === 0) load(); },
     refresh: function () { return load(); },
     rerender: function () { if (state.records.length) renderList(); }, // les réservations VMP viennent d'être (re)chargées : états et filtres à recalculer
@@ -12844,6 +12977,32 @@ var ARTWORK_CONTRACT = artworkSvg('contract'), ARTWORK_CALENDAR = artworkSvg('ca
     openAdmin: function () { showTab('admin'); },              // back office unifié (déclenché depuis la page Candidats)
     closeAdmin: function () { showTab(state.tab || 'vmp'); },
     sharedMail: sharedMail,                                    // modèles de réservation/convocation par type, repris par la page Candidats
+    // Modèles de courriel et de document (éditeur unique du back office).
+    templates: function () {
+      var out = [], vars = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'AFFECTATION', 'EMAIL', 'DDN', 'TELEPHONE', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'DATE_DU_JOUR'];
+      function row(tab) { var d = state.data[tab]; return d && d.rows[0] || null; }
+      function none() { return { empty: 'Aucune réservation dans la table : aperçu indisponible.' }; }
+      function mail(t, k, group, title, hint) {
+        var tab = t === 'common' ? 'vmp' : t, pre = 'x-mf-' + t + '-' + k + '-', rs = '[data-reset-t="' + t + '"][data-reset-k="' + k + '"]';
+        out.push({ id: 'rsv:' + t + ':' + k, group: group, type: 'mail', title: title, hint: hint + ' ' + TPL_HINT, subject: tplCtl(document.getElementById(pre + 'subject')), body: tplCtl(document.getElementById(pre + 'body')), vars: vars,
+          reset: function () { tplClick(rs); },
+          preview: function (sj, bd) { var r = row(tab); if (!r) return none(); var x = { TYPE: SPECS[tab].title }; return { subject: fill(sj, tab, r, false, x), text: fill(bd, tab, r, false, x) }; } });
+      }
+      function doc(k, title, hint, tab) {
+        out.push({ id: 'rsv:common:' + k, group: 'Réservations · pièces jointes', type: 'doc', title: title, hint: hint, body: tplCtl(document.getElementById('x-mf-common-' + k + '-template')), vars: vars,
+          reset: function () { tplClick('[data-reset-t="common"][data-reset-k="' + k + '"]'); },
+          preview: function (sj, bd) { var r = row(tab); if (!r) return none(); return { html: sanitizeHtml(fill(bd, tab, r, true, { TYPE: SPECS[tab].title })) }; } });
+      }
+      var sets = [['reservation', 'Réservations · invitations à réserver', function (t) { return 'Envoyée au ' + SPECS[t].personWord + ' pour l’inviter à réserver un créneau.'; }],
+        ['convocation', 'Réservations · confirmations', function (t) { return 'Envoyée au ' + SPECS[t].personWord + ' pour confirmer sa réservation.'; }]];
+      sets.forEach(function (g) { TAB_ORDER.forEach(function (t) { mail(t, g[0], g[1], KIND_TITLES[g[0]] + ' · ' + SPECS[t].title, g[2](t)); }); });
+      mail('common', 'service', 'Réservations · antenne médicale', KIND_TITLES.service, 'Envoyée à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail) ; {{TYPE}} vaut VMP ou VEMI.');
+      [['suppression', 'Réservations · suppression d’un doublon', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est supprimée.'; }],
+        ['conflit', 'Réservations · annulation (conflit de créneau)', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est annulée parce que le créneau a été réservé par plusieurs personnes.'; }]].forEach(function (g) { TAB_ORDER.forEach(function (t) { mail(t, g[0], g[1], KIND_TITLES[g[0]] + ' · ' + SPECS[t].title, g[2](t)); }); });
+      doc('fichePoste', 'Fiche de poste (VMP et VEMI)', 'Pièce jointe 1 : téléchargée en PDF à l’envoi du message à l’antenne médicale (VMP ou VEMI) ; l’utilisateur la glisse dans le message. HTML : styles en ligne, images en base64 uniquement ; converti en PDF A4.', 'vmp');
+      doc('fichePresentation', 'Fiche de présentation (VEMI uniquement)', 'Pièce jointe 2 : téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VEMI. HTML : styles en ligne, images en base64 uniquement ; converti en PDF A4.', 'vemi');
+      return out;
+    },
     saveAdmin: saveAdmin, cancelAdmin: cancelAdmin,            // enregistrement global du back office (tables et modèles de courriels communs)
     setOpts: function (o) { state.opts = o || {}; },
     // Réservation VMP depuis la fiche d'un réserviste (page Réservistes)
@@ -13369,6 +13528,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     // Numérotation des étapes : reprend à 1 dans chaque rubrique.
     var n = 0; Array.prototype.forEach.call(wrap.querySelectorAll('[data-grp="' + g + '"] .badge-num'), function (b) { b.textContent = String(++n); });
     Array.prototype.forEach.call(wrap.querySelectorAll('.CodeMirror'), function (c) { if (c.CodeMirror) c.CodeMirror.refresh(); }); // éditeurs Markdown montés pendant que leur bloc était masqué
+    if (window.__boTplRefresh) window.__boTplRefresh(g);
     window.scrollTo(0, 0);
   }
   // Pastille du nombre de demandes à traiter sur les rubriques de suivi (renseignée par la page Bienvenue à l'ouverture du back office) et vue d'ensemble.
@@ -13387,13 +13547,115 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   window.__showBoTab = showBoTab;
   showBoTab('apercu');
 
+  /* Éditeur unique des modèles : une liste pour choisir le modèle, une zone de texte, le rappel des variables et un aperçu du rendu.
+     Les champs d'origine de chaque page restent dans le formulaire (masqués) : l'éditeur les lit et les écrit, leur brouillon et l'enregistrement sont inchangés. */
+  (function () {
+    var KINDS = {
+      mail: { grp: 'courriels', title: 'Modèles de courriels', lead: 'Choisissez le courriel à modifier : l’objet et le message se rédigent en texte brut. Le message s’ouvre dans la messagerie, prêt à être relu et envoyé.', label: 'Message', rows: 14 },
+      doc: { grp: 'documents', title: 'Modèles de documents (PDF)', lead: 'Choisissez le document à modifier : modèle HTML converti en PDF A4 (styles en ligne, images en base64 uniquement). Les valeurs des variables sont insérées sans balises.', label: 'Modèle du document (HTML)', rows: 18 }
+    };
+    var VAR_DESC = {
+      IDENTITE: 'Nom complet (NOM Prénom)', CIVILITE: 'M. ou Mme', NOM: 'Nom de famille', PRENOM: 'Prénom', GRADE: 'Grade', NIGEND: 'Numéro Nigend', NID: 'N° d’identification du candidat',
+      N_CANDIDATURE: 'N° de candidature', N_CAND: 'N° CAND (GendForm)', DATE_TESTS: 'Date des tests psychométriques', DATE_VEMI: 'Date de la VEMI', ANTENNE: 'Antenne médicale',
+      DATE_DU_JOUR: 'Date du jour (jj/mm/aaaa)', N_CHRONO: 'N° Chrono, saisi à la génération de la lettre de rejet', TYPE_CONTRAT: 'ESR, RENOUVELLEMENT ou AVENANT', INITIAL: 'X pour un contrat initial',
+      RENOUVELLEMENT: 'X pour un renouvellement', SIGNATAIRE_BLOC: 'Bloc de signature : nom en gras, fonction, délégation ou suppléance', SIGNATAIRE: 'Nom du signataire en vigueur', SIGNATAIRE_QUALITE: 'Fonction du signataire',
+      AFFECTATION: 'Affectation', EMAIL: 'Adresse mail', DDN: 'Date de naissance', TELEPHONE: 'Téléphone', DATE: 'Date du rendez-vous', HEURE: 'Heure du rendez-vous', TYPE: 'VMP, VEMI ou Tests psy',
+      AFFECTATION_DEMANDEE: 'Groupement demandé', DATE_DEBUT: 'Début du nouveau contrat ou de la période', DATE_FIN: 'Fin du nouveau contrat ou de la période', DATE_EFFET: 'Date d’effet de l’avenant',
+      JUSQUAU: 'Suspension jusqu’au', TYPE_DEMANDE: 'Type de demande', SIGNATURE_AUTORITE: 'Signature de l’autorité d’emploi (si déposée)',
+      DEMANDEUR: 'Nom du demandeur', MODULE: 'Module concerné', DEMANDE: 'Texte de la demande', DATE_DEMANDE: 'Date de la demande', DATE_TRAITEMENT: 'Date de traitement', FONCTION: 'Fonction demandée'
+    };
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function collect(type) {
+      var all = [];
+      [window.PMG, window.RSV, window.RES, window.WEL].forEach(function (m) { if (m && m.templates) all = all.concat(m.templates()); });
+      return all.filter(function (d) { return d.type === type && d.body; });
+    }
+    var E = {};
+    Object.keys(KINDS).forEach(function (type) {
+      var K = KINDS[type], sec = document.createElement('section'); sec.className = 'step bo-tpl'; sec.id = 'bo-tpl-' + type; sec.setAttribute('data-grp', K.grp);
+      var p = 'bo-tpl-' + type;
+      sec.innerHTML = '<div class="head"><h2>' + K.title + '</h2></div><p class="lead">' + K.lead + '</p>' +
+        '<div class="cf-field" style="max-width:36rem"><label for="' + p + '-sel">Modèle à modifier</label><select class="select" id="' + p + '-sel"></select></div>' +
+        '<p class="hint" id="' + p + '-hint" style="margin-top:.75rem"></p>' +
+        (type === 'mail' ? '<div class="cf-field"><label for="' + p + '-subj">Objet</label><input class="input" type="text" id="' + p + '-subj" autocomplete="off"></div>' : '') +
+        '<div class="cf-field" style="margin-top:.75rem"><label for="' + p + '-area">' + K.label + '</label><textarea class="textarea tall' + (type === 'doc' ? ' mono' : '') + '" id="' + p + '-area" rows="' + K.rows + '" spellcheck="' + (type === 'mail') + '"></textarea></div>' +
+        '<h3 class="bo-h3">Variables disponibles</h3><p class="hint">Cliquez sur une variable pour l’insérer dans le champ en cours de saisie (survolez-la pour voir sa signification). Toute colonne de la table peut aussi servir de variable, par son libellé : <code>{{Libellé de la colonne}}</code>.</p>' +
+        '<div class="bo-tpl-vars" id="' + p + '-vars" role="group" aria-label="Variables disponibles"></div>' +
+        '<div class="bo-tpl-actions"><button type="button" class="btn secondary sm" id="' + p + '-prev" aria-expanded="false">Afficher l’aperçu</button><button type="button" class="btn secondary sm" id="' + p + '-reset">Rétablir le texte par défaut</button></div>' +
+        '<div id="' + p + '-pv" hidden></div>';
+      main.insertBefore(sec, overview.nextSibling);
+      E[type] = { type: type, K: K, sec: sec, list: [], cur: '', last: 'area', open: false, timer: null, sel: sec.querySelector('select'), hint: sec.querySelector('#' + p + '-hint'), subj: sec.querySelector('#' + p + '-subj'), area: sec.querySelector('#' + p + '-area'), vars: sec.querySelector('#' + p + '-vars'), pv: sec.querySelector('#' + p + '-pv'), btn: sec.querySelector('#' + p + '-prev') };
+    });
+    // Les blocs d'origine servent de support aux champs : masqués, ils restent dans le formulaire avec leurs écouteurs.
+    var mf = document.getElementById('mail-forms');
+    [mf && mf.closest('section.step'), document.getElementById('bo-common-mail')].forEach(function (el) { if (el) el.classList.add('tpl-shadow'); });
+    Array.prototype.forEach.call(wrap.querySelectorAll('details.bo-advanced'), function (d) { var sm = d.querySelector(':scope > summary'); if (sm && /plan prévisionnel|contrats et courriels/.test(sm.textContent)) d.classList.add('tpl-shadow'); });
+
+    function cur(e) { return e.list.filter(function (d) { return d.id === e.cur; })[0] || null; }
+    function fillSelect(e) {
+      var groups = [], map = {};
+      e.list.forEach(function (d) { if (!map[d.group]) { map[d.group] = []; groups.push(d.group); } map[d.group].push(d); });
+      e.sel.innerHTML = groups.map(function (g) { return '<optgroup label="' + esc(g) + '">' + map[g].map(function (d) { return '<option value="' + esc(d.id) + '"' + (d.id === e.cur ? ' selected' : '') + '>' + esc(d.title) + '</option>'; }).join('') + '</optgroup>'; }).join('');
+    }
+    function load(e) {
+      var d = cur(e); e.sec.classList.toggle('is-empty', !d);
+      if (!d) { e.hint.textContent = 'Aucun modèle disponible.'; e.area.value = ''; if (e.subj) e.subj.value = ''; e.vars.innerHTML = ''; e.pv.hidden = true; return; }
+      e.hint.textContent = d.hint || '';
+      if (e.subj) e.subj.value = d.subject ? d.subject.read() : '';
+      if (document.activeElement !== e.area) e.area.value = d.body.read();
+      e.vars.innerHTML = (d.vars || []).map(function (v) { var t = VAR_DESC[v] ? esc(v + ' : ' + VAR_DESC[v]) : esc(v); return '<button type="button" class="fr-tag fr-tag--sm bo-vartag" data-v="{{' + v + '}}" title="' + t + '" aria-label="Insérer {{' + v + '}} (' + (VAR_DESC[v] ? esc(VAR_DESC[v]) : 'variable') + ')">{{' + v + '}}</button>'; }).join('');
+      preview(e);
+    }
+    function refresh(type) {
+      var e = E[type]; e.list = collect(type);
+      if (!e.list.some(function (d) { return d.id === e.cur; })) e.cur = e.list.length ? e.list[0].id : '';
+      fillSelect(e); load(e);
+    }
+    function preview(e) {
+      if (!e.open) { e.pv.hidden = true; return; }
+      var d = cur(e); if (!d) return; e.pv.hidden = false;
+      var r; try { r = d.preview(e.subj ? e.subj.value : '', e.area.value); } catch (err) { r = { empty: 'Aperçu impossible : ' + ((err && err.message) || err) + '.' }; }
+      var note = '<p class="hint" style="margin:.5rem 0 0">Aperçu calculé avec les données du premier enregistrement de la table (exemple).</p>';
+      if (r.empty) { e.pv.innerHTML = '<div class="doc-alert warning" role="status" style="margin:0"><p>' + esc(r.empty) + '</p></div>'; return; }
+      if (e.type === 'mail') { e.pv.innerHTML = '<h3 class="bo-h3">Aperçu</h3><div class="bo-mailprev"><p class="bo-mailprev__subj">Objet : ' + esc(r.subject) + '</p><pre>' + esc(r.text) + '</pre></div>' + note; return; }
+      var fr = e.pv.querySelector('iframe');
+      if (!fr) { e.pv.innerHTML = '<h3 class="bo-h3">Aperçu</h3><iframe class="tpl-preview" sandbox title="Aperçu du document"></iframe>' + note; fr = e.pv.querySelector('iframe'); }
+      fr.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="width:698px;margin:12px auto;padding:36px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);box-sizing:content-box;min-height:800px;color:#161616;">' + r.html + '</div></body></html>';
+    }
+    Object.keys(E).forEach(function (type) {
+      var e = E[type];
+      e.sel.addEventListener('change', function () { e.cur = e.sel.value; e.pv.innerHTML = ''; load(e); });
+      e.area.addEventListener('input', function () { var d = cur(e); if (d) d.body.write(e.area.value); clearTimeout(e.timer); e.timer = setTimeout(function () { preview(e); }, 250); });
+      e.area.addEventListener('focus', function () { e.last = 'area'; });
+      if (e.subj) {
+        e.subj.addEventListener('input', function () { var d = cur(e); if (d && d.subject) d.subject.write(e.subj.value); clearTimeout(e.timer); e.timer = setTimeout(function () { preview(e); }, 250); });
+        e.subj.addEventListener('focus', function () { e.last = 'subj'; });
+      }
+      e.vars.addEventListener('mousedown', function (ev) { if (ev.target.closest('[data-v]')) ev.preventDefault(); }); // garde le focus (et le curseur) dans le champ
+      e.vars.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-v]'); if (!b) return;
+        var f = e.last === 'subj' && e.subj ? e.subj : e.area, tok = b.getAttribute('data-v'), s0 = f.selectionStart == null ? f.value.length : f.selectionStart, s1 = f.selectionEnd == null ? s0 : f.selectionEnd;
+        f.value = f.value.slice(0, s0) + tok + f.value.slice(s1); f.focus(); f.selectionStart = f.selectionEnd = s0 + tok.length;
+        f.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      e.btn.addEventListener('click', function () { e.open = !e.open; e.btn.setAttribute('aria-expanded', String(e.open)); e.btn.textContent = e.open ? 'Masquer l’aperçu' : 'Afficher l’aperçu'; e.pv.innerHTML = ''; preview(e); });
+      e.sec.querySelector('#bo-tpl-' + type + '-reset').addEventListener('click', function () { var d = cur(e); if (!d) return; d.reset(); setTimeout(function () { e.area.blur(); load(e); }, 0); });
+    });
+    window.__boTplRefresh = function (g) { Object.keys(KINDS).forEach(function (t) { if (KINDS[t].grp === g) refresh(t); }); };
+    window.__boTplItems = function () {
+      var out = []; Object.keys(KINDS).forEach(function (t) { collect(t).forEach(function (d) { out.push({ grp: KINDS[t].grp, kind: 'Modèle', title: d.title + ' (' + d.group + ')', text: (d.subject ? d.subject.read() + ' ' : '') + d.body.read(), run: function () { E[t].cur = d.id; showBoTab(KINDS[t].grp); } }); }); });
+      return out;
+    };
+    document.getElementById('bo-g-cancel').addEventListener('click', function () { setTimeout(function () { Object.keys(E).forEach(function (t) { if (pageBo.getAttribute('data-tab') === KINDS[t].grp) refresh(t); }); }, 0); });
+  })();
+
   /* Recherche dans tout le back office : blocs du formulaire (titre, libellés, textes, valeurs saisies) et éléments du brouillon (articles, FAQ, étapes, signataires, demandes). */
   (function () {
     var qEl = document.getElementById('bo-q'), list = document.getElementById('bo-results'), hits = [], active = -1, hitTimer;
     function fold(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
     function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     var tabLabel = {}; TABS.forEach(function (t) { tabLabel[t[0]] = t[1]; });
-    var SKIP = '#bo-overview, .table-wrap, #w-articles, #w-faq-admin, #w-tuto-admin, #w-sign-admin, #w-counters, .CodeMirror, .editor-toolbar, script, style, .bo-bar';
+    var SKIP = '.tpl-shadow, #bo-overview, .table-wrap, #w-articles, #w-faq-admin, #w-tuto-admin, #w-sign-admin, #w-counters, .CodeMirror, .editor-toolbar, script, style, .bo-bar';
     // Blocs du formulaire : chaque <details> ou section porte son propre texte (hors blocs imbriqués), rattaché à sa rubrique.
     function formItems() {
       var map = new Map();
@@ -13419,7 +13681,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     }
     function build(q) {
       var terms = fold(q).split(/\s+/).filter(Boolean); if (!terms.length) return [];
-      var all = formItems().concat(window.WEL && window.WEL.searchItems ? window.WEL.searchItems() : []), order = TABS.map(function (t) { return t[0]; });
+      var all = formItems().concat(window.WEL && window.WEL.searchItems ? window.WEL.searchItems() : [], window.__boTplItems ? window.__boTplItems() : []), order = TABS.map(function (t) { return t[0]; });
       var res = [];
       all.forEach(function (it) {
         var ft = fold(it.title), fx = fold(it.text), hay = ft + ' ' + fx;
