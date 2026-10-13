@@ -14844,3 +14844,220 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 </script>
 </body>
 </html>
+n(function () { e.drop.classList.remove('is-busy'); });
+      }
+      e.imp.addEventListener('click', function (ev) {
+        if (!ev.target.closest('#bo-tpl-doc-undo') || !undo) return;
+        if (undo.id !== e.cur) { e.cur = undo.id; fillSelect(e); load(e); }
+        setBody(undo.value); undo = null; status('', '<p>Import annulé : le texte précédent a été rétabli.</p>'); preview(e);
+      });
+      e.sel.addEventListener('change', function () { undo = null; status('', ''); });
+      e.drop.addEventListener('click', function () { e.file.value = ''; e.file.click(); });
+      e.drop.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); e.file.value = ''; e.file.click(); } });
+      e.file.addEventListener('change', function () { if (e.file.files && e.file.files[0]) run(e.file.files[0]); });
+      ['dragenter', 'dragover'].forEach(function (t) { e.drop.addEventListener(t, function (ev) { ev.preventDefault(); e.drop.classList.add('is-over'); }); });
+      e.drop.addEventListener('dragleave', function () { e.drop.classList.remove('is-over'); });
+      e.drop.addEventListener('drop', function (ev) { ev.preventDefault(); e.drop.classList.remove('is-over'); var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; if (f) run(f); });
+      window.__boDocImportRun = run; // pour les essais
+    })();
+    window.__boTplRefresh = function (g) { Object.keys(KINDS).forEach(function (t) { if (KINDS[t].grp === g) refresh(t); }); };
+    window.__boTplItems = function () {
+      var out = []; Object.keys(KINDS).forEach(function (t) { collect(t).forEach(function (d) { out.push({ grp: KINDS[t].grp, kind: 'Modèle', title: d.title + ' (' + d.group + ')', text: (d.subject ? d.subject.read() + ' ' : '') + d.body.read(), run: function () { E[t].cur = d.id; showBoTab(KINDS[t].grp); } }); }); });
+      return out;
+    };
+    document.getElementById('bo-g-cancel').addEventListener('click', function () { setTimeout(function () { Object.keys(E).forEach(function (t) { if (pageBo.getAttribute('data-tab') === KINDS[t].grp) refresh(t); }); }, 0); });
+  })();
+
+  /* Recherche dans tout le back office : blocs du formulaire (titre, libellés, textes, valeurs saisies) et éléments du brouillon (articles, FAQ, étapes, signataires, demandes). */
+  (function () {
+    var qEl = document.getElementById('bo-q'), list = document.getElementById('bo-results'), hits = [], active = -1, hitTimer;
+    function fold(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    var tabLabel = {}; TABS.forEach(function (t) { tabLabel[t[0]] = t[1]; });
+    var SKIP = '.tpl-shadow, #bo-overview, .table-wrap, #w-articles, #w-faq-admin, #w-tuto-admin, #w-sign-admin, #w-counters, .CodeMirror, .editor-toolbar, script, style, .bo-bar';
+    // Blocs du formulaire : chaque <details> ou section porte son propre texte (hors blocs imbriqués), rattaché à sa rubrique.
+    function formItems() {
+      var map = new Map();
+      function own(node) { var u = node.closest('details, section.step'); return u && u.closest('[data-grp]') ? u : null; }
+      function add(u, txt) { if (!txt) return; var e = map.get(u); if (!e) map.set(u, e = []); e.push(txt); }
+      var tw = document.createTreeWalker(wrap, NodeFilter.SHOW_TEXT, null), n;
+      while ((n = tw.nextNode())) {
+        var par = n.parentElement; if (!par || par.closest(SKIP) || !/\S/.test(n.nodeValue)) continue;
+        var u = own(par); if (u) add(u, n.nodeValue.replace(/\s+/g, ' ').trim());
+      }
+      Array.prototype.forEach.call(wrap.querySelectorAll('input, textarea, select'), function (c) {
+        if (c.closest(SKIP) || c.type === 'checkbox' || c.type === 'radio' || c.type === 'button' || c.type === 'search') return;
+        var u = own(c); if (!u) return;
+        add(u, c.tagName === 'SELECT' ? (c.selectedOptions[0] ? c.selectedOptions[0].textContent : '') : c.value);
+      });
+      var out = [];
+      map.forEach(function (parts, u) {
+        var head = u.matches('details') ? u.querySelector(':scope > summary') : u.querySelector('h2');
+        var title = head ? head.textContent.replace(/\s+/g, ' ').trim() : '';
+        out.push({ grp: u.closest('[data-grp]').getAttribute('data-grp'), kind: u.matches('details') ? 'Bloc' : 'Rubrique', title: title || 'Sans titre', text: parts.join(' · '), el: u });
+      });
+      return out;
+    }
+    function build(q) {
+      var terms = fold(q).split(/\s+/).filter(Boolean); if (!terms.length) return [];
+      var all = formItems().concat(window.WEL && window.WEL.searchItems ? window.WEL.searchItems() : [], window.__boTplItems ? window.__boTplItems() : []), order = TABS.map(function (t) { return t[0]; });
+      var res = [];
+      all.forEach(function (it) {
+        var ft = fold(it.title), fx = fold(it.text), hay = ft + ' ' + fx;
+        if (!terms.every(function (t) { return hay.indexOf(t) !== -1; })) return;
+        var inTitle = terms.every(function (t) { return ft.indexOf(t) !== -1; }), pos = fx.indexOf(terms[0]), snip = '';
+        if (!inTitle && pos >= 0) { var raw = String(it.text), a = Math.max(0, pos - 30); snip = (a > 0 ? '…' : '') + raw.slice(a, pos + 70).replace(/\s+/g, ' '); }
+        else snip = String(it.text).replace(/\s+/g, ' ').slice(0, 90);
+        res.push({ it: it, score: (inTitle ? 0 : 1) * 1000 + order.indexOf(it.grp) * 10, snip: snip, terms: terms });
+      });
+      res.sort(function (a, b) { return a.score - b.score; });
+      return res.slice(0, 40);
+    }
+    function mark(text, terms) {
+      var out = esc(text);
+      terms.forEach(function (t) { if (t.length < 2) return; var re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'); out = out.replace(re, function (m) { return m.length ? '<mark>' + m + '</mark>' : m; }); });
+      return out;
+    }
+    function render() {
+      var q = qEl.value.trim();
+      if (!q) { hide(); return; }
+      hits = build(q); active = hits.length ? 0 : -1;
+      list.innerHTML = hits.length ? hits.map(function (h, i) {
+        return '<li role="presentation"><button type="button" class="bo-res' + (i === 0 ? ' is-active' : '') + '" role="option" data-hit="' + i + '" id="bo-res-' + i + '"><span class="bo-res__top"><span class="fr-tag fr-tag--sm">' + esc(tabLabel[h.it.grp] || h.it.grp) + '</span><span class="bo-res__title">' + mark(h.it.title, h.terms) + '</span></span>' +
+          (h.snip ? '<span class="bo-res__snip">' + mark(h.snip, h.terms) + '</span>' : '') + '</button></li>';
+      }).join('') : '<li class="bo-none" role="presentation">Aucun résultat pour « ' + esc(q) + ' ».</li>';
+      list.hidden = false; qEl.setAttribute('aria-expanded', 'true');
+    }
+    function hide() { list.hidden = true; qEl.setAttribute('aria-expanded', 'false'); qEl.removeAttribute('aria-activedescendant'); }
+    function setActive(i) {
+      if (!hits.length) return; active = (i + hits.length) % hits.length;
+      Array.prototype.forEach.call(list.querySelectorAll('.bo-res'), function (b, j) { b.classList.toggle('is-active', j === active); });
+      var cur = document.getElementById('bo-res-' + active); if (cur) { qEl.setAttribute('aria-activedescendant', cur.id); cur.scrollIntoView({ block: 'nearest' }); }
+    }
+    function go(i) {
+      var h = hits[i]; if (!h) return;
+      hide(); showBoTab(h.it.grp);
+      if (h.it.run) { h.it.run(); return; }
+      var el = h.it.el; if (!el || !document.body.contains(el)) return;
+      for (var d = el; d; d = d.parentElement && d.parentElement.closest('details')) { if (d.matches('details')) d.open = true; if (!d.parentElement) break; }
+      setTimeout(function () {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.classList.add('bo-hit'); clearTimeout(hitTimer); hitTimer = setTimeout(function () { el.classList.remove('bo-hit'); }, 2500);
+      }, 60);
+    }
+    var timer; qEl.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(render, 120); });
+    qEl.addEventListener('focus', function () { if (qEl.value.trim()) render(); });
+    qEl.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) render(); else setActive(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (list.hidden) render(); else go(active); }
+      else if (e.key === 'Escape') { if (!list.hidden) { e.preventDefault(); hide(); } else if (qEl.value) { qEl.value = ''; } }
+    });
+    document.getElementById('bo-q-btn').addEventListener('click', function () { render(); qEl.focus(); });
+    list.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    list.addEventListener('click', function (e) { var b = e.target.closest('[data-hit]'); if (b) go(Number(b.getAttribute('data-hit'))); });
+    document.addEventListener('click', function (e) { if (!boSearch.contains(e.target)) hide(); });
+  })();
+
+  var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
+  document.querySelector('.fr-header').addEventListener('click', function (e) {
+    // Ni le bouton « Paramètres d'affichage », ni le menu de navigation (burger + liens + fermeture) ne comptent comme un clic sur l'en-tête.
+    if (e.target.closest('.fr-header__tools') || e.target.closest('#modal-header-menu') || e.target.closest('#btn-header-menu')) return;
+    clearTimeout(hdrTimer);
+    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
+    hdrClicks++;
+    if (hdrClicks === 1) {
+      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
+      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
+      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+<script>
+/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
+(function () {
+  ['modal', 'r-modal'].forEach(function (id) {
+    var root = document.getElementById(id); if (!root) return;
+    var queued = false;
+    function relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+�. */
+(function () {
+  ['modal', 'r-modal'].forEach(function (id) {
+    var root = document.getElementById(id); if (!root) return;
+    var queued = false;
+    function relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+dy>
+</html>
+ot, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
