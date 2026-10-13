@@ -5,6 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Candidats</title>
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<script>
+/* Performance : les métadonnées du document (liste des tables, colonnes) sont relues des dizaines de fois par les différentes pages au démarrage ;
+   elles sont gardées 45 s en mémoire ; les données d'une table sont gardées 15 s (une même table est demandée par plusieurs pages : candidats, réservistes, réservations).
+   Toute écriture (création, mise à jour, suppression) invalide les compteurs de fraîcheur des pages (window.__dataDirty). */
+(function () {
+  try {
+    var G = window.grist, api = G && G.docApi; if (!api || api.__cached) return;
+    var rawFetch = api.fetchTable.bind(api), rawList = api.listTables.bind(api), keep = {}, flight = {}, META_TTL = 45000, DATA_TTL = 15000;
+    function memo(key, ttl, fn) { var m = keep[key]; if (m && Date.now() - m.t < ttl) return m.p; var p = fn(); keep[key] = { t: Date.now(), p: p }; p.catch(function () { if (keep[key] && keep[key].p === p) delete keep[key]; }); return p; }
+    api.listTables = function () { return memo('@tables', META_TTL, rawList); };
+    api.fetchTable = function (t) {
+      if (t === '_grist_Tables' || t === '_grist_Tables_column') return memo(t, META_TTL, function () { return rawFetch(t); });
+      if (t === '_grist_Attachments') { if (flight[t]) return flight[t]; var q = rawFetch(t), e2 = function () { if (flight[t] === q) delete flight[t]; }; flight[t] = q; q.then(e2, e2); return q; } // métadonnées des pièces jointes : jamais gardées (un dépôt vient d'avoir lieu)
+      return memo(t, DATA_TTL, function () { return rawFetch(t); }); // données d'une table : relues au plus toutes les 15 s, quelle que soit la page qui les demande
+    };
+    // Données modifiées (écriture, ou changement signalé par Grist sur la table liée) : les tables de données sont relues à la prochaine demande.
+    window.__dropData = function () { Object.keys(keep).forEach(function (k) { if (k.charAt(0) !== '_' && k.charAt(0) !== '@') delete keep[k]; }); flight = {}; };
+    var rawGet = G.getTable.bind(G);
+    G.getTable = function (id) {
+      var t = rawGet(id);
+      ['create', 'update', 'upsert', 'destroy'].forEach(function (m) {
+        if (typeof t[m] !== 'function') return; var f = t[m].bind(t);
+        t[m] = function () { return Promise.resolve(f.apply(null, arguments)).then(function (r) { window.__dropData(); if (window.__dataDirty) window.__dataDirty(); return r; }); };
+      });
+      return t;
+    };
+    api.__cached = true;
+  } catch (e) {}
+})();
+</script>
+<script>
+/* Performance : les longues listes (milliers de lignes) s'affichent par paquets : les premières lignes tout de suite, la suite pendant les temps morts.
+   window.__fillRows(tbody, items, rowHtml, onChunk) ; un nouvel appel interrompt le précédent. */
+window.__fillRows = function (tb, items, fn, onChunk) {
+  var tok = tb.__fillTok = (tb.__fillTok || 0) + 1, FIRST = 120, CHUNK = 300, i = 0;
+  function html(to) { var h = ''; for (; i < to; i++) h += fn(items[i], i); return h; }
+  tb.innerHTML = html(Math.min(items.length, FIRST));
+  function more() {
+    if (tb.__fillTok !== tok || i >= items.length) return;
+    tb.insertAdjacentHTML('beforeend', html(Math.min(items.length, i + CHUNK)));
+    if (onChunk) onChunk();
+    if (i < items.length) setTimeout(more, 0);
+  }
+  if (i < items.length) setTimeout(more, 0);
+};
+</script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <!-- Articles de la page Bienvenue : rédaction en Markdown (éditeur WYSIWYG) dans le back office, converti en HTML à l'affichage. -->
@@ -451,6 +497,7 @@
   @media (max-width: 560px) { .et-row { grid-template-columns: 1fr 2rem; } .et-track { grid-column: 1 / -1; order: 5; } .et-kn { font-size: 1.6rem; } }
   /* Tutoriel : visite guidée (projecteur sur l'élément + carte explicative) */
   .tuto-root[hidden] { display: none; }
+  @media (min-width: 1100px) { body.has-tuto-side .modal-overlay { padding-right: 26rem; } } /* visite guidée : la carte se place à droite de la fenêtre ouverte */
   .tuto-shade { position: fixed; inset: 0; z-index: 1290; background: rgba(15, 15, 40, .62); }
   .tuto-hole { position: fixed; z-index: 1291; border-radius: .6rem; box-shadow: 0 0 0 9999px rgba(15, 15, 40, .62), 0 0 0 3px #fff, 0 0 0 6px var(--blue); pointer-events: none; transition: left .35s ease, top .35s ease, width .35s ease, height .35s ease; }
   .tuto-card { position: fixed; z-index: 1300; width: min(24rem, calc(100vw - 1.5rem)); max-height: calc(100vh - 1.5rem); overflow: auto; padding: 1.25rem 1.35rem 1.1rem; border-radius: .9rem; background: var(--bg); color: var(--ink); box-shadow: 0 18px 44px rgba(10, 10, 40, .45); animation: tuto-in .3s cubic-bezier(.2, .9, .3, 1.2) both; transition: left .35s ease, top .35s ease; }
@@ -847,6 +894,12 @@
   @media (max-width: 991px) { .gs-results { left: 0; width: auto; } }
   .nav-soon { gap: .5rem; }
   .nav-soon .fr-badge { margin-left: .5rem; }
+  .info-tip { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-left: .25rem; border-radius: 4px; color: var(--muted); cursor: help; vertical-align: middle; text-transform: none; } /* même pictogramme « i » que la légende des tableaux */
+  .info-tip:hover, .info-tip.is-open, .info-tip:focus { background: var(--blue-tint); color: var(--blue); }
+  .info-tip [class^="fr-icon-"] { --icon-size: 1rem; }
+  #info-tip-pop { position: fixed; z-index: 3000; max-width: min(18rem, 80vw); padding: .5rem .75rem; border-radius: .375rem; background: var(--ink); color: var(--bg); font-size: .8125rem; line-height: 1.4; font-weight: 400; font-style: normal; text-transform: none; letter-spacing: 0; text-align: left; box-shadow: 0 .5rem 1.5rem rgba(20, 10, 30, .3); pointer-events: none; visibility: hidden; opacity: 0; transition: opacity .12s; }
+  #info-tip-pop.is-shown { visibility: visible; opacity: 1; }
+  .info-tip:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
   .bo-hit { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: .5rem; }
   @media (max-width: 640px) { .bo-page-head { flex-wrap: wrap; } .bo-search { order: 3; flex-basis: 100%; max-width: none; } }
   .bo-sources summary, .bo-advanced summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 0.25rem 0; }
@@ -1180,6 +1233,7 @@
     justify-content: space-between;
     gap: 0.75rem;
   }
+  .widget-footer__links { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.5rem; }
   .widget-footer__credit { margin: 0; font-size: 0.8em; color: var(--text-mention-grey); }
   .widget-footer a.fr-link, .widget-footer button.fr-link { font-size: 0.8em; }
 
@@ -1508,6 +1562,21 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   </div>
 </div>
 
+<div class="modal-overlay" id="w-acmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="w-acmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="w-acmodal-title">Demander l’accès</h2>
+          <p class="modal-sub">Demande d’ouverture de droits d’accès à SERVIR</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="w-acmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="w-acmodal-body"></div>
+    </div>
+  </div>
+</div>
+
 <div id="page-pmg">
 <div class="wrap fr-container">
   <div class="tabs" id="tabs" role="tablist" aria-label="Sections du widget" hidden>
@@ -1783,7 +1852,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
     <section class="step" data-grp="reglages">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Objectifs : population et PMG</h2></div>
-      <p class="lead">La population à atteindre alimente la jauge de la page Statistiques des réservistes. Pour chaque PMG, un objectif séparé pour les candidats d’origine CIV et d’origine VCA : ils alimentent les deux jauges de progression du « Focus par PMG » (page Statistiques des candidats). Laisser vide pour ne pas afficher la jauge correspondante.</p>
+      <p class="lead">La population à atteindre alimente la jauge de la page Statistiques des réservistes. Pour chaque PMG, un objectif séparé pour les candidats de recrutement CIV et de recrutement VCA : ils alimentent les deux jauges de progression du « Focus par PMG » (page Statistiques des candidats). Laisser vide pour ne pas afficher la jauge correspondante.</p>
       <div class="cf-field" style="max-width:22rem;margin-bottom:1.25rem"><label for="r-poptarget">Population à atteindre (réservistes)</label><input class="input" type="number" min="0" step="1" inputmode="numeric" id="r-poptarget" data-poptarget placeholder="Aucune cible"><span class="hint">Cible de la jauge « Population à atteindre » de la page Statistiques des réservistes : effectif de réservistes visé, candidats (hors rejets et abandons) en pastel.</span></div>
       <div id="r-pmgt-admin"></div>
     </section>
@@ -2305,7 +2374,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       </div>
       <form id="cmodal-form" novalidate></form>
       <div id="cmodal-bulk" hidden>
-        <p class="hint">Ajoutez plusieurs candidatures à la fois depuis un fichier .csv, avec les mêmes informations que la création individuelle.</p>
+        <p class="hint">Ajoutez plusieurs candidatures à la fois depuis un fichier .csv ou Excel/Calc (.xlsx, .xls, .ods), avec les mêmes informations que la création individuelle.</p>
         <div id="imp-msg"></div>
         <div id="imp-body"></div>
       </div>
@@ -2352,7 +2421,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <div class="modal-header">
         <div style="min-width:0">
           <h2 class="modal-title" id="bmodal-title">Mettre à jour en bloc</h2>
-          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois, les admet dans la réserve, ou met à jour les colonnes de votre choix depuis un fichier .csv.</p>
+          <p class="modal-sub">Met à jour les tests psychométriques ou la VEMI de plusieurs candidats à la fois, les admet dans la réserve, ou met à jour les colonnes de votre choix depuis un fichier .csv ou Excel/Calc.</p>
         </div>
         <div class="modal-actions"><button class="round-btn" id="bmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
@@ -2380,8 +2449,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.22.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.27.1</span></p>
+  <div class="widget-footer__links">
+  <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
+  </div>
 </footer>
 
 <script>
@@ -2430,9 +2502,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     'nom': 'Nom', 'ddn': 'Date de naissance', 'dpt': 'Département de naissance', 'numero de telephone': 'Tél', 'email': 'Mail', 'code postal': 'CP',
     'n° candidature': 'Numéro de candidature', 'n_cand': 'Numéro CAND (GendForm)', 'n° cand': 'Numéro CAND (GendForm)', 'numero cand': 'Numéro CAND (GendForm)', 'dde bpro': 'Demande BPRO',
     'etat candidature': 'État de la candidature', 'affectation': 'Groupement', 'pmg': 'PMG souhaitée', 'date tests psy': 'Date des tests', 'tests psy': 'Résultat', 'date vemi': 'Date de la VEMI',
-    'antenne vemi': 'Antenne médicale', 'vemi': 'Résultat', 'validite vemi': 'Date de validité'
+    'antenne vemi': 'Antenne médicale', 'vemi': 'Résultat', 'validite vemi': 'Date de validité', 'origine': 'Recrutement'
   };
   function displayLabel(col) { return DISPLAY_LABELS[norm(col.label)] || DISPLAY_LABELS[norm(col.id)] || col.label; }
+  // Infobulle « i » à côté du libellé de certains champs (survol, focus clavier ou clic).
+  var LABEL_TIPS = { 'origine': 'CIV : civil · VCA : voie de changement d’armée · AM : ancien de l’arme' };
+  function labelTipHtml(col) { var t = LABEL_TIPS[norm(col.label)] || LABEL_TIPS[norm(col.id)]; return t ? '<span class="info-tip" tabindex="0" role="note" aria-label="' + esc(displayLabel(col) + ' : ' + t) + '" data-tip="' + esc(t) + '"><span class="fr-icon-information-line" aria-hidden="true"></span></span>' : ''; }
   // Pied de la modale : colonnes repérées par leur libellé.
   var FOOT_LABELS = { created: 'Création candidature', updated: 'Dernière mise à jour', by: 'Dernière mise à jour par' };
 
@@ -3066,14 +3141,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var hiddenN = all.filter(function (r) { return toList(r.st).some(hiddenByDefault); }).length;
     $('count').textContent = list.length + (list.length > 1 ? ' candidats' : ' candidat') + (list.length !== all.length ? ' sur ' + all.length : '') +
       (statusIsDefault() && hiddenN ? ' · ' + hiddenN + ' rejet' + (hiddenN > 1 ? 's' : '') + '/abandon' + (hiddenN > 1 ? 's' : '') + ' masqué' + (hiddenN > 1 ? 's' : '') : '') + (filters.aff.length ? ' · affectation ' + filters.aff.join(', ') : '');
-    $('rows').innerHTML = list.map(function (r, i) {
+    window.__fillRows($('rows'), list, function (r, i) {
       // Points d'attention (doublon, déjà ESR, pièces en attente) : ligne bleutée, motifs affichés à droite au survol (au lieu d'icône ou de badge).
       var hints = [], dup = flagValue(r.raw, c, 'Doublon'), esr = flagValue(r.raw, c, 'Déjà ESR');
       if (dup) hints.push('<span class="h-dup">Doublon</span>');
       if (esr) hints.push('<span class="h-esr">Déjà ESR</span>');
       if (toList(r.st).some(function (s) { return /pieces?/.test(norm(s)); })) hints.push('En attente de pièces');
       return '<tr class="row-open' + (hints.length ? ' row-miss' : '') + (dup ? ' row-dup' : '') + (esr ? ' row-esr' : '') + '" tabindex="0" data-i="' + i + '" aria-label="Ouvrir la fiche de ' + esc(r.id ? formatName(r.id) : 'ce candidat') + (hints.length ? ' (' + hints.join(', ').replace(/<[^>]+>/g, '') + ')' : '') + '"><td class="sel"><input type="checkbox" data-sel="' + r.raw.id + '"' + (sel[r.raw.id] ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(r.id ? formatName(r.id) : 'ce candidat') + '"></td><td class="name"><div class="name-line"><span>' + (r.id ? esc(formatName(r.id)) : '—') + '</span>' + (toList(r.st).length ? '<span class="tagrow">' + tagsHtml(r.st) + '</span>' : '') + '' + '</div></td><td class="end">' + (hints.length ? '<span class="miss-hint">' + hints.join(' · ') + '</span>' : '') + '</td></tr>';
-    }).join('');
+    }, syncSel);
     syncSel();
 
     var $s = $('state');
@@ -3926,7 +4001,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       // Édition au clic (fiche simple uniquement) : le champ en cours de saisie affiche son éditeur.
       var editable = !opts.ro && !opts.cmp && isEditableCol(col), editing = editable && state.edit && state.edit.colId === id;
       var body = editing ? editorHtml(col, item) : f.html;
-      return '<th scope="row">' + esc(displayLabel(col)) + '</th><td' + (span ? ' colspan="' + span + '"' : '') +
+      return '<th scope="row">' + esc(displayLabel(col)) + labelTipHtml(col) + '</th><td' + (span ? ' colspan="' + span + '"' : '') +
         (editable && !editing ? ' data-edit="' + esc(id) + '" tabindex="0" role="button" aria-label="Modifier ' + esc(displayLabel(col)) + '" title="Cliquer pour modifier"' : (!opts.ro && !opts.cmp && col.formula ? ' title="Colonne calculée par une formule dans Grist : non modifiable ici (la convertir en colonne de données dans Grist pour la rendre modifiable)"' : '')) +
         ' class="' + (f.empty && !editing ? 'is-empty' : '') + (f.pre ? ' is-pre' : '') + (diff ? ' is-diff' : '') + (editable && !editing ? ' is-editable' : '') + (editing ? ' is-editing' : '') + '">' + body + extra + '</td>';
     }
@@ -5016,7 +5091,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       createColumns(c).map(function (s) {
         return '<section class="cf-section"><h3>' + esc(s.title) + '</h3><div class="cf-grid">' + s.cols.map(function (col) {
           var id = 'cf-' + col.id, isReq = req.indexOf(col.id) !== -1;
-          return '<div class="cf-field"><label for="' + id + '">' + esc(displayLabel(col)) + (isReq ? '<span class="req" aria-hidden="true">*</span>' : '') + '</label>' + controlHtml(col, id, cr.values[col.id]) + '</div>';
+          return '<div class="cf-field"><label for="' + id + '">' + esc(displayLabel(col)) + (isReq ? '<span class="req" aria-hidden="true">*</span>' : '') + labelTipHtml(col) + '</label>' + controlHtml(col, id, cr.values[col.id]) + '</div>';
         }).join('') + '</div></section>';
       }).join('') +
       '<div class="cf-actions"><button type="submit" class="btn"' + (cr.busy ? ' disabled' : '') + '>' + (cr.busy ? 'Création…' : (cr.confirmDup ? 'Créer quand même' : 'Créer la candidature')) + '</button>' +
@@ -5145,7 +5220,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var CSV_ALIASES = {
     ddn: ['datedenaissance', 'datenaissance', 'naissance', 'nele', 'dn'], numerodetelephone: ['telephone', 'tel', 'tele', 'portable', 'mobile', 'gsm', 'numerotelephone', 'numerotel', 'telephoneportable'], tel: ['telephone', 'numerodetelephone', 'portable', 'mobile', 'gsm'],
     email: ['mail', 'courriel', 'adresseemail', 'adressemail', 'adresseelectronique', 'emailperso'], mail: ['email', 'courriel', 'adresseemail', 'adressemail'], codepostal: ['cp', 'codepost'], cp: ['codepostal'],
-    ncandidature: ['numerodecandidature', 'numerocandidature', 'candidature', 'refcandidature', 'ncandidature'], nid: ['numeroid', 'identifiant', 'numerodidentification', 'idcandidat'], nigend: ['matricule', 'numigend'],
+    ncandidature: ['numerodecandidature', 'numerocandidature', 'candidature', 'refcandidature', 'ncandidature', 'ndecandidature', 'nodecandidature', 'nocandidature'], nid: ['numeroid', 'identifiant', 'numerodidentification', 'idcandidat'], nigend: ['matricule', 'numigend'],
     nom: ['nomdefamille', 'nomnaissance', 'nomdenaissance', 'nomusuel'], prenom: ['prenoms', 'prenomusuel'], civilite: ['titre', 'genre'], lieudenaissance: ['lieunaissance', 'villedenaissance', 'communedenaissance', 'lieunais'],
     dpt: ['departement', 'departementdenaissance', 'dptnaissance', 'depnaissance'], adresse: ['rue', 'adressepostale', 'adressepostal', 'adressepersonnelle'], ville: ['commune', 'localite'], affectation: ['groupement', 'gd', 'groupementdegendarmerie'],
     etatcandidature: ['etat', 'statut', 'etatdelacandidature', 'etatducandidat', 'statutcandidature'], commentaires: ['commentaire', 'observations', 'observation', 'remarques', 'remarque', 'notes'],
@@ -5245,7 +5320,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function pickCsvFile(cb) {
     var i = document.createElement('input');
-    i.type = 'file'; i.accept = '.csv,text/csv';
+    i.type = 'file'; i.accept = window.__TABLE_ACCEPT;
     i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
     i.click();
   }
@@ -5265,22 +5340,22 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     host.innerHTML =
       '<span class="hint">Mêmes colonnes que la création individuelle, reconnues automatiquement quel que soit leur ordre ou leur intitulé exact. Obligatoires : ' + esc(reqNames.join(', ')) + '. ' +
       '<button type="button" class="btn secondary sm" id="imp-template">Télécharger un modèle .csv</button></span>' +
-      '<div class="doc-drop' + (st.busy ? ' is-busy' : '') + '" id="imp-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (st.busy ? 'true' : 'false') + '">' +
-      ICON_UPLOAD + '<p><strong>' + (st.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ici') + '</strong>' + (st.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
+      '<div class="doc-drop' + (st.busy ? ' is-busy' : '') + '" id="imp-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv, Excel ou Calc : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (st.busy ? 'true' : 'false') + '">' +
+      ICON_UPLOAD + '<p><strong>' + (st.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ou Excel/Calc ici') + '</strong>' + (st.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>';
     $('imp-msg').innerHTML = st.msg ? '<div class="doc-alert ' + st.msg.type + '" role="' + (st.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(st.msg.text) + '</p></div>' : '';
   }
   // Lecture du fichier : les colonnes sont reconnues automatiquement, l'import se lance après vérification.
   function importCandidatesFile(file) {
     var c = cfg(), st = state.importState; if (st.busy) return;
-    var reader = new FileReader();
+    var reader = {};
     reader.onload = function () {
       var text = String(reader.result || ''), rows = parseCsvText(text);
       if (rows.length < 2) { showImportMsg('error', rows.length ? 'Le fichier ne contient aucune ligne de données sous l’en-tête.' : 'Fichier vide ou illisible.'); return; }
       st.msg = null; st.csv = { name: file.name, text: text, rows: rows, map: csvAutoMap(rows[0], importColumns(c)).map(function (col) { return col ? col.id : ''; }) };
       renderImportSection();
     };
-    reader.onerror = function () { st.busy = false; showImportMsg('error', 'Lecture du fichier impossible.'); };
-    reader.readAsText(file, 'UTF-8');
+    reader.onerror = function (e) { st.busy = false; showImportMsg('error', 'Lecture du fichier impossible' + (e && e.message ? ' : ' + e.message : '') + '.'); };
+    window.__readTableText(file).then(function (t) { reader.result = t; reader.onload(); }, reader.onerror);
   }
   function runCandidatesImport() {
     var c = cfg(), st = state.importState; if (!st.csv || st.busy) return;
@@ -5435,7 +5510,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="psy"' + (b.mode === 'psy' ? ' checked' : '') + '> Résultats des tests psychométriques</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="vemi"' + (b.mode === 'vemi' ? ' checked' : '') + '> Résultats de la VEMI</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="adm"' + (b.mode === 'adm' ? ' checked' : '') + '> Admettre dans la réserve</label>' +
-      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="csv"' + (b.mode === 'csv' ? ' checked' : '') + '> Mettre à jour depuis un fichier .csv</label>' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="csv"' + (b.mode === 'csv' ? ' checked' : '') + '> Mettre à jour depuis un fichier .csv ou Excel/Calc</label>' +
       '</div></section>';
 
     if (b.mode === 'csv') { html += csvFormHtml(c, b); $('bmodal-form').innerHTML = html; return; }
@@ -5544,14 +5619,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function csvFormHtml(c, b) {
     var C = b.csv;
     if (!C) {
-      return '<section class="cf-section"><h3>Fichier .csv</h3><p class="hint">Une ligne par candidat, avec un identifiant (N° de candidature, NID, Nigend ou Email) et les colonnes à mettre à jour. Les colonnes sont reconnues automatiquement, quel que soit leur ordre ou leur intitulé exact ; vous choisissez ensuite ce qui est mis à jour.</p>' +
-        '<div class="doc-drop" id="bcsv-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD + '<p><strong>Glissez-déposez un fichier .csv ici</strong><br>ou cliquez pour parcourir vos fichiers</p></div></section>' +
+      return '<section class="cf-section"><h3>Fichier .csv ou Excel/Calc</h3><p class="hint">Une ligne par candidat, avec un identifiant (N° de candidature, NID, Nigend ou Email) et les colonnes à mettre à jour. Les colonnes sont reconnues automatiquement, quel que soit leur ordre ou leur intitulé exact ; vous choisissez ensuite ce qui est mis à jour.</p>' +
+        '<div class="doc-drop" id="bcsv-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv, Excel ou Calc : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD + '<p><strong>Glissez-déposez un fichier .csv ou Excel/Calc ici</strong><br>ou cliquez pour parcourir vos fichiers</p></div></section>' +
         '<div class="cf-actions"><button type="button" class="btn secondary" id="bf-cancel">Annuler</button></div>';
     }
     var targets = csvUpdTargets(c), P = csvPlan(c, b), nrows = C.rows.length - 1;
     var keyOpts = C.rows[0].map(function (h, i) { var col = targets.filter(function (t) { return t.id === C.map[i]; })[0]; return '<option value="' + i + '"' + (i === C.key ? ' selected' : '') + '>' + esc(String(h).replace(/\*/g, '').trim() || '(sans nom)') + (col ? ' → ' + esc(displayLabel(col)) : '') + '</option>'; }).join('');
     var nUp = P.used.length, ready = P.keyCol && P.matched.length && nUp;
-    return '<section class="cf-section"><h3>Fichier .csv</h3><p class="hint"><strong>' + esc(C.name) + '</strong> · ' + nrows + ' ligne' + (nrows > 1 ? 's' : '') + '. <button type="button" class="btn secondary sm" id="bcsv-change">Changer de fichier</button></p></section>' +
+    return '<section class="cf-section"><h3>Fichier .csv ou Excel/Calc</h3><p class="hint"><strong>' + esc(C.name) + '</strong> · ' + nrows + ' ligne' + (nrows > 1 ? 's' : '') + '. <button type="button" class="btn secondary sm" id="bcsv-change">Changer de fichier</button></p></section>' +
       '<section class="cf-section"><h3>Identifiant des candidats</h3><div class="cf-field" style="max-width:32rem"><label for="bcsv-key">Colonne qui identifie chaque candidat<span class="req" aria-hidden="true">*</span></label>' +
       '<select class="select" id="bcsv-key" data-bcsv-key><option value="-1"' + (C.key < 0 ? ' selected' : '') + '>— Choisir —</option>' + keyOpts + '</select></div>' +
       (P.keyCol ? '<p class="hint">' + P.matched.length + ' candidat' + (P.matched.length > 1 ? 's trouvés' : ' trouvé') + ' sur ' + esc(displayLabel(P.keyCol)) + (P.notFound.length ? ' · ' + P.notFound.length + ' introuvable' + (P.notFound.length > 1 ? 's' : '') + ' : ' + esc(P.notFound.slice(0, 8).join(', ')) + (P.notFound.length > 8 ? '…' : '') : '') + '.</p>' : '<p class="hint">Choisissez la colonne du fichier qui contient le N° de candidature, le NID, le Nigend ou l’email.</p>') + '</section>' +
@@ -5564,7 +5639,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function csvLoadFile(file) {
     var c = cfg(), b = state.bulk; if (!b) return;
-    var reader = new FileReader();
+    var reader = {};
     reader.onload = function () {
       var rows = parseCsvText(String(reader.result || ''));
       if (rows.length < 2) { b.error = rows.length ? 'Le fichier ne contient aucune ligne de données sous l’en-tête.' : 'Fichier vide ou illisible.'; renderBulkForm(); return; }
@@ -5572,8 +5647,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       b.csv = { name: file.name, rows: rows, map: map, key: key, use: map.map(function (id, i) { return !!id && i !== key; }) };
       b.error = ''; b.warn = ''; b.confirm = false; b.result = null; renderBulkForm();
     };
-    reader.onerror = function () { b.error = 'Lecture du fichier impossible.'; renderBulkForm(); };
-    reader.readAsText(file, 'UTF-8');
+    reader.onerror = function (e) { b.error = 'Lecture du fichier impossible' + (e && e.message ? ' : ' + e.message : '') + '.'; renderBulkForm(); };
+    window.__readTableText(file).then(function (t) { reader.result = t; reader.onload(); }, reader.onerror);
   }
   function submitCsvUpdate() {
     var c = cfg(), b = state.bulk; if (!b || !b.csv || b.busy) return;
@@ -5937,9 +6012,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   if (IN_GRIST) {
     grist.ready({ requiredAccess: 'full' });
     var timer;
-    grist.onOptions(function (o) { state.opts = o || {}; load(); if (window.WEL) window.WEL.setOptions(o); if (window.RES) window.RES.setOptions(o); if (window.RSV) window.RSV.setOptions(o); });
-    grist.onRecords(function () { clearTimeout(timer); timer = setTimeout(load, 150); });
-    grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; load(); }).catch(function () {});
+    function soon(ms) { clearTimeout(timer); timer = setTimeout(load, ms || 80); } // options, table liée et enregistrements arrivent ensemble au démarrage : un seul chargement
+    grist.onOptions(function (o) { state.opts = o || {}; soon(); if (window.WEL) window.WEL.setOptions(o); if (window.RES) window.RES.setOptions(o); if (window.RSV) window.RSV.setOptions(o); });
+    grist.onRecords(function () { if (window.__dropData) window.__dropData(); soon(150); });
+    grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; soon(); }).catch(function () {});
   } else {
     $('demo').hidden = false;
     state.boundTable = 'Candidats_PMG';
@@ -6049,7 +6125,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { q: "Qu'est-ce que SERVIR ?", a: "**SERVIR** est le nom de l'outil : **S**uivi de l'**E**mploi, du **R**ecrutement, des **V**isites médicales et de l'**I**nstruction dans la **R**éserve.\n\nIl rassemble en une seule page, organisée en onglets :\n\n- le suivi des **candidats** à une PMG ou à l'acculturation ([Candidats](#go:pmg)) ;\n- le suivi des **réservistes** opérationnels, spécialistes et citoyens ([Réservistes](#go:res)), avec les demandes de [renouvellement](#go:res-ren) et d'[avenant](#go:res-ave) ;\n- la validation des **rendez-vous** VMP, VEMI et tests psychométriques ([Réservations](#go:rsv)) ;\n- les statistiques de la population ([réservistes](#go:res-stat) et [candidats](#go:pmg-stat)).\n\nChaque personne a une **fiche en fenêtre (modale)** : les informations y sont regroupées par onglets (identité, renseignements militaires, médico-statutaire, qualifications, documents), sans avoir à naviguer entre des colonnes." },
     { q: "Que signifient les lignes colorées dans les listes ?", a: "Les lignes des listes se colorent pour attirer l'attention. **Passez la souris sur une ligne** : le motif s'affiche sur sa partie droite. La petite icône **i**, à gauche du compteur, rappelle la légende.\n\n**Page [Réservistes](#go:res)**\n\n- **Grisée** : réserviste **non employable**, c'est-à-dire dont **au moins une échéance est dépassée** (contrat, visite médicale (VMP), tir PA ou tir HK). Les étiquettes Tir, VMP ou Contrat qui en sont la cause restent en rouge. La fiche porte aussi le badge rouge **NON EMPLOYABLE** à côté du nom. Au survol, la ligne propose l'action adaptée à chaque échéance dépassée, d'un clic : **Demander le renouvellement du contrat** (ou, si une demande est déjà en cours, l'affichage de cette demande avec son état), **Réserver un créneau** ou **Mettre à jour l'échéance de VMP** (deux liens), **Mettre à jour la date de validité du tir**.\n- **Bleutée** : **informations essentielles manquantes** (affectation, grade, NID, Nigend, civilité ou une date d'expiration ; les dates d'expiration du tir HK et du PPE ne sont pas comptées). Une **VMP dépassée dont le rendez-vous est déjà programmé** (aujourd'hui ou plus tard) ne rend pas le réserviste non employable : il passe en « À renseigner » (Expiration VMP), sa ligne étant **orangée**, jusqu'à la saisie de la nouvelle date. Au survol, chaque champ manquant est un lien : un clic ouvre la fiche sur le bon onglet, avec le champ prêt à être complété.\n\n**Page [Candidats](#go:pmg)**\n\n- **Bleue** : en attente de pièces.\n- **Orange** : doublon.\n- **Rouge** : déjà ESR.\n\nSi plusieurs motifs s'appliquent, la couleur la plus urgente l'emporte (rouge, puis orange, puis bleu). Pour n'afficher que certaines lignes, cliquez dans le champ de recherche : les **affichages rapides** (données manquantes, non employables, échéances proches…) s'y trouvent." },
     { q: "Que signifient les étiquettes Tir, VMP et Contrat ?", a: "Le suivi des échéances est **visuel** : chaque étiquette résume l'état des dates du réserviste par une couleur.\n\n- **Rouge** : échéance dépassée.\n- **Orange** : échéance dans moins de 60 jours.\n- **Vert** : à jour.\n- **Gris** : date non renseignée.\n\nUne VMP dépassée dont le **rendez-vous est programmé** reste en rouge (la date est échue), mais la **ligne** du réserviste prend une **teinte orangée** : il reste employable et la nouvelle date est attendue.\n\nLe tag **Tir** ne tient compte que de l'échéance du **tir PA** (le tir HK s'affiche dans la fiche mais n'influence pas le tag). Le détail (états et dates) se lit en passant la souris sur l'étiquette, et dans les onglets « Médico-statutaire » et « Qualifications » de la fiche." },
-    { q: "Comment inscrire un ou plusieurs candidats ?", a: "Sur la page [Candidats](#go:pmg), bouton **Créer une candidature**, pour une PMG ou une acculturation. Seules quelques informations initiales sont nécessaires : les champs marqués d'un astérisque (nom, prénom, date de naissance, mail, numéro de candidature, groupement et **origine**, par exemple CIV, AM ou VCA). Tout le reste se complète ensuite **sur la fiche du candidat**.\n\nLa fenêtre propose deux onglets :\n\n- **Un candidat** : remplissez le formulaire.\n- **Plusieurs candidats (.csv)** : téléchargez d'abord le **modèle .csv**, complétez-le puis importez-le. Les dates s'écrivent JJ/MM/AAAA, la ligne d'exemple du modèle n'est pas importée, et les lignes en erreur sont listées avec leur numéro sans bloquer les autres.\n\nCôté pièces, celles versées dans l'onglet **Documents** sont automatiquement rattachées à la bonne rubrique lorsqu'elles sont nommées selon la nomenclature habituelle. Le widget signale aussi un **doublon** si la personne est déjà inscrite (voir la question suivante)." },
+    { q: "Comment inscrire un ou plusieurs candidats ?", a: "Sur la page [Candidats](#go:pmg), bouton **Créer une candidature**, pour une PMG ou une acculturation. Seules quelques informations initiales sont nécessaires : les champs marqués d'un astérisque (nom, prénom, date de naissance, mail, numéro de candidature, groupement et **recrutement**, par exemple CIV, AM ou VCA). Tout le reste se complète ensuite **sur la fiche du candidat**.\n\nLa fenêtre propose deux onglets :\n\n- **Un candidat** : remplissez le formulaire.\n- **Plusieurs candidats (.csv)** : téléchargez d'abord le **modèle .csv**, complétez-le (dans Excel ou Calc) puis déposez le fichier, au format **.csv**, **.xlsx**, **.xls** ou **.ods**. Les colonnes sont reconnues automatiquement : vérifiez-les, puis importez. Les dates s'écrivent JJ/MM/AAAA, la ligne d'exemple du modèle n'est pas importée, et les lignes en erreur sont listées avec leur numéro sans bloquer les autres.\n\nCôté pièces, celles versées dans l'onglet **Documents** sont automatiquement rattachées à la bonne rubrique lorsqu'elles sont nommées selon la nomenclature habituelle. Le widget signale aussi un **doublon** si la personne est déjà inscrite (voir la question suivante)." },
     { q: "Que faire en cas de doublon ou de candidat « Déjà ESR » ?", a: "**Doublon** : les deux fiches s'ouvrent **côte à côte**, les différences surlignées. Pour chaque champ, vous choisissez l'information à conserver (« Reprendre cette valeur »), puis la fiche à garder (la plus récente ou la plus ancienne) :\n\n1. **Synchroniser les informations** : les champs vides de la fiche conservée sont complétés et les pièces jointes regroupées.\n2. **Supprimer la fiche en trop**, directement et avec confirmation.\n\n**Déjà ESR** : le candidat est déjà réserviste. Son rapprochement se fait par NID, à défaut par numéro d'ESR, puis par Nigend, et la fiche du réserviste s'affiche à côté (sans être modifiée). Si aucun réserviste ne correspond, le message indique ce qui a été cherché. Vous choisissez ensuite de **supprimer** ou de **conserver** la candidature.\n\nUne fiche **non marquée** dont un homonyme existe (même NID, ou même identité et même date de naissance) affiche une alerte avec le bouton **Comparer les deux fiches**." },
     { q: "Comment suivre l'ancienneté d'une candidature ?", a: "Le **pied de la fiche** du candidat indique : « Candidature créée le … (depuis N jours) », puis « Mise à jour le … par … ». La mention **depuis N jours** ne concerne que les dossiers **en cours** (ni admis, ni rejetés, ni abandonnés) et passe en **orange** au-delà d'un seuil réglé en back office (21 jours par défaut, dans les options avancées de Candidats, rubrique « Suivi des candidatures »).\n\nLa **date de création** se corrige d'un clic sur la date (sauf si la colonne est calculée par une formule dans Grist) ; la date de mise à jour n'est pas modifiable.\n\nLa page [Statistiques des candidats](#go:pmg-stat) affiche l'**ancienneté moyenne** des dossiers en cours." },
     { q: "Comment admettre un candidat comme réserviste ?", a: "Dans la fiche du candidat, onglet **Renseignements militaires**, cliquez sur l'icône **Admettre comme réserviste** placée à côté de **Contrat** (au survol, elle se déplie).\n\n- Le candidat est **ajouté à la table des réservistes** : les champs qui ont un équivalent (identité, date de naissance, coordonnées, NID, affectation, grade, corps, dates du contrat, validité de la VEMI reprise comme échéance VMP…) sont repris.\n- Sa **candidature est supprimée** de la table des candidats.\n\nLe **grade** (proposé : BRI), le **Nigend** et l'**ESR signé** sont **obligatoires** : ils se saisissent dans la fenêtre qui s'ouvre à droite de la fiche (le fichier se glisse-dépose ou se choisit d'un clic) ; cliquez enfin sur **Confirmer l'admission**. L'ESR signé est versé dans l'onglet **Documents** de la fiche du réserviste. Vérifiez ensuite la fiche du réserviste : les autres informations propres aux réservistes (échéances…) sont à compléter." },
@@ -6058,27 +6134,28 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { q: "À quoi sert le point rouge clignotant dans le menu ?", a: "Le **voyant** signale qu'il y a des **actions à réaliser** sur une page ou un onglet : par exemple des demandes à traiter ou des réservations à confirmer. Il disparaît quand plus rien n'est en attente.\n\nLes voyants sont alimentés par des **compteurs** (nombre de lignes d'une table répondant à un critère) que l'équipe projet règle dans le back office." },
     { q: "Comment demander un renouvellement de contrat, un avenant, une mutation ou une suspension ?", a: "Ces démarches se font **directement depuis la fiche du réserviste** (onglet **Renseignements militaires**, groupe **Contrat**) : trois icônes ouvrent la demande de renouvellement, de mutation, ou de suspension / démission. L'icône prend la couleur de l'état de la dernière demande et propose **Éditer la demande** quand une demande est en cours. Depuis la liste, le survol d'un réserviste non employable (contrat dépassé) propose aussi **Demander le renouvellement du contrat**, ou affiche la demande déjà en cours avec son état.\n\nLes champs sont **pré-remplis** à partir de la fiche : il suffit de vérifier les informations, ou de les mettre à jour (cliquez sur une valeur pour la modifier), puis de valider. Tous les champs sont obligatoires, sauf les pièces jointes d'un renouvellement ; les pièces se déposent par glisser-déposer. Un message prévient s'il existe déjà une demande pour ce réserviste.\n\nLe suivi se fait dans les pages [Renouvellements](#go:res-ren) et [Avenants](#go:res-ave) (menu Réservistes) : on peut y **modifier** une demande (y compris son état) ou la **supprimer**." },
     { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : le panneau de droite affiche le **contrat signé par le réserviste** (versé à l'étape précédente) avec un bouton **Imprimer le contrat signé**, qui passe en **vert** une fois imprimé (il reste réimprimable) ; le bloc **Verser document contre-signé** vient ensuite. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
-    { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, les demandes **Rejet DRJ** et **Demande finalisée** sont masquées, pour ne laisser que le travail en cours. Cliquez dans le champ de recherche : la section **Par état de la demande** propose **tous** les états ; cochez-les pour les afficher. Sur la page Avenants, la section **Par type de demande** filtre sur la mutation interne ou externe, la suspension ou la démission.\n\nLes **filtres actifs** s’affichent sous la barre de recherche : un clic sur une étiquette retire le filtre. Le bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » et rappelle le nombre de rejets et de demandes finalisées masqués." },
-    { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats, ou leur **admission dans la réserve** (voir ci-dessous).\n\n**Admettre dans la réserve** (Candidats) : pour chaque candidat, renseignez le **N° ESR** (différent pour chacun), le **grade** et l'**échéance du contrat** (obligatoires), et au besoin l'**échéance du tir PA** et la **qualité judiciaire** (facultatives) ; les « valeurs communes » évitent de saisir plusieurs fois la même information. Déposez ensuite **tous les contrats signés** : chaque fichier est rattaché au candidat dont le **Nigend figure dans le nom du fichier**. Le bouton ne s'active que lorsque tout est complet ; après confirmation, les fiches réservistes sont créées (contrats versés dans leurs documents) et les candidatures supprimées.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »).\n\n**Depuis un fichier .csv.** Choisissez « Mettre à jour depuis un fichier .csv » et déposez votre fichier : l’identifiant (N° de candidature, NID, Nigend ou email) et les colonnes sont **reconnus automatiquement**, quel que soit leur ordre ou leur intitulé exact. Vous cochez ce qui doit être mis à jour (une cellule vide ne modifie rien) et pouvez corriger une association avant de valider. L’ajout de plusieurs candidats (bouton **Créer**, onglet « Plusieurs candidats ») reconnaît lui aussi les colonnes automatiquement." },
+    { q: "Pourquoi certaines demandes n'apparaissent-elles pas dans les pages de suivi ?", a: "Par défaut, seules les demandes **À l'étude**, **En attente de pièces**, **À la signature RO1** et **À la signature DRJ** sont affichées, pour ne laisser que le travail en cours (les demandes finalisées ou rejetées sont masquées). Ces filtres s'affichent sous la barre de recherche. Cliquez dans le champ : la section **Par état de la demande** propose **tous** les états ; cochez-les ou décochez-les pour modifier l'affichage. Sur la page Avenants, la section **Par type de demande** filtre sur la mutation interne ou externe, la suspension ou la démission.\n\nLes **filtres actifs** s’affichent sous la barre de recherche : un clic sur une étiquette retire le filtre. Le bouton **Réinitialiser les filtres** revient au réglage par défaut et vide la recherche. Le compteur indique « x sur y » et rappelle le nombre de demandes masquées par le filtre d’état." },
+    { q: "Comment mettre à jour plusieurs fiches à la fois ?", a: "Le bouton **Mettre à jour en bloc** évite de modifier les fiches une à une : saisissez les identifiants, un par ligne (**Nigend** pour les réservistes ; **N° de candidature ou NID** pour les candidats), et la valeur à appliquer.\n\n- Page [Réservistes](#go:res) : une **échéance** (tir PA ou HK, VMP, contrat), par exemple immédiatement après une séance de tir, le **grade et le corps**, par exemple à la parution du tableau d'avancement, ou la **qualité judiciaire**.\n- Page [Candidats](#go:pmg) : les résultats des **tests psychométriques** ou de la **VEMI** de plusieurs candidats, ou leur **admission dans la réserve** (voir ci-dessous).\n\n**Admettre dans la réserve** (Candidats) : pour chaque candidat, renseignez le **N° ESR** (différent pour chacun), le **grade** et l'**échéance du contrat** (obligatoires), et au besoin l'**échéance du tir PA** et la **qualité judiciaire** (facultatives) ; les « valeurs communes » évitent de saisir plusieurs fois la même information. Déposez ensuite **tous les contrats signés** : chaque fichier est rattaché au candidat dont le **Nigend figure dans le nom du fichier**. Le bouton ne s'active que lorsque tout est complet ; après confirmation, les fiches réservistes sont créées (contrats versés dans leurs documents) et les candidatures supprimées.\n\nPlus rapide : **cochez** d'abord les lignes concernées dans la liste, puis choisissez **Mettre à jour la sélection** : la liste des identifiants est préremplie (voir « Comment agir sur plusieurs candidats ou réservistes à la fois ? »).\n\n**Depuis un fichier .csv ou Excel/Calc.** Choisissez « Mettre à jour depuis un fichier .csv ou Excel/Calc » (formats .csv, .xlsx, .xls, .ods) et déposez votre fichier : l’identifiant (N° de candidature, NID, Nigend ou email) et les colonnes sont **reconnus automatiquement**, quel que soit leur ordre ou leur intitulé exact. Vous cochez ce qui doit être mis à jour (une cellule vide ne modifie rien) et pouvez corriger une association avant de valider. L’ajout de plusieurs candidats (bouton **Créer**, onglet « Plusieurs candidats ») reconnaît lui aussi les colonnes automatiquement." },
     { q: "Comment agir sur plusieurs candidats ou réservistes à la fois ?", a: "Sur les pages [Candidats](#go:pmg) et [Réservistes](#go:res), une **case à cocher** apparaît au survol de chaque ligne ; celle de l'en-tête sélectionne toutes les lignes affichées. Dès qu'une sélection existe, une **barre d'actions** propose :\n\n- **Exporter la sélection (.csv)** ;\n- **Mettre à jour la sélection en bloc** : la liste des identifiants est préremplie (Nigend pour les réservistes ; N° de candidature, à défaut NID, pour les candidats) ;\n- **Relancer pour la VMP** (réservistes) ou **Inviter à réserver** (candidats, au choix **VEMI** ou **tests psychométriques**). Chaque ligne propose **Écrire**, qui ouvre un message individuel dans votre messagerie. **Envoyer à tous en Cci** prépare un **seul message** dont tous les destinataires sont en copie cachée : les variables propres à chacun (nom, civilité…) y restent vides et les personnes sans adresse valide sont ignorées. Si la liste est trop longue pour un seul message, elle est répartie en **lots** à envoyer l'un après l'autre ;\n- **Tout désélectionner**.\n\nAstuce : combinez avec les affichages rapides, par exemple « Échéances proches » puis le détail VMP, pour relancer d'un coup les réservistes concernés." },
     { q: "Comment rechercher, filtrer et exporter ?", a: "Sur chaque page, cliquez dans le **champ de recherche** (nom, prénom, NID, Nigend, téléphone, mail…) : un panneau propose des **affichages rapides** à cocher d'un clic et cumulables (par affectation, recrutement (CIV, AM, VCA), état du dossier ou PMG pour les candidats ; données manquantes, non employables, échéances proches, type de réserviste, affectation, et « Autres » (grade, corps, qualité judiciaire) pour les réservistes). Le détail d'une catégorie (par exemple les échéances concernées) n'apparaît que lorsqu'on clique dessus. **Réinitialiser les filtres** efface tout.\n\nVotre recherche et vos filtres sont **conservés pour la session** : vous les retrouvez en changeant de page ou en rechargeant.\n\nAu clavier, les **flèches** passent d'une ligne de la liste à l'autre et **Entrée** ouvre la fiche.\n\nLe bouton **Exporter (.csv)** exporte la **vue active**, c'est-à-dire la liste telle qu'elle est affichée avec la recherche et les filtres appliqués ; vous choisissez les colonnes à inclure. Pour n'exporter que certaines lignes, **cochez-les** d'abord." },
     { q: "Comment générer un plan prévisionnel d'emploi (PPE) ?", a: "Dans la fiche du réserviste, onglet **Renseignements militaires**, cliquez sur l'icône placée à côté de **Plan prévisionnel d'emploi**, puis choisissez la **date de début**. La fin est fixée automatiquement **un an plus tard, moins un jour**. Vous pouvez joindre, **facultativement**, la **signature de l'autorité d'emploi** (image déposée par glisser-déposer ou choisie d'un clic) : elle se place à l'emplacement prévu dans le modèle du PPE.\n\nLe PDF est téléchargé et une copie est rangée dans l'onglet **Documents** de la fiche. La carte « Plan prévisionnel d'emploi » affiche la date de fin du dernier PPE généré, avec une étiquette quand il est expiré." },
     { q: "Comment ajouter ou retrouver un document sur une fiche ?", a: "L'onglet **Documents** d'une fiche (candidat ou réserviste) liste les pièces jointes. Pour en ajouter, **glissez-déposez** un fichier ou cliquez dans la zone : le widget demande alors le **nom à afficher** de la pièce. Chaque document peut ensuite être renommé, remplacé ou supprimé.\n\nLes documents générés par le widget (PPE, lettres, ESR, contrats versés) y sont rangés automatiquement." },
     { q: "Comment obtenir les statistiques, et les exporter en PDF ?", a: "La page [Statistiques](#go:res-stat) présente, **en temps réel**, la population des réservistes pour anticiper les démarches : effectif, non employables, population à atteindre (jauge : réservistes et candidats en cours), demandes en cours, et les répartitions par affectation, type de réserviste, sexe, tranche d'âge et grade.\n\n- Cliquez sur une tuile de **demandes en cours** pour voir le détail par état.\n- Les **échéances** s'affichent en graphique (matrice affectation × échéance, avec infobulle) ; le PDF les présente sous forme de tableau.\n- Une réunion avec le commandement ? Le bouton **Extraire en PDF** produit en un clic une note A4 au format de la charte graphique de l'État, avec la vue d'échéances choisie.\n\nLes candidats ont leur page [Statistiques](#go:pmg-stat) : état des candidatures (barre unique, détail au clic sur « Sans suite » ou « En cours »), objectifs d'admis par PMG (jauges CIV et VCA, réglées en back office), répartitions par groupement, tranche d'âge et sexe, et **ancienneté moyenne** des dossiers en cours." },
     { q: "Pourquoi un champ n'est-il pas modifiable au clic ?", a: "Les champs **calculés par une formule dans Grist** ne peuvent pas être écrits par le widget : une infobulle sur la cellule l'indique. Pour la rendre modifiable, convertissez la colonne en colonne de données dans Grist (en gardant, si besoin, une formule déclenchée à la création).\n\nCertains types de colonnes (références, pièces jointes) ne sont pas non plus modifiables au clic : les pièces jointes se gèrent dans l'onglet Documents." },
-    { q: "Je n'ai pas trouvé ma réponse : comment contacter l'équipe projet ?", a: "Sous chaque réponse, répondez **Non** à « Cette réponse vous a-t-elle aidé ? » puis cliquez sur **Contacter l'équipe projet**. Le lien du même nom, en bas de page, ouvre la même fenêtre.\n\nIndiquez votre **Nigend**, ce que vous souhaitez (question, anomalie, amélioration…) et votre message : le **module** concerné est prérempli (la question de la FAQ ou la page affichée). Vous pouvez aussi joindre, **facultativement**, une **capture d'écran** (glissez-déposez, cliquez pour parcourir ou collez-la avec Ctrl+V) : elle est enregistrée dans la colonne **PJ** de la demande. Votre demande est transmise directement à l'équipe projet." }
+    { q: "Je n'ai pas trouvé ma réponse : comment contacter l'équipe projet ?", a: "Sous chaque réponse, répondez **Non** à « Cette réponse vous a-t-elle aidé ? » puis cliquez sur **Contacter l'équipe projet**. Le lien du même nom, en bas de page, ouvre la même fenêtre.\n\nIndiquez votre **Nigend**, ce que vous souhaitez (question, anomalie, amélioration…) et votre message : le **module** concerné est prérempli (la question de la FAQ ou la page affichée). Vous pouvez aussi joindre, **facultativement**, une **capture d'écran** (glissez-déposez, cliquez pour parcourir ou collez-la avec Ctrl+V) : elle est enregistrée dans la colonne **PJ** de la demande. Votre demande est transmise directement à l'équipe projet." },
+    { q: "Comment demander l'ouverture des droits d'accès pour un collègue ?", a: "Un utilisateur déjà autorisé peut demander l'ouverture de droits pour un autre membre du personnel : cliquez sur **Demander l'accès** dans le **pied de page**.\n\nDans la fenêtre, renseignez les informations de la **personne qui doit obtenir l'accès** (tous les champs sont obligatoires) :\n\n- **Nigend** ;\n- **Grade** : choisissez-le dans la liste, ou **Autre grade (à saisir)…** s'il n'y figure pas ;\n- **Nom** et **Prénom** ;\n- **Email professionnel**, qui doit se terminer par **@gendarmerie.interieur.gouv.fr** ;\n- **Affectation**, dans la liste proposée.\n\nLa demande est transmise à l'équipe projet, qui ouvre les droits : la personne concernée est ensuite **prévenue par courriel**." }
   ];
   // Tutoriel (visite guidée) : étapes par défaut, modifiables en back office (rubrique « Tutoriel »). Texte en Markdown ; page : clé de page à ouvrir ; target : sélecteur CSS de l'élément mis en lumière.
   var DEFAULT_TUTO = [
     { icon: "👋", title: "Bienvenue sur SERVIR", page: "welcome", target: "#btn-tuto", body: "**SERVIR** : Suivi de l’Emploi, du Recrutement, des Visites médicales et de l’Instruction dans la Réserve.\n\nEn quelques étapes, découvrez les principales fonctionnalités. Vous pouvez quitter à tout moment (Échap) et relancer cette visite avec ce bouton." },
     { icon: "🧭", title: "Le menu principal", page: "", target: "#header-navigation", body: "Toutes les pages sont accessibles depuis ce menu :\n\n- **Bienvenue** : les actualités du service ;\n- **Candidats** et **Réservistes** : menus déroulants avec leurs pages liées (statistiques, renouvellements, avenants, **réservations** VEMI et tests psy pour les candidats, VMP pour les réservistes) ;\n- **FAQ**." },
-    { icon: "🪖", title: "Candidats : inscrire", page: "pmg", target: "#btn-create", body: "Inscrivez un candidat à une **PMG** ou à l’**acculturation** : seules quelques informations sont nécessaires (dont l’origine), le reste se complète ensuite sur la fiche.\n\nPour plusieurs candidats à la fois, importez un fichier **.csv** à partir du modèle fourni." },
+    { icon: "🪖", title: "Candidats : inscrire", page: "pmg", target: "#btn-create", body: "Inscrivez un candidat à une **PMG** ou à l’**acculturation** : seules quelques informations sont nécessaires (dont le recrutement), le reste se complète ensuite sur la fiche.\n\nPour plusieurs candidats à la fois, importez un fichier **.csv** à partir du modèle fourni." },
     { icon: "📄", title: "La fiche du candidat", page: "pmg", target: "#modal-tabs", body: "Cliquez sur une ligne pour ouvrir la **fiche** : les informations sont regroupées en onglets (candidat, renseignements militaires, médico-statutaire, documents).\n\n- Cliquez sur une valeur pour la **modifier** ;\n- déposez les pièces dans l’onglet **Documents** (glisser-déposer) ;\n- en pied de fiche : la **date de création** (modifiable d’un clic) et, pour un dossier en cours, son **ancienneté** ;\n- en cas de **doublon**, les deux fiches s’ouvrent côte à côte pour les fusionner." },
     { icon: "🎯", title: "Candidats : repérer et agir", page: "pmg", target: "#rows tr", body: "Les lignes se colorent : **bleue** pour un dossier en attente de pièces, **orange** pour un doublon, **rouge** pour un « Déjà ESR ». Survolez une ligne pour lire le motif ; l’icône **i** près du compteur rappelle la légende.\n\nCochez des lignes pour **exporter**, **mettre à jour en bloc** ou **inviter à réserver** (VEMI ou tests psy, par message individuel ou envoi groupé en Cci). Dans la fiche d’un candidat admis, l’icône **Admettre comme réserviste** crée sa fiche réserviste (grade, Nigend et ESR signé demandés)." },
     { icon: "🫡", title: "Réservistes : repérer les lignes à traiter", page: "res", target: "#r-rows tr", body: "Les lignes se colorent : **grisée** pour un réserviste non employable (échéance dépassée), **bleutée** quand des informations essentielles manquent.\n\n**Survolez** une ligne : le motif s’affiche à droite, et un clic sur un champ manquant ouvre la fiche pour le compléter, et un non employable propose l’action adaptée (renouveler le contrat, réserver ou mettre à jour la VMP, mettre à jour le tir). La petite icône **i** près du compteur rappelle la légende.\n\nLes **affichages rapides** se trouvent dans le champ de recherche : cliquez-y." },
     { icon: "☑️", title: "Actions groupées", page: "res", target: "#r-rows tr", body: "Cochez des lignes (la case apparaît au survol, celle de l’en-tête coche tout) : une barre propose d’**exporter** la sélection, de la **mettre à jour en bloc** ou de **relancer pour la VMP**, par message individuel ou par un seul envoi en **Cci**.\n\nMême principe sur la page **Candidats**, avec l’invitation à réserver la **VEMI** ou les **tests psychométriques**." },
     { icon: "📝", title: "Démarches sur le contrat", page: "res", target: "#r-mt-mil", body: "Depuis la fiche d’un réserviste, groupe **Contrat** : demandes de renouvellement, de mutation ou de suspension, avec des champs **pré-remplis**.\n\nLeur suivi se fait dans les pages **Renouvellements** et **Avenants** du menu Réservistes, jusqu’à la signature du contrat et sa finalisation." },
-    { icon: "🔁", title: "Renouvellements et avenants", page: "res-ren", target: "#r-v-ren-q", body: "Les demandes de contrat se suivent ici (et dans **Avenants**). Cliquez dans le champ de recherche pour filtrer **par état** (les rejets et demandes finalisées sont masqués par défaut) et, pour les avenants, **par type**.\n\nQuand une demande passe **À la signature RO1**, générez le contrat et déposez-le signé ; à **À la signature DRJ**, imprimez le contrat signé par le réserviste (bouton vert une fois imprimé) puis versez le document contre-signé." },
+    { icon: "🔁", title: "Renouvellements et avenants", page: "res-ren", target: "#r-v-ren-q", body: "Les demandes de contrat se suivent ici (et dans **Avenants**). Cliquez dans le champ de recherche pour filtrer **par état** (par défaut : à l’étude, en attente de pièces, à la signature RO1 et DRJ) et, pour les avenants, **par type**.\n\nQuand une demande passe **À la signature RO1**, générez le contrat et déposez-le signé ; à **À la signature DRJ**, imprimez le contrat signé par le réserviste (bouton vert une fois imprimé) puis versez le document contre-signé." },
     { icon: "⏱️", title: "« Dix-moi tout ! » : 10 minutes chrono", page: "res", target: "", body: "Dans le menu Réservistes, le bouton **Dix-moi tout !** lance une session de 10 minutes : une fiche aux informations majeures manquantes s’ouvre, puis une autre…\n\nChaque champ complété fait avancer le score. Un jeu pour mettre les données à jour !" },
     { icon: "📅", title: "Réservations", page: "rsv-vemi", target: "#x-tabs", body: "Les rendez-vous **VEMI** et **tests psychométriques** se gèrent depuis le menu **Candidats** (un onglet chacun) ; les rendez-vous **VMP**, depuis le menu **Réservistes** (« Convocations à la visite médicale périodique (VMP) »).\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic.\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
     { icon: "📊", title: "Statistiques", page: "res-stat", target: "#r-stats-pdf", body: "Les statistiques de la population se mettent à jour **en temps réel** : répartitions, échéances, demandes en cours. Les candidats ont aussi leur page (menu Candidats).\n\nUne réunion avec le commandement ? **Extraire en PDF** produit une note à la charte graphique de l’État." },
@@ -6379,6 +6456,117 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var fc = document.getElementById('footer-contact');
   if (fc) fc.addEventListener('click', function () { if (HD.info && !HD.info.error) openHelpdesk(document.title, fc, { faqFirst: true }); else window.open(fc.getAttribute('data-href'), '_blank', 'noopener'); }); // pied de page : FAQ d'abord ; repli : formulaire externe
   loadHelpdesk();
+
+  /* ---------- Demander l'accès : crée une ligne dans la table « Gestion des accès » (Nigend, Grade, NOM, Prénom, Email, Affectation) ---------- */
+  var AC = { info: null, loading: null, state: null, opener: null };
+  var AC_DOMAIN = '@gendarmerie.interieur.gouv.fr';
+  var AC_GRADES = ['GAV', 'GND', 'BRI', 'BRC', 'MDL', 'MDC', 'ADJ', 'ADC', 'MAJ', 'ASP', 'SLT', 'LTN', 'CNE', 'CEN', 'LCL', 'COL', 'GBR', 'GDI', 'AA', 'AAP2', 'AAP1', 'ATP2', 'ATP1', 'ATP', 'SACN', 'SACS', 'SACE'];
+  function acInfoFrom(table, cols, refOpts) {
+    function pick(names) { return svPick(cols, names); }
+    var c = { nigend: pick(['nigend']), grade: pick(['grade']), nom: pick(['nom']), prenom: pick(['prenom']), email: pick(['email', 'mail', 'courriel', 'e mail']), aff: pick(['choix affectation']) || pick(['affectation']) };
+    var miss = [!c.nigend && 'Nigend', !c.grade && 'Grade', !c.nom && 'NOM', !c.prenom && 'Prénom', !c.email && 'Email', !c.aff && 'Affectation'].filter(Boolean);
+    if (miss.length) return { error: 'colonne(s) introuvable(s) dans la table « ' + table + ' » : ' + miss.join(', ') };
+    var affOpts = c.aff.ref ? (refOpts || []) : (c.aff.choices || []).map(function (v) { return { v: v, label: v }; });
+    var gr = c.grade.choices && c.grade.choices.length ? c.grade.choices : AC_GRADES;
+    return { table: table, cols: c, affOpts: affOpts, grades: gr };
+  }
+  function loadAccessInfo() {
+    if (AC.loading) return AC.loading;
+    if (!IN_GRIST) { // aperçu hors de Grist
+      var dc = function (id, t, ch) { return { id: id, label: id, type: t || 'Text', choices: ch || null, ref: '', visible: 0 }; };
+      var cols = [dc('Nigend'), dc('Grade'), dc('NOM'), dc('Prénom'), dc('Email'), dc('Choix affectation', 'Choice', ['GD 01', 'GD 38', 'GD 73', 'GD 74', 'GGM', 'GR'])];
+      AC.info = acInfoFrom('Gestion_des_acces', cols, null); AC.info.demo = true;
+      return (AC.loading = Promise.resolve(AC.info));
+    }
+    AC.loading = grist.docApi.listTables().then(function (l) {
+      var t = l.filter(function (x) { return SV.ac.tableRe.test(loose(x)); })[0]; if (!t) throw new Error('table « Gestion des accès » introuvable dans ce document');
+      return Promise.all([t, grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]);
+    }).then(function (r) {
+      var T = r[1], C = r[2], tid = T.id[T.tableId.indexOf(r[0])], cols = [];
+      for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i]) && !C.isFormula[i]) cols.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], choices: choicesOf(C.widgetOptions && C.widgetOptions[i]), ref: /^Ref:/.test(C.type[i]) ? C.type[i].split(':')[1] : '', visible: C.visibleCol ? C.visibleCol[i] : 0 });
+      var info = acInfoFrom(r[0], cols, null); if (info.error || !info.cols.aff.ref) return info;
+      var a = info.cols.aff, j = a.visible ? C.id.indexOf(a.visible) : -1, vid = j >= 0 ? C.colId[j] : ''; // affectation liée à une autre table : on lit sa colonne affichée
+      return grist.docApi.fetchTable(a.ref).then(function (t) {
+        if (!vid || !t[vid]) vid = ['Nom', 'NOM', 'Affectation', 'Libellé', 'Name'].filter(function (x) { return t[x]; })[0] || '';
+        info.affOpts = vid ? (t.id || []).map(function (id, n) { return { v: id, label: String(t[vid][n] == null ? '' : t[vid][n]) }; }).filter(function (o) { return o.label; }) : [];
+        return info;
+      }).catch(function () { info.affOpts = []; return info; });
+    }).then(function (info) { return (AC.info = info); }, function (e) { AC.loading = null; return (AC.info = { error: (e && e.message) || String(e) }); });
+    return AC.loading;
+  }
+  function renderAccess() {
+    var h = AC.state, body = $('acmodal-body'); if (!h) return;
+    if (h.done) { body.innerHTML = '<div class="doc-alert success" role="status"><p>' + esc(h.done) + '</p></div><div class="cf-actions"><button type="button" class="btn" data-ac="close">Fermer</button></div>'; return; }
+    if (!h.ready) { body.innerHTML = '<p class="hint">Chargement…</p>'; return; }
+    if (AC.info && AC.info.error) { body.innerHTML = '<div class="doc-alert error" role="alert"><p>Demande d’accès impossible depuis le widget : ' + esc(AC.info.error) + '.</p></div><div class="cf-actions"><button type="button" class="btn secondary" data-ac="close">Fermer</button></div>'; return; }
+    var info = AC.info, f = h.f, busy = h.busy ? ' disabled' : '';
+    function fld(id, label, inner, hint) { return '<div class="cf-field"><label for="w-ac-' + id + '">' + label + '<span class="req" aria-hidden="true">*</span></label>' + inner + (hint ? '<p class="hint" style="margin:.25rem 0 0">' + hint + '</p>' : '') + '</div>'; }
+    function inp(id, ph, extra) { return '<input class="input" type="text" id="w-ac-' + id + '" placeholder="' + esc(ph || '') + '" autocomplete="off" required aria-required="true" value="' + esc(f[id]) + '"' + (extra || '') + busy + '>'; }
+    var affField = info.affOpts.length
+      ? '<select class="select" id="w-ac-aff" required aria-required="true"' + busy + '><option value="">— Choisir —</option>' + info.affOpts.map(function (o) { return '<option value="' + esc(o.v) + '"' + (String(o.v) === String(f.aff) ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') + '</select>'
+      : inp('aff', 'ex. GD 38');
+    body.innerHTML = (h.error ? '<div class="doc-alert error" role="alert"><p>' + esc(h.error) + '</p></div>' : '') +
+      '<p class="hint" style="margin:0 0 1rem">Renseignez les informations de la personne pour qui vous demandez l’ouverture de droits. Tous les champs sont obligatoires. La demande est transmise à l’équipe projet, qui ouvre les droits puis prévient le personnel par courriel.</p>' +
+      '<div class="cf-grid">' +
+      fld('nigend', 'Nigend', inp('nigend', 'ex. 392206', ' inputmode="numeric"')) +
+      fld('grade', 'Grade', '<select class="select" id="w-ac-grade" required aria-required="true"' + busy + '><option value="">— Choisir —</option>' + info.grades.map(function (g) { return '<option value="' + esc(g) + '"' + (g === f.grade ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join('') + '<option value="__other"' + (f.grade === '__other' ? ' selected' : '') + '>Autre grade (à saisir)…</option></select>' +
+        (f.grade === '__other' ? '<input class="input" type="text" id="w-ac-gradeother" style="margin-top:.5rem" placeholder="Saisissez votre grade" autocomplete="off" required aria-required="true" aria-label="Autre grade" value="' + esc(f.gradeOther) + '"' + busy + '>' : '')) +
+      fld('nom', 'Nom', inp('nom', '', ' autocomplete="family-name"')) +
+      fld('prenom', 'Prénom', inp('prenom', '', ' autocomplete="given-name"')) +
+      fld('email', 'Email professionnel', '<input class="input" type="email" id="w-ac-email" placeholder="prenom.nom' + AC_DOMAIN + '" autocomplete="email" required aria-required="true" value="' + esc(f.email) + '"' + busy + '>', 'Adresse en ' + AC_DOMAIN) +
+      fld('aff', 'Affectation', affField) +
+      '</div>' +
+      '<div class="cf-actions"><button type="button" class="btn" data-ac="send"' + busy + '>' + (h.busy ? 'Envoi…' : 'Envoyer la demande') + '</button><button type="button" class="btn secondary" data-ac="close"' + busy + '>Annuler</button></div>';
+  }
+  function acKeep() { var h = AC.state; if (!h || !$('ac-nigend')) return; ['nigend', 'grade', 'gradeother', 'nom', 'prenom', 'email', 'aff'].forEach(function (k) { var e = $('ac-' + k); if (e) h.f[k === 'gradeother' ? 'gradeOther' : k] = e.value; }); }
+  function openAccess(opener) {
+    AC.opener = opener || null;
+    AC.state = { ready: false, busy: false, error: '', done: '', f: { nigend: '', grade: '', gradeOther: '', nom: '', prenom: '', email: '', aff: '' } };
+    renderAccess();
+    var ov = $('acmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('acmodal-close').focus(); }); });
+    var h = AC.state; loadAccessInfo().then(function () { if (AC.state === h) { h.ready = true; renderAccess(); var f = $('acmodal-body').querySelector('#w-ac-nigend'); if (f) setTimeout(function () { f.focus(); }, 120); } });
+  }
+  function closeAccess() {
+    var ov = $('acmodal'); if (ov.hidden || (AC.state && AC.state.busy)) return;
+    ov.classList.remove('is-open'); AC.state = null; document.body.style.overflow = '';
+    setTimeout(function () { ov.hidden = true; }, 200);
+    if (AC.opener && document.body.contains(AC.opener)) AC.opener.focus();
+  }
+  function sendAccess() {
+    var h = AC.state, info = AC.info; if (!h || h.busy || !info || info.error) return;
+    acKeep(); var f = h.f; Object.keys(f).forEach(function (k) { f[k] = String(f[k]).trim(); });
+    var grade = f.grade === '__other' ? f.gradeOther : f.grade, gv = f.grade; f.grade = grade; // « Autre grade » : le grade saisi remplace le choix
+    var lab = { nigend: 'Nigend', grade: 'Grade', nom: 'Nom', prenom: 'Prénom', email: 'Email professionnel', aff: 'Affectation' }, miss = Object.keys(lab).filter(function (k) { return !f[k]; });
+    if (miss.length) { f.grade = gv; h.error = 'Champ(s) obligatoire(s) à renseigner : ' + miss.map(function (k) { return lab[k]; }).join(', ') + '.'; renderAccess(); return; }
+    if (!/^[^\s@,;]+@gendarmerie\.interieur\.gouv\.fr$/i.test(f.email)) { f.grade = gv; h.error = 'L’email professionnel doit se terminer par ' + AC_DOMAIN + '.'; renderAccess(); return; }
+    var c = info.cols, fields = {}, num = function (col, v) { return /^(Int|Numeric)$/.test(col.type) && /^\d+$/.test(v) ? Number(v) : v; };
+    fields[c.nigend.id] = num(c.nigend, f.nigend); fields[c.grade.id] = f.grade.toUpperCase(); fields[c.nom.id] = f.nom.toUpperCase(); fields[c.prenom.id] = f.prenom; fields[c.email.id] = f.email.toLowerCase();
+    fields[c.aff.id] = c.aff.ref ? Number(f.aff) : f.aff;
+    h.error = ''; h.busy = true; renderAccess();
+    Promise.resolve(info.demo ? (window.__lastAccess = { table: info.table, fields: fields }) : grist.getTable(info.table).create({ fields: fields })).then(function () {
+      h.busy = false; h.done = 'La demande d’ouverture de droits a bien été transmise à l’équipe projet. Le personnel sera prévenu par courriel à l’ouverture de ses droits. Merci !'; renderAccess();
+      if (window.WEL && SVS && SVS.ac && SVS.ac.meta) svLoad('ac'); // met à jour le suivi du back office s'il est chargé
+    }).catch(function (e) { h.busy = false; h.error = 'Envoi impossible : ' + ((e && e.message) || e) + '.'; renderAccess(); });
+  }
+  $('acmodal-body').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ac]'); if (!b) return;
+    if (b.getAttribute('data-ac') === 'send') sendAccess(); else closeAccess();
+  });
+  $('acmodal-body').addEventListener('change', function (e) { // « Autre grade » : affiche (ou retire) la zone de saisie
+    if (e.target.id !== 'w-ac-grade' || !AC.state) return;
+    acKeep(); renderAccess(); var o = $('ac-gradeother'); if (o) o.focus(); else $('ac-grade').focus();
+  });
+  $('acmodal-body').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('input') && AC.state && !AC.state.busy) { e.preventDefault(); sendAccess(); } });
+  $('acmodal-close').addEventListener('click', closeAccess);
+  $('acmodal').addEventListener('mousedown', function (e) { if (e.target === $('acmodal')) closeAccess(); });
+  $('acmodal').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAccess(); return; }
+    if (e.key !== 'Tab') return;
+    var f = [].filter.call($('acmodal').querySelectorAll('button:not(:disabled), input, select, textarea'), function (n) { return n.offsetParent !== null; }); if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  var fa = document.getElementById('footer-access'); if (fa) fa.addEventListener('click', function () { openAccess(fa); });
 
   /* ---------- Signataires : un par défaut, les autres programmés par dates ---------- */
   function newSignId() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -7392,15 +7580,15 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   DEMO.rows = DEMO_ROWS_BY_LABEL.map(function (r, i) { var o = { id: i + 1 }; Object.keys(r).forEach(function (k) { o[makeId(k)] = r[k]; }); return o; });
   // Table « Renouvellement contrats » (structure réelle : colonnes [libellé, type, formule ?]).
   var DEMO_RENEW_TABLE = 'Renouvellement_contrats';
-  var DEMO_RENEW_CHOICES = { 'Etat demande': ['À traiter', 'En cours', 'À la signature RO1', 'À la signature DRJ', 'Demande finalisée', 'Rejet DRJ', 'Acceptée', 'Refusée'], 'Affectation demandée': DEMO_CHOICES['Affectation'], 'CRT': ['Auvergne-Rhône-Alpes', 'Île-de-France', 'Occitanie'] };
-  var DEMO_RENEW_OPTIONS = { 'À traiter': { fillColor: '#FFB020', textColor: '#000000' }, 'En cours': { fillColor: '#2F80ED', textColor: '#FFFFFF' }, 'À la signature RO1': { fillColor: '#8E44AD', textColor: '#FFFFFF' }, 'À la signature DRJ': { fillColor: '#6A3FC8', textColor: '#FFFFFF' }, 'Demande finalisée': { fillColor: '#1F8D49', textColor: '#FFFFFF' }, 'Rejet DRJ': { fillColor: '#C9191E', textColor: '#FFFFFF' }, 'Acceptée': { fillColor: '#27AE60', textColor: '#FFFFFF' }, 'Refusée': { fillColor: '#EB5757', textColor: '#FFFFFF' } };
+  var DEMO_RENEW_CHOICES = { 'Etat demande': ['À l’étude', 'En attente de pièces', 'À la signature RO1', 'À la signature DRJ', 'Demande finalisée', 'Rejet DRJ', 'Acceptée', 'Refusée'], 'Affectation demandée': DEMO_CHOICES['Affectation'], 'CRT': ['Auvergne-Rhône-Alpes', 'Île-de-France', 'Occitanie'] };
+  var DEMO_RENEW_OPTIONS = { 'À l’étude': { fillColor: '#2F80ED', textColor: '#FFFFFF' }, 'En attente de pièces': { fillColor: '#FFB020', textColor: '#000000' }, 'À la signature RO1': { fillColor: '#8E44AD', textColor: '#FFFFFF' }, 'À la signature DRJ': { fillColor: '#6A3FC8', textColor: '#FFFFFF' }, 'Demande finalisée': { fillColor: '#1F8D49', textColor: '#FFFFFF' }, 'Rejet DRJ': { fillColor: '#C9191E', textColor: '#FFFFFF' }, 'Acceptée': { fillColor: '#27AE60', textColor: '#FFFFFF' }, 'Refusée': { fillColor: '#EB5757', textColor: '#FFFFFF' } };
   var DEMO_RENEW = { cols: [
     ['Etat demande', 'Choice'], ['Nigend', 'Text', true], ['Réf. Nigend', 'Ref:Reservistes_RO1_RS_RC'], ['Réf. Nigend_Grade', 'Any', true], ['Corps', 'Text'], ['Réf. Nigend_NOM', 'Any', true], ['Réf. Nigend_Prénom', 'Any', true],
     ['Affectation demandée', 'Choice'], ['CRT', 'Choice'], ['Date de début nouveau contrat', 'Date'], ['Date de fin nouveau contrat', 'Date', true], ['Email', 'Text'], ['Numéro de téléphone', 'Text'],
     ['Adresse', 'Text'], ['CP', 'Text'], ['Ville', 'Text'], ['Profession', 'Text'], ['Avis SRJ', 'Text'], ['B2', 'Attachments'], ['TAJ', 'Attachments'], ['Demande', 'Attachments'],
     ['N° ESR', 'Text', true], ['Date contrat', 'Date', true], ['Contrat signé RO', 'Attachments'], ['Contrat signé DRJ', 'Attachments'], ['Créé le', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ].map(function (c) { return { id: makeId(c[0]), label: c[0], type: c[1], formula: !!c[2], choices: DEMO_RENEW_CHOICES[c[0]] || null, choiceOptions: c[0] === 'Etat demande' ? DEMO_RENEW_OPTIONS : null }; }),
-    rows: [{ id: 1, Etat_demande: 'En cours', Nigend: '2019-1120', Ref_Nigend: 2, Affectation_demandee: 'GD 38' },
+    rows: [{ id: 1, Etat_demande: 'En attente de pièces', Nigend: '2019-1120', Ref_Nigend: 2, Affectation_demandee: 'GD 38' },
       { id: 4, Etat_demande: 'Rejet DRJ', Nigend: '2024-0999', Ref_Nigend: 5, Affectation_demandee: 'GD 74' },
       { id: 3, Etat_demande: 'À la signature DRJ', Nigend: '2008-0210', Ref_Nigend: 4, Contrat_signe_RO: ['L', 62], Affectation_demandee: 'GD 01', Date_de_debut_nouveau_contrat: d(2026, 11, 1), Date_de_fin_nouveau_contrat: d(2027, 10, 31) },
       { id: 2, Etat_demande: 'À la signature RO1', Nigend: '2022-0555', Ref_Nigend: 3, Affectation_demandee: 'GD 74', Date_de_debut_nouveau_contrat: d(2026, 12, 1) }] }; // demande existante pour Camille Perrin
@@ -7416,7 +7604,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return { id: makeId(c[0]), label: c[0], type: c[1], formula: !!c[2], choices: ch[c[0]] || null, choiceOptions: c[0] === 'Etat demande' ? DEMO_RENEW_OPTIONS : null };
   }), rows: [
     { id: 1, Etat_demande: 'À la signature RO1', Ref_Nigend: 3, Nigend: '2022-0555', Type: 'Mutation interne RGIF', Affectation_demandee: 'GD 74', CRT_souhaitee: 'Auvergne-Rhône-Alpes', Date_effet: d(2026, 11, 1) },
-    { id: 2, Etat_demande: 'En cours', Ref_Nigend: 2, Nigend: '2019-1120', Type: 'Suspension', Date_effet: d(2026, 10, 15), Suspension_jusqu_au: d(2027, 1, 15) }
+    { id: 2, Etat_demande: 'À l’étude', Ref_Nigend: 2, Nigend: '2019-1120', Type: 'Suspension', Date_effet: d(2026, 10, 15), Suspension_jusqu_au: d(2027, 1, 15) }
   ] };
   var DEMO_EXTRA = {}; DEMO_EXTRA[DEMO_RENEW_TABLE] = DEMO_RENEW; DEMO_EXTRA[DEMO_MUT_TABLE] = DEMO_MUT;
   var demoAttSeq = 100, DEMO_ATT = { 60: { name: 'Fiche_de_poste.pdf', size: 142000 }, 61: { name: 'Attestation_formation.pdf', size: 96000 }, 62: { name: 'Contrat_renouvellement_signe_RO.pdf', size: 188000 } };
@@ -8022,13 +8210,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
     $('arrow').textContent = state.sortDir === 1 ? '▲' : '▼';
     $('count').textContent = list.length + (list.length > 1 ? ' réservistes' : ' réserviste') + (list.length !== all.length ? ' sur ' + all.length : '');
-    $('rows').innerHTML = list.map(function (r, i) {
+    window.__fillRows($('rows'), list, function (r, i) {
       var off = expiredLabels(r.raw, c); // non employable : ligne grisée (au lieu d'un badge), mention « Non employable » au survol
       var missCols = missingColsOf(r.raw, c), miss = missCols.map(displayLabel); // informations essentielles manquantes : ligne mise en évidence
       var pend = vmpPending(r.raw, c); // pend : ligne hachurée en rouge (filigrane)
       return '<tr class="row-open' + (off.length ? ' row-off' : '') + (miss.length ? ' row-miss' : '') + (pend ? ' row-pend' : '') + '" tabindex="0" data-i="' + i + '"' + '' + ' aria-label="Ouvrir la fiche de ' + esc(r.id ? formatName(r.id) : 'ce réserviste') + (off.length ? ' (non employable)' : '') + (miss.length ? ' (informations manquantes)' : '') + '"><td class="sel"><input type="checkbox" data-sel="' + r.raw.id + '"' + (sel[r.raw.id] ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(r.id ? formatName(r.id) : 'ce réserviste') + '"></td><td class="name"><div class="name-line"><span>' + (r.id ? esc(formatName(r.id)) : '—') + '</span>' +
         rowTags(r, c) + '</div>' + (quick.missing ? '<div class="miss-line">À renseigner : ' + esc(miss.join(', ')) + '</div>' : '') + '</td><td class="end">' + ((off.length || miss.length) ? '<span class="miss-hint">' + (off.length ? '<strong class="off-hint">Non employable</strong>' + offActionsHtml(r, c, i) : '') + (miss.length && !off.length ? 'À renseigner : ' + missCols.map(function (col) { return '<button type="button" class="miss-link" data-miss-col="' + esc(col.id) + '" data-miss-i="' + i + '" title="Compléter ce champ dans la fiche">' + esc(displayLabel(col)) + '</button>'; }).join(', ') : '') + '</span>' : '') + '</td></tr>';
-    }).join('');
+    }, syncSel);
     syncSel();
 
     var $s = $('state');
@@ -10013,10 +10201,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (!out.length) all.forEach(function (c) { out.push(c); names[c.id] = c.label; });
     return { cols: out, names: names };
   }
-  var STATE_BADGE = { 'a traiter': 'warning', 'en cours': 'info', 'a la signature ro1': 'new', 'a la signature drj': 'new', 'demande finalisee': 'success', 'rejet drj': 'error', 'acceptee': 'success', 'refusee': 'error' };
+  var STATE_BADGE = { 'a traiter': 'warning', 'en cours': 'info', 'a l\'etude': 'info', 'en attente de pieces': 'warning', 'a la signature ro1': 'new', 'a la signature drj': 'new', 'demande finalisee': 'success', 'rejet drj': 'error', 'acceptee': 'success', 'refusee': 'error' };
   // Badge DSFR d'état d'une demande : variante selon l'état, badge neutre pour un état inconnu.
   // « État de la demande » dans les tableaux de suivi : étiquette (fr-tag) colorée selon l'état.
-  var STATE_TAG = { 'a traiter': 'orange', 'en cours': 'blue', 'a la signature ro1': 'purple', 'a la signature drj': 'purple', 'demande finalisee': 'green', 'acceptee': 'green', 'refusee': 'red', 'rejet drj': 'red' };
+  var STATE_TAG = { 'a traiter': 'orange', 'en cours': 'blue', 'a l\'etude': 'blue', 'en attente de pieces': 'orange', 'a la signature ro1': 'purple', 'a la signature drj': 'purple', 'demande finalisee': 'green', 'acceptee': 'green', 'refusee': 'red', 'rejet drj': 'red' };
   function reqStateChipHtml(label) { return '<span class="fr-tag fr-tag--sm tag-c-' + (STATE_TAG[norm(label || '')] || 'grey') + '">' + esc(label) + '</span>'; }
   // Étiquette cliquable d'une demande à la signature : ouvre la fenêtre de signature du renouvellement / de l'avenant.
   function reqSignTagHtml(label, state, key, kind) {
@@ -10077,9 +10265,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       state.records.filter(function (r) { return ng && ngSrc && !emptyVal(row[ng.id]) && norm(String(r.raw[ngSrc.id] || '')) === norm(String(row[ng.id])); })[0];
     return rec ? { id: rec.identity == null ? '' : String(rec.identity), raw: rec.raw } : { id: '', raw: {} };
   }
-  // Filtres des pages de suivi : type de demande (avenants) et état. Par défaut (V.st === null), les demandes « Rejet DRJ » et « Demande finalisée » sont masquées ;
+  // Filtres des pages de suivi : type de demande (avenants) et état. Par défaut (V.st === null), seules les demandes À l'étude, En attente de pièces, À la signature RO1 et À la signature DRJ sont affichées ;
   // le filtre reste visible : sa sélection est affichée, et « Réinitialiser les filtres » revient à ce réglage.
-  function hiddenState(v) { var n = norm(v); return n.indexOf('finalis') !== -1 || n.indexOf('rejet') === 0; } // « Demande finalisée », « Rejet DRJ » et leurs variantes d'intitulé
+  // États affichés par défaut : À l'étude, En attente de pièces, À la signature RO1, À la signature DRJ (comparaison sans accents ni ponctuation).
+  var DEFAULT_STATES = ['a l etude', 'en attente de pieces', 'a la signature ro1', 'a la signature drj'];
+  function stateKey(v) { return norm(v).replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function shownByDefault(v) { return DEFAULT_STATES.indexOf(stateKey(v)) !== -1; }
   function viewOptions(d, col) { // valeurs proposées : celles de la colonne (dans l'ordre de ses choix), puis celles présentes dans les demandes
     if (!col) return [];
     var seen = {}, out = [];
@@ -10087,7 +10278,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     d.rows.forEach(function (r) { var v = r[col.id] == null ? '' : String(r[col.id]); if (!seen[v]) { seen[v] = true; out.push(v); } });
     return out;
   }
-  function viewSelection(V, opts) { return V.st === null ? opts.filter(function (v) { return !hiddenState(v); }) : V.st; }
+  function viewSelection(V, opts) {
+    if (V.st !== null) return V.st;
+    var def = opts.filter(shownByDefault); return def.length ? def : opts; // aucun de ces états dans la colonne : tout est affiché
+  }
   function viewFiltersDefault(V) { return V.st === null && !V.ty.length && !V.q.trim(); }
   function renderViewFilters(key, d, ec, tc) {
     var V = VIEWS[key], P = 'v-' + key + '-f';
@@ -10129,8 +10323,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var sc = V.col && cols.filter(function (c) { return c.id === V.col; })[0];
     function sortVal(r) { var v = sc ? r[sc.id] : r.id; return typeof v === 'number' ? v : norm(String(v == null ? '' : v)); }
     list.sort(function (a, b) { var x = sortVal(a), y = sortVal(b); return (x < y ? -1 : x > y ? 1 : 0) * V.dir; });
-    var hiddenDef = V.st === null && ec ? d.rows.filter(function (r) { return hiddenState(r[ec.id] == null ? '' : String(r[ec.id])); }).length : 0;
-    cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '') + (hiddenDef ? ' · ' + hiddenDef + ' rejet' + (hiddenDef > 1 ? 's' : '') + '/finalisée' + (hiddenDef > 1 ? 's' : '') + ' masqué' + (hiddenDef > 1 ? 's' : '') : '');
+    var hiddenDef = V.st === null && ec ? d.rows.length - d.rows.filter(function (r) { return selSt.indexOf(r[ec.id] == null ? '' : String(r[ec.id])) !== -1; }).length : 0;
+    cnt.textContent = list.length + ' ' + noun + (list.length > 1 ? 's' : '') + (list.length !== d.rows.length ? ' sur ' + d.rows.length : '') + (hiddenDef ? ' · ' + hiddenDef + ' masqué' + (hiddenDef > 1 ? 's' : '') + ' par le filtre d’état' : '');
     thead.innerHTML = '<tr>' + dcols.map(function (c) {
       if (!c.sort) return '<th scope="col" class="v-actions">' + esc(c.title) + '</th>';
       var on = sc && sc.id === c.sort.id;
@@ -10583,7 +10777,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var head = '<div class="focus-head"><h2 class="fr-h5" style="margin:0"><span aria-hidden="true">🔍</span> Focus par PMG</h2><div class="focus-pick"><label for="r-cfocus">PMG</label><select id="r-cfocus" class="select">' +
       po.opts.map(function (o) { return '<option value="' + esc(o.value) + '"' + (o.value === sel ? ' selected' : '') + '>' + esc(o.none ? 'Non renseignée' : o.value) + ' (' + o.count + ')</option>'; }).join('') + '</select></div></div>';
     if (!n) return '<section class="stat-focus">' + head + '<p class="stat-hint">Aucune candidature pour cette PMG.</p></section>';
-    // Jauges d'objectif d'admis : une par origine (CIV, VCA) ayant un objectif pour cette PMG.
+    // Jauges d'objectif d'admis : une par recrutement (CIV, VCA) ayant un objectif pour cette PMG.
     var oc = findCol(t, 'Origine'), tgt = (cfg().pmgTargets || {})[sel] || {}, gauges = ORIGINS.map(function (og) {
       var ad = !ec || !oc ? 0 : recs.filter(function (r) { return norm(cellVals(oc, r.raw[oc.id])[0] || '') === og[0] && cellVals(ec, r.raw[ec.id]).some(function (v) { return norm(v) === 'admis pmg'; }); }).length;
       var encList = !ec || !oc ? [] : recs.filter(function (r) { // en cours : au moins un état « en cours » (ou aucun état), et pas encore admis
@@ -10629,7 +10823,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var d = {
       n: n, actives: actives, admis: admis, recs: recs, table: t, ageAvg: ageAvg, ageN: ages.length,
       dists: [candEtat(recs, t), candDist(recs, t, 'Par PMG souhaitée', 'PMG'), asCatPie(candDist(recs, t, 'Par groupement', 'Affectation'), 8),
-        candDist(recs, t, 'Par origine', 'Origine'), stackOf(candDist(recs, t, 'Par sexe', findCol(t, 'Sexe') ? 'Sexe' : 'Civilité', sexMap)), candAge(recs, t)].filter(Boolean),
+        candDist(recs, t, 'Par recrutement', 'Origine'), stackOf(candDist(recs, t, 'Par sexe', findCol(t, 'Sexe') ? 'Sexe' : 'Civilité', sexMap)), candAge(recs, t)].filter(Boolean),
       ech: []
     };
     var ageInd = ageAvg == null ? [] : [['Ancienneté moyenne des dossiers en cours', ageAvg + ' j (' + ages.length + ' dossier' + (ages.length > 1 ? 's' : '') + ')']];
@@ -12391,8 +12585,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       out += '<section class="cf-section" style="margin-top:16px"><h3>Ajouter un lot de créneaux</h3>' +
         '<span class="hint">Colonnes attendues : ' + esc(slotCsvHeaders(cs).join(', ')) + '. <button type="button" class="btn secondary sm" id="x-sf-template">Télécharger un modèle .csv</button></span>' +
         (imp.error ? '<div class="doc-alert error" role="alert"><p>' + esc(imp.error) + '</p></div>' : '') +
-        '<div class="doc-drop' + (imp.busy ? ' is-busy' : '') + '" id="x-sf-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (imp.busy ? 'true' : 'false') + '">' +
-        ICON_UPLOAD + '<p><strong>' + (imp.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ici') + '</strong>' + (imp.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>' +
+        '<div class="doc-drop' + (imp.busy ? ' is-busy' : '') + '" id="x-sf-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv, Excel ou Calc : glisser-déposer ou cliquer pour parcourir" aria-disabled="' + (imp.busy ? 'true' : 'false') + '">' +
+        ICON_UPLOAD + '<p><strong>' + (imp.busy ? 'Import en cours…' : 'Glissez-déposez un fichier .csv ou Excel/Calc ici') + '</strong>' + (imp.busy ? '' : '<br>ou cliquez pour parcourir vos fichiers') + '</p></div>' +
         '<div class="cf-actions"><button type="button" class="btn secondary sm" id="x-sf-import-cancel"' + (imp.busy ? ' disabled' : '') + '>Annuler</button></div></section>';
     }
     $('smodal-body').innerHTML = out;
@@ -12566,13 +12760,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function pickCsvFile(cb) {
     var i = document.createElement('input');
-    i.type = 'file'; i.accept = '.csv,text/csv';
+    i.type = 'file'; i.accept = window.__TABLE_ACCEPT;
     i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
     i.click();
   }
   function importSlotsFile(file) {
     var sa = state.slotAdmin; if (!sa || !sa.import || sa.import.busy) return;
-    var tab = sa.tab, reader = new FileReader();
+    var tab = sa.tab, reader = {};
     reader.onload = function () {
       var r = parseSlotCsv(tab, String(reader.result || ''));
       if (r.error) { sa.import.error = r.error; renderSlots(); return; }
@@ -12589,8 +12783,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         return load();
       });
     };
-    reader.onerror = function () { sa.import.busy = false; sa.import.error = 'Lecture du fichier impossible.'; renderSlots(); };
-    reader.readAsText(file, 'UTF-8');
+    reader.onerror = function (e) { sa.import.busy = false; sa.import.error = 'Lecture du fichier impossible' + (e && e.message ? ' : ' + e.message : '') + '.'; renderSlots(); };
+    window.__readTableText(file).then(function (t) { reader.result = t; reader.onload(); }, reader.onerror);
   }
   function slotFieldsFromForm(cs, s, vals) {
     var fields = {}, dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
@@ -13310,12 +13504,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     setOptions: function (o) { state.opts = o || {}; if (/^rsv-/.test(window.__page || '') || !state.data.vmp) load(); },
     refresh: function () { return load(); },
     // Page affichée depuis le menu : VMP (menu Réservistes) ou VEMI / tests psy (menu Candidats). Seuls les onglets de ce menu sont proposés.
-    showPage: function (p) {
+    showPage: function (p, skipLoad) {
       var fam = p === 'rsv-vmp' ? ['vmp'] : ['vemi', 'psy'], want = p === 'rsv-vmp' ? 'vmp' : (p === 'rsv-psy' ? 'psy' : 'vemi');
       ['vmp', 'vemi', 'psy'].forEach(function (t) { $('tab-' + t).hidden = fam.indexOf(t) === -1; });
       $('tab-admin').hidden = true; $('tabs').hidden = fam.length < 2;
       var h = $('list-h1'); h.className = fam.length < 2 ? 'fr-h3' : 'fr-sr-only'; h.style.marginBottom = fam.length < 2 ? '1rem' : '';
-      showTab(want); return load();
+      showTab(want); return skipLoad && state.data.vmp ? Promise.resolve() : load();
     },
     openAdmin: function () { showTab('admin'); },              // back office unifié (déclenché depuis la page Candidats)
     closeAdmin: function () { showTab(state.tab || 'vmp'); },
@@ -13418,8 +13612,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var def = defSet(id), have = valuesOf(id), nzs = function (t) { return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
     return (wanted || have).filter(function (v) { return have.indexOf(v) !== -1; }).map(function (v) {
       return { sec: 'Par état de la demande', l: v || 'Non renseigné', keep: true,
-        run: function () { var ck = checkedVals(id), cur = sameSet(ck, def) ? [] : ck, next = cur.indexOf(v) !== -1 ? cur.filter(function (x) { return x !== v; }) : cur.concat([v]); only(id, next.length ? next : def); },
-        on: function () { var ck = checkedVals(id); return !sameSet(ck, def) && ck.indexOf(v) !== -1; } };
+        run: function () { var ck = checkedVals(id), next = ck.indexOf(v) !== -1 ? ck.filter(function (x) { return x !== v; }) : ck.concat([v]); only(id, next.length ? next : def); }, // les états par défaut sont déjà cochés (et affichés en étiquettes)
+        on: function () { return checkedVals(id).indexOf(v) !== -1; } };
     });
   }
   function states(id, wanted) { var have = valuesOf(id); return wanted.filter(function (v) { return have.indexOf(v) !== -1; }).map(function (v) { return { l: v, run: function () { only(id, [v]); }, on: function () { return checkedOnly(id, v); } }; }); }
@@ -13472,7 +13666,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       return out;
     },
     'x-q': function () { return [{ l: 'Action attendue', run: sel('x-flt-action', 'action'), on: selOn('x-flt-action', 'action') }, { l: 'Doublons', run: sel('x-flt-action', 'dup'), on: selOn('x-flt-action', 'dup') }, { l: 'Conflits de créneau', run: sel('x-flt-action', 'conflict'), on: selOn('x-flt-action', 'conflict') }, { l: 'Toutes les réservations', run: sel('x-flt-action', 'all'), on: selOn('x-flt-action', 'all') }]; },
-    'r-v-ren-q': function () { return cumStates('r-v-ren-fst-panel'); }, // tous les états de la colonne ; rejets et demandes finalisées masqués par défaut
+    'r-v-ren-q': function () { return cumStates('r-v-ren-fst-panel'); }, // tous les états de la colonne ; par défaut : À l'étude, En attente de pièces, À la signature RO1 et DRJ
     'r-v-ave-q': function () { // avenants : états (comme ci-dessus), puis type de demande (aucun type coché = tous)
       var out = cumStates('r-v-ave-fst-panel'), tid = 'r-v-ave-fty-panel';
       valuesOf(tid).forEach(function (v) {
@@ -13537,6 +13731,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 (function () {
   var pages = { welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo' };
   // Anciennes clés (liens #go:, étapes du tutoriel, page mémorisée) : « Réservations » est réparti entre les menus Réservistes (VMP) et Candidats (VEMI, tests psy).
+  // Fraîcheur des données par page : relues au plus toutes les 20 s à l'affichage (et après toute écriture : window.__dataDirty).
+  var fresh = {};
+  function stale(k) { var t = Date.now(); if (fresh[k] && t - fresh[k] < 20000) return false; fresh[k] = t; return true; }
+  window.__dataDirty = function () { fresh = {}; };
   var ALIAS = { rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' };
   var titles = { welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office' };
   // Page affichée : bouton du menu « courant », titre du document, page retrouvée à la réouverture (aussi appelée au changement d'onglet de Réservations).
@@ -13558,11 +13756,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     p = ALIAS[p] || p;
     Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = pages[k] !== pages[p]; });
     mark(p);
-    if (p === 'res' && window.RES) window.RES.refresh();
-    if ((p === 'res-ren' || p === 'res-ave') && window.RES) window.RES.refreshView(p === 'res-ren' ? 'ren' : 'ave');
-    if (p === 'res-stat' && window.RES) window.RES.refreshStats();
-    if (p === 'pmg-stat' && window.RES) window.RES.refreshCandStats();
-    if (/^rsv-/.test(p) && window.RSV) window.RSV.showPage(p);
+    if (p === 'res' && window.RES && stale('res')) window.RES.refresh();
+    if ((p === 'res-ren' || p === 'res-ave') && window.RES && stale(p)) window.RES.refreshView(p === 'res-ren' ? 'ren' : 'ave');
+    if (p === 'res-stat' && window.RES && stale(p)) window.RES.refreshStats();
+    if (p === 'pmg-stat' && window.RES && stale(p)) window.RES.refreshCandStats();
+    if (/^rsv-/.test(p) && window.RSV) window.RSV.showPage(p, !stale('rsv'));
     if (window.__refreshActiveFilters) window.__refreshActiveFilters();
     window.scrollTo(0, 0);
   }
@@ -13606,6 +13804,17 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     root.innerHTML = '<div class="tuto-shade"></div><div class="tuto-hole" hidden></div><div class="tuto-card" role="dialog" aria-modal="true" aria-labelledby="tuto-title" tabindex="-1"></div>';
     document.body.appendChild(root);
     hole = root.querySelector('.tuto-hole'); card = root.querySelector('.tuto-card');
+    // Le défilement reste possible pendant la visite : la molette passe à travers le voile (page, ou fenêtre ouverte par la visite) ; le trou et la carte suivent (voir place()).
+    root.addEventListener('wheel', function (e) {
+      if (e.ctrlKey || e.target.closest('.tuto-card')) return;
+      var els = document.elementsFromPoint(e.clientX, e.clientY).filter(function (x) { return !root.contains(x); });
+      for (var i = 0; i < els.length; i++) {
+        for (var n = els[i]; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+          var oy = getComputedStyle(n).overflowY;
+          if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 1 && ((e.deltaY < 0 && n.scrollTop > 0) || (e.deltaY > 0 && n.scrollTop + n.clientHeight < n.scrollHeight - 1))) { e.preventDefault(); n.scrollTop += e.deltaY; return; }
+        }
+      }
+    }, { passive: false });
     card.addEventListener('click', function (e) {
       var b = e.target.closest('[data-ta]'); if (!b) return;
       var a = b.getAttribute('data-ta');
@@ -13634,16 +13843,17 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function closeOpened() {
     var m = opened; opened = null; if (!m || !isOpen(m)) return;
     var b = document.querySelector(m.closer); if (b) b.click();
-    if (active) document.body.style.overflow = 'hidden';
   }
   function ensureOpen(m) {
     opened = m; if (isOpen(m)) return;
     var o = document.querySelector(m.opener); if (o) o.click();
-    if (active) document.body.style.overflow = 'hidden';
   }
   function visible(el) { if (!el) return false; var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && el.offsetParent !== null || (el.getClientRects && el.getClientRects().length > 0 && r.width > 0); }
   function place() {
     var vw = window.innerWidth, vh = window.innerHeight, cw = card.offsetWidth, ch = card.offsetHeight;
+    // Une fenêtre (fiche, réservation…) est ouverte : sur grand écran, elle se décale et la carte se place à son côté (à droite), sans la recouvrir.
+    var side = active && vw >= 1100 && !!document.querySelector('.modal-overlay.is-open:not([hidden])');
+    document.body.classList.toggle('has-tuto-side', side);
     if (curTarget && !curTarget.isConnected && STEPS[idx] && STEPS[idx].target) curTarget = document.querySelector(STEPS[idx].target); // élément recréé (la modale s'est redessinée)
     if (curTarget && visible(curTarget)) {
       var r = curTarget.getBoundingClientRect(), pad = 8;
@@ -13663,6 +13873,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       function overlap(c) { var w = Math.min(c.l + cw, hx1) - Math.max(c.l, hx0), h = Math.min(c.t + ch, hy1) - Math.max(c.t, hy0); return w > 0 && h > 0 ? w * h : 0; }
       function fits(c) { return c.t >= 10 && c.t + ch <= vh - 10 && c.l >= 12 && c.l + cw <= vw - 12; }
       var pick = null, best = null;
+      if (side) { var sc = { t: clampY(r.top + r.height / 2 - ch / 2), l: vw - cw - 16 }; if (fits(sc) && overlap(sc) === 0) pick = sc; }
       cands.forEach(function (c) { if (!pick && fits(c) && overlap(c) === 0) pick = c; });
       if (!pick) { // aucune position libre : coins de la fenêtre les plus éloignés de l'élément
         var corners = [{ t: 10, l: 12 }, { t: 10, l: vw - cw - 12 }, { t: vh - ch - 10, l: 12 }, { t: vh - ch - 10, l: vw - cw - 12 }];
@@ -13672,9 +13883,12 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       card.style.top = Math.max(10, pick.t) + 'px'; card.style.left = Math.max(12, pick.l) + 'px';
     } else {
       hole.hidden = true; root.querySelector('.tuto-shade').style.display = '';
-      card.style.top = Math.max(12, (vh - ch) / 2) + 'px'; card.style.left = Math.max(12, (vw - cw) / 2) + 'px';
+      card.style.top = Math.max(12, (vh - ch) / 2) + 'px'; card.style.left = Math.max(12, side ? vw - cw - 16 : (vw - cw) / 2) + 'px';
     }
   }
+  // Ouverture ou fermeture d'une fenêtre pendant la visite : la carte est replacée (et la fenêtre décalée ou recentrée).
+  var placeRaf = 0;
+  new MutationObserver(function () { if (active && !placeRaf) placeRaf = requestAnimationFrame(function () { placeRaf = 0; place(); }); }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
   function render() {
     var st = STEPS[idx], last = idx === STEPS.length - 1;
     // Indicateur d'étapes du système de design de l'État (composant « Indicateur d'étapes »).
@@ -13716,12 +13930,12 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (active) return;
     var list = override || (window.WEL && window.WEL.tutoSteps ? window.WEL.tutoSteps() : []); if (!list.length) return;
     STEPS = list;
-    active = true; startPage = window.__page || 'welcome'; root.hidden = false; document.body.style.overflow = 'hidden';
+    active = true; startPage = window.__page || 'welcome'; root.hidden = false;
     go(typeof from === 'number' ? Math.min(from, STEPS.length - 1) : 0);
   }
   function close() {
     if (!active) return;
-    active = false; token++; root.hidden = true; closeOpened(); document.body.style.overflow = '';
+    active = false; token++; root.hidden = true; document.body.classList.remove('has-tuto-side'); closeOpened();
     if (window.__showPage && window.__page !== startPage) window.__showPage(startPage);
     var b = document.getElementById('btn-tuto'); if (b) b.focus();
   }
@@ -13730,6 +13944,33 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   var first = true; try { first = !localStorage.getItem('servirTuto'); } catch (e) {}
   if (first) Array.prototype.forEach.call(document.querySelectorAll('[data-tuto]'), function (b) { b.classList.add('tuto-pulse'); });
   window.__tuto = { open: open, close: close };
+})();
+</script>
+<script>
+// Infobulles « i » : texte affiché au survol, au focus clavier ou au clic (écran tactile), dans un bloc flottant (jamais rogné par un tableau ou une fenêtre) ; Échap ou clic ailleurs le referme.
+(function () {
+  var pop = null, cur = null;
+  function el() { if (!pop) { pop = document.createElement('div'); pop.id = 'info-tip-pop'; pop.setAttribute('role', 'tooltip'); document.body.appendChild(pop); } return pop; }
+  function show(t) {
+    var p = el(); cur = t; p.textContent = t.getAttribute('data-tip') || ''; p.classList.add('is-shown');
+    var r = t.getBoundingClientRect(), w = p.offsetWidth, h = p.offsetHeight;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8)), top = r.bottom + 8;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+    p.style.left = left + 'px'; p.style.top = top + 'px';
+  }
+  function hide() { cur = null; if (pop) pop.classList.remove('is-shown'); }
+  function tip(e) { return e.target.closest && e.target.closest('.info-tip'); }
+  document.addEventListener('mouseover', function (e) { var t = tip(e); if (t) show(t); });
+  document.addEventListener('mouseout', function (e) { var t = tip(e); if (t && !(e.relatedTarget && t.contains(e.relatedTarget)) && !t.classList.contains('is-open')) hide(); });
+  document.addEventListener('focusin', function (e) { var t = tip(e); if (t) show(t); });
+  document.addEventListener('focusout', function (e) { var t = tip(e); if (t) { t.classList.remove('is-open'); hide(); } });
+  document.addEventListener('click', function (e) {
+    var t = tip(e);
+    Array.prototype.forEach.call(document.querySelectorAll('.info-tip.is-open'), function (x) { if (x !== t) x.classList.remove('is-open'); });
+    if (t) { e.preventDefault(); e.stopPropagation(); var open = t.classList.toggle('is-open'); if (open) show(t); else hide(); } else if (cur) hide(); // preventDefault : n'active pas le champ du libellé
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cur) { Array.prototype.forEach.call(document.querySelectorAll('.info-tip.is-open'), function (x) { x.classList.remove('is-open'); }); hide(); } });
+  window.addEventListener('scroll', function () { if (cur) hide(); }, true);
 })();
 </script>
 <script>
@@ -13812,6 +14053,48 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   list.addEventListener('mousedown', function (e) { e.preventDefault(); });
   list.addEventListener('click', function (e) { var b = e.target.closest('[data-hit]'); if (b) go(Number(b.getAttribute('data-hit'))); });
   document.addEventListener('click', function (e) { if (!box.contains(e.target)) hide(); });
+})();
+</script>
+<script>
+/* Lecture des fichiers tabulaires importés : .csv (UTF-8 ou Windows-1252, comme l'enregistre Excel en français) et classeurs Excel / Calc
+   (.xlsx, .xlsm, .xlsb, .xls, .ods, .fods). Un classeur est converti en texte .csv (séparateur « ; », dates en jj/mm/aaaa) : les analyseurs existants s'appliquent sans changement.
+   window.__readTableText(file) → Promise<string>. La bibliothèque SheetJS n'est chargée qu'à la première lecture d'un classeur. */
+(function () {
+  'use strict';
+  var SHEETJS = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', loading = null;
+  function loadLib() {
+    if (window.XLSX) return Promise.resolve();
+    return loading || (loading = new Promise(function (ok, ko) {
+      var s = document.createElement('script'); s.src = SHEETJS; s.onload = function () { window.XLSX ? ok() : ko(new Error('bibliothèque Excel inutilisable')); };
+      s.onerror = function () { loading = null; ko(new Error('la bibliothèque de lecture Excel n’a pas pu être chargée (vérifiez la connexion, puis réessayez), ou enregistrez le fichier au format .csv')); };
+      document.head.appendChild(s);
+    }));
+  }
+  function readBuf(file) { return new Promise(function (ok, ko) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { ko(new Error('lecture du fichier impossible')); }; r.readAsArrayBuffer(file); }); }
+  function decode(buf) { // UTF-8 (avec ou sans BOM) ; à défaut Windows-1252 (« CSV » d'Excel en français)
+    var u = new Uint8Array(buf);
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(u).replace(/^﻿/, ''); } catch (e) { return new TextDecoder('windows-1252').decode(u); }
+  }
+  function sheetText(buf) {
+    var wb = window.XLSX.read(buf, { type: 'array', cellDates: true, dateNF: 'dd/mm/yyyy' }), best = '';
+    for (var i = 0; i < wb.SheetNames.length; i++) { // première feuille qui contient des données
+      var ws = wb.Sheets[wb.SheetNames[i]];
+      Object.keys(ws).forEach(function (k) { // dates : toujours jj/mm/aaaa (Excel enregistre souvent le format « mm/jj/aa » de la langue du système, quelle que soit l'affichage choisi)
+        var c = ws[k]; if (k.charAt(0) === '!' || !c || c.t !== 'd') return;
+        var h = c.v instanceof Date ? c.v.getUTCHours() + c.v.getUTCMinutes() : 0; c.z = h ? 'dd/mm/yyyy hh:mm' : 'dd/mm/yyyy'; delete c.w;
+      });
+      var t = window.XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[i]], { FS: ';', RS: '\n', dateNF: 'dd/mm/yyyy', blankrows: false });
+      if (/\S/.test(t.replace(/;/g, ''))) { best = t; break; }
+    }
+    return best;
+  }
+  window.__readTableText = function (file) {
+    var m = /\.([a-z0-9]+)$/i.exec(file && file.name || ''), e = m ? m[1].toLowerCase() : '';
+    if (/^(xlsx|xlsm|xlsb|xls|ods|fods)$/.test(e)) return Promise.all([loadLib(), readBuf(file)]).then(function (r) { return sheetText(r[1]); });
+    if (e && !/^(csv|txt|tsv)$/.test(e)) return Promise.reject(new Error('format .' + e + ' non pris en charge (formats acceptés : .csv, .xlsx, .xls, .ods)'));
+    return readBuf(file).then(decode);
+  };
+  window.__TABLE_ACCEPT = '.csv,.txt,.xlsx,.xlsm,.xlsb,.xls,.ods,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet';
 })();
 </script>
 <script>
@@ -14835,452 +15118,6 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         b.removeAttribute('title');
         /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
         b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-n(function () { e.drop.classList.remove('is-busy'); });
-      }
-      e.imp.addEventListener('click', function (ev) {
-        if (!ev.target.closest('#bo-tpl-doc-undo') || !undo) return;
-        if (undo.id !== e.cur) { e.cur = undo.id; fillSelect(e); load(e); }
-        setBody(undo.value); undo = null; status('', '<p>Import annulé : le texte précédent a été rétabli.</p>'); preview(e);
-      });
-      e.sel.addEventListener('change', function () { undo = null; status('', ''); });
-      e.drop.addEventListener('click', function () { e.file.value = ''; e.file.click(); });
-      e.drop.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); e.file.value = ''; e.file.click(); } });
-      e.file.addEventListener('change', function () { if (e.file.files && e.file.files[0]) run(e.file.files[0]); });
-      ['dragenter', 'dragover'].forEach(function (t) { e.drop.addEventListener(t, function (ev) { ev.preventDefault(); e.drop.classList.add('is-over'); }); });
-      e.drop.addEventListener('dragleave', function () { e.drop.classList.remove('is-over'); });
-      e.drop.addEventListener('drop', function (ev) { ev.preventDefault(); e.drop.classList.remove('is-over'); var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]; if (f) run(f); });
-      window.__boDocImportRun = run; // pour les essais
-    })();
-    window.__boTplRefresh = function (g) { Object.keys(KINDS).forEach(function (t) { if (KINDS[t].grp === g) refresh(t); }); };
-    window.__boTplItems = function () {
-      var out = []; Object.keys(KINDS).forEach(function (t) { collect(t).forEach(function (d) { out.push({ grp: KINDS[t].grp, kind: 'Modèle', title: d.title + ' (' + d.group + ')', text: (d.subject ? d.subject.read() + ' ' : '') + d.body.read(), run: function () { E[t].cur = d.id; showBoTab(KINDS[t].grp); } }); }); });
-      return out;
-    };
-    document.getElementById('bo-g-cancel').addEventListener('click', function () { setTimeout(function () { Object.keys(E).forEach(function (t) { if (pageBo.getAttribute('data-tab') === KINDS[t].grp) refresh(t); }); }, 0); });
-  })();
-
-  /* Recherche dans tout le back office : blocs du formulaire (titre, libellés, textes, valeurs saisies) et éléments du brouillon (articles, FAQ, étapes, signataires, demandes). */
-  (function () {
-    var qEl = document.getElementById('bo-q'), list = document.getElementById('bo-results'), hits = [], active = -1, hitTimer;
-    function fold(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-    var tabLabel = {}; TABS.forEach(function (t) { tabLabel[t[0]] = t[1]; });
-    var SKIP = '.tpl-shadow, #bo-overview, .table-wrap, #w-articles, #w-faq-admin, #w-tuto-admin, #w-sign-admin, #w-counters, .CodeMirror, .editor-toolbar, script, style, .bo-bar';
-    // Blocs du formulaire : chaque <details> ou section porte son propre texte (hors blocs imbriqués), rattaché à sa rubrique.
-    function formItems() {
-      var map = new Map();
-      function own(node) { var u = node.closest('details, section.step'); return u && u.closest('[data-grp]') ? u : null; }
-      function add(u, txt) { if (!txt) return; var e = map.get(u); if (!e) map.set(u, e = []); e.push(txt); }
-      var tw = document.createTreeWalker(wrap, NodeFilter.SHOW_TEXT, null), n;
-      while ((n = tw.nextNode())) {
-        var par = n.parentElement; if (!par || par.closest(SKIP) || !/\S/.test(n.nodeValue)) continue;
-        var u = own(par); if (u) add(u, n.nodeValue.replace(/\s+/g, ' ').trim());
-      }
-      Array.prototype.forEach.call(wrap.querySelectorAll('input, textarea, select'), function (c) {
-        if (c.closest(SKIP) || c.type === 'checkbox' || c.type === 'radio' || c.type === 'button' || c.type === 'search') return;
-        var u = own(c); if (!u) return;
-        add(u, c.tagName === 'SELECT' ? (c.selectedOptions[0] ? c.selectedOptions[0].textContent : '') : c.value);
-      });
-      var out = [];
-      map.forEach(function (parts, u) {
-        var head = u.matches('details') ? u.querySelector(':scope > summary') : u.querySelector('h2');
-        var title = head ? head.textContent.replace(/\s+/g, ' ').trim() : '';
-        out.push({ grp: u.closest('[data-grp]').getAttribute('data-grp'), kind: u.matches('details') ? 'Bloc' : 'Rubrique', title: title || 'Sans titre', text: parts.join(' · '), el: u });
-      });
-      return out;
-    }
-    function build(q) {
-      var terms = fold(q).split(/\s+/).filter(Boolean); if (!terms.length) return [];
-      var all = formItems().concat(window.WEL && window.WEL.searchItems ? window.WEL.searchItems() : [], window.__boTplItems ? window.__boTplItems() : []), order = TABS.map(function (t) { return t[0]; });
-      var res = [];
-      all.forEach(function (it) {
-        var ft = fold(it.title), fx = fold(it.text), hay = ft + ' ' + fx;
-        if (!terms.every(function (t) { return hay.indexOf(t) !== -1; })) return;
-        var inTitle = terms.every(function (t) { return ft.indexOf(t) !== -1; }), pos = fx.indexOf(terms[0]), snip = '';
-        if (!inTitle && pos >= 0) { var raw = String(it.text), a = Math.max(0, pos - 30); snip = (a > 0 ? '…' : '') + raw.slice(a, pos + 70).replace(/\s+/g, ' '); }
-        else snip = String(it.text).replace(/\s+/g, ' ').slice(0, 90);
-        res.push({ it: it, score: (inTitle ? 0 : 1) * 1000 + order.indexOf(it.grp) * 10, snip: snip, terms: terms });
-      });
-      res.sort(function (a, b) { return a.score - b.score; });
-      return res.slice(0, 40);
-    }
-    function mark(text, terms) {
-      var out = esc(text);
-      terms.forEach(function (t) { if (t.length < 2) return; var re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'); out = out.replace(re, function (m) { return m.length ? '<mark>' + m + '</mark>' : m; }); });
-      return out;
-    }
-    function render() {
-      var q = qEl.value.trim();
-      if (!q) { hide(); return; }
-      hits = build(q); active = hits.length ? 0 : -1;
-      list.innerHTML = hits.length ? hits.map(function (h, i) {
-        return '<li role="presentation"><button type="button" class="bo-res' + (i === 0 ? ' is-active' : '') + '" role="option" data-hit="' + i + '" id="bo-res-' + i + '"><span class="bo-res__top"><span class="fr-tag fr-tag--sm">' + esc(tabLabel[h.it.grp] || h.it.grp) + '</span><span class="bo-res__title">' + mark(h.it.title, h.terms) + '</span></span>' +
-          (h.snip ? '<span class="bo-res__snip">' + mark(h.snip, h.terms) + '</span>' : '') + '</button></li>';
-      }).join('') : '<li class="bo-none" role="presentation">Aucun résultat pour « ' + esc(q) + ' ».</li>';
-      list.hidden = false; qEl.setAttribute('aria-expanded', 'true');
-    }
-    function hide() { list.hidden = true; qEl.setAttribute('aria-expanded', 'false'); qEl.removeAttribute('aria-activedescendant'); }
-    function setActive(i) {
-      if (!hits.length) return; active = (i + hits.length) % hits.length;
-      Array.prototype.forEach.call(list.querySelectorAll('.bo-res'), function (b, j) { b.classList.toggle('is-active', j === active); });
-      var cur = document.getElementById('bo-res-' + active); if (cur) { qEl.setAttribute('aria-activedescendant', cur.id); cur.scrollIntoView({ block: 'nearest' }); }
-    }
-    function go(i) {
-      var h = hits[i]; if (!h) return;
-      hide(); showBoTab(h.it.grp);
-      if (h.it.run) { h.it.run(); return; }
-      var el = h.it.el; if (!el || !document.body.contains(el)) return;
-      for (var d = el; d; d = d.parentElement && d.parentElement.closest('details')) { if (d.matches('details')) d.open = true; if (!d.parentElement) break; }
-      setTimeout(function () {
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        el.classList.add('bo-hit'); clearTimeout(hitTimer); hitTimer = setTimeout(function () { el.classList.remove('bo-hit'); }, 2500);
-      }, 60);
-    }
-    var timer; qEl.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(render, 120); });
-    qEl.addEventListener('focus', function () { if (qEl.value.trim()) render(); });
-    qEl.addEventListener('keydown', function (e) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) render(); else setActive(active + 1); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
-      else if (e.key === 'Enter') { e.preventDefault(); if (list.hidden) render(); else go(active); }
-      else if (e.key === 'Escape') { if (!list.hidden) { e.preventDefault(); hide(); } else if (qEl.value) { qEl.value = ''; } }
-    });
-    document.getElementById('bo-q-btn').addEventListener('click', function () { render(); qEl.focus(); });
-    list.addEventListener('mousedown', function (e) { e.preventDefault(); });
-    list.addEventListener('click', function (e) { var b = e.target.closest('[data-hit]'); if (b) go(Number(b.getAttribute('data-hit'))); });
-    document.addEventListener('click', function (e) { if (!boSearch.contains(e.target)) hide(); });
-  })();
-
-  var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
-  document.querySelector('.fr-header').addEventListener('click', function (e) {
-    // Ni le bouton « Paramètres d'affichage », ni le menu de navigation (burger + liens + fermeture) ne comptent comme un clic sur l'en-tête.
-    if (e.target.closest('.fr-header__tools') || e.target.closest('#modal-header-menu') || e.target.closest('#btn-header-menu')) return;
-    clearTimeout(hdrTimer);
-    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
-    hdrClicks++;
-    if (hdrClicks === 1) {
-      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
-      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
-      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
-    } else if (homeTimer) {
-      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
-    }
-    if (hdrClicks < 5) return;
-    hdrClicks = 0;
-    returnPage = window.__page || 'pmg';
-    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
-    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
-    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
-    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
-    window.__showPage('bo');
-  });
-  document.getElementById('bo-close').addEventListener('click', function () {
-    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
-    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
-    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-<script>
-/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
-(function () {
-  ['modal', 'r-modal'].forEach(function (id) {
-    var root = document.getElementById(id); if (!root) return;
-    var queued = false;
-    function relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-�. */
-(function () {
-  ['modal', 'r-modal'].forEach(function (id) {
-    var root = document.getElementById(id); if (!root) return;
-    var queued = false;
-    function relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-dy>
-</html>
-ot, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-ic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
-      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
-      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
-    } else if (homeTimer) {
-      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
-    }
-    if (hdrClicks < 5) return;
-    hdrClicks = 0;
-    returnPage = window.__page || 'pmg';
-    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
-    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
-    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
-    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
-    window.__showPage('bo');
-  });
-  document.getElementById('bo-close').addEventListener('click', function () {
-    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
-    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
-    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-<script>
-/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
-(function () {
-  ['modal', 'r-modal'].forEach(function (id) {
-    var root = document.getElementById(id); if (!root) return;
-    var queued = false;
-    function relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-.closeAdmin) window.WEL.closeAdmin();
-    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
-    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-<script>
-/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
-(function () {
-  ['modal', 'r-modal'].forEach(function (id) {
-    var root = document.getElementById(id); if (!root) return;
-    var queued = false;
-    function relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-mise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-moveAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-ationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-oot.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
-(function () {
-  ['modal', 'r-modal'].forEach(function (id) {
-    var root = document.getElementById(id); if (!root) return;
-    var queued = false;
-    function relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-} else if (qEl.value) { qEl.value = ''; } }
-    });
-    document.getElementById('bo-q-btn').addEventListener('click', function () { render(); qEl.focus(); });
-    list.addEventListener('mousedown', function (e) { e.preventDefault(); });
-    list.addEventListener('click', function (e) { var b = e.target.closest('[data-hit]'); if (b) go(Number(b.getAttribute('data-hit'))); });
-    document.addEventListener('click', function (e) { if (!boSearch.contains(e.target)) hide(); });
-  })();
-
-  var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
-  document.querySelector('.fr-header').addEventListener('click', function (e) {
-    // Ni le bouton « Paramètres d'affichage », ni le menu de navigation (burger + liens + fermeture) ne comptent comme un clic sur l'en-tête.
-    if (e.target.closest('.fr-header__tools') || e.target.closest('#modal-header-menu') || e.target.closest('#btn-header-menu')) return;
-    clearTimeout(hdrTimer);
-    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
-    hdrClicks++;
-    if (hdrClicks === 1) {
-      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
-      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
-      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
-    } else if (homeTimer) {
-      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
-    }
-    if (hdrClicks < 5) return;
-    hdrClicks = 0;
-    returnPage = window.__page || 'pmg';
-    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
-    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
-    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
-    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
-    window.__showPage('bo');
-  });
-  document.getElementById('bo-close').addEventListener('click', function () {
-    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
-    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
-    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
-    window.__showPage(returnPage || 'pmg');
-  });
-})();
-</script>
-<script>
-/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
-(function () {
-  ['modal', 'r-modal'].forEach(function (id) {
-    var root = document.getElementById(id); if (!root) return;
-    var queued = false;
-    function relabel() {
-      queued = false;
-      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
-        var t = b.getAttribute('title'); if (!t) return;
-        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
-        b.removeAttribute('title');
-        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
- dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
-        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
-      });
-    }
-    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-
-    relabel();
-  });
-})();
-</script>
-</body>
-</html>
-/, '') : t);
       });
     }
     new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
