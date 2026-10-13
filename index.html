@@ -2449,7 +2449,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.28.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.28.4</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -5249,8 +5249,29 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return p;
   }
   // Valeur d'une cellule selon le type de la colonne : { value } ou { error }.
+  // Civilité : « Masculin » / « Féminin » (ou Homme, Femme, M, F, Mr, Mme…) deviennent « Monsieur » / « Madame » (ou, si la colonne ne propose pas ces valeurs, son choix équivalent : M., Mme…).
+  function civiliteValue(col, s) {
+    var k = csvKey(s), g = /^(m|mr|monsieur|masculin|homme|h|male)$/.test(k) ? 'M' : (/^(f|mme|madame|mlle|mademoiselle|feminin|femme|female)$/.test(k) ? 'F' : null); if (!g) return null;
+    var pref = g === 'M' ? ['monsieur', 'm', 'mr', 'masculin'] : ['madame', 'mme', 'f', 'feminin'], ch = col.choices || [];
+    if (!ch.length) return g === 'M' ? 'Monsieur' : 'Madame';
+    for (var i = 0; i < pref.length; i++) { var m = ch.filter(function (o) { return csvKey(o) === pref[i]; })[0]; if (m) return m; }
+    return null;
+  }
+  function isCiviliteCol(col) { return norm(col.label) === 'civilite' || norm(col.id) === 'civilite'; }
+  // Corps : l'une des cinq valeurs ci-dessous (casse, accents et espaces ignorés ; « MDR » seul suffit s'il n'y a pas d'ambiguïté).
+  var CORPS_RS = ['MDR RS', 'SOG RS', 'CSTAGN RS', 'OFF GIE RS', 'OFF CTA RS'];
+  function isCorpsCol(col) { return norm(col.label) === 'corps' || norm(col.id) === 'corps'; }
+  function matchCorps(v) {
+    var k = csvKey(v); if (!k) return null;
+    var ex = CORPS_RS.filter(function (o) { return csvKey(o) === k; })[0]; if (ex) return ex;
+    var pre = CORPS_RS.filter(function (o) { return csvKey(o).indexOf(k) === 0; });
+    return pre.length === 1 ? pre[0] : null;
+  }
   function csvParseValue(col, raw) {
     var s = String(raw == null ? '' : raw).trim(), t = typeBase(col.type), lab = displayLabel(col);
+    if (isCiviliteCol(col)) { var cv = civiliteValue(col, s); if (cv) return { value: cv }; }
+    if (isCorpsCol(col)) { var mc = matchCorps(s); return mc ? { value: mc } : { error: 'valeur invalide (' + lab + ') : choisir parmi ' + CORPS_RS.join(', ') }; }
+    if (norm(col.label) === 'crt' || norm(col.id) === 'crt') { var ck = (col.choices || []).filter(function (o) { return norm(o) === norm(s); })[0]; return { value: ck || s }; } // CRT : importée telle quelle, même hors de la liste de la colonne
     if (t === 'Date' || t === 'DateTime') {
       var p = csvDateParts(s); if (!p) return { error: 'date invalide (' + lab + ', format attendu JJ/MM/AAAA)' };
       var iso = p.y + '-' + csvP2(p.mo) + '-' + csvP2(p.d) + (t === 'DateTime' ? 'T' + csvP2(p.h) + ':' + csvP2(p.mi) : ''), r = parseEdit(col, iso);
@@ -11118,8 +11139,29 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return p;
   }
   // Valeur d'une cellule selon le type de la colonne : { value } ou { error }.
+  // Corps d'un réserviste : l'une des cinq valeurs ci-dessous (casse, accents et espaces ignorés ; « MDR » seul suffit s'il n'y a pas d'ambiguïté).
+  var CORPS_RS = ['MDR RS', 'SOG RS', 'CSTAGN RS', 'OFF GIE RS', 'OFF CTA RS'];
+  function isCorpsCol(col) { return norm(col.label) === 'corps' || norm(col.id) === 'corps'; }
+  function matchCorps(v) {
+    var k = csvKey(v); if (!k) return null;
+    var ex = CORPS_RS.filter(function (o) { return csvKey(o) === k; })[0]; if (ex) return ex;
+    var pre = CORPS_RS.filter(function (o) { return csvKey(o).indexOf(k) === 0; }); // saisie abrégée : « MDR », « OFFGIE »…
+    return pre.length === 1 ? pre[0] : null;
+  }
+  // Civilité : « Masculin » / « Féminin » (ou Homme, Femme, M, F, Mr, Mme…) deviennent « Monsieur » / « Madame » (ou, si la colonne ne propose pas ces valeurs, son choix équivalent : M., Mme…).
+  function civiliteValue(col, s) {
+    var k = csvKey(s), g = /^(m|mr|monsieur|masculin|homme|h|male)$/.test(k) ? 'M' : (/^(f|mme|madame|mlle|mademoiselle|feminin|femme|female)$/.test(k) ? 'F' : null); if (!g) return null;
+    var pref = g === 'M' ? ['monsieur', 'm', 'mr', 'masculin'] : ['madame', 'mme', 'f', 'feminin'], ch = col.choices || [];
+    if (!ch.length) return g === 'M' ? 'Monsieur' : 'Madame';
+    for (var i = 0; i < pref.length; i++) { var m = ch.filter(function (o) { return csvKey(o) === pref[i]; })[0]; if (m) return m; }
+    return null;
+  }
+  function isCiviliteCol(col) { return norm(col.label) === 'civilite' || norm(col.id) === 'civilite'; }
   function csvParseValue(col, raw) {
     var s = String(raw == null ? '' : raw).trim(), t = typeBase(col.type), lab = displayLabel(col);
+    if (isCiviliteCol(col)) { var cv = civiliteValue(col, s); if (cv) return { value: cv }; }
+    if (isCorpsCol(col)) { var mc = matchCorps(s); return mc ? { value: mc } : { error: 'valeur invalide (' + lab + ') : choisir parmi ' + CORPS_RS.join(', ') }; }
+    if (norm(col.label) === 'crt' || norm(col.id) === 'crt') { var ck = (col.choices || []).filter(function (o) { return norm(o) === norm(s); })[0]; return { value: ck || s }; } // CRT : importée telle quelle, même hors de la liste de la colonne
     if (t === 'Date' || t === 'DateTime') {
       var p = csvDateParts(s); if (!p) return { error: 'date invalide (' + lab + ', format attendu JJ/MM/AAAA)' };
       var iso = p.y + '-' + csvP2(p.mo) + '-' + csvP2(p.d) + (t === 'DateTime' ? 'T' + csvP2(p.h) + ':' + csvP2(p.mi) : ''), r = parseEdit(col, iso);
@@ -11340,7 +11382,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var gradeCol = findCol(c.table, 'Grade'), corpsCol = findCol(c.table, 'Corps');
       html += '<section class="cf-section"><h3>Grade et Corps</h3><div class="cf-grid">' +
         (gradeCol ? '<div class="cf-field"><label for="r-bf-grade">Grade</label>' + controlHtml(gradeCol, 'r-bf-grade', b.grade, '', ' data-bulk="grade"') + '</div>' : '') +
-        (corpsCol ? '<div class="cf-field"><label for="r-bf-corps">Corps</label>' + controlHtml(corpsCol, 'r-bf-corps', b.corps, '', ' data-bulk="corps"') + '</div>' : '') +
+        (corpsCol ? '<div class="cf-field"><label for="r-bf-corps">Corps</label><select class="select" id="r-bf-corps" data-bulk="corps"><option value="">— Ne pas modifier —</option>' + CORPS_RS.map(function (o) { return '<option value="' + esc(o) + '"' + (o === b.corps ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></div>' : '') +
         '</div><span class="hint">Laissez un champ vide pour ne pas le modifier.' + (!gradeCol || !corpsCol ? ' Colonne introuvable dans cette table : ' + [!gradeCol && 'Grade', !corpsCol && 'Corps'].filter(Boolean).join(', ') + '.' : '') + '</span></section>';
     }
 
