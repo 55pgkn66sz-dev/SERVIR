@@ -2548,7 +2548,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.49.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.50.2</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -6221,8 +6221,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // Le point apparaît à chaque niveau : l'onglet, le lien du menu et la catégorie du menu déroulant qui contient ce lien (cf. DOT_PARENTS).
   var DOT_TARGETS = {
     welcome: '#header-navigation [data-page="welcome"]',
-    pmg: '#header-navigation [data-page="pmg"]', 'pmg-stat': '#header-navigation [data-page="pmg-stat"]', 'cat:pmg': '#header-navigation [aria-controls="menu-pmg"]',
-    res: '#header-navigation [data-page="res"]', 'res-ren': '#header-navigation [data-page="res-ren"]', 'res-ave': '#header-navigation [data-page="res-ave"]', 'res-stat': '#header-navigation [data-page="res-stat"]', 'cat:res': '#header-navigation [aria-controls="menu-res"]',
+    pmg: '#header-navigation [data-page="pmg"]', 'pmg-stat': '#header-navigation [data-page="pmg-stat"]', 'cat:pmg': '#header-navigation .fr-nav__btn[aria-controls="menu-pmg"]',
+    res: '#header-navigation [data-page="res"]', 'res-ren': '#header-navigation [data-page="res-ren"]', 'res-ave': '#header-navigation [data-page="res-ave"]', 'res-stat': '#header-navigation [data-page="res-stat"]', 'cat:res': '#header-navigation .fr-nav__btn[aria-controls="menu-res"]',
     'rsv-vmp': '#header-navigation [data-page="rsv-vmp"]', 'rsv-vemi': '#header-navigation [data-page="rsv-vemi"], #x-tab-vemi', 'rsv-psy': '#header-navigation [data-page="rsv-psy"], #x-tab-psy'
   };
   // Anciennes cibles de compteur (page « Réservations » et ses onglets), converties vers les nouvelles pages.
@@ -6351,6 +6351,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         } else if (dot) { dot.remove(); }
       });
     });
+    Array.prototype.forEach.call(document.querySelectorAll('#header-navigation .fr-btn--close .wel-nav-dot'), function (d) { d.remove(); }); // jamais de point sur les boutons « Fermer » des menus
   }
   function render() {
     applyNavDots();
@@ -14631,18 +14632,25 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 
   /* ----- Liste des dates du formulaire : tenue à jour automatiquement (dates à venir des besoins) ----- */
   function desiredOpenDates() { var t = todayIso(), o = {}, om = (S.cfg && S.cfg.openMonths) || []; S.bes.forEach(function (b) { if (b.date >= t && (!om.length || om.indexOf(b.date.slice(0, 7)) !== -1)) o[b.date] = 1; }); return Object.keys(o).sort(); } // dates à venir, limitées aux mois choisis (aucun mois choisi : toutes)
-  function syncOpen() {
+  function syncOpen() { // aligne JDC_Dates_ouvertes sur les dates à venir des besoins (dans les mois choisis) ; le résultat ou l'erreur est conservé (S.syncErr / S.syncInfo) pour être affiché
     if (!S.T.open || S.syncing || !S.loaded) return Promise.resolve(false);
+    if (!S.T.open.cols.date) { S.syncErr = 'colonne « Date » introuvable dans la table « ' + S.T.open.name + ' » (elle doit s’appeler Date).'; return Promise.resolve(false); }
     var want = desiredOpenDates(), have = {}, add, del = [];
     S.T.open.rows.forEach(function (r) { var d = toIso(raw('open', r, 'date')); (have[d] = have[d] || []).push(r.id); });
     add = want.filter(function (d) { return !have[d]; });
     Object.keys(have).forEach(function (d) { if (want.indexOf(d) === -1) del = del.concat(have[d]); else have[d].slice(1).forEach(function (id) { del.push(id); }); }); // dates passées, supprimées ou en double
-    if (!add.length && !del.length) return Promise.resolve(false);
+    if (!add.length && !del.length) { S.syncErr = ''; S.syncInfo = { added: 0, removed: 0 }; return Promise.resolve(false); }
     S.syncing = true;
     return writeMany('open', add.map(function (d) { return { date: d }; })).then(function () { return del.reduce(function (p, id) { return p.then(function () { return write('destroy', 'open', id); }); }, Promise.resolve()); })
-      .then(function () { S.syncing = false; return true; }, function () { S.syncing = false; return false; });
+      .then(function () { S.syncing = false; S.syncErr = ''; S.syncInfo = { added: add.length, removed: del.length }; return true; }, function (e) { S.syncing = false; S.syncErr = (e && e.message) || String(e); return false; });
   }
-  function scheduleSync() { clearTimeout(S.syncT); S.syncT = setTimeout(function () { syncOpen().then(function (ch) { if (ch && R && U.tab) render(); }); }, 700); }
+  function scheduleSync() { clearTimeout(S.syncT); S.syncT = setTimeout(function () { syncOpen().then(function (ch) { if ((ch || S.syncErr) && R && U.tab) render(); }); }, 700); }
+  function syncBanner() { return S.syncErr ? '<div class="doc-alert error" role="alert"><p><strong>Dates du formulaire non mises à jour</strong> (table JDC_Dates_ouvertes) : ' + esc(S.syncErr) + '</p></div>' : ''; }
+  function openDatesHtml() { // état de la liste des dates proposées par le formulaire
+    if (!S.T.open) return '';
+    var ds = S.T.open.cols.date ? uniq(S.T.open.rows.map(function (r) { return toIso(raw('open', r, 'date')); }).filter(Boolean)).sort() : [];
+    return '<p style="margin:.5rem 0 0">Dates actuellement proposées par le formulaire (' + ds.length + ') : ' + (ds.length ? esc(ds.map(function (d) { return fmtFr(d).slice(0, 5); }).join(', ')) : 'aucune') + '. ' + btn('syncopen', 'Actualiser maintenant') + '</p>';
+  }
   function sref(s) { return s ? { id: s.id, text: s.name } : { id: 0, text: '' }; }
   function bref(b) { return { id: b.id, text: b.label }; }
   function aref(a) { return { id: a.id, text: a.nigend }; }
@@ -14930,6 +14938,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var html = monthBar('<div class="tb-field"><label class="ed-check" style="margin-top:1.6rem"><input type="checkbox" data-j="onlydispo"' + (U.onlyDispo ? ' checked' : '') + '> Seulement les animateurs disponibles</label></div><div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">' + btn('propose', 'Proposer une répartition', '', 'btn') + btn('invite', 'Inviter à donner ses disponibilités (cci)') + btn('relance', 'Relancer ceux qui n’ont pas répondu (cci)') + '</div>') +
       '<p class="hint">' + list.length + ' date' + (list.length > 1 ? 's' : '') + ' · ' + got + ' / ' + need + ' cadre' + (need > 1 ? 's' : '') + ' désigné' + (got > 1 ? 's' : '') + ' · ' + Object.keys(answered).length + ' animateur' + (Object.keys(answered).length > 1 ? 's' : '') + ' sur ' + actifs.length + ' ont répondu au formulaire' +
       (unknown.length ? ' · ' + unknown.length + ' réponse' + (unknown.length > 1 ? 's' : '') + ' d’une personne absente de la liste (' + esc(unknown.map(function (k) { var r = S.dm[k]; return r.nigend || r.email; }).join(', ')) + ')' : '') + '.</p>';
+    html += syncBanner();
     if (!S.T.open) html += '<div class="doc-alert warning" role="status"><p>La table JDC_Dates_ouvertes est absente : la liste des dates du formulaire n’est pas tenue à jour (voir la procédure de mise en place).</p></div>';
     if (!list.length) return html + '<p class="hint">Aucun besoin ce mois-ci : renseignez-les dans la gestion (⚙ puis Besoins).</p>';
     return html + conflictBanner(m) + list.map(function (b) { return cardBes(b); }).join('');
@@ -15010,7 +15019,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var sites = '<div class="tb-field"><label for="jdc-ps">Site</label><select class="select" id="jdc-ps" data-j="psite" style="width:auto;min-width:12rem"><option value="">Tous les sites</option>' + S.sites.map(function (s) { return '<option value="' + s.id + '"' + (String(s.id) === String(U.psite) ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></div>';
     var html = '<div class="toolbar">' + '<div class="tb-field"><span class="ppe-sig-l">Affichage</span>' + seg('pview', U.pview, [['cal', 'Planning'], ['list', 'Liste']]) + '</div>' + (isCal ? '<div class="tb-field"><span class="ppe-sig-l">Période</span>' + seg('pper', per, [['month', 'Mois'], ['week', 'Semaine']]) + '</div>' : '') + '<div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap">' + nav + (isCal ? sites : '') + '</div>' +
       '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto;align-items:center">' + btn('sendplan', 'Envoyer le planning (cci)', '', 'btn') + btn('invite', 'Inviter à donner ses disponibilités (cci)') + btn('csv', 'Exporter .csv') + btn('print', 'Imprimer') + (isCal ? info('Cliquez sur une case pour désigner. Vert : complet ; orange : à pourvoir ; hachuré : pas de besoin.') : '') + '</div></div>';
-    html += conflictBanner(m);
+    html += syncBanner() + conflictBanner(m);
     if (isCal) html += vPlanCal();
     else html += vPlanList();
     return html;
@@ -15097,7 +15106,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 
   /* ----- Réglages ----- */
   function vReg() {
-    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), html = '<section class="cf-section"><h3>Lien de réservation (formulaire de disponibilités)</h3><div class="cf-field" style="max-width:48rem"><label for="jr-form">Lien du formulaire Grist externe ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Le formulaire ne propose que les dates à venir : les dates passées sont retirées à chaque ouverture du widget.') + '</label><input class="input" id="jr-form" data-jr="form" value="' + esc(c.form) + '" placeholder="https://grist.numerique.gouv.fr/…/forms/…"></div>' + openMonthsHtml(c.openMonths, 'data-jopen') + '</section>';
+    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), html = '<section class="cf-section"><h3>Lien de réservation (formulaire de disponibilités)</h3><div class="cf-field" style="max-width:48rem"><label for="jr-form">Lien du formulaire Grist externe ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Le formulaire ne propose que les dates à venir : les dates passées sont retirées à chaque ouverture du widget.') + '</label><input class="input" id="jr-form" data-jr="form" value="' + esc(c.form) + '" placeholder="https://grist.numerique.gouv.fr/…/forms/…"></div>' + openMonthsHtml(c.openMonths, 'data-jopen') + openDatesHtml() + '</section>';
     html += '<section class="cf-section"><h3>Règles de priorité de la répartition ' + info('Cochez et classez les règles : la première départage d’abord, les suivantes les égalités, puis l’ordre alphabétique. « Grade croissant » : du moins au plus gradé (GAV/GA2, GA1, BRI, BRC, MDL/GND, MDC, ADJ, ADC, MAJ, ASP, SLT, LTN, CNE, CEN/CDT, LCL, COL ; « / » = même rang) dans la catégorie visée, l’autre catégorie passant après. Plafonds mensuels, habilitation et une seule JDC par jour sont toujours respectés.') + '</h3><ol class="jdc-rules">' +
       c.rules.map(function (r, i) { var lab = RULES.filter(function (x) { return x[0] === r.id; })[0][1]; return '<li><label class="ed-check"><input type="checkbox" data-jrule="' + i + '"' + (r.on ? ' checked' : '') + '> ' + esc(lab) + '</label><span>' + btn('ruleup', '↑', ' data-i="' + i + '" aria-label="Monter"' + (i === 0 ? ' disabled' : '')) + ' ' + btn('ruledown', '↓', ' data-i="' + i + '" aria-label="Descendre"' + (i === c.rules.length - 1 ? ' disabled' : '')) + '</span></li>'; }).join('') + '</ol></section>';
     html += '<section class="cf-section"><h3>Modèles de courriels ' + info('Courriels préparés dans votre messagerie, destinataires en Cci. Cliquez sur une variable pour l’insérer dans le champ en cours.') + '</h3>' + Object.keys(DEF_TPL).map(function (k) {
@@ -15316,15 +15325,23 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       '<div style="border-bottom:3px solid #000091;padding-bottom:8px;margin:12px 0 14px"><div style="font-size:22px;font-weight:bold;margin-top:4px">Journées défense et citoyenneté – ' + esc(monthLabel(m)) + '</div><div style="font-size:11px;color:#555">Établi le ' + esc(fmtFr(todayIso())) + '</div></div>';
     var tabs = planningMatrixHtml(list), title1 = '<div style="font-size:15px;font-weight:bold;margin:0 0 8px">1. Vue planning</div>', legend = '<div style="font-size:10px;color:#555;margin-top:2px">Bordure verte : complet ; orange : à pourvoir ; case grisée : pas de besoin ce jour-là sur ce site.</div>';
     tabs.forEach(function (t, i) { blocks.push(wrap((i === 0 ? head + title1 : '') + t + (i === tabs.length - 1 ? legend : ''))); });
+    // Rappel des coordonnées des sites concernés ce mois-ci
+    var sIds = [], sRows = []; list.forEach(function (b) { if (sIds.indexOf(b.siteId) === -1) sIds.push(b.siteId); });
+    sIds.map(function (id) { return S.sBy[id]; }).filter(Boolean).sort(function (a, b) { return a.name.localeCompare(b.name, 'fr'); }).forEach(function (st) {
+      var adr = [st.adresse, [st.cp, st.ville].filter(Boolean).join(' ')].filter(Boolean).map(esc).join('<br>');
+      sRows.push('<tr><td ' + td + '><strong>' + esc(st.name) + '</strong></td><td ' + td + '>' + (adr || '<span style="color:#777">—</span>') + '</td><td ' + td + '>' + (esc(st.contact) || '<span style="color:#777">—</span>') + '</td><td ' + td + '>' + (esc(st.tel) || '<span style="color:#777">—</span>') + '</td></tr>');
+    });
+    if (sRows.length) { var sHead = '<thead><tr><th ' + th + '>Site</th><th ' + th + '>Adresse</th><th ' + th + '>Contact</th><th ' + th + '>Téléphone</th></tr></thead>';
+      for (var k = 0; k < sRows.length; k += 8) blocks.push(wrap((k === 0 ? '<div style="font-size:15px;font-weight:bold;margin:0 0 8px">2. Coordonnées des sites</div>' : '') + '<table style="border-collapse:collapse;width:100%;table-layout:fixed"><colgroup><col style="width:28%"><col style="width:32%"><col style="width:24%"><col style="width:16%"></colgroup>' + sHead + '<tbody>' + sRows.slice(k, k + 8).join('') + '</tbody></table>')); }
     var rows = ans.map(function (a) {
       var ds = []; monthBes(m).forEach(function (b) { assigned(b).filter(activeDes).forEach(function (d) { if (d.animId === a.id) ds.push(dow(b.date).slice(0, 3) + '. ' + fmtFr(b.date) + ' – ' + b.site); }); });
       return '<tr><td ' + td + '>' + esc(name(a)) + '<br><span style="color:#555">' + esc(a.statut) + '</span></td><td ' + td + '>' + datesIn(a, m) + '</td><td ' + td + '>' + (ds.length ? ds.map(esc).join('<br>') : '<span style="color:#555">Non retenu(e) pour ce mois</span>') + '</td><td ' + td + '>' + ds.length + '</td></tr>';
     });
-    var thead = '<thead><tr><th ' + th + '>Militaire</th><th ' + th + '>Dates déclarées</th><th ' + th + '>Désignation(s)</th><th ' + th + '>Total</th></tr></thead>', title2 = '<div style="font-size:15px;font-weight:bold;margin:0 0 8px">2. Récapitulatif des désignations <span style="font-weight:normal;font-size:12px;color:#555">(militaires ayant donné leurs disponibilités)</span></div>';
+    var thead = '<thead><tr><th ' + th + '>Militaire</th><th ' + th + '>Dates déclarées</th><th ' + th + '>Désignation(s)</th><th ' + th + '>Total</th></tr></thead>', title2 = '<div style="font-size:15px;font-weight:bold;margin:0 0 8px">' + (sRows.length ? '3' : '2') + '. Récapitulatif des désignations <span style="font-weight:normal;font-size:12px;color:#555">(militaires ayant donné leurs disponibilités)</span></div>';
     if (!rows.length) rows = ['<tr><td ' + td + ' colspan="4">Aucune disponibilité déclarée pour ce mois.</td></tr>'];
     for (var i = 0; i < rows.length; i += 9) blocks.push(wrap((i === 0 ? title2 : '') + '<table style="border-collapse:collapse;width:100%;table-layout:fixed"><colgroup><col style="width:26%"><col style="width:14%"><col style="width:52%"><col style="width:8%"></colgroup>' + thead + '<tbody>' + rows.slice(i, i + 9).join('') + '</tbody></table>'));
     var tail = '';
-    if (unf.length) tail += '<div style="font-size:15px;font-weight:bold;margin:0 0 6px;color:#b34000">3. Besoins non pourvus</div><ul style="margin:0 0 0 18px;padding:0;font-size:12px;line-height:1.5">' + unf.map(function (b) { var r = b.nb - filled(b); return '<li>' + esc(dow(b.date) + ' ' + fmtFr(b.date) + ' – ' + b.site) + ' : ' + r + ' poste' + (r > 1 ? 's' : '') + ' à pourvoir</li>'; }).join('') + '</ul>';
+    if (unf.length) tail += '<div style="font-size:15px;font-weight:bold;margin:0 0 6px;color:#b34000">' + (sRows.length ? '4' : '3') + '. Besoins non pourvus</div><ul style="margin:0 0 0 18px;padding:0;font-size:12px;line-height:1.5">' + unf.map(function (b) { var r = b.nb - filled(b); return '<li>' + esc(dow(b.date) + ' ' + fmtFr(b.date) + ' – ' + b.site) + ' : ' + r + ' poste' + (r > 1 ? 's' : '') + ' à pourvoir</li>'; }).join('') + '</ul>';
     if (S.cfg.form) tail += '<div style="font-size:12px;margin-top:' + (unf.length ? 12 : 0) + 'px">Pour vous positionner ou modifier vos disponibilités : ' + esc(S.cfg.form) + '</div>';
     if (tail) blocks.push(wrap(tail));
     return blocks;
@@ -15447,6 +15464,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'savebatch') return saveBatch();
     if (j === 'impanim') { U.form = { kind: 'impanim', res: null }; return render(); }
     if (j === 'resync') return syncFromRes();
+    if (j === 'syncopen') { S.syncing = false; return syncOpen().then(function (ch) { var i = S.syncInfo || {}; setMsg(S.syncErr ? 'error' : 'success', S.syncErr ? 'Mise à jour impossible : ' + S.syncErr : (ch ? 'Liste du formulaire mise à jour : ' + i.added + ' date(s) ajoutée(s), ' + i.removed + ' retirée(s).' : 'La liste du formulaire est déjà à jour.')); render(); }); }
     if (j === 'pickanim') return pickAnimFile();
     if (j === 'tplanim') return tplAnimCsv();
     if (j === 'importanim') { var ri = U.form.res; return writeMany('anim', ri.items).then(function () { U.form = null; done(ri.items.length + ' animateur' + (ri.items.length > 1 ? 's importés' : ' importé') + '.'); }, fail); }
@@ -16151,7 +16169,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   pageBo.appendChild(wrap);
   document.getElementById('page-rsv').insertAdjacentElement('afterend', pageBo);
 
-  // Page JDC : absente du menu, ouverte par 5 clics rapides sur « Instruction » (voir plus bas).
+  // Page JDC : absente du menu, ouverte par 5 clics rapides sur « Emploi » (voir plus bas).
   var pageJdc = document.createElement('div'); pageJdc.id = 'page-jdc'; pageJdc.hidden = true;
   var jdcWrap = document.createElement('div'); jdcWrap.className = 'wrap fr-container';
   jdcWrap.innerHTML = '<div class="bo-page-head"><h1 style="margin:0">Journée défense et citoyenneté (JDC)</h1><button type="button" class="btn secondary" id="jdc-close"><span class="fr-icon-arrow-left-line" aria-hidden="true"></span> Retour</button></div><div id="jdc-host" class="jdc-host"></div>';
@@ -16579,8 +16597,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   });
   var jdcReturn = 'welcome', insClicks = 0, insTimer;
   Array.prototype.forEach.call(document.querySelectorAll('#header-navigation .nav-soon'), function (a) {
-    if (!/^Instruction/.test(a.textContent.trim())) return;
-    a.addEventListener('click', function () { // « Instruction » reste non cliquable en apparence : cinq clics rapides ouvrent la page JDC
+    if (!/^Emploi/.test(a.textContent.trim())) return;
+    a.addEventListener('click', function () { // « Emploi » reste non cliquable en apparence : cinq clics rapides ouvrent la page JDC
       clearTimeout(insTimer); insTimer = setTimeout(function () { insClicks = 0; }, 1500);
       if (++insClicks < 5) return;
       insClicks = 0; jdcReturn = window.__page && window.__page !== 'jdc' ? window.__page : 'welcome';
