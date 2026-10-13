@@ -845,6 +845,8 @@
   .fr-header__search .fr-search-bar { position: relative; }
   .gs-results { left: auto; right: 0; width: min(34rem, 92vw); top: calc(100% + 6px); z-index: 1200; text-align: left; }
   @media (max-width: 991px) { .gs-results { left: 0; width: auto; } }
+  .nav-soon { gap: .5rem; }
+  .nav-soon .fr-badge { margin-left: .5rem; }
   .bo-hit { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: .5rem; }
   @media (max-width: 640px) { .bo-page-head { flex-wrap: wrap; } .bo-search { order: 3; flex-basis: 100%; max-width: none; } }
   .bo-sources summary, .bo-advanced summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 0.25rem 0; }
@@ -1264,6 +1266,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
                   </div>
                   <div class="fr-col-12 fr-col-lg-7">
                     <ul class="nav-rows">
+                      <li><a class="nav-row" href="#" target="_self" data-page="rsv-vemi">Convocations à la visite d’expertise médicale initiale (VEMI)<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="rsv-psy">Convocations aux tests psychométriques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                       <li><a class="nav-row" href="#" target="_self" data-page="pmg-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                     </ul>
                   </div>
@@ -1289,8 +1293,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
                   </div>
                   <div class="fr-col-12 fr-col-lg-7">
                     <ul class="nav-rows">
-                      <li><a class="nav-row" href="#" target="_self" data-page="res-ren">Demandes de renouvellement de contrat<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                       <li><a class="nav-row" href="#" target="_self" data-page="res-ave">Demandes d’avenants de contrat<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="res-ren">Demandes de renouvellement de contrat<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="rsv-vmp">Convocations à la visite médicale périodique (VMP)<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                       <li><a class="nav-row" href="#" target="_self" data-page="res-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                     </ul>
                   </div>
@@ -1298,7 +1303,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
               </div>
             </div>
           </li>
-          <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="rsv">Réservations</a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link nav-soon" role="link" aria-disabled="true" title="Bientôt disponible">Instruction <span class="fr-badge fr-badge--sm fr-badge--new fr-badge--no-icon">Prochainement</span></a></li>
+          <li class="fr-nav__item"><a class="fr-nav__link nav-soon" role="link" aria-disabled="true" title="Bientôt disponible">Emploi <span class="fr-badge fr-badge--sm fr-badge--new fr-badge--no-icon">Prochainement</span></a></li>
           <li class="fr-nav__item"><a class="fr-nav__link" href="#" target="_self" data-page="faq">FAQ</a></li>
         </ul>
       </nav>
@@ -1377,7 +1383,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     <section class="step">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Articles de la page Bienvenue</h2></div>
       <p class="lead">Affichés dans cet ordre sur la page Bienvenue (première page du widget). Titre et date sont obligatoires ; le texte se rédige en Markdown (le bouton <span class="fr-icon-eye-line" aria-hidden="true"></span> de l’éditeur en affiche l’aperçu) — le HTML est aussi accepté. L’article n’est diffusé qu’à partir de sa date (et jusqu’à sa fin de publication, si renseignée).</p>
-      <p class="hint">Renvoi vers une page ou un onglet : <code>[texte du lien](#go:cible)</code>. Cibles : <code>pmg</code> (Candidats), <code>res</code> (Réservistes), <code>res-ren</code> (Renouvellements), <code>res-ave</code> (Avenants), <code>res-stat</code> (Statistiques des réservistes), <code>pmg-stat</code> (Statistiques des candidats), <code>rsv</code> (Réservations), <code>faq</code> (FAQ), <code>rsv:vmp</code>, <code>rsv:vemi</code>, <code>rsv:psy</code> (onglets de Réservations), <code>welcome</code> (Bienvenue). Valable aussi dans le bloc d’introduction, ou en HTML : <code>&lt;a href="#go:res-stat"&gt;…&lt;/a&gt;</code>.</p>
+      <p class="hint">Renvoi vers une page ou un onglet : <code>[texte du lien](#go:cible)</code>. Cibles : <code>pmg</code> (Candidats), <code>res</code> (Réservistes), <code>res-ren</code> (Renouvellements), <code>res-ave</code> (Avenants), <code>res-stat</code> (Statistiques des réservistes), <code>pmg-stat</code> (Statistiques des candidats), <code>rsv-vmp</code> (Convocations à la visite médicale périodique (VMP)), <code>rsv-vemi</code> (Convocations à la visite d’expertise médicale initiale (VEMI)), <code>rsv-psy</code> (Convocations aux tests psychométriques), <code>faq</code> (FAQ), <code>welcome</code> (Bienvenue). Valable aussi dans le bloc d’introduction, ou en HTML : <code>&lt;a href="#go:res-stat"&gt;…&lt;/a&gt;</code>.</p>
       <div id="w-articles"></div>
       <div class="actions" style="margin-top:20px"><button class="btn secondary sm" id="w-btn-add" type="button"><span class="fr-icon-add-line" aria-hidden="true"></span> Ajouter un article</button></div>
     </section>
@@ -2374,7 +2380,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.20.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.22.0</span></p>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
 </footer>
 
@@ -6008,9 +6014,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // (ex. « À LA UNE · 29/09/2026 » ou « 29/09/2026 · NOUVEAUTÉ » — fr-badge met déjà le texte en gras et en majuscules).
   var STATUS_OPTS = [['', '— Aucun (gris)'], ['success', 'Succès'], ['warning', 'Avertissement'], ['error', 'Erreur'], ['info', 'Information'], ['new', 'Nouveauté']];
   // Pages du widget pouvant recevoir le point rouge clignotant d'un compteur (mêmes clés que le script de navigation en fin de fichier).
+  function normNavPage(p) { var l = { rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' }; return l[p] || p || ''; } // anciennes cibles « Réservations »
   var NAV_PAGE_OPTS = [
     ['', '— Aucune —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes RO1/RS/RC'], ['res-ren', 'Réservistes · Renouvellements'], ['res-ave', 'Réservistes · Avenants'],
-    ['res-stat', 'Réservistes · Statistiques'], ['rsv', 'Réservations'], ['rsv:vmp', 'Réservations · onglet VMP'], ['rsv:vemi', 'Réservations · onglet VEMI'], ['rsv:psy', 'Réservations · onglet Tests psy']
+    ['res-stat', 'Réservistes · Statistiques'], ['rsv-vmp', 'Réservistes · Convocations à la visite médicale périodique (VMP)'], ['rsv-vemi', 'Candidats · Convocations à la visite d’expertise médicale initiale (VEMI)'], ['rsv-psy', 'Candidats · Convocations aux tests psychométriques']
   ];
   // Élément DOM recevant le point pour chaque cible ci-dessus : les quatre pages du menu, plus les trois onglets internes de la page
   // Réservations (id stables, toujours dans le DOM même si la page n'est pas affichée pour l'instant).
@@ -6019,9 +6026,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     welcome: '#header-navigation [data-page="welcome"]',
     pmg: '#header-navigation [data-page="pmg"]', 'pmg-stat': '#header-navigation [data-page="pmg-stat"]', 'cat:pmg': '#header-navigation [aria-controls="menu-pmg"]',
     res: '#header-navigation [data-page="res"]', 'res-ren': '#header-navigation [data-page="res-ren"]', 'res-ave': '#header-navigation [data-page="res-ave"]', 'res-stat': '#header-navigation [data-page="res-stat"]', 'cat:res': '#header-navigation [aria-controls="menu-res"]',
-    rsv: '#header-navigation [data-page="rsv"]', 'rsv:vmp': '#x-tab-vmp', 'rsv:vemi': '#x-tab-vemi', 'rsv:psy': '#x-tab-psy'
+    'rsv-vmp': '#header-navigation [data-page="rsv-vmp"]', 'rsv-vemi': '#header-navigation [data-page="rsv-vemi"], #x-tab-vemi', 'rsv-psy': '#header-navigation [data-page="rsv-psy"], #x-tab-psy'
   };
-  var DOT_PARENTS = { pmg: 'cat:pmg', 'pmg-stat': 'cat:pmg', res: 'cat:res', 'res-ren': 'cat:res', 'res-ave': 'cat:res', 'res-stat': 'cat:res', 'rsv:vmp': 'rsv', 'rsv:vemi': 'rsv', 'rsv:psy': 'rsv' };
+  // Anciennes cibles de compteur (page « Réservations » et ses onglets), converties vers les nouvelles pages.
+  var DOT_LEGACY = { rsv: ['rsv-vmp', 'rsv-vemi', 'rsv-psy'], 'rsv:vmp': ['rsv-vmp'], 'rsv:vemi': ['rsv-vemi'], 'rsv:psy': ['rsv-psy'] };
+  var DOT_PARENTS = { pmg: 'cat:pmg', 'pmg-stat': 'cat:pmg', res: 'cat:res', 'res-ren': 'cat:res', 'res-ave': 'cat:res', 'res-stat': 'cat:res', 'rsv-vmp': 'cat:res', 'rsv-vemi': 'cat:pmg', 'rsv-psy': 'cat:pmg' };
   function dateTagHtml(a) {
     if (!a.date) return '';
     var parts = [a.before, fmtArtDate(a.date), a.after].filter(function (s) { return s && String(s).trim(); }).map(esc).join(' · ');
@@ -6044,8 +6053,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { q: "Que faire en cas de doublon ou de candidat « Déjà ESR » ?", a: "**Doublon** : les deux fiches s'ouvrent **côte à côte**, les différences surlignées. Pour chaque champ, vous choisissez l'information à conserver (« Reprendre cette valeur »), puis la fiche à garder (la plus récente ou la plus ancienne) :\n\n1. **Synchroniser les informations** : les champs vides de la fiche conservée sont complétés et les pièces jointes regroupées.\n2. **Supprimer la fiche en trop**, directement et avec confirmation.\n\n**Déjà ESR** : le candidat est déjà réserviste. Son rapprochement se fait par NID, à défaut par numéro d'ESR, puis par Nigend, et la fiche du réserviste s'affiche à côté (sans être modifiée). Si aucun réserviste ne correspond, le message indique ce qui a été cherché. Vous choisissez ensuite de **supprimer** ou de **conserver** la candidature.\n\nUne fiche **non marquée** dont un homonyme existe (même NID, ou même identité et même date de naissance) affiche une alerte avec le bouton **Comparer les deux fiches**." },
     { q: "Comment suivre l'ancienneté d'une candidature ?", a: "Le **pied de la fiche** du candidat indique : « Candidature créée le … (depuis N jours) », puis « Mise à jour le … par … ». La mention **depuis N jours** ne concerne que les dossiers **en cours** (ni admis, ni rejetés, ni abandonnés) et passe en **orange** au-delà d'un seuil réglé en back office (21 jours par défaut, dans les options avancées de Candidats, rubrique « Suivi des candidatures »).\n\nLa **date de création** se corrige d'un clic sur la date (sauf si la colonne est calculée par une formule dans Grist) ; la date de mise à jour n'est pas modifiable.\n\nLa page [Statistiques des candidats](#go:pmg-stat) affiche l'**ancienneté moyenne** des dossiers en cours." },
     { q: "Comment admettre un candidat comme réserviste ?", a: "Dans la fiche du candidat, onglet **Renseignements militaires**, cliquez sur l'icône **Admettre comme réserviste** placée à côté de **Contrat** (au survol, elle se déplie).\n\n- Le candidat est **ajouté à la table des réservistes** : les champs qui ont un équivalent (identité, date de naissance, coordonnées, NID, affectation, grade, corps, dates du contrat, validité de la VEMI reprise comme échéance VMP…) sont repris.\n- Sa **candidature est supprimée** de la table des candidats.\n\nLe **grade** (proposé : BRI), le **Nigend** et l'**ESR signé** sont **obligatoires** : ils se saisissent dans la fenêtre qui s'ouvre à droite de la fiche (le fichier se glisse-dépose ou se choisit d'un clic) ; cliquez enfin sur **Confirmer l'admission**. L'ESR signé est versé dans l'onglet **Documents** de la fiche du réserviste. Vérifiez ensuite la fiche du réserviste : les autres informations propres aux réservistes (échéances…) sont à compléter." },
-    { q: "Comment réserver un créneau, ou envoyer le lien de réservation ?", a: "Toutes les réservations (**VMP, VEMI, tests psychométriques**) sont réunies sur la page [Réservations](#go:rsv), dans trois onglets. Depuis cette page, bouton **Réserver**, vous pouvez :\n\n- **réserver un créneau pour un administré** : choisissez un créneau proposé (date, heure et antenne médicale se remplissent ; seuls les créneaux **libres** sont proposés ; s'il n'y en a plus, la fenêtre le précise), puis la personne, par nom ou par NID / Nigend ;\n- **envoyer le lien de réservation** : onglet « Inviter à réserver » (VMP, VEMI et tests psy), qui prépare le message d'invitation dans votre messagerie.\n\nPour les tests psy, l'heure se choisit parmi 10:00, 11:00 et 15:00. Si la personne a déjà une réservation, une confirmation est demandée et la nouvelle est marquée comme **doublon**. Les réservations se **modifient** et se **suppriment** depuis le tableau. L'icône de réservation de la fiche du candidat ou du réserviste ouvre la même fenêtre.\n\nL'icône d'engrenage **Gérer les créneaux** permet de créer, modifier ou supprimer les créneaux proposés (à l'unité, par lot ou par import .csv), avec des filtres par **état du créneau**, **mois** et **antenne** ; les créneaux passés sont masqués par défaut." },
-    { q: "Comment confirmer une réservation, au candidat et à l'antenne médicale ?", a: "Dans le tableau de la page [Réservations](#go:rsv), chaque ligne propose deux icônes d'envoi :\n\n1. **Envoyer la convocation** au candidat ou au réserviste : en un clic, un courriel type s'ouvre dans votre messagerie, il ne reste qu'à l'envoyer.\n2. **Envoyer la convocation à l'antenne médicale** (VMP et VEMI) : en un deuxième clic, les pièces nécessaires à l'antenne sont **générées et téléchargées**, et un courriel (validé avec le SSA) s'ouvre : glissez-y les pièces téléchargées puis envoyez.\n\nUne icône change d'apparence quand l'envoi a déjà été fait, et une icône grisée précise en infobulle ce qui manque (adresse e-mail, date, antenne…).\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
+    { q: "Comment réserver un créneau, ou envoyer le lien de réservation ?", a: "Les réservations **VEMI** et **tests psychométriques** se trouvent dans le menu **Candidats** ([Convocations à la visite d’expertise médicale initiale (VEMI)](#go:rsv-vemi), [Convocations aux tests psychométriques](#go:rsv-psy)), les réservations **VMP** dans le menu **Réservistes** ([Convocations à la visite médicale périodique (VMP)](#go:rsv-vmp)). Depuis ces pages, bouton **Réserver**, vous pouvez :\n\n- **réserver un créneau pour un administré** : choisissez un créneau proposé (date, heure et antenne médicale se remplissent ; seuls les créneaux **libres** sont proposés ; s'il n'y en a plus, la fenêtre le précise), puis la personne, par nom ou par NID / Nigend ;\n- **envoyer le lien de réservation** : onglet « Inviter à réserver » (VMP, VEMI et tests psy), qui prépare le message d'invitation dans votre messagerie.\n\nPour les tests psy, l'heure se choisit parmi 10:00, 11:00 et 15:00. Si la personne a déjà une réservation, une confirmation est demandée et la nouvelle est marquée comme **doublon**. Les réservations se **modifient** et se **suppriment** depuis le tableau. L'icône de réservation de la fiche du candidat ou du réserviste ouvre la même fenêtre.\n\nL'icône d'engrenage **Gérer les créneaux** permet de créer, modifier ou supprimer les créneaux proposés (à l'unité, par lot ou par import .csv), avec des filtres par **état du créneau**, **mois** et **antenne** ; les créneaux passés sont masqués par défaut." },
+    { q: "Comment confirmer une réservation, au candidat et à l'antenne médicale ?", a: "Dans le tableau des pages de réservation ([VMP](#go:rsv-vmp), [VEMI](#go:rsv-vemi), [tests psy](#go:rsv-psy)), chaque ligne propose deux icônes d'envoi :\n\n1. **Envoyer la convocation** au candidat ou au réserviste : en un clic, un courriel type s'ouvre dans votre messagerie, il ne reste qu'à l'envoyer.\n2. **Envoyer la convocation à l'antenne médicale** (VMP et VEMI) : en un deuxième clic, les pièces nécessaires à l'antenne sont **générées et téléchargées**, et un courriel (validé avec le SSA) s'ouvre : glissez-y les pièces téléchargées puis envoyez.\n\nUne icône change d'apparence quand l'envoi a déjà été fait, et une icône grisée précise en infobulle ce qui manque (adresse e-mail, date, antenne…).\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
     { q: "À quoi sert le point rouge clignotant dans le menu ?", a: "Le **voyant** signale qu'il y a des **actions à réaliser** sur une page ou un onglet : par exemple des demandes à traiter ou des réservations à confirmer. Il disparaît quand plus rien n'est en attente.\n\nLes voyants sont alimentés par des **compteurs** (nombre de lignes d'une table répondant à un critère) que l'équipe projet règle dans le back office." },
     { q: "Comment demander un renouvellement de contrat, un avenant, une mutation ou une suspension ?", a: "Ces démarches se font **directement depuis la fiche du réserviste** (onglet **Renseignements militaires**, groupe **Contrat**) : trois icônes ouvrent la demande de renouvellement, de mutation, ou de suspension / démission. L'icône prend la couleur de l'état de la dernière demande et propose **Éditer la demande** quand une demande est en cours. Depuis la liste, le survol d'un réserviste non employable (contrat dépassé) propose aussi **Demander le renouvellement du contrat**, ou affiche la demande déjà en cours avec son état.\n\nLes champs sont **pré-remplis** à partir de la fiche : il suffit de vérifier les informations, ou de les mettre à jour (cliquez sur une valeur pour la modifier), puis de valider. Tous les champs sont obligatoires, sauf les pièces jointes d'un renouvellement ; les pièces se déposent par glisser-déposer. Un message prévient s'il existe déjà une demande pour ce réserviste.\n\nLe suivi se fait dans les pages [Renouvellements](#go:res-ren) et [Avenants](#go:res-ave) (menu Réservistes) : on peut y **modifier** une demande (y compris son état) ou la **supprimer**." },
     { q: "Comment fonctionne la signature d'une demande ?", a: "Le circuit suit l'**état de la demande**, que l'on change dans la fenêtre de modification :\n\n1. **À traiter**, puis **En cours** : instruction de la demande.\n2. **À la signature RO1** : à ce passage, les données complétées dans la demande (coordonnées, profession, corps…) sont reportées sur la fiche du réserviste. L'icône « signer » remplace le crayon et ouvre la demande en lecture seule (seul l'état reste modifiable) avec, à droite, deux blocs : **Générer le contrat** (avec ou sans envoi par courriel : le PDF est téléchargé, à joindre au message) et **Déposer le contrat signé** par le réserviste.\n3. **À la signature DRJ** : le panneau de droite affiche le **contrat signé par le réserviste** (versé à l'étape précédente) avec un bouton **Imprimer le contrat signé**, qui passe en **vert** une fois imprimé (il reste réimprimable) ; le bloc **Verser document contre-signé** vient ensuite. Au versement, la demande passe à **Demande finalisée**, le document est ajouté aux Documents de la fiche et les informations du contrat sont mises à jour (nouvelles dates pour un renouvellement, nouvelle affectation pour une mutation).\n4. **Rejet DRJ** : demande refusée.\n\nLes modèles de contrat et de courriel se règlent dans le back office, rubrique « Documents et contrats »." },
@@ -6062,7 +6071,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // Tutoriel (visite guidée) : étapes par défaut, modifiables en back office (rubrique « Tutoriel »). Texte en Markdown ; page : clé de page à ouvrir ; target : sélecteur CSS de l'élément mis en lumière.
   var DEFAULT_TUTO = [
     { icon: "👋", title: "Bienvenue sur SERVIR", page: "welcome", target: "#btn-tuto", body: "**SERVIR** : Suivi de l’Emploi, du Recrutement, des Visites médicales et de l’Instruction dans la Réserve.\n\nEn quelques étapes, découvrez les principales fonctionnalités. Vous pouvez quitter à tout moment (Échap) et relancer cette visite avec ce bouton." },
-    { icon: "🧭", title: "Le menu principal", page: "", target: "#header-navigation", body: "Toutes les pages sont accessibles depuis ce menu :\n\n- **Bienvenue** : les actualités du service ;\n- **Candidats** et **Réservistes** : menus déroulants avec leurs pages liées ;\n- **Réservations** et **FAQ**." },
+    { icon: "🧭", title: "Le menu principal", page: "", target: "#header-navigation", body: "Toutes les pages sont accessibles depuis ce menu :\n\n- **Bienvenue** : les actualités du service ;\n- **Candidats** et **Réservistes** : menus déroulants avec leurs pages liées (statistiques, renouvellements, avenants, **réservations** VEMI et tests psy pour les candidats, VMP pour les réservistes) ;\n- **FAQ**." },
     { icon: "🪖", title: "Candidats : inscrire", page: "pmg", target: "#btn-create", body: "Inscrivez un candidat à une **PMG** ou à l’**acculturation** : seules quelques informations sont nécessaires (dont l’origine), le reste se complète ensuite sur la fiche.\n\nPour plusieurs candidats à la fois, importez un fichier **.csv** à partir du modèle fourni." },
     { icon: "📄", title: "La fiche du candidat", page: "pmg", target: "#modal-tabs", body: "Cliquez sur une ligne pour ouvrir la **fiche** : les informations sont regroupées en onglets (candidat, renseignements militaires, médico-statutaire, documents).\n\n- Cliquez sur une valeur pour la **modifier** ;\n- déposez les pièces dans l’onglet **Documents** (glisser-déposer) ;\n- en pied de fiche : la **date de création** (modifiable d’un clic) et, pour un dossier en cours, son **ancienneté** ;\n- en cas de **doublon**, les deux fiches s’ouvrent côte à côte pour les fusionner." },
     { icon: "🎯", title: "Candidats : repérer et agir", page: "pmg", target: "#rows tr", body: "Les lignes se colorent : **bleue** pour un dossier en attente de pièces, **orange** pour un doublon, **rouge** pour un « Déjà ESR ». Survolez une ligne pour lire le motif ; l’icône **i** près du compteur rappelle la légende.\n\nCochez des lignes pour **exporter**, **mettre à jour en bloc** ou **inviter à réserver** (VEMI ou tests psy, par message individuel ou envoi groupé en Cci). Dans la fiche d’un candidat admis, l’icône **Admettre comme réserviste** crée sa fiche réserviste (grade, Nigend et ESR signé demandés)." },
@@ -6071,14 +6080,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { icon: "📝", title: "Démarches sur le contrat", page: "res", target: "#r-mt-mil", body: "Depuis la fiche d’un réserviste, groupe **Contrat** : demandes de renouvellement, de mutation ou de suspension, avec des champs **pré-remplis**.\n\nLeur suivi se fait dans les pages **Renouvellements** et **Avenants** du menu Réservistes, jusqu’à la signature du contrat et sa finalisation." },
     { icon: "🔁", title: "Renouvellements et avenants", page: "res-ren", target: "#r-v-ren-q", body: "Les demandes de contrat se suivent ici (et dans **Avenants**). Cliquez dans le champ de recherche pour filtrer **par état** (les rejets et demandes finalisées sont masqués par défaut) et, pour les avenants, **par type**.\n\nQuand une demande passe **À la signature RO1**, générez le contrat et déposez-le signé ; à **À la signature DRJ**, imprimez le contrat signé par le réserviste (bouton vert une fois imprimé) puis versez le document contre-signé." },
     { icon: "⏱️", title: "« Dix-moi tout ! » : 10 minutes chrono", page: "res", target: "", body: "Dans le menu Réservistes, le bouton **Dix-moi tout !** lance une session de 10 minutes : une fiche aux informations majeures manquantes s’ouvre, puis une autre…\n\nChaque champ complété fait avancer le score. Un jeu pour mettre les données à jour !" },
-    { icon: "📅", title: "Réservations", page: "rsv", target: "#x-tabs", body: "Les rendez-vous **VMP**, **VEMI** et **tests psychométriques** sont réunis ici, un onglet chacun.\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic.\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
+    { icon: "📅", title: "Réservations", page: "rsv-vemi", target: "#x-tabs", body: "Les rendez-vous **VEMI** et **tests psychométriques** se gèrent depuis le menu **Candidats** (un onglet chacun) ; les rendez-vous **VMP**, depuis le menu **Réservistes** (« Convocations à la visite médicale périodique (VMP) »).\n\n- Réservez un créneau pour un administré ou envoyez-lui le lien de réservation ;\n- confirmez la réservation au candidat et à l’antenne médicale en un clic.\n\n**Rappel à l'ouverture.** Si un rendez-vous commence dans moins de 72 h sans avoir été confirmé, une fenêtre « Rendez-vous à confirmer » s'affiche à l'ouverture du widget : ses boutons envoient la confirmation au candidat ou à l'antenne médicale sans quitter la page." },
     { icon: "📊", title: "Statistiques", page: "res-stat", target: "#r-stats-pdf", body: "Les statistiques de la population se mettent à jour **en temps réel** : répartitions, échéances, demandes en cours. Les candidats ont aussi leur page (menu Candidats).\n\nUne réunion avec le commandement ? **Extraire en PDF** produit une note à la charte graphique de l’État." },
     { icon: "🔎", title: "Rechercher, filtrer, exporter", page: "res", target: "#r-q", body: "Cliquez dans le champ de **recherche** : le panneau propose des **affichages rapides** cumulables. Votre vue est **conservée pour la session**, et les **flèches** parcourent la liste (Entrée ouvre la fiche).\n\nLe bouton **Exporter (.csv)** exporte la vue affichée, ou seulement les lignes cochées, avec les colonnes de votre choix." },
     { icon: "❓", title: "FAQ et aide", page: "faq", target: "#w-faq-q", body: "La **FAQ** répond aux questions fréquentes.\n\nVous n’avez pas trouvé votre réponse ? Répondez « Non » sous la question : vous pourrez contacter l’équipe projet directement." },
     { icon: "🎨", title: "Affichage", page: "", target: ".fr-header__tools button[aria-controls=\"fr-theme-modal\"]", body: "Choisissez le thème **clair**, **sombre** ou celui de votre système avec « Paramètres d’affichage »." },
     { icon: "🎉", title: "C’est tout !", page: "welcome", target: "#btn-tuto", body: "Vous connaissez l’essentiel. Bonne découverte !\n\nCe tutoriel reste disponible à tout moment avec le bouton **Tutoriel**." }
   ];
-  var TUTO_PAGES = [['', '— Page courante —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes'], ['res-ren', 'Renouvellements'], ['res-ave', 'Avenants'], ['res-stat', 'Réservistes · Statistiques'], ['rsv', 'Réservations'], ['faq', 'FAQ']];
+  var TUTO_PAGES = [['', '— Page courante —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes'], ['res-ren', 'Renouvellements'], ['res-ave', 'Avenants'], ['res-stat', 'Réservistes · Statistiques'], ['rsv-vmp', 'Convocations à la visite médicale périodique (VMP)'], ['rsv-vemi', 'Convocations à la visite d’expertise médicale initiale (VEMI)'], ['rsv-psy', 'Convocations aux tests psychométriques'], ['faq', 'FAQ']];
   var TUTO_TARGETS = [['', 'Aucun (carte centrée)'], ['#btn-tuto', 'Bouton Tutoriel'], ['#header-navigation', 'Menu principal'], ['#btn-create', 'Candidats : Créer une candidature'], ['#rows tr', 'Candidats : première ligne de la liste'],
     ['#q', 'Candidats : recherche'], ['#btn-bulk', 'Candidats : Mettre à jour en bloc'], ['#btn-export', 'Candidats : Exporter (.csv)'], ['#r-q', 'Réservistes : recherche'], ['#r-rows tr', 'Réservistes : première ligne de la liste'], ['#r-btn-bulk', 'Réservistes : Mettre à jour en bloc'], ['#view-list .legend-btn', 'Candidats : légende des couleurs'], ['#r-view-list .legend-btn', 'Réservistes : légende des couleurs'], ['#r-btn-export', 'Réservistes : Exporter (.csv)'],
     ['#modal .modal-dialog', 'Candidats : fiche du candidat (modale)'], ['#modal-tabs', 'Candidats : onglets de la fiche'], ['#mt-info', 'Candidats : onglet Candidat'], ['#mt-mil', 'Candidats : onglet Renseignements militaires'], ['#mt-medico', 'Candidats : onglet Médico-statutaire'], ['#mt-docs', 'Candidats : onglet Documents'],
@@ -6094,7 +6103,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return {
       intro: (o && o.intro) || '',
       articles: arts ? arts.map(function (a) { return { title: a.title || '', date: a.date || '', endDate: a.endDate || '', status: a.status || '', before: a.before || '', after: a.after || '', body: a.body || '' }; }) : JSON.parse(JSON.stringify(DEFAULT_ARTICLES)),
-      counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '', page: c.page || '' }; }),
+      counters: ((o && o.counters) || []).map(function (c) { return { name: c.name || '', table: c.table || '', column: c.column || '', mode: c.mode || 'contains', value: c.value || '', page: normNavPage(c.page) }; }),
       faq: (o && Array.isArray(o.faq) ? o.faq : DEFAULT_FAQ).map(function (f) { return { q: f.q || '', a: f.a || '' }; }),
       sign: normSign(o && o.signataires),
       suivi: svTpl(o && o.suivi),
@@ -6131,9 +6140,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     cfg().counters.forEach(function (c) {
       if (!c.page) return;
       var n = state.counts[c.name];
-      if (typeof n === 'number' && n > 0) active[c.page] = true;
+      if (typeof n === 'number' && n > 0) (DOT_LEGACY[c.page] || [c.page]).forEach(function (k) { active[k] = true; });
     });
-    // Le point se répercute sur le niveau supérieur : onglet de Réservations → lien « Réservations » ; lien d'un menu déroulant → bouton de sa catégorie.
+    // Le point se répercute sur le niveau supérieur : lien d'un menu déroulant → bouton de sa catégorie.
     Object.keys(active).forEach(function (key) { if (DOT_PARENTS[key]) active[DOT_PARENTS[key]] = true; });
     Object.keys(DOT_TARGETS).forEach(function (key) {
       var els = document.querySelectorAll(DOT_TARGETS[key]);
@@ -11758,7 +11767,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function renderList() {
     var tab = state.tab, spec = SPECS[tab], d = state.data[tab], thead = $('thead'), rows = $('rows'), stateEl = $('state');
-    $('list-h1').textContent = 'Réservations ' + spec.title;
+    $('list-h1').textContent = { vmp: 'Convocations à la visite médicale périodique (VMP)', vemi: 'Convocations à la visite d’expertise médicale initiale (VEMI)', psy: 'Convocations aux tests psychométriques' }[tab] || 'Réservations ' + spec.title;
     if (!d) {
       thead.innerHTML = ''; rows.innerHTML = ''; $('count').textContent = '';
       stateEl.hidden = false; stateEl.innerHTML = '<strong>Table introuvable</strong>La table des réservations « ' + esc(spec.title) + ' » n’a pas été trouvée : vérifiez le récapitulatif des sources dans le back office.';
@@ -12146,7 +12155,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   $('tabs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-tab]'); if (!b) return;
     var k = b.getAttribute('data-tab'); showTab(k);
-    if (k !== 'admin') $('tab-admin').hidden = true;
+    if (k !== 'admin') { $('tab-admin').hidden = true; if (window.__markPage) window.__markPage('rsv-' + k); } // le menu suit l'onglet
   });
   var qTimer;
   $('q').addEventListener('input', function () { clearTimeout(qTimer); qTimer = setTimeout(renderList, 200); });
@@ -13283,7 +13292,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var b = e.target.closest('[data-soon]'); if (!b || b.disabled) return;
     var a = b.getAttribute('data-soon'), tab = b.getAttribute('data-tab');
     if (a === 'close') closeSoon();
-    else if (a === 'open') { closeSoon(); if (window.__showPage) window.__showPage('rsv'); showTab(tab); }
+    else if (a === 'open') { closeSoon(); if (window.__showPage) window.__showPage('rsv-' + tab); }
     else send(tab, a === 'service' ? 'service' : 'convocation', Number(b.getAttribute('data-id')));
   });
   $('soonmodal').addEventListener('keydown', function (e) {
@@ -13298,8 +13307,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
   /* ---------- Démarrage : les options du widget sont pilotées par la première page ---------- */
   window.RSV = {
-    setOptions: function (o) { state.opts = o || {}; if (window.__page === 'rsv' || !state.data.vmp) load(); },
+    setOptions: function (o) { state.opts = o || {}; if (/^rsv-/.test(window.__page || '') || !state.data.vmp) load(); },
     refresh: function () { return load(); },
+    // Page affichée depuis le menu : VMP (menu Réservistes) ou VEMI / tests psy (menu Candidats). Seuls les onglets de ce menu sont proposés.
+    showPage: function (p) {
+      var fam = p === 'rsv-vmp' ? ['vmp'] : ['vemi', 'psy'], want = p === 'rsv-vmp' ? 'vmp' : (p === 'rsv-psy' ? 'psy' : 'vemi');
+      ['vmp', 'vemi', 'psy'].forEach(function (t) { $('tab-' + t).hidden = fam.indexOf(t) === -1; });
+      $('tab-admin').hidden = true; $('tabs').hidden = fam.length < 2;
+      var h = $('list-h1'); h.className = fam.length < 2 ? 'fr-h3' : 'fr-sr-only'; h.style.marginBottom = fam.length < 2 ? '1rem' : '';
+      showTab(want); return load();
+    },
     openAdmin: function () { showTab('admin'); },              // back office unifié (déclenché depuis la page Candidats)
     closeAdmin: function () { showTab(state.tab || 'vmp'); },
     sharedMail: sharedMail,                                    // modèles de réservation/convocation par type, repris par la page Candidats
@@ -13518,11 +13535,13 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 })();
 // Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
-  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', rsv: 'page-rsv', faq: 'page-faq', bo: 'page-bo' };
-  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', rsv: 'Réservations', faq: 'Foire aux questions', bo: 'Back office' };
-  function show(p) {
+  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo' };
+  // Anciennes clés (liens #go:, étapes du tutoriel, page mémorisée) : « Réservations » est réparti entre les menus Réservistes (VMP) et Candidats (VEMI, tests psy).
+  var ALIAS = { rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' };
+  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office' };
+  // Page affichée : bouton du menu « courant », titre du document, page retrouvée à la réouverture (aussi appelée au changement d'onglet de Réservations).
+  function mark(p) {
     window.__page = p;
-    Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = k !== p; });
     Array.prototype.forEach.call(document.querySelectorAll('#header-navigation [data-page]'), function (a) {
       if (a.getAttribute('data-page') === p) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
@@ -13533,11 +13552,17 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     });
     document.title = titles[p];
     if (p !== 'bo') { try { localStorage.setItem('widgetPage', p); } catch (e) {} } // le back office n'est jamais la page retrouvée à la réouverture
+  }
+  window.__markPage = mark;
+  function show(p) {
+    p = ALIAS[p] || p;
+    Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = pages[k] !== pages[p]; });
+    mark(p);
     if (p === 'res' && window.RES) window.RES.refresh();
     if ((p === 'res-ren' || p === 'res-ave') && window.RES) window.RES.refreshView(p === 'res-ren' ? 'ren' : 'ave');
     if (p === 'res-stat' && window.RES) window.RES.refreshStats();
     if (p === 'pmg-stat' && window.RES) window.RES.refreshCandStats();
-    if (p === 'rsv' && window.RSV) window.RSV.refresh();
+    if (/^rsv-/.test(p) && window.RSV) window.RSV.showPage(p);
     if (window.__refreshActiveFilters) window.__refreshActiveFilters();
     window.scrollTo(0, 0);
   }
@@ -13551,16 +13576,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     try { var m =document.getElementById('modal-header-menu'); if (m && window.dsfr) window.dsfr(m).modal.conceal(); } catch (err) {} // referme le menu mobile
   });
   var saved = 'welcome'; try { saved = localStorage.getItem('widgetPage') || 'welcome'; } catch (e) {}
-  show(pages[saved] ? saved : 'welcome');
+  saved = ALIAS[saved] || saved; show(pages[saved] ? saved : 'welcome');
   window.__showPage = show; // utilisé par le back office unifié
   // Renvois internes (articles, introduction, tout contenu rédigé en Markdown/HTML) : lien de la forme href="#go:cible", où cible est
-  // une page (welcome, pmg, res, res-ren, res-ave, res-stat, rsv) ou un onglet de la page Réservations (rsv:vmp, rsv:vemi, rsv:psy).
-  var GO_TABS = { 'rsv:vmp': 'x-tab-vmp', 'rsv:vemi': 'x-tab-vemi', 'rsv:psy': 'x-tab-psy' };
+  // une page (welcome, pmg, pmg-stat, res, res-ren, res-ave, res-stat, rsv-vmp, rsv-vemi, rsv-psy, faq) ; les anciennes cibles rsv, rsv:vmp, rsv:vemi et rsv:psy restent reconnues.
   window.__go = function (target) {
-    var k = String(target || '').trim(), page = k.split(':')[0];
-    if (!pages[page] || page === 'bo') return false;
-    show(page);
-    var tab = GO_TABS[k] && document.getElementById(GO_TABS[k]); if (tab) tab.click();
+    var k = String(target || '').trim(); k = ALIAS[k] || k;
+    if (!pages[k] || k === 'bo') return false;
+    show(k);
     return true;
   };
   document.addEventListener('click', function (e) {
@@ -13603,7 +13626,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   var MODALS = [
     { re: /^#r-(modal|mt-)/, page: 'res', opener: '#r-rows tr', closer: '#r-modal-close', overlay: '#r-modal' },
     { re: /^#(modal|mt-)/, page: 'pmg', opener: '#rows tr', closer: '#modal-close', overlay: '#modal' },
-    { re: /^#x-rmodal/, page: 'rsv', opener: '#x-btn-book', closer: '#x-rmodal-close', overlay: '#x-rmodal' }
+    { re: /^#x-rmodal/, page: 'rsv-vemi', opener: '#x-btn-book', closer: '#x-rmodal-close', overlay: '#x-rmodal' }
   ];
   var opened = null; // modale ouverte par la visite
   function modalFor(sel) { sel = String(sel || '').trim(); for (var i = 0; i < MODALS.length; i++) if (MODALS[i].re.test(sel)) return MODALS[i]; return null; }
