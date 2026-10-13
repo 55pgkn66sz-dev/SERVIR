@@ -15061,3 +15061,232 @@ relabel() {
 </script>
 </body>
 </html>
+ic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
+      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
+      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+<script>
+/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
+(function () {
+  ['modal', 'r-modal'].forEach(function (id) {
+    var root = document.getElementById(id); if (!root) return;
+    var queued = false;
+    function relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+<script>
+/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
+(function () {
+  ['modal', 'r-modal'].forEach(function (id) {
+    var root = document.getElementById(id); if (!root) return;
+    var queued = false;
+    function relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+mise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+moveAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+ationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+oot.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
+(function () {
+  ['modal', 'r-modal'].forEach(function (id) {
+    var root = document.getElementById(id); if (!root) return;
+    var queued = false;
+    function relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+} else if (qEl.value) { qEl.value = ''; } }
+    });
+    document.getElementById('bo-q-btn').addEventListener('click', function () { render(); qEl.focus(); });
+    list.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    list.addEventListener('click', function (e) { var b = e.target.closest('[data-hit]'); if (b) go(Number(b.getAttribute('data-hit'))); });
+    document.addEventListener('click', function (e) { if (!boSearch.contains(e.target)) hide(); });
+  })();
+
+  var returnPage = 'pmg', hdrClicks = 0, hdrTimer, homeTimer;
+  document.querySelector('.fr-header').addEventListener('click', function (e) {
+    // Ni le bouton « Paramètres d'affichage », ni le menu de navigation (burger + liens + fermeture) ne comptent comme un clic sur l'en-tête.
+    if (e.target.closest('.fr-header__tools') || e.target.closest('#modal-header-menu') || e.target.closest('#btn-header-menu')) return;
+    clearTimeout(hdrTimer);
+    hdrTimer = setTimeout(function () { hdrClicks = 0; }, 1500);
+    hdrClicks++;
+    if (hdrClicks === 1) {
+      // Clic isolé : retour à la page Bienvenue, après un court délai pour laisser le temps à d'autres clics d'arriver
+      // (une rafale de 5 ouvre le back office à la place — voir plus bas).
+      homeTimer = setTimeout(function () { homeTimer = null; window.__showPage('welcome'); }, 350);
+    } else if (homeTimer) {
+      clearTimeout(homeTimer); homeTimer = null; // ce n'est plus un clic isolé
+    }
+    if (hdrClicks < 5) return;
+    hdrClicks = 0;
+    returnPage = window.__page || 'pmg';
+    if (window.WEL && window.WEL.openAdmin) window.WEL.openAdmin();
+    if (window.PMG && window.PMG.openAdmin) window.PMG.openAdmin();
+    if (window.RES && window.RES.openAdmin) window.RES.openAdmin();
+    if (window.RSV && window.RSV.openAdmin) window.RSV.openAdmin();
+    window.__showPage('bo');
+  });
+  document.getElementById('bo-close').addEventListener('click', function () {
+    if (window.WEL && window.WEL.closeAdmin) window.WEL.closeAdmin();
+    if (window.RES && window.RES.closeAdmin) window.RES.closeAdmin();
+    if (window.RSV && window.RSV.closeAdmin) window.RSV.closeAdmin();
+    window.__showPage(returnPage || 'pmg');
+  });
+})();
+</script>
+<script>
+/* Fiches Candidat / Réserviste : le titre de chaque icône d'action devient son libellé de dépliage (data-lbl) ; aria-label reste lu par les lecteurs d'écran, et l'infobulle native ne double plus le libellé. */
+(function () {
+  ['modal', 'r-modal'].forEach(function (id) {
+    var root = document.getElementById(id); if (!root) return;
+    var queued = false;
+    function relabel() {
+      queued = false;
+      Array.prototype.forEach.call(root.querySelectorAll('.icon-btn[title]'), function (b) {
+        var t = b.getAttribute('title'); if (!t) return;
+        if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', t);
+        b.removeAttribute('title');
+        /* icône indisponible (grisée) : le dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+ dépliage n'affiche que le nom de la démarche, sans les raisons (elles restent dans aria-label pour les lecteurs d'écran) */
+        b.setAttribute('data-lbl', b.disabled ? t.replace(/\s*\(.*$/, '').replace(/\s+—.*$/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
+/, '') : t);
+      });
+    }
+    new MutationObserver(function () { if (!queued) { queued = true; Promise.resolve().then(relabel); } }).observe(root, { childList: true, subtree: true });
+    relabel();
+  });
+})();
+</script>
+</body>
+</html>
