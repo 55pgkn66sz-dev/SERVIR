@@ -2031,7 +2031,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <div class="modal-header">
         <div style="min-width:0">
           <h2 class="modal-title" id="r-bmodal-title">Mettre à jour en bloc</h2>
-          <p class="modal-sub">Met à jour une échéance, ou le grade et le corps, de plusieurs réservistes à la fois — un Nigend par ligne.</p>
+          <p class="modal-sub">Met à jour une échéance, le grade et le corps ou la qualité judiciaire de plusieurs réservistes à la fois (un Nigend par ligne), ou les colonnes de votre choix depuis un fichier .csv ou Excel/Calc.</p>
         </div>
         <div class="modal-actions"><button class="round-btn" id="r-bmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
       </div>
@@ -2449,7 +2449,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.27.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.28.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -11069,6 +11069,211 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     });
     return { col: col, matched: matched, notFound: notFound };
   }
+
+  /* ----- Mise à jour en bloc depuis un fichier .csv ou Excel/Calc : identifiant (Nigend…) et colonnes reconnus automatiquement, choix de ce qui est mis à jour ----- */
+  function parseCsvText(text) {
+    text = String(text || ''); if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM éventuel
+    var firstLine = text.split(/\r\n|\r|\n/, 1)[0] || '';
+    var delim = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+    var rows = [], row = [], field = '', inQ = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (inQ) { if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; } else field += ch; }
+      else if (ch === '"') inQ = true;
+      else if (ch === delim) { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(field); field = ''; rows.push(row); row = []; }
+      else field += ch;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return String(x).trim() !== ''; }); });
+  }
+  function csvKey(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+  function csvP2(n) { return (n < 10 ? '0' : '') + n; }
+  // Synonymes courants des en-têtes, par nom de colonne (clés sans accents ni ponctuation).
+  var CSV_ALIASES = {
+    nigend: ['matricule', 'numigend', 'numeronigend', 'nnigend'], nid: ['numeroid', 'identifiant', 'numerodidentification'], email: ['mail', 'courriel', 'adresseemail', 'adressemail', 'emailpro'], mail: ['email', 'courriel', 'adresseemail', 'adressemail'],
+    nom: ['nomdefamille', 'nomusuel'], prenom: ['prenoms', 'prenomusuel'], affectation: ['groupement', 'gd', 'unite'], qualitejud: ['qualitejudiciaire', 'qualite', 'qj'], grade: ['gradeactuel'], corps: ['corpsdarmee'],
+    exptirpa: ['echeancetirpa', 'validitetirpa', 'tirpa', 'datetirpa'], exptirhk: ['echeancetirhk', 'validitetirhk', 'tirhk', 'datetirhk'], expvmp: ['echeancevmp', 'validitevmp', 'vmp', 'datevmp'], expcontrat: ['echeancecontrat', 'finducontrat', 'expirationducontrat', 'datefincontrat', 'finscontrat'],
+    codepostal: ['cp'], cp: ['codepostal'], telephone: ['tel', 'portable', 'mobile'], numerodetelephone: ['telephone', 'tel', 'portable', 'mobile']
+  };
+  function csvNames(col) { var o = {}; [col.label, displayLabel(col), col.id].forEach(function (n) { var k = csvKey(n); if (k) o[k] = true; }); return Object.keys(o); }
+  // Associe chaque en-tête du fichier à une colonne de la table : nom identique, puis synonyme, puis nom contenu dans l'en-tête (ou l'inverse). Une colonne n'est associée qu'une fois.
+  function csvAutoMap(headers, cols) {
+    var used = {}, res = headers.map(function () { return null; }), hk = headers.map(function (h) { return csvKey(String(h).replace(/\*/g, '')); });
+    function take(i, col) { res[i] = col; used[col.id] = true; }
+    hk.forEach(function (k, i) { if (!k || res[i]) return; var col = cols.filter(function (c) { return !used[c.id] && csvNames(c).indexOf(k) !== -1; })[0]; if (col) take(i, col); });
+    hk.forEach(function (k, i) { if (!k || res[i]) return; var col = cols.filter(function (c) { return !used[c.id] && csvNames(c).some(function (n) { return (CSV_ALIASES[n] || []).indexOf(k) !== -1; }); })[0]; if (col) take(i, col); });
+    hk.forEach(function (k, i) {
+      if (k.length < 4 || res[i]) return; var best = null, bl = 0;
+      cols.forEach(function (c) { if (used[c.id]) return; csvNames(c).forEach(function (n) { if (n.length >= 4 && n.length > bl && (k.indexOf(n) !== -1 || n.indexOf(k) !== -1)) { best = c; bl = n.length; } }); });
+      if (best) take(i, best);
+    });
+    return res;
+  }
+  function csvDateParts(s) {
+    var m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})(?:[ T]+(\d{1,2})[:hH](\d{2}))?/.exec(s), p;
+    if (m) p = { y: +m[3], mo: +m[2], d: +m[1], h: m[4] != null ? +m[4] : 0, mi: m[5] != null ? +m[5] : 0 };
+    else { m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T]+(\d{1,2})[:hH](\d{2}))?/.exec(s); if (!m) return null; p = { y: +m[1], mo: +m[2], d: +m[3], h: m[4] != null ? +m[4] : 0, mi: m[5] != null ? +m[5] : 0 }; }
+    if (p.mo < 1 || p.mo > 12 || p.d < 1 || p.d > 31 || new Date(Date.UTC(p.y, p.mo - 1, p.d)).getUTCMonth() !== p.mo - 1) return null;
+    return p;
+  }
+  // Valeur d'une cellule selon le type de la colonne : { value } ou { error }.
+  function csvParseValue(col, raw) {
+    var s = String(raw == null ? '' : raw).trim(), t = typeBase(col.type), lab = displayLabel(col);
+    if (t === 'Date' || t === 'DateTime') {
+      var p = csvDateParts(s); if (!p) return { error: 'date invalide (' + lab + ', format attendu JJ/MM/AAAA)' };
+      var iso = p.y + '-' + csvP2(p.mo) + '-' + csvP2(p.d) + (t === 'DateTime' ? 'T' + csvP2(p.h) + ':' + csvP2(p.mi) : ''), r = parseEdit(col, iso);
+      return r.error ? { error: lab + ' : ' + r.error } : { value: r.value };
+    }
+    if (t === 'Choice' && col.choices && col.choices.length) {
+      var match = col.choices.filter(function (o) { return norm(o) === norm(s); })[0];
+      return match ? { value: match } : { error: 'valeur invalide (' + lab + ') : choisir parmi ' + col.choices.join(', ') };
+    }
+    if (t === 'ChoiceList') {
+      var parts = s.split(/[;,|]/).map(function (x) { return x.trim(); }).filter(Boolean), out = [];
+      for (var i = 0; i < parts.length; i++) { var mt = (col.choices || []).filter(function (o) { return norm(o) === norm(parts[i]); })[0]; if (!mt) return { error: 'valeur invalide (' + lab + ') : ' + parts[i] }; out.push(mt); }
+      return { value: ['L'].concat(out) };
+    }
+    if (t === 'Bool') {
+      if (/^(oui|o|true|vrai|1|x|yes)$/i.test(s)) return { value: true };
+      if (/^(non|n|false|faux|0|no)$/i.test(s)) return { value: false };
+      return { error: 'valeur invalide (' + lab + ') : oui ou non attendu' };
+    }
+    if (t === 'Int' || t === 'Numeric') { var q = parseEdit(col, s); return q.error ? { error: lab + ' : ' + q.error } : { value: q.value }; }
+    return { value: s };
+  }
+  // Tableau d'association : en-tête du fichier, exemple de valeur, colonne reconnue (modifiable) ; cases « mettre à jour » facultatives.
+  function csvMapTableHtml(rows, map, cols, o) {
+    var sample = function (i) { for (var r = 1; r < Math.min(rows.length, 6); r++) { var v = String(rows[r][i] == null ? '' : rows[r][i]).trim(); if (v) return v; } return ''; };
+    return '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Colonnes du fichier et colonnes reconnues</caption><thead><tr>' + (o.use ? '<th scope="col">Mettre à jour</th>' : '') +
+      '<th scope="col">Colonne du fichier</th><th scope="col">Exemple</th><th scope="col">Colonne reconnue</th></tr></thead><tbody>' +
+      rows[0].map(function (h, i) {
+        var cur = map[i] || '', isKey = o.keyIdx === i;
+        return '<tr>' + (o.use ? '<td>' + (isKey ? '<span class="hint">Identifiant</span>' : '<input type="checkbox" data-' + o.pre + '-use="' + i + '"' + (o.use[i] ? ' checked' : '') + (cur ? '' : ' disabled') + ' aria-label="Mettre à jour la colonne ' + esc(h) + '">') + '</td>' : '') +
+          '<th scope="row">' + esc(String(h).replace(/\*/g, '').trim() || '(sans nom)') + '</th><td>' + (sample(i) ? esc(sample(i).slice(0, 40)) : '<span class="hint">—</span>') + '</td>' +
+          '<td><select class="select" data-' + o.pre + '-map="' + i + '" aria-label="Colonne reconnue pour ' + esc(h) + '"><option value="">— Ignorer —</option>' +
+          cols.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === cur ? ' selected' : '') + '>' + esc(displayLabel(c)) + (o.req && o.req.indexOf(c.id) !== -1 ? ' *' : '') + '</option>'; }).join('') + '</select></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  // Une colonne du tableau n'est associée qu'à un en-tête : choisir une colonne déjà prise la libère de l'autre.
+  function csvSetMap(map, i, id) { if (id) map.forEach(function (x, j) { if (j !== i && x === id) map[j] = ''; }); map[i] = id; }
+  function pickCsvFile(cb) {
+    var i = document.createElement('input');
+    i.type = 'file'; i.accept = window.__TABLE_ACCEPT;
+    i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
+    i.click();
+  }
+  function csvUpdTargets(c) {
+    var cols = state.colsByTable[c.table] || [], keys = ['Nigend', 'NID', 'Email'].map(function (l) { return findCol(c.table, l); }).filter(Boolean);
+    var out = cols.filter(isEditableCol); keys.forEach(function (k) { if (out.indexOf(k) === -1) out.push(k); });
+    return out;
+  }
+  // Identifiant par défaut : l'en-tête reconnu comme Nigend, à défaut NID ou Email.
+  function csvAutoKey(c, map) {
+    var order = ['Nigend', 'NID', 'Email'];
+    for (var i = 0; i < order.length; i++) { var col = findCol(c.table, order[i]); if (col) { var j = map.indexOf(col.id); if (j !== -1) return j; } }
+    return -1;
+  }
+  function csvPlan(c, b) {
+    var C = b.csv, targets = csvUpdTargets(c), byId = {}; targets.forEach(function (t) { byId[t.id] = t; });
+    var out = { keyCol: C.key >= 0 && C.map[C.key] ? byId[C.map[C.key]] || null : null, matched: [], notFound: [], errors: [], unchanged: 0, used: [] };
+    if (!out.keyCol) return out;
+    var index = {}; state.records.forEach(function (r) { var v = r.raw[out.keyCol.id], k = norm(String(v == null ? '' : v).trim()); if (k && !index[k]) index[k] = r; });
+    out.used = C.rows[0].map(function (h, i) { return i; }).filter(function (i) { var col = C.map[i] && byId[C.map[i]]; return i !== C.key && C.use[i] && col && isEditableCol(col); });
+    C.rows.slice(1).forEach(function (r, n) {
+      var line = n + 2, kv = String(r[C.key] == null ? '' : r[C.key]).trim(); if (!kv) return;
+      var rec = index[norm(kv)]; if (!rec) { out.notFound.push(kv); return; }
+      var fields = {}, err = null;
+      out.used.forEach(function (i) {
+        if (err) return; var raw = String(r[i] == null ? '' : r[i]).trim(); if (raw === '') return; // cellule vide : champ inchangé
+        var col = byId[C.map[i]], pv = csvParseValue(col, raw); if (pv.error) err = pv.error; else fields[col.id] = pv.value;
+      });
+      if (err) { out.errors.push('ligne ' + line + ' (' + kv + ') : ' + err); return; }
+      if (!Object.keys(fields).length) { out.unchanged++; return; }
+      out.matched.push({ line: line, key: kv, rec: rec, fields: fields });
+    });
+    return out;
+  }
+  function csvFormHtml(c, b) {
+    var C = b.csv;
+    if (!C) {
+      return '<section class="cf-section"><h3>Fichier .csv ou Excel/Calc</h3><p class="hint">Une ligne par réserviste, avec un identifiant (Nigend, NID ou Email) et les colonnes à mettre à jour. Les colonnes sont reconnues automatiquement, quel que soit leur ordre ou leur intitulé exact ; vous choisissez ensuite ce qui est mis à jour.</p>' +
+        '<div class="doc-drop" id="r-bcsv-drop" role="button" tabindex="0" aria-label="Déposer un fichier .csv, Excel ou Calc : glisser-déposer ou cliquer pour parcourir">' + ICON_UPLOAD + '<p><strong>Glissez-déposez un fichier .csv ou Excel/Calc ici</strong><br>ou cliquez pour parcourir vos fichiers</p></div></section>' +
+        '<div class="cf-actions"><button type="button" class="btn secondary" id="r-bf-cancel">Annuler</button></div>';
+    }
+    var targets = csvUpdTargets(c), P = csvPlan(c, b), nrows = C.rows.length - 1;
+    var keyOpts = C.rows[0].map(function (h, i) { var col = targets.filter(function (t) { return t.id === C.map[i]; })[0]; return '<option value="' + i + '"' + (i === C.key ? ' selected' : '') + '>' + esc(String(h).replace(/\*/g, '').trim() || '(sans nom)') + (col ? ' → ' + esc(displayLabel(col)) : '') + '</option>'; }).join('');
+    var nUp = P.used.length, ready = P.keyCol && P.matched.length && nUp;
+    return '<section class="cf-section"><h3>Fichier .csv ou Excel/Calc</h3><p class="hint"><strong>' + esc(C.name) + '</strong> · ' + nrows + ' ligne' + (nrows > 1 ? 's' : '') + '. <button type="button" class="btn secondary sm" id="r-bcsv-change">Changer de fichier</button></p></section>' +
+      '<section class="cf-section"><h3>Identifiant des réservistes</h3><div class="cf-field" style="max-width:32rem"><label for="r-bcsv-key">Colonne qui identifie chaque réserviste<span class="req" aria-hidden="true">*</span></label>' +
+      '<select class="select" id="r-bcsv-key" data-r-bcsv-key><option value="-1"' + (C.key < 0 ? ' selected' : '') + '>— Choisir —</option>' + keyOpts + '</select></div>' +
+      (P.keyCol ? '<p class="hint">' + P.matched.length + ' réserviste' + (P.matched.length > 1 ? 's trouvés' : ' trouvé') + ' sur ' + esc(displayLabel(P.keyCol)) + (P.notFound.length ? ' · ' + P.notFound.length + ' introuvable' + (P.notFound.length > 1 ? 's' : '') + ' : ' + esc(P.notFound.slice(0, 8).join(', ')) + (P.notFound.length > 8 ? '…' : '') : '') + '.</p>' : '<p class="hint">Choisissez la colonne du fichier qui contient le N° de candidature, le NID, le Nigend ou l’email.</p>') + '</section>' +
+      '<section class="cf-section"><h3>Que mettre à jour</h3><p class="hint">Cochez les colonnes à mettre à jour ; corrigez l’association si une colonne a été mal reconnue. Une cellule vide ne modifie pas le champ.</p>' +
+      csvMapTableHtml(C.rows, C.map, targets, { pre: 'bcsv', use: C.use, keyIdx: C.key }) + '</section>' +
+      (P.errors.length ? '<div class="cf-warn" role="alert"><p>' + P.errors.length + ' ligne' + (P.errors.length > 1 ? 's' : '') + ' ignorée' + (P.errors.length > 1 ? 's' : '') + ' : ' + esc(P.errors.slice(0, 5).join(' ; ')) + (P.errors.length > 5 ? '…' : '') + '</p></div>' : '') +
+      (b.error ? '<div class="doc-alert error" role="alert"><p>' + esc(b.error) + '</p></div>' : '') + (b.warn ? '<div class="cf-warn" role="alert"><p>' + esc(b.warn) + '</p></div>' : '') +
+      '<div class="cf-actions"><button type="submit" class="btn"' + (b.busy || !ready ? ' disabled' : '') + '>' + (b.busy ? 'Mise à jour…' : (b.confirm ? 'Mettre à jour quand même' : 'Mettre à jour' + (P.matched.length ? ' ' + P.matched.length + ' réserviste' + (P.matched.length > 1 ? 's' : '') : ''))) + '</button>' +
+      '<button type="button" class="btn secondary" id="r-bf-cancel"' + (b.busy ? ' disabled' : '') + '>Annuler</button></div>';
+  }
+  function csvLoadFile(file) {
+    var c = cfg(), b = state.bulk; if (!b) return;
+    var reader = {};
+    reader.onload = function () {
+      var rows = parseCsvText(String(reader.result || ''));
+      if (rows.length < 2) { b.error = rows.length ? 'Le fichier ne contient aucune ligne de données sous l’en-tête.' : 'Fichier vide ou illisible.'; renderBulkForm(); return; }
+      var map = csvAutoMap(rows[0], csvUpdTargets(c)).map(function (col) { return col ? col.id : ''; }), key = csvAutoKey(c, map);
+      b.csv = { name: file.name, rows: rows, map: map, key: key, use: map.map(function (id, i) { return !!id && i !== key; }) };
+      b.error = ''; b.warn = ''; b.confirm = false; b.result = null; renderBulkForm();
+    };
+    reader.onerror = function (e) { b.error = 'Lecture du fichier impossible' + (e && e.message ? ' : ' + e.message : '') + '.'; renderBulkForm(); };
+    window.__readTableText(file).then(function (t) { reader.result = t; reader.onload(); }, reader.onerror);
+  }
+  function submitCsvUpdate() {
+    var c = cfg(), b = state.bulk; if (!b || !b.csv || b.busy) return;
+    var P = csvPlan(c, b);
+    if (!P.keyCol) { b.error = 'Choisissez la colonne qui identifie les réservistes.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (!P.used.length) { b.error = 'Cochez au moins une colonne à mettre à jour.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if (!P.matched.length) { b.error = 'Aucun réserviste du fichier ne correspond (ou aucune cellule à mettre à jour).'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
+    if ((P.notFound.length || P.errors.length) && !b.confirm) {
+      b.warn = [P.notFound.length ? P.notFound.length + ' identifiant' + (P.notFound.length > 1 ? 's introuvables' : ' introuvable') : '', P.errors.length ? P.errors.length + ' ligne(s) avec une valeur invalide' : ''].filter(Boolean).join(' · ') + '. ' +
+        P.matched.length + ' réserviste' + (P.matched.length > 1 ? 's seront mis à jour' : ' sera mis à jour') + '.';
+      b.confirm = true; b.error = ''; renderBulkForm(); return;
+    }
+    b.busy = true; b.error = ''; renderBulkForm();
+    var failed = [], okList = [], names = P.used.map(function (i) { var col = csvUpdTargets(c).filter(function (t) { return t.id === b.csv.map[i]; })[0]; return col ? displayLabel(col) : ''; }).filter(Boolean);
+    P.matched.reduce(function (p, it) {
+      var raw = it.rec.raw, pre = missingColsOf(raw, c).filter(function (col) { return col.id in it.fields; }).length, wasIncomplete = sprintActive() && sprintMissing(raw, c).length > 0; // état avant la mise à jour
+      return p.then(function () { return api.updateFields(c.table, raw.id, it.fields).then(function () { okList.push({ id: raw.id, newFields: pre, wasIncomplete: wasIncomplete }); }).catch(function (e) { failed.push({ nigend: it.key, error: (e && e.message) || String(e) }); }); });
+    }, Promise.resolve()).then(function () {
+      b.busy = false; b.confirm = false; b.warn = '';
+      b.result = { ok: P.matched.length - failed.length, failed: failed, summary: names.join(', ') };
+      return load();
+    }).then(function () { sprintBulkDone(okList, c); if (!$('bmodal').hidden) renderBulkForm(); });
+  }
+  $('bmodal-form').addEventListener('click', function (e) {
+    var b = state.bulk; if (!b || b.mode !== 'csv' || b.busy) return;
+    if (e.target.closest('#r-bcsv-drop')) { pickCsvFile(csvLoadFile); return; }
+    if (e.target.id === 'r-bcsv-change') { b.csv = null; b.error = ''; b.warn = ''; b.confirm = false; renderBulkForm(); }
+  });
+  $('bmodal-form').addEventListener('keydown', function (e) {
+    var b = state.bulk; if (!b || b.mode !== 'csv' || b.busy) return;
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('#r-bcsv-drop')) { e.preventDefault(); pickCsvFile(csvLoadFile); }
+  });
+  ['dragenter', 'dragover'].forEach(function (t) { $('bmodal-form').addEventListener(t, function (e) { var z = e.target.closest && e.target.closest('#r-bcsv-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } }); });
+  $('bmodal-form').addEventListener('dragleave', function (e) { var z = e.target.closest && e.target.closest('#r-bcsv-drop'); if (z) z.classList.remove('is-over'); });
+  $('bmodal-form').addEventListener('drop', function (e) {
+    var z = e.target.closest && e.target.closest('#r-bcsv-drop'); if (!z) return; e.preventDefault(); z.classList.remove('is-over');
+    if (state.bulk && !state.bulk.busy && e.dataTransfer && e.dataTransfer.files.length) csvLoadFile(e.dataTransfer.files[0]);
+  });
+  $('bmodal-form').addEventListener('change', function (e) {
+    var b = state.bulk, el = e.target; if (!b || b.mode !== 'csv' || !b.csv || !el.getAttribute) return;
+    var m = el.getAttribute('data-bcsv-map'), u = el.getAttribute('data-bcsv-use');
+    if (el.hasAttribute('data-r-bcsv-key')) { var old = b.csv.key; b.csv.key = Number(el.value); if (old >= 0 && b.csv.map[old]) b.csv.use[old] = true; if (b.csv.key >= 0) b.csv.use[b.csv.key] = false; }
+    else if (m != null) { var i = Number(m); csvSetMap(b.csv.map, i, el.value); b.csv.map.forEach(function (id, j) { if (!id) b.csv.use[j] = false; }); if (el.value && i !== b.csv.key) b.csv.use[i] = true; if (i === b.csv.key && !el.value) b.csv.key = -1; }
+    else if (u != null) b.csv.use[Number(u)] = el.checked;
+    else return;
+    b.error = ''; b.warn = ''; b.confirm = false; renderBulkForm();
+  });
   function openBulk(fromSel) { // true : la liste des Nigend est préremplie avec les réservistes sélectionnés
     var c = cfg(); if (!c.table || (state.read && state.read.error)) return;
     state.bulk = { mode: 'ech', ech: 'tir', date: '', dateA: '', dateB: '', grade: '', corps: '', qual: '', nigends: '', busy: false, error: '', warn: '', confirm: false, result: null };
@@ -11090,6 +11295,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function renderBulkForm() {
     var c = cfg(), b = state.bulk; if (!b) return;
+    $('bmodal').querySelector('.modal-column').classList.toggle('is-wide', b.mode === 'csv' && !b.result); // tableau d'association : fenêtre élargie
     if (b.result) {
       $('bmodal-form').innerHTML =
         '<div class="doc-alert ' + (b.result.failed.length ? 'error' : 'success') + '" role="' + (b.result.failed.length ? 'alert' : 'status') + '"><p>' +
@@ -11106,7 +11312,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="ech"' + (b.mode === 'ech' ? ' checked' : '') + '> Échéance (Tir, VMP ou Contrat)</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="grade"' + (b.mode === 'grade' ? ' checked' : '') + '> Grade et Corps</label>' +
       '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="qual"' + (b.mode === 'qual' ? ' checked' : '') + '> Qualité judiciaire</label>' +
+      '<label class="bulk-mode"><input type="radio" name="bulk-mode" value="csv"' + (b.mode === 'csv' ? ' checked' : '') + '> Mettre à jour depuis un fichier .csv ou Excel/Calc</label>' +
       '</div></section>';
+    if (b.mode === 'csv') { html += csvFormHtml(c, b); $('bmodal-form').innerHTML = html; return; }
 
     if (b.mode === 'ech') {
       var def = BULK_ECH[b.ech], multi = def.dates.length > 1;
@@ -11145,6 +11353,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function submitBulk() {
     var c = cfg(), b = state.bulk; if (!b || b.busy) return;
+    if (b.mode === 'csv') { submitCsvUpdate(); return; }
     var list = parseNigendList(b.nigends);
     if (!list.length) { b.error = 'Indiquez au moins un Nigend.'; b.warn = ''; b.confirm = false; renderBulkForm(); return; }
 
