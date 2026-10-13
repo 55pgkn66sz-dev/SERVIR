@@ -2548,7 +2548,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.50.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.53.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -7614,7 +7614,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { key: 'hab', title: 'Médico-statutaire', cardTitle: 'Médico-statutaire',
       defaults: ['Exp. VMP'] },
     { key: 'qual', title: 'Qualifications', cardTitle: 'Qualifications',
-      defaults: ['Exp. tir PA', 'Exp. tir HK', 'Qualité jud'] }
+      defaults: ['Exp. tir PA', 'Exp. tir HK', 'Qualité jud'] },
+    { key: 'comm', title: 'Commentaires', cardTitle: 'Commentaires',
+      defaults: ['Commentaires'] }
   ];
   // Blocs par onglet : seules les colonnes de ces blocs (et cochées dans le back office) sont affichées dans la fiche.
   var TAB_GROUPS = {
@@ -7632,6 +7634,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     qual: [
       { title: 'Tir', rows: [['Exp. tir PA', 'Exp. tir HK']] },
       { title: 'Qualité judiciaire', rows: [['Qualité jud']] }
+    ],
+    comm: [
+      { title: 'Commentaires', rows: [['Commentaires']] }
     ]
   };
   // Libellés affichés dans la fiche quand ils diffèrent de ceux de la table.
@@ -7684,7 +7689,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     ['Grade', 'Choice'], ['Corps', 'Text'], ['Civilité', 'Choice'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Nigend', 'Text'], ['Type R', 'Choice'], ['Affectation', 'Choice'], ['NID', 'Text'], ['DDN', 'Date'], ['Age', 'Int'],
     ['Ville', 'Text'], ['Dpt', 'Text'], ['Affectation précise', 'Text'], ['Adresse email', 'Text'], ['Téléphone', 'Text'], ['Mouvement', 'Choice'], ['Exp. contrat', 'Date'], ['Exp. VMP', 'Date'],
     ['Exp. tir PA', 'Date'], ['Exp. tir HK', 'Date'], ['Qualité jud', 'Choice'], ['N° ESR', 'Text'], ['Date contrat', 'Date'], ['Date de début contrat', 'Date'],
-    ['Etat CIAPT', 'Choice'], ['Etat CIAPT HK', 'Choice'], ['Etat VMP', 'Choice'], ['Etat contrat', 'Choice'], ['Adresse', 'Text'], ['PJ', 'Attachments'], ['Nom PJ', 'Text'],
+    ['Etat CIAPT', 'Choice'], ['Etat CIAPT HK', 'Choice'], ['Etat VMP', 'Choice'], ['Etat contrat', 'Choice'], ['Adresse', 'Text'], ['Commentaires', 'Text'], ['PJ', 'Attachments'], ['Nom PJ', 'Text'],
     ['Créé le', 'DateTime:Europe/Paris'], ['Créé par', 'Text'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ];
   var DEMO_CHOICES = {
@@ -7835,9 +7840,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   /* ---------- Configuration effective ---------- */
   function colMeta(table, id) { var l = state.colsByTable[table] || []; for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
   var FC_MEMO = {}; // recherche de colonne mémorisée (la normalisation des libellés coûtait cher, répétée pour chaque ligne)
+  // Garde-fou : si la liste des colonnes d'une table se retrouve transitoirement incomplète (relecture des métadonnées), les colonnes déjà résolues le restent
+  // (sinon les sections de la fiche disparaissent jusqu'au rechargement de la page).
+  var COLS_MAX = {}, FC_GOOD = {}, TABS_GOOD = {};
+  function colsIncomplete(table) { var n = (state.colsByTable[table] || []).length; if (n > (COLS_MAX[table] || 0)) COLS_MAX[table] = n; return n < (COLS_MAX[table] || 0) * 0.8; }
   function findCol(table, key) {
     var l = state.colsByTable[table] || [], m = FC_MEMO[table]; if (!m || m.src !== l) m = FC_MEMO[table] = { src: l, v: {} };
-    var ck = String(key); if (ck in m.v) return m.v[ck]; return (m.v[ck] = findColRaw(table, key));
+    var ck = String(key); if (ck in m.v) return m.v[ck];
+    var r = findColRaw(table, key), gk = table + '|' + ck;
+    if (r) FC_GOOD[gk] = r; else if (FC_GOOD[gk] && colsIncomplete(table)) return FC_GOOD[gk]; // liste incomplète : résultat non mémorisé
+    return (m.v[ck] = r);
   }
   function findColRaw(table, key) {
     var k = norm(key), l = state.colsByTable[table] || [];
@@ -7847,7 +7859,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     for (var j = 0; j < al.length; j++) for (var m = 0; m < l.length; m++) if (norm(l[m].label) === al[j] || norm(l[m].id) === al[j]) return l[m];
     return null;
   }
-  var COL_ALIASES = { 'code postal': ['cp', 'codepostal', 'code_postal', 'code postal (cp)', 'cp (code postal)'], 'cp': ['code postal', 'codepostal', 'code_postal'] };
+  var COL_ALIASES = { 'code postal': ['cp', 'codepostal', 'code_postal', 'code postal (cp)', 'cp (code postal)'], 'cp': ['code postal', 'codepostal', 'code_postal'], 'commentaires': ['commentaire', 'remarques', 'remarque'] };
   function displayLabel(col) { if (col.__dl === undefined) col.__dl = DISPLAY_LABELS[norm(col.label)] || DISPLAY_LABELS[norm(col.id)] || col.label; return col.__dl; }
   function colLabel(c) { return c.label + ' (' + c.id + ') · ' + typeFr(c.type); }
   function defaultTabs(table) {
@@ -7864,13 +7876,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   // Colonnes de la fiche : une configuration enregistrée avant la version 2 des colonnes par défaut (ex. ajout de « Adresse ») ne les connaît pas :
   // celles qui existent dans la table et ne sont rattachées à aucun onglet sont ajoutées à leur onglet d'origine. Enregistrée en version 2, la configuration est respectée telle quelle.
-  var TABS_VERSION = 2;
+  var TABS_VERSION = 3; // 3 : onglet « Commentaires »
   function withNewDefaults(table, tabs, ver) {
     if (ver >= TABS_VERSION) return tabs;
     var used = {}; TAB_DEFS.forEach(function (t) { (tabs[t.key] || []).forEach(function (id) { used[id] = true; }); });
     TAB_DEFS.forEach(function (t) {
       t.defaults.forEach(function (l) { var c = findCol(table, l); if (c && !used[c.id]) { used[c.id] = true; (tabs[t.key] = tabs[t.key] || []).push(c.id); } });
-      var order = (state.colsByTable[table] || []).map(function (c) { return c.id; }); tabs[t.key].sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
+      var order = (state.colsByTable[table] || []).map(function (c) { return c.id; }); tabs[t.key] = (tabs[t.key] || []).sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
     });
     return tabs;
   }
@@ -7884,6 +7896,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var o = ro(), table = o.table || state.detected || '';
     var tabs = o.tabs ? withNewDefaults(table, normalizeTabs(table, o.tabs), o.tabsV || 0) : defaultTabs(table);
     if (!TAB_DEFS.some(function (t) { return (tabs[t.key] || []).length; })) tabs = defaultTabs(table); // configuration enregistrée vide : colonnes par défaut
+    var tg = table + '|' + JSON.stringify(o.tabs || null) + '|' + (o.tabsV || 0), tn = TAB_DEFS.reduce(function (n, t) { return n + (tabs[t.key] || []).length; }, 0); // même configuration mais bien moins de colonnes qu'avant : relecture incomplète, on garde la dernière bonne
+    if (TABS_GOOD[tg] && tn < TABS_GOOD[tg].n && colsIncomplete(table)) tabs = JSON.parse(JSON.stringify(TABS_GOOD[tg].tabs)); else TABS_GOOD[tg] = { n: tn, tabs: JSON.parse(JSON.stringify(tabs)) };
     Object.keys(state.extraTabs || {}).forEach(function (k) { // colonnes rattachées en cours de session (« Dix-moi tout ! »)
       var cur = tabs[k] || []; tabs[k] = cur.concat(state.extraTabs[k].filter(function (id) { return cur.indexOf(id) === -1; }));
     });
@@ -11781,9 +11795,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     refreshView: refreshView, // pages « Renouvellements » / « Avenants » (key : 'ren' ou 'ave')
     table: function () { return cfg().table; }, // table des réservistes (utilisée par la page Réservations pour « Réserver »)
     // Réservistes proposés à la page JDC (ajout d'un animateur) : Nigend, grade, nom, prénom, mail, téléphone, affectation.
+    // Affectations possibles : choix de la colonne « Affectation » de la table des réservistes, complétés par les valeurs présentes.
+    affChoices: function () {
+      var c = cfg(), col = findCol(c.table, 'Affectation'), set = {};
+      (col && col.choices || []).forEach(function (v) { set[v] = true; });
+      if (col) state.records.forEach(function (r) { valuesOfCol(r, col).forEach(function (v) { if (v) set[v] = true; }); });
+      return Object.keys(set);
+    },
     jdcPeople: function () {
       var c = cfg(), g = function (names) { for (var i = 0; i < names.length; i++) { var col = findCol(c.table, names[i]); if (col) return col; } return null; };
-      var cN = g(['Nigend']), cG = g(['Grade']), cNom = g(['NOM', 'Nom']), cP = g(['Prénom', 'Prenom']), cM = g(['Mail', 'Email', 'Courriel']), cT = g(['Tél', 'Téléphone', 'Numéro de téléphone']), cA = g(['Affectation']);
+      var cN = g(['Nigend']), cG = g(['Grade']), cNom = g(['NOM', 'Nom']), cP = g(['Prénom', 'Prenom']), cM = g(['Adresse email', 'Adresse mail', 'Email', 'Mail', 'Courriel', 'E-mail', 'Mél']), cT = g(['Tél', 'Téléphone', 'Numéro de téléphone']), cA = g(['Affectation']);
       function v(raw, col) { var x = col ? raw[col.id] : ''; return x == null ? '' : String(x).trim(); }
       return state.records.map(function (r) { return { nigend: v(r.raw, cN), grade: v(r.raw, cG), nom: v(r.raw, cNom).toUpperCase(), prenom: v(r.raw, cP), mail: v(r.raw, cM), tel: v(r.raw, cT), aff: v(r.raw, cA) }; }).filter(function (p) { return p.nigend && p.nom; });
     },
@@ -14465,6 +14486,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     des: { name: 'JDC_Designations', re: /jdc.*design/, cols: { bes: ['besoin'], anim: ['animateur'], statut: ['statut'], dd: ['date designation'], dc: ['date convocation', 'informe le', 'date information'], comm: ['commentaire'] } }
   };
   var S = { cfg: normCfg(null), T: {}, loaded: false, loading: null, error: '', sites: [], anim: [], bes: [], dis: [], des: [], bBy: {}, aBy: {}, sBy: {}, dm: {} };
+  function woChoices(wo) { try { var o = JSON.parse(wo || '{}'); return Array.isArray(o.choices) ? o.choices : null; } catch (e) { return null; } } // choix d'une colonne « Choix »
   function pickCol(all, names) { var n = names.map(loose); return all.filter(function (c) { return n.indexOf(loose(c.label)) !== -1 || n.indexOf(loose(c.id)) !== -1; })[0] || null; }
   function colsFor(def, all) { var o = {}; Object.keys(def.cols).forEach(function (k) { o[k] = pickCol(all, def.cols[k]); }); return o; }
   function colMeta(id, label, type, ref) { return { id: id, label: label, type: type || 'Text', ref: ref || '' }; }
@@ -14511,7 +14533,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         Object.keys(TDEF).forEach(function (k) {
           var name = names.filter(function (x) { return TDEF[k].re.test(loose(x)); })[0]; if (!name) { if (!TDEF[k].opt) missing.push(TDEF[k].name); return; }
           var tid = T.id[T.tableId.indexOf(name)], all = [];
-          for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) all.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], ref: /^Ref(List)?:/.test(C.type[i]) ? C.type[i].split(':')[1] : '' });
+          for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) all.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], ref: /^Ref(List)?:/.test(C.type[i]) ? C.type[i].split(':')[1] : '', choices: woChoices(C.widgetOptions && C.widgetOptions[i]) });
           out[k] = { name: name, cols: colsFor(TDEF[k], all), rows: [] };
         });
         if (missing.length) throw new Error('table(s) introuvable(s) dans ce document : ' + missing.join(', ') + '. Importez les fichiers .csv fournis.');
@@ -14777,8 +14799,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
   function dlgSpec() {
     if (U.dlg) return U.dlg;
-    var f = U.form; if (!f || !/^addres(batch)?$/.test(f.kind)) return null;
-    var modes = f.picked ? '' : '<div class="jdc-seg" role="group" aria-label="Mode d’ajout" style="margin:0 0 1rem">' + [['one', 'Un réserviste', f.kind === 'addres'], ['batch', 'Plusieurs réservistes (en lot)', f.kind === 'addresbatch']].map(function (m) { return '<button type="button" class="btn ' + (m[2] ? '' : 'secondary ') + 'sm" data-j="resmode" data-v="' + m[0] + '" aria-pressed="' + m[2] + '">' + m[1] + '</button>'; }).join('') + '</div>';
+    var f = U.form; if (!f || !/^addres(batch|man)?$/.test(f.kind)) return null;
+    var modes = f.picked || f.kind === 'addresman' ? '' : '<div class="jdc-seg" role="group" aria-label="Mode d’ajout" style="margin:0 0 1rem">' + [['one', 'Un réserviste', f.kind === 'addres'], ['batch', 'Plusieurs réservistes (en lot)', f.kind === 'addresbatch']].map(function (m) { return '<button type="button" class="btn ' + (m[2] ? '' : 'secondary ') + 'sm" data-j="resmode" data-v="' + m[0] + '" aria-pressed="' + m[2] + '">' + m[1] + '</button>'; }).join('') + '</div>';
     return { title: 'Ajouter des animateurs réservistes', html: '<div style="padding:0 .25rem 1rem">' + modes + (f.kind === 'addresbatch' ? formResBatch() : formAnim()) + '</div>' };
   }
   function renderDlg() {
@@ -14799,7 +14821,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var q = loose(U.q), ym = todayIso().slice(0, 7), yr = todayIso().slice(0, 4);
     var list = S.anim.filter(function (a) { return !q || loose(name(a) + ' ' + a.nigend + ' ' + a.aff).indexOf(q) !== -1; }).sort(function (a, b) { return name(a).localeCompare(name(b), 'fr'); });
     var html = '<div class="toolbar"><div class="tb-field tb-search"><label for="jdc-q">Rechercher un militaire</label><input class="input" type="search" id="jdc-q" data-j="q" placeholder="Nom, Nigend, affectation…" value="' + esc(U.q) + '"></div>' +
-      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">' + btn('addres', 'Ajouter un réserviste', '', 'btn') + btn('addnon', 'Ajouter un militaire actif', '', 'btn') + btn('impanim', 'Importer des animateurs (.csv, Excel, Calc)', '', 'btn secondary') + (S.anim.some(function (a) { return a.statut === 'Réserviste'; }) ? btn('resync', 'Mettre à jour depuis les réservistes', '', 'btn secondary') : '') + '</div></div>';
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">' + btn('addres', 'Ajouter un réserviste', '', 'btn') + btn('addnon', 'Ajouter un militaire actif', '', 'btn') + btn('impanim', 'Importer des animateurs (.csv, Excel, Calc)', '', 'btn secondary') + (S.anim.length ? btn('bulkmax', 'Maximum par mois en lot', '', 'btn secondary') : '') + (S.anim.some(function (a) { return a.statut === 'Réserviste'; }) ? btn('resync', 'Mettre à jour depuis les réservistes', '', 'btn secondary') : '') + '</div></div>';
     if (U.form && /^(addnon|editanim)$/.test(U.form.kind)) html += formAnim();
     else if (U.form && U.form.kind === 'impanim') html += formImpAnim();
     html += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Militaires habilités à animer des JDC</caption><thead><tr><th scope="col">Militaire</th><th scope="col">Statut</th><th scope="col">Affectation</th><th scope="col">Max / mois</th><th scope="col">Ce mois</th><th scope="col">Année</th><th scope="col">Habilité jusqu’au</th><th scope="col">En service</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
@@ -14811,6 +14833,25 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     return html;
   }
 
+  /* ----- Maximum de désignations par mois : mise à jour en lot (affectation + statut) ----- */
+  function bulkMaxTargets(m) { return S.anim.filter(function (a) { return (!m.aff || loose(a.aff) === loose(m.aff)) && (m.st === 'all' || (m.st === 'res') === (a.statut === 'Réserviste')); }); }
+  function openBulkMax(keep) {
+    var m = U.mx = keep && U.mx ? U.mx : { aff: '', st: 'all', max: '' }, affs = uniq(((S.T.anim.cols.aff && S.T.anim.cols.aff.choices) || []).concat(window.RES && window.RES.affChoices ? window.RES.affChoices() : [], S.anim.map(function (a) { return a.aff; })).filter(Boolean)).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+    var n = bulkMaxTargets(m).length;
+    U.dlg = { title: 'Maximum de désignations par mois (en lot)', kind: 'bulkmax', html: '<div style="padding:0 .25rem 1rem"><div class="cf-grid">' +
+      '<div class="cf-field"><label for="jmx-a">Affectation</label><select class="select" id="jmx-a" data-j="mxaff"><option value="">Toutes les affectations</option>' + affs.map(function (a) { return '<option' + (a === m.aff ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="cf-field"><label for="jmx-s">Statut</label><select class="select" id="jmx-s" data-j="mxst">' + [['all', 'Réservistes et actifs'], ['res', 'Réservistes'], ['act', 'Actifs (non réservistes)']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === m.st ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="cf-field"><label for="jmx-v">Maximum par mois</label><input class="input" type="number" min="0" id="jmx-v" data-j="mxval" value="' + esc(m.max) + '" placeholder="vide = illimité"></div></div>' +
+      '<p><strong>' + n + '</strong> animateur' + (n > 1 ? 's' : '') + ' concerné' + (n > 1 ? 's' : '') + '. Le maximum actuel de chacun sera remplacé.</p>' +
+      '<div class="cf-actions">' + btn('bulkmaxok', 'Appliquer', n ? '' : ' disabled', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
+    render();
+  }
+  function bulkMaxOk() {
+    var m = U.mx, v = String((R.querySelector('#jmx-v') || {}).value || '').trim(), t = bulkMaxTargets(m);
+    if (v !== '' && (isNaN(Number(v)) || Number(v) < 0)) { U.dlg = null; setMsg('error', 'Le maximum par mois doit être un nombre positif (vide = illimité).'); return render(); }
+    if (!t.length) { U.dlg = null; return render(); }
+    U.dlg = null; updMany('anim', t.map(function (a) { return { id: a.id, obj: { max: v === '' ? null : Number(v) } }; })).then(function () { done('Maximum par mois ' + (v === '' ? 'supprimé (illimité)' : 'fixé à ' + v) + ' pour ' + t.length + ' animateur' + (t.length > 1 ? 's' : '') + (m.aff ? ' (' + m.aff + ')' : '') + '.'); }, fail);
+  }
   /* ----- Ajout d'animateurs en lot : réservistes cochés dans la liste, ou import d'un fichier ----- */
   function peopleAvail() { var have = {}; S.anim.forEach(function (x) { have[loose(x.nigend)] = 1; }); return (window.RES && window.RES.jdcPeople ? window.RES.jdcPeople() : []).filter(function (p) { return !have[loose(p.nigend)]; }); }
   function batchFiltered(f) { var qq = loose(f.q || ''); return peopleAvail().filter(function (p) { return !qq || loose(p.nom + ' ' + p.prenom + ' ' + p.nigend + ' ' + p.aff + ' ' + p.grade).indexOf(qq) !== -1; }); }
@@ -14879,19 +14920,19 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     writeMany('anim', objs).then(function () { U.form = null; done(objs.length + ' réserviste' + (objs.length > 1 ? 's ajoutés' : ' ajouté') + ' à la liste des animateurs' + (objs.some(function (o) { return !o.email; }) ? ' (certains sans adresse mail)' : '') + '.'); }, fail);
   }
   function formAnim() {
-    var f = U.form, a = f.data || {}, pre = f.kind === 'addres', ed = f.kind === 'editanim';
+    var f = U.form, a = f.data || {}, pre = f.kind === 'addres', man = f.kind === 'addresman', ed = f.kind === 'editanim';
     function fld(id, label, v, type, ph, ro) { return '<div class="cf-field"><label for="jf-' + id + '">' + label + '</label><input class="input" type="' + (type || 'text') + '" id="jf-' + id + '" data-jf="' + id + '" value="' + esc(v == null ? '' : v) + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + (ro ? ' readonly' : '') + '></div>'; }
     if (pre && !f.picked) {
       var people = (window.RES && window.RES.jdcPeople ? window.RES.jdcPeople() : []), have = {}; S.anim.forEach(function (x) { have[loose(x.nigend)] = 1; });
       var qq = loose(f.q || ''), res = people.filter(function (p) { return !have[loose(p.nigend)] && (!qq || loose(p.nom + ' ' + p.prenom + ' ' + p.nigend).indexOf(qq) !== -1); }).slice(0, 15);
       return '<section class="cf-section"><h3>Ajouter un réserviste</h3><div class="cf-field" style="max-width:28rem"><label for="jf-pq">Rechercher dans les réservistes</label><input class="input" type="search" id="jf-pq" data-j="pq" value="' + esc(f.q || '') + '" placeholder="Nom, prénom ou Nigend"></div>' +
         (people.length ? '<ul class="jdc-pick">' + (res.length ? res.map(function (p) { return '<li><span>' + esc([p.grade, p.nom, p.prenom].filter(Boolean).join(' ')) + ' <span class="hint">· ' + esc(p.nigend) + (p.aff ? ' · ' + esc(p.aff) : '') + '</span></span>' + btn('pickres', 'Ajouter', ' data-nig="' + esc(p.nigend) + '"') + '</li>'; }).join('') : '<li class="hint">Aucun réserviste ne correspond (ou tous sont déjà dans la liste).</li>') + '</ul>' : '<p class="hint">La liste des réservistes n’est pas disponible.</p>') +
-        '<div class="cf-actions">' + btn('formx', 'Annuler') + '</div></section>';
+        '<div class="cf-actions">' + btn('manualres', 'Réserviste introuvable ? Le saisir manuellement') + btn('formx', 'Annuler') + '</div></section>';
     }
-    return '<section class="cf-section"><h3>' + (ed ? 'Modifier un animateur' : pre ? 'Réserviste à ajouter' : 'Ajouter un militaire actif') + '</h3><div class="cf-grid">' +
+    return '<section class="cf-section"><h3>' + (ed ? 'Modifier un animateur' : man ? 'Réserviste saisi manuellement' : pre ? 'Réserviste à ajouter' : 'Ajouter un militaire actif') + '</h3>' + (man ? '<p class="hint">Ce réserviste ne figure pas dans la table Réservistes : ses informations ne seront pas mises à jour automatiquement.</p>' : '') + '<div class="cf-grid">' +
       fld('nigend', 'Nigend*', a.nigend, 'text', '', ed || pre) + fld('grade', 'Grade', a.grade, 'text', 'ex. MDC', pre) + fld('nom', 'Nom*', a.nom, 'text', '', pre) + fld('prenom', 'Prénom*', a.prenom, 'text', '', pre) + fld('email', 'Adresse email*', a.email, 'email', 'adresse de contact (pas nécessairement professionnelle)') + fld('tel', 'Téléphone', a.tel) + fld('aff', 'Affectation', a.aff, 'text', 'ex. GD 38') +
       fld('max', 'Maximum de désignations par mois', a.max == null ? '' : a.max, 'number', 'vide = illimité') + fld('hab', 'Habilité jusqu’au', a.hab, 'date') + fld('comm', 'Commentaire', a.comm) + '</div>' +
-      '<div class="cf-actions">' + btn('saveanim', ed ? 'Enregistrer' : 'Ajouter', '', 'btn') + btn('formx', 'Annuler') + '</div></section>';
+      '<div class="cf-actions">' + btn('saveanim', ed ? 'Enregistrer' : 'Ajouter', '', 'btn') + (man ? btn('addres', 'Retour à la recherche') : '') + btn('formx', 'Annuler') + '</div></section>';
   }
 
   /* ----- Besoins et sites ----- */
@@ -15130,7 +15171,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var mx = String(v.max || '').trim(); if (mx !== '' && (isNaN(Number(mx)) || Number(mx) < 0)) { setMsg('error', 'Le maximum par mois doit être un nombre positif (vide = illimité).'); return render(); }
     var obj = { nigend: nig, grade: String(v.grade || '').trim().toUpperCase(), nom: String(v.nom || '').trim().toUpperCase(), prenom: String(v.prenom || '').trim(), email: mail.toLowerCase(), tel: String(v.tel || '').trim(), aff: String(v.aff || '').trim(), max: mx === '' ? null : Number(mx), hab: v.hab || '', comm: String(v.comm || '').trim() };
     if (f.kind === 'editanim') { write('update', 'anim', f.id, obj).then(function () { U.form = null; done('Animateur mis à jour.'); }, fail); return; }
-    obj.statut = f.kind === 'addres' ? 'Réserviste' : 'Actif'; obj.res = f.kind === 'addres' ? nig : ''; obj.actif = true;
+    var isRes = f.kind === 'addres' || f.kind === 'addresman'; obj.statut = isRes ? 'Réserviste' : 'Actif'; obj.res = isRes ? nig : ''; obj.actif = true;
     write('create', 'anim', null, obj).then(function () { U.form = null; done(name(obj) + ' ajouté à la liste des animateurs.'); }, fail);
   }
   function saveBes() {
@@ -15158,10 +15199,13 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var obj = { site: nm, adresse: v.adresse || '', cp: v.cp || '', ville: v.ville || '', contact: v.contact || '', tel: v.tel || '', aff: v.aff || '', actif: v.actif !== '0' };
     write(f.kind === 'editsite' ? 'update' : 'create', 'sites', f.id, obj).then(function () { U.form = null; done('Site enregistré.'); }, fail);
   }
+  var assigning = {}; // désignations en cours d'écriture (clic double ou répété : une seule désignation)
   function assign(bId, aId) {
-    var b = S.bBy[bId], a = S.aBy[aId]; if (!b || !a) return;
+    var b = S.bBy[bId], a = S.aBy[aId], key = bId + '|' + aId; if (!b || !a || assigning[key]) return;
+    if (assigned(b).some(function (d) { return d.animId === aId && activeDes(d); })) { setMsg('error', name(a) + ' est déjà désigné pour cette date.'); return render(); }
     var bl = blockers(a, b); if (bl.length) { setMsg('error', name(a) + ' : ' + bl.join(', ') + '.'); return render(); }
-    write('create', 'des', null, { bes: bref(b), anim: aref(a), statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }).then(function () { setMsg('', ''); render(); }, fail);
+    assigning[key] = true;
+    write('create', 'des', null, { bes: bref(b), anim: aref(a), statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }).then(function () { delete assigning[key]; setMsg('', ''); render(); }, function (e) { delete assigning[key]; fail(e); });
   }
   // Volontaires pour le créneau d'une désignation retirée : animateurs actifs qui ont déclaré être disponibles (date + site), classés selon les règles de priorité.
   function volunteersFor(d) {
@@ -15214,7 +15258,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     render();
   }
   function proposeOk() {
-    var items = U.dlg.items; U.dlg = null; render();
+    var items = (U.dlg.items || []).filter(function (it) { var bb = S.bBy[it.besId]; return bb && !assigned(bb).some(function (d) { return d.animId === it.animId && activeDes(d); }); }); U.dlg = null; render(); // pas de doublon si la désignation existe déjà
+    if (!items.length) return;
     items.reduce(function (p, it) { return p.then(function () { return write('create', 'des', null, { bes: bref(S.bBy[it.besId]), anim: aref(S.aBy[it.animId]), statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }); }); }, Promise.resolve()).then(function () { done(items.length + ' désignation' + (items.length > 1 ? 's enregistrées' : ' enregistrée') + '.'); }, fail);
   }
 
@@ -15457,12 +15502,19 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'resmode') { var fo = U.form; U.form = { kind: b.getAttribute('data-v') === 'batch' ? 'addresbatch' : 'addres', q: fo.q || '', sel: fo.sel || {}, max: fo.max || '' }; return render(); }
     if (j === 'reload') { S.loading = null; return loadAll().then(render); }
     if (j === 'formx') { U.form = null; return render(); }
+    if (j === 'manualres') {
+      if (!window.confirm('Ce réserviste ne figure pas dans la table Réservistes.\n\nConfirmez-vous le saisir manuellement ? Ses informations devront être renseignées à la main.')) return;
+      var q0 = String((U.form && U.form.q) || '').trim(), isNig = /\d/.test(q0);
+      U.form = { kind: 'addresman', data: { nigend: isNig ? q0 : '', nom: !isNig ? q0.toUpperCase() : '' } }; return render();
+    }
     if (j === 'addres') { U.form = { kind: 'addres', q: '', sel: {}, max: '' }; return render(); }
     if (j === 'pickres') { var p = (window.RES && window.RES.jdcPeople ? window.RES.jdcPeople() : []).filter(function (x) { return loose(x.nigend) === loose(b.getAttribute('data-nig')); })[0]; if (p) U.form = { kind: 'addres', picked: true, data: { nigend: p.nigend, grade: p.grade, nom: p.nom, prenom: p.prenom, email: p.mail, tel: p.tel, aff: p.aff } }; return render(); }
     if (j === 'selall') { batchFiltered(U.form).forEach(function (p) { U.form.sel[p.nigend] = true; }); return render(); }
     if (j === 'selnone') { U.form.sel = {}; return render(); }
     if (j === 'savebatch') return saveBatch();
     if (j === 'impanim') { U.form = { kind: 'impanim', res: null }; return render(); }
+    if (j === 'bulkmax') return openBulkMax(false);
+    if (j === 'bulkmaxok') return bulkMaxOk();
     if (j === 'resync') return syncFromRes();
     if (j === 'syncopen') { S.syncing = false; return syncOpen().then(function (ch) { var i = S.syncInfo || {}; setMsg(S.syncErr ? 'error' : 'success', S.syncErr ? 'Mise à jour impossible : ' + S.syncErr : (ch ? 'Liste du formulaire mise à jour : ' + i.added + ' date(s) ajoutée(s), ' + i.removed + ' retirée(s).' : 'La liste du formulaire est déjà à jour.')); render(); }); }
     if (j === 'pickanim') return pickAnimFile();
@@ -15482,7 +15534,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'delbes') { var bx = S.bBy[id], n = assigned(bx).length; if (n && !window.confirm('Ce besoin a ' + n + ' désignation(s) : elles seront aussi supprimées. Continuer ?')) return; if (!n && !window.confirm('Supprimer ce besoin ?')) return; return assigned(bx).reduce(function (pp, d) { return pp.then(function () { return write('destroy', 'des', d.id); }); }, Promise.resolve()).then(function () { return write('destroy', 'bes', id); }).then(function () { done('Besoin supprimé.'); }, fail); }
     if (j === 'savebes') return saveBes();
     if (j === 'impbes') { var i = document.createElement('input'); i.type = 'file'; i.accept = window.__TABLE_ACCEPT || '.csv'; i.onchange = function () { if (i.files && i.files[0]) importBes(i.files[0]); }; return i.click(); }
-    if (j === 'assign') return assign(Number(b.getAttribute('data-bes')), Number(b.getAttribute('data-anim')));
+    if (j === 'assign') { b.disabled = true; return assign(Number(b.getAttribute('data-bes')), Number(b.getAttribute('data-anim'))); }
     if (j === 'cancel') { var d = S.des.filter(function (x) { return x.id === id; })[0]; if (!d) return; if (!d.dc) return write('destroy', 'des', id).then(render, fail); return openCancel(d); }
     if (j === 'delrow') return write('destroy', 'des', id).then(render, fail);
     if (j === 'cancelok') return cancelOk();
@@ -15519,6 +15571,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       if (/^\d{4}$/.test(yy) && (mm || key !== 'bmonth')) U[key] = yy + '-' + (mm || '01'); else if (!mm) U[key] = '';
       if (key === 'month') U.week = ''; return render();
     }
+    if (j === 'mxaff' || j === 'mxst') { U.mx.aff = j === 'mxaff' ? t.value : U.mx.aff; U.mx.st = j === 'mxst' ? t.value : U.mx.st; U.mx.max = (R.querySelector('#jmx-v') || {}).value || ''; return openBulkMax(true); }
     if (j === 'relper') { U.relM = t.value; U.relD = (R.querySelector('#ji-d') || {}).value || ''; return openRelance(); }
     if (j === 'psite') { U.psite = t.value; return render(); }
     if (j === 'bmonth') { U.bmonth = t.value; return render(); }
