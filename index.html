@@ -2590,7 +2590,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.4</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -7222,9 +7222,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var SV = {
     hd: {
       grp: 'helpdesk', title: 'Demandes Helpdesk', word: 'demande', tableRe: /helpdesk/, doneLabel: 'Traité', doneTitle: 'Marquer la demande comme traitée',
-      cols: { nigend: ['nigend'], who: ['demandeur'], aff: ['affectation'], type: ['type'], module: ['module'], msg: ['demande', 'message'], email: ['email', 'mail', 'courriel', 'e mail'], pj: ['pj'], done: ['traite', 'traitee', 'statut', 'etat', 'etat demande', 'etat de la demande'], created: ['cree le', 'creee le'], doneAt: ['traite le'] },
+      cols: { nigend: ['nigend'], who: ['demandeur'], aff: ['affectation'], type: ['type'], module: ['module'], msg: ['demande', 'message'], email: ['email', 'mail', 'courriel', 'e mail'], pj: ['pj'], comment: ['commentaires', 'commentaire'], done: ['traite', 'traitee', 'statut', 'etat', 'etat demande', 'etat de la demande'], created: ['cree le', 'creee le'], doneAt: ['traite le'] },
       vars: ['DEMANDEUR', 'NIGEND', 'AFFECTATION', 'TYPE', 'MODULE', 'DEMANDE', 'DATE_DEMANDE', 'DATE_TRAITEMENT', 'DATE_DU_JOUR'],
-      hint: 'Le tableau relit la table Helpdesk (colonnes Nigend, Demandeur, Affectation, Type, Module, Demande, Email, PJ, Traité, Créé le, Traité le). Cliquez sur une ligne pour voir la demande et les coordonnées du demandeur.'
+      hint: 'Le tableau relit la table Helpdesk (colonnes Nigend, Demandeur, Affectation, Type, Module, Demande, Email, PJ, Traité, Commentaires, Créé le, Traité le). Cliquez sur une ligne pour voir la demande et les coordonnées du demandeur.'
     },
     ac: {
       grp: 'acces', title: 'Gestion des accès', word: 'demande d’accès', tableRe: /gestion.*acces/, doneLabel: 'Droits ouverts', doneTitle: 'Marquer les droits comme ouverts',
@@ -7274,8 +7274,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function svDemo(k) {
     var now = Math.floor(Date.now() / 86400000) * 86400, c = function (id, t, ch) { return { id: id, label: id, type: t || 'Text', formula: false, choices: ch || null }; };
     if (k === 'hd') {
-      var all = [c('Nigend'), c('Demandeur'), c('Affectation'), c('Type'), c('Module'), c('Demande'), c('Email'), c('PJ', 'Attachments'), c('Traité', 'Choice', ['Traitée', 'En attente', 'Nouvelle demande']), c('Créé le', 'DateTime:Europe/Paris'), c('Traité le', 'DateTime:Europe/Paris')];
-      var R = function (id, nig, who, aff, type, mod, msg, mail, done, cr, dn) { return { id: id, Nigend: nig, Demandeur: who, Affectation: aff, Type: type, Module: mod, Demande: msg, Email: mail, PJ: null, 'Traité': done, 'Créé le': now - cr * 86400 + 32400, 'Traité le': dn == null ? null : now - dn * 86400 + 50000 }; };
+      var all = [c('Nigend'), c('Demandeur'), c('Affectation'), c('Type'), c('Module'), c('Demande'), c('Email'), c('PJ', 'Attachments'), c('Traité', 'Choice', ['Traitée', 'En attente', 'Nouvelle demande']), c('Créé le', 'DateTime:Europe/Paris'), c('Traité le', 'DateTime:Europe/Paris'), c('Commentaires')];
+      var R = function (id, nig, who, aff, type, mod, msg, mail, done, cr, dn) { return { id: id, Nigend: nig, Demandeur: who, Affectation: aff, Type: type, Module: mod, Demande: msg, Email: mail, PJ: null, Commentaires: '', 'Traité': done, 'Créé le': now - cr * 86400 + 32400, 'Traité le': dn == null ? null : now - dn * 86400 + 50000 }; };
       return { meta: svMeta(k, 'Helpdesk', all), rows: [
         R(1, '2019-1120', 'PERRIN Camille', 'GD 38', 'Signaler une anomalie', 'Réservistes RO1/RS/RC', 'Impossible d’ouvrir la fiche d’un réserviste : la fenêtre se fige après le clic sur « Modifier ».', 'camille.perrin@example.fr', 'En attente', 6),
         R(2, '2011-0384', 'LEFÈVRE Antoine', 'GD 74', 'Poser une question', 'Réservations', 'Comment annuler un créneau VMP déjà confirmé à l’antenne médicale ?', 'antoine.lefevre@example.fr', 'Nouvelle demande', 1),
@@ -7481,6 +7481,20 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       demandeur = svEdKv('Grade', 'grade') + svEdKv('Nom', 'nom') + svEdKv('Prénom', 'prenom') + svEdKv('Nigend', 'nigend') + svEdKv('Courriel', 'email');
     }
     if (k === 'hd') demandeur += svKv('Courriel', ok ? '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>' : '<span class="hint" style="font-weight:400">' + (mail ? esc(mail) + ' (adresse invalide)' : 'non renseigné') + '</span>');
+    // Commentaires (colonne « Commentaires » de la table Helpdesk) : zone de saisie modifiable, enregistrée par le bouton.
+    var comm = '';
+    if (k === 'hd') {
+      var cc = svCol(k, 'comment'), stored = svStr(svRaw(k, row, 'comment'));
+      if (!cc) comm = '<section class="cf-section"><h3>Commentaires</h3><p class="hint">Colonne « Commentaires » introuvable dans la table Helpdesk : ajoutez-la (type Texte) pour pouvoir annoter les demandes.</p></section>';
+      else if (cc.formula) comm = '<section class="cf-section"><h3>Commentaires</h3><p class="sv-msg">' + (esc(stored) || '<span class="sv-empty">Aucun commentaire</span>') + '</p></section>';
+      else {
+        var cur = M.cdraft != null ? M.cdraft : stored;
+        comm = '<section class="cf-section"><h3>Commentaires</h3><div class="cf-field"><label class="fr-sr-only" for="w-sv-comm">Commentaires</label>' +
+          '<textarea class="textarea" rows="4" id="w-sv-comm" placeholder="Notes sur le traitement de cette demande (visibles par les gestionnaires)…"' + (M.csaving ? ' disabled' : '') + '>' + esc(cur) + '</textarea></div>' +
+          '<div class="cf-actions" style="align-items:center"><button type="button" class="btn secondary sm" id="w-sv-commbtn" data-svm="savecomm"' + (M.csaving || cur === stored ? ' disabled' : '') + '>' + (M.csaving ? 'Enregistrement…' : 'Enregistrer le commentaire') + '</button>' +
+          (M.cmsg ? '<span class="hint" role="status">' + esc(M.cmsg) + '</span>' : '') + '</div></section>';
+      }
+    }
     var act = done
       ? '<button type="button" class="btn" data-svm="mail"' + (ok ? '' : ' disabled title="Aucune adresse mail valide"') + '>Écrire au demandeur</button> <button type="button" class="btn secondary" data-svm="reopen"' + (M.busy ? ' disabled' : '') + '>Remettre en attente</button>'
       : '<label class="x-check" style="margin:0 1rem 0 0"><input type="checkbox" id="w-sv-mailck"' + (M.mail && ok ? ' checked' : '') + (ok ? '' : ' disabled') + '> Préparer le courriel au demandeur</label>' +
@@ -7488,7 +7502,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         '<button type="button" class="btn" data-svm="done"' + (M.busy ? ' disabled' : '') + '>' + (M.busy ? 'Enregistrement…' : esc(k === 'hd' ? 'Marquer comme traitée' : 'Marquer les droits comme ouverts')) + '</button>';
     $('svmodal-body').innerHTML = (M.err ? '<div class="doc-alert error" role="alert" style="margin:0 0 1rem"><p>' + esc(M.err) + '</p></div>' : '') +
       '<section class="cf-section"><h3>' + (k === 'hd' ? 'La demande' : 'La demande d’accès') + '</h3><dl class="sv-dl">' + demande + '</dl></section>' +
-      '<section class="cf-section"><h3>Le demandeur</h3><dl class="sv-dl">' + demandeur + '</dl></section>' +
+      '<section class="cf-section"><h3>Le demandeur</h3><dl class="sv-dl">' + demandeur + '</dl></section>' + comm +
       '<div class="cf-actions" style="align-items:center;flex-wrap:wrap">' + act + ' <button type="button" class="btn secondary" data-svm="close">Fermer</button></div>';
   }
   function svAttsHtml(list) { return list.length ? list.map(function (a) { return '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">' + esc(a.name) + (a.image ? '<img alt="Aperçu de ' + esc(a.name) + '" src="' + esc(a.url) + '">' : '') + '</a>'; }).join('') : 'Aucune'; }
@@ -7513,6 +7527,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var a = b.getAttribute('data-svm'), M = SVM;
     if (a === 'close') svCloseModal();
     else if (a === 'mail') svMail(M.k, M.id);
+    else if (a === 'savecomm') {
+      var cc = svCol(M.k, 'comment'), ta = $('sv-comm'); if (!cc || !ta || cc.formula) return;
+      M.cdraft = ta.value; M.csaving = true; M.cmsg = ''; M.err = ''; svRenderModal();
+      Promise.resolve(svUpdate(M.k, M.id, (function () { var f = {}; f[cc.id] = M.cdraft.trim(); return f; })())).then(function () { return svLoad(M.k); })
+        .then(function () { M.cdraft = null; M.cmsg = 'Commentaire enregistré.'; })
+        .catch(function (err) { M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; })
+        .then(function () { M.csaving = false; if (SVM === M) svRenderModal(); });
+    }
     else if (a === 'done' || a === 'reopen') {
       var ck = $('sv-mailck'); M.mail = ck ? ck.checked : false; M.busy = true; M.err = ''; svRenderModal();
       svMark(M.k, M.id, a === 'done', M.mail).then(function () { M.busy = false; if (SVM === M) { M.err = ''; svRenderModal(); } })
@@ -7539,6 +7561,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       .catch(function (err) { M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; })
       .then(function () { M.saving = false; if (SVM === M) svRenderModal(); });
   }
+  $('svmodal').addEventListener('input', function (e) {
+    if (e.target.id !== 'w-sv-comm' || !SVM) return;
+    var row = svRow(SVM.k, SVM.id), b = $('sv-commbtn'); SVM.cdraft = e.target.value; SVM.cmsg = '';
+    if (b) b.disabled = !row || SVM.cdraft === svStr(svRaw(SVM.k, row, 'comment'));
+  });
   $('svmodal').addEventListener('change', function (e) { var t = e.target; if (t.getAttribute && t.getAttribute('data-svin') && t.tagName === 'SELECT') svCommitField(SVM, t.getAttribute('data-svin'), t.value); });
   $('svmodal').addEventListener('focusout', function (e) { var t = e.target; if (t.getAttribute && t.getAttribute('data-svin') && t.tagName === 'INPUT') svCommitField(SVM, t.getAttribute('data-svin'), t.value); else if (t.getAttribute && t.getAttribute('data-svin') && SVM && SVM.edit) { SVM.edit = null; svRenderModal(); } });
   $('svmodal').addEventListener('keydown', function (e) {
@@ -7551,7 +7578,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); svCloseModal(); return; }
     if (e.key === 'Tab') {
-      var f = Array.prototype.filter.call($('svmodal').querySelectorAll('button:not(:disabled), input:not(:disabled), a[href]'), function (n) { return n.offsetParent !== null; });
+      var f = Array.prototype.filter.call($('svmodal').querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href]'), function (n) { return n.offsetParent !== null; });
       if (!f.length) return;
       if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
