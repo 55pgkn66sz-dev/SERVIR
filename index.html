@@ -75,6 +75,10 @@
     return window.__docHeader(698).then(function (h) { return h ? html.replace(re, function () { return h.html; }) : html; });
   };
   window.__DOC_LOGO = { src: LOGO, w: 130, h: Math.round(130 * LH / LW) };
+  window.__fontsReady = function () { // police Marianne chargée avant le rendu des documents (sinon repli sur Arial)
+    if (!(document.fonts && document.fonts.load)) return Promise.resolve();
+    return Promise.all(['400 14px Marianne', '700 14px Marianne', 'italic 400 14px Marianne'].map(function (f) { return document.fonts.load(f).catch(function () {}); })).then(function () {});
+  };
   window.__BLOC_FALLBACK = '<!--bloc-marque--><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="font-weight:bold;text-transform:uppercase;line-height:1.1;">Ministère<br>de l’intérieur</div><div style="font-weight:bold;font-size:12pt;">Gendarmerie nationale</div></div><!--/bloc-marque-->';
 })();
 </script>
@@ -2590,7 +2594,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.4</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.8</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -2663,8 +2667,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var MAIL_SIGN = 'Cordialement,\nDivision réserves jeunesse';
   // Modèles de documents : HTML (converti en PDF A4). En-tête du service inclus, donc entièrement modifiable.
   function pageHtml(title, inner) {
-    return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
-      '  <div style="border-bottom: 3px solid #000091; padding-bottom: 12px; margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
+    return '<div style="font-family: Marianne, Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
+      '  <div style="margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
       '  <h1 style="font-size: 22px; margin: 0 0 24px;">' + title + '</h1>\n' + inner + '\n</div>';
   }
   function rowHtml(label, value) {
@@ -2880,27 +2884,33 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       });
     },
     attachmentUrl: function (id) { return api.getToken().then(function (t) { return t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token); }); },
-    // Envoi d'une pièce jointe. « NetworkError » = le navigateur n'a obtenu aucune réponse lisible (fichier refusé car trop lourd, jeton périmé, connexion coupée) :
-    // un fichier de 10 Mo ou moins est renvoyé une fois avec un jeton neuf ; sinon, message explicite plutôt que l'erreur brute.
+    // Envoi d'une pièce jointe en deux étapes : (1) autorisation d'accès demandée à Grist, (2) envoi du fichier au serveur du document.
+    // « NetworkError » = aucune réponse lisible à l'une de ces étapes ; l'erreur peut être un texte brut (renvoyé par Grist) ou un TypeError (fetch).
+    // Un fichier de 10 Mo ou moins est renvoyé une fois avec une autorisation neuve ; le message final dit à quelle étape l'envoi a échoué.
     uploadAttachment: function (file) {
-      var big = file.size > 10 * 1024 * 1024, mo = (file.size / 1048576).toFixed(1).replace('.', ',');
+      var big = file.size > 10 * 1024 * 1024, mo = (file.size / 1048576).toFixed(2).replace('.', ',');
+      function msgOf(e) { return typeof e === 'string' ? e : (e && e.message) || ''; }
+      function netFail(e) { return e instanceof TypeError || /NetworkError|Failed to fetch|Load failed|network/i.test(msgOf(e)); }
       function once() {
+        var stage = 'auth', host = '';
         return api.getToken().then(function (t) {
+          stage = 'upload'; try { host = new URL(t.baseUrl).host; } catch (x) {}
           var fd = new FormData(); fd.append('upload', file, file.name);
           return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
-        });
+        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e); err.stage = stage; err.host = host; throw err; });
       }
-      function netFail(e) { return e instanceof TypeError || /NetworkError|Failed to fetch|Load failed/i.test((e && e.message) || ''); }
       return once().catch(function (e) {
-        if (!netFail(e)) throw e;
+        if (!e.net) throw e;
         tokenCache = null;
-        if (big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le (scan en résolution plus faible, PDF compressé) puis réessayez');
+        if (e.stage === 'upload' && big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le puis réessayez');
         return once().catch(function (e2) {
-          if (!netFail(e2)) throw e2;
-          throw new Error('le serveur Grist n’a pas répondu à l’envoi de « ' + file.name + ' » (' + mo + ' Mo). Vérifiez votre connexion et réessayez ; si le problème persiste, rechargez la page (session expirée) ou essayez avec un fichier plus léger');
+          if (!e2.net) throw e2;
+          throw new Error(e2.stage === 'auth'
+            ? 'Grist n’a pas délivré l’autorisation d’envoi de fichiers (' + e2.message.replace(/\.+$/, '') + '). Rechargez la page ; si cela persiste, vérifiez le niveau d’accès accordé au widget dans Grist (accès complet au document requis)'
+            : 'la requête d’envoi de « ' + file.name + ' » (' + mo + ' Mo) vers le serveur Grist' + (e2.host ? ' (' + e2.host + ')' : '') + ' est bloquée avant toute réponse (' + e2.message.replace(/\.+$/, '') + '). Causes possibles : pare-feu, proxy ou extension du navigateur, ou serveur Grist qui n’accepte pas les envois depuis ce widget. Essayez en navigation privée ou depuis un autre réseau');
         });
       });
     },
@@ -3485,7 +3495,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
 
   // Conversion HTML → PDF A4 : le modèle est rendu hors écran puis paginé par jsPDF (via html2canvas).
-  function buildPdfFromHtml(html, opts) { return window.__withBloc(html).then(function (h) { return buildPdfFromHtmlRaw(h, opts); }); } // l'en-tête du ministère remplace le repère <!--bloc-marque-->
+  function buildPdfFromHtml(html, opts) { return window.__fontsReady().then(function () { return window.__withBloc(html); }).then(function (h) { return buildPdfFromHtmlRaw(h, opts); }); } // l'en-tête du ministère remplace le repère <!--bloc-marque-->
   function buildPdfFromHtmlRaw(html) {
     return new Promise(function (resolve, reject) {
       if (!(window.jspdf && window.jspdf.jsPDF)) return reject(new Error('la bibliothèque de génération de PDF n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
@@ -6483,8 +6493,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var miss = [!nig && 'Nigend', !typ && 'Type', !mod && 'Module', !msg && 'zone de texte'].filter(Boolean);
     if (miss.length) return { error: 'colonne(s) introuvable(s) dans la table « ' + table + ' » : ' + miss.join(', ') };
     // Colonne « PJ » (pièces jointes) : sert à joindre une capture d'écran ; à défaut, la première colonne de pièces jointes. Absente : la zone de dépôt n'est pas proposée.
-    var att = cols.filter(function (c) { return /^Attachments/.test(c.type); }), pj = att.filter(function (c) { return loose(c.label) === 'pj' || loose(c.id) === 'pj'; })[0] || att[0] || null;
-    return { table: table, cols: { nigend: nig, type: typ, module: mod, msg: msg, pj: pj }, choices: typ.choices || [] };
+    var att = cols.filter(function (c) { return /^Attachments/.test(c.type); }), isPj = function (c) { return /^(pj|piece|pieces|piece jointe|pieces jointes|capture|captures|capture d ecran|fichier|fichiers|image|images|screenshot)$/.test(loose(c.label)) || /^(pj|piece|capture|fichier|image|screenshot)/.test(loose(c.id)); };
+    var pj = att.filter(isPj)[0] || att[0] || null;
+    // Pas de colonne « Pièces jointes » : la zone de dépôt est remplacée par une explication (colonne PJ absente, ou créée avec un autre type).
+    var wrong = !pj ? cols.filter(isPj)[0] || null : null;
+    return { table: table, cols: { nigend: nig, type: typ, module: mod, msg: msg, pj: pj }, pjWrong: wrong ? wrong.label + ' (type ' + wrong.type + ')' : '', choices: typ.choices || [] };
   }
   function loadHelpdesk() {
     if (HD.loading) return HD.loading;
@@ -6548,7 +6561,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<div class="cf-field" style="margin-top:1rem"><label for="w-hd-msg">Votre message<span class="req" aria-hidden="true">*</span></label><textarea class="textarea" rows="6" id="w-hd-msg" placeholder="Décrivez votre demande ou votre difficulté…">' + esc(h.msg) + '</textarea></div>' +
       (info.cols.pj ? '<div class="cf-field" style="margin-top:1rem"><span class="ppe-sig-l" id="w-hd-shot-l">Capture d’écran <span class="hint">(facultatif)</span></span>' +
         (h.shot ? '<div class="ppe-sig">' + (h.shot.url ? '<img alt="Aperçu de la capture jointe" src="' + esc(h.shot.url) + '">' : '') + '<span class="ppe-sig-n" style="color:var(--ink)">' + esc(h.shot.file.name) + '</span><button type="button" class="btn secondary sm" data-hd="unshot"' + (h.busy ? ' disabled' : '') + ' title="Retirer la capture" aria-label="Retirer la capture"><span class="fr-icon-delete-line" aria-hidden="true"></span></button></div>'
-          : '<div class="doc-drop doc-drop--sm" id="w-hd-drop" data-hd="pickshot" role="button" tabindex="0" aria-labelledby="w-hd-shot-l"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg><p><strong>Glissez-déposez une capture d’écran</strong><br>ou cliquez pour parcourir (image ou PDF, 10 Mo max) — vous pouvez aussi la coller (Ctrl+V)</p></div>') + '</div>' : '') +
+          : '<div class="doc-drop doc-drop--sm" id="w-hd-drop" data-hd="pickshot" role="button" tabindex="0" aria-labelledby="w-hd-shot-l"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg><p><strong>Glissez-déposez une capture d’écran</strong><br>ou cliquez pour parcourir (image ou PDF, 10 Mo max) — vous pouvez aussi la coller (Ctrl+V)</p></div>') + '</div>'
+        : '<div class="cf-field" style="margin-top:1rem"><span class="ppe-sig-l">Capture d’écran <span class="hint">(indisponible)</span></span><p class="hint" role="status">Joindre une capture n’est pas possible : ' + (info.pjWrong ? 'la colonne « ' + esc(info.pjWrong) + ' » de la table « ' + esc(info.table) + ' » n’est pas de type « Pièces jointes ». Changez son type dans Grist (Type de colonne → Pièces jointes).' : 'la table « ' + esc(info.table) + ' » n’a pas de colonne de type « Pièces jointes ». Ajoutez une colonne « PJ » de ce type dans Grist pour activer le dépôt de captures.') + '</p></div>') +
       '<div class="cf-actions"><button type="button" class="btn" data-hd="send"' + (h.busy ? ' disabled' : '') + '>' + (h.busy ? 'Envoi…' : 'Envoyer à l’équipe projet') + '</button><button type="button" class="btn secondary" data-hd="close"' + (h.busy ? ' disabled' : '') + '>Annuler</button></div>';
   }
   // Capture d'écran jointe (facultative) : un seul fichier, image ou PDF.
@@ -7883,27 +7897,33 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       });
     },
     attachmentUrl: function (id) { return api.getToken().then(function (t) { return t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token); }); },
-    // Envoi d'une pièce jointe. « NetworkError » = le navigateur n'a obtenu aucune réponse lisible (fichier refusé car trop lourd, jeton périmé, connexion coupée) :
-    // un fichier de 10 Mo ou moins est renvoyé une fois avec un jeton neuf ; sinon, message explicite plutôt que l'erreur brute.
+    // Envoi d'une pièce jointe en deux étapes : (1) autorisation d'accès demandée à Grist, (2) envoi du fichier au serveur du document.
+    // « NetworkError » = aucune réponse lisible à l'une de ces étapes ; l'erreur peut être un texte brut (renvoyé par Grist) ou un TypeError (fetch).
+    // Un fichier de 10 Mo ou moins est renvoyé une fois avec une autorisation neuve ; le message final dit à quelle étape l'envoi a échoué.
     uploadAttachment: function (file) {
-      var big = file.size > 10 * 1024 * 1024, mo = (file.size / 1048576).toFixed(1).replace('.', ',');
+      var big = file.size > 10 * 1024 * 1024, mo = (file.size / 1048576).toFixed(2).replace('.', ',');
+      function msgOf(e) { return typeof e === 'string' ? e : (e && e.message) || ''; }
+      function netFail(e) { return e instanceof TypeError || /NetworkError|Failed to fetch|Load failed|network/i.test(msgOf(e)); }
       function once() {
+        var stage = 'auth', host = '';
         return api.getToken().then(function (t) {
+          stage = 'upload'; try { host = new URL(t.baseUrl).host; } catch (x) {}
           var fd = new FormData(); fd.append('upload', file, file.name);
           return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
-        });
+        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e); err.stage = stage; err.host = host; throw err; });
       }
-      function netFail(e) { return e instanceof TypeError || /NetworkError|Failed to fetch|Load failed/i.test((e && e.message) || ''); }
       return once().catch(function (e) {
-        if (!netFail(e)) throw e;
+        if (!e.net) throw e;
         tokenCache = null;
-        if (big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le (scan en résolution plus faible, PDF compressé) puis réessayez');
+        if (e.stage === 'upload' && big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le puis réessayez');
         return once().catch(function (e2) {
-          if (!netFail(e2)) throw e2;
-          throw new Error('le serveur Grist n’a pas répondu à l’envoi de « ' + file.name + ' » (' + mo + ' Mo). Vérifiez votre connexion et réessayez ; si le problème persiste, rechargez la page (session expirée) ou essayez avec un fichier plus léger');
+          if (!e2.net) throw e2;
+          throw new Error(e2.stage === 'auth'
+            ? 'Grist n’a pas délivré l’autorisation d’envoi de fichiers (' + e2.message.replace(/\.+$/, '') + '). Rechargez la page ; si cela persiste, vérifiez le niveau d’accès accordé au widget dans Grist (accès complet au document requis)'
+            : 'la requête d’envoi de « ' + file.name + ' » (' + mo + ' Mo) vers le serveur Grist' + (e2.host ? ' (' + e2.host + ')' : '') + ' est bloquée avant toute réponse (' + e2.message.replace(/\.+$/, '') + '). Causes possibles : pare-feu, proxy ou extension du navigateur, ou serveur Grist qui n’accepte pas les envois depuis ce widget. Essayez en navigation privée ou depuis un autre réseau');
         });
       });
     },
@@ -8037,8 +8057,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   /* ---------- Contrats des demandes (renouvellements, avenants) : modèles par défaut, modifiables en back office ---------- */
   function ctrBlock(title, rows) {
-    return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
-      '  <div style="border-bottom: 3px solid #000091; padding-bottom: 12px; margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
+    return '<div style="font-family: Marianne, Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
+      '  <div style="margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
       '  <h1 style="font-size: 22px; margin: 0 0 24px;">' + title + '</h1>\n' +
       '  <p>Entre le ministère de l’intérieur (Division réserves jeunesse) et <strong>{{IDENTITE}}</strong>, grade {{GRADE}}, Nigend {{NIGEND}}.</p>\n' +
       '  <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">\n' + rows + '  </table>\n' +
@@ -8811,8 +8831,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   /* ---------- Plan prévisionnel d'emploi (PPE) : PDF généré depuis un modèle HTML (back office), copie rangée dans Documents ---------- */
   var ICON_PPE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M17 10H7v2h10v-2zm2-7h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zm-5-5H7v2h7v-2z"/></svg>';
   function ppeRow(label, value) { return '    <tr><th style="text-align: left; width: 35%; padding: 6px 10px; background: #f3f3fd; border: 1px solid #ddd;">' + label + '</th><td style="padding: 6px 10px; border: 1px solid #ddd;">' + value + '</td></tr>\n'; }
-  var DEFAULT_PPE = '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
-    '  <div style="border-bottom: 3px solid #000091; padding-bottom: 12px; margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
+  var DEFAULT_PPE = '<div style="font-family: Marianne, Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; color: #161616;">\n' +
+    '  <div style="margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
     '  <h1 style="font-size: 22px; margin: 0 0 24px;">Plan prévisionnel d’emploi</h1>\n' +
     '  <p>Période d’emploi : du <strong>{{DATE_DEBUT}}</strong> au <strong>{{DATE_FIN}}</strong>.</p>\n' +
     '  <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">\n' +
@@ -8868,7 +8888,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   // Conversion HTML → PDF A4 : le modèle est rendu hors écran puis paginé par jsPDF (via html2canvas).
   // opts.margin : marges [haut, droite, bas, gauche] en points (défaut 36) ; opts.decorate(doc, nbPages) : ajoute du texte sur chaque page (pied de page).
-  function buildPdfFromHtml(html, opts) { return window.__withBloc(html).then(function (h) { return buildPdfFromHtmlRaw(h, opts); }); } // l'en-tête du ministère remplace le repère <!--bloc-marque-->
+  function buildPdfFromHtml(html, opts) { return window.__fontsReady().then(function () { return window.__withBloc(html); }).then(function (h) { return buildPdfFromHtmlRaw(h, opts); }); } // l'en-tête du ministère remplace le repère <!--bloc-marque-->
   function buildPdfFromHtmlRaw(html, opts) {
     opts = opts || {};
     var mg = opts.margin || [36, 36, 36, 36], widthPt = 595.28 - mg[1] - mg[3], widthPx = Math.round(widthPt * 96 / 72);
@@ -10659,7 +10679,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var g = cv.getContext('2d'); g.scale(K, K); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
     var groups = d.groups || [{ name: '', rows: d.rows }], n = d.rows.length, gap = 16, max = Math.max.apply(null, d.rows.map(function (r) { return r.count; })) || 1;
     var top = 16, lab = 18, cap = d.groups ? 20 : 0, plot = H - top - lab - cap, slot = Math.min(56, (W - 8 - gap * (groups.length - 1)) / n), bw = Math.min(30, slot * .6), x = 4;
-    g.font = '10.5px Arial, Helvetica, sans-serif';
+    g.font = '10.5px Marianne, Arial, Helvetica, sans-serif';
     g.textAlign = 'center';
     groups.forEach(function (grp) {
       var gw = Math.max(grp.rows.length * slot, d.groups ? g.measureText(grp.name).width + 8 : 0), x0 = x + (gw - grp.rows.length * slot) / 2;
@@ -10667,10 +10687,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       grp.rows.forEach(function (r, i) {
         var cx = x0 + slot * i + slot / 2, bh = r.count ? Math.max(2, Math.round((plot - lab) * r.count / max)) : 0;
         g.fillStyle = '#000091'; g.fillRect(cx - bw / 2, top + plot - lab - bh, bw, bh);
-        g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'bottom'; g.fillText(String(r.count), cx, top + plot - lab - bh - 2);
-        g.font = '10.5px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(r.label || '—', cx, top + plot - lab + 4);
+        g.fillStyle = '#000'; g.font = 'bold 10.5px Marianne, Arial, Helvetica, sans-serif'; g.textBaseline = 'bottom'; g.fillText(String(r.count), cx, top + plot - lab - bh - 2);
+        g.font = '10.5px Marianne, Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(r.label || '—', cx, top + plot - lab + 4);
       });
-      if (d.groups && grp.name) { g.fillStyle = '#555'; g.font = '10px Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(grp.name, x + gw / 2, top + plot + 6); }
+      if (d.groups && grp.name) { g.fillStyle = '#555'; g.font = '10px Marianne, Arial, Helvetica, sans-serif'; g.textBaseline = 'top'; g.fillText(grp.name, x + gw / 2, top + plot + 6); }
       x += gw + gap;
     });
     return cv.toDataURL('image/png');
@@ -10722,9 +10742,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var x = cx + R + 40, y0 = cy - d.rows.length * 9;
     d.rows.forEach(function (r, i) {
       var y = y0 + i * 18 + 9; g.fillStyle = pieColor(i, r); g.fillRect(x, y - 5, 10, 10);
-      g.fillStyle = '#000'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '11px Arial, Helvetica, sans-serif'; g.fillText(pieLabel(r), x + 18, y);
-      g.font = 'bold 11px Arial, Helvetica, sans-serif'; g.textAlign = 'right'; g.fillText(String(r.count), x + 140, y);
-      g.font = '11px Arial, Helvetica, sans-serif'; g.fillStyle = '#555'; g.fillText(frPct(r.pct), x + 190, y);
+      g.fillStyle = '#000'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '11px Marianne, Arial, Helvetica, sans-serif'; g.fillText(pieLabel(r), x + 18, y);
+      g.font = 'bold 11px Marianne, Arial, Helvetica, sans-serif'; g.textAlign = 'right'; g.fillText(String(r.count), x + 140, y);
+      g.font = '11px Marianne, Arial, Helvetica, sans-serif'; g.fillStyle = '#555'; g.fillText(frPct(r.pct), x + 190, y);
     });
     return cv.toDataURL('image/png');
   }
@@ -10968,16 +10988,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var segs = etatSegments(d, null).filter(function (q) { return q.total; }), aff = d.byAff.filter(function (B) { return segs.some(function (q) { return q.get(B); }); });
     var top = 24, H = top + aff.length * rowH + 8 + lines.length * 16 + 6, cv = document.createElement('canvas'); cv.width = W * K; cv.height = H * K;
     var g = cv.getContext('2d'); g.scale(K, K); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-    var lx = 1; g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '10.5px Arial, Helvetica, sans-serif';
+    var lx = 1; g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '10.5px Marianne, Arial, Helvetica, sans-serif';
     segs.forEach(function (q) { g.fillStyle = q.color; g.fillRect(lx, 7, 9, 9); g.fillStyle = '#000'; var t = q.label + ' ' + q.total; g.fillText(t, lx + 14, 12); lx += 14 + g.measureText(t).width + 18; });
     var lw = 90, nw = 28, tw = W - lw - nw - 6, maxS = Math.max.apply(null, aff.map(function (B) { return segs.reduce(function (a, q) { return a + q.get(B); }, 0); })) || 1, y = top;
     aff.forEach(function (B) {
       var sum = segs.reduce(function (a, q) { return a + q.get(B); }, 0), x = lw, full = tw * sum / maxS;
-      g.fillStyle = '#000'; g.font = '10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(B.label || 'Non renseignée', 1, y + 8);
-      segs.forEach(function (q) { var n = q.get(B); if (!n) return; var w = full * n / sum; g.fillStyle = q.color; g.fillRect(x, y + 1, Math.max(1, w - 1), 14); if (w > 14) { g.fillStyle = '#fff'; g.font = 'bold 9.5px Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.fillText(String(n), x + w / 2, y + 8.5); } x += w; });
-      g.fillStyle = '#000'; g.font = 'bold 10.5px Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(String(sum), lw + full + 6, y + 8); y += rowH;
+      g.fillStyle = '#000'; g.font = '10.5px Marianne, Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(B.label || 'Non renseignée', 1, y + 8);
+      segs.forEach(function (q) { var n = q.get(B); if (!n) return; var w = full * n / sum; g.fillStyle = q.color; g.fillRect(x, y + 1, Math.max(1, w - 1), 14); if (w > 14) { g.fillStyle = '#fff'; g.font = 'bold 9.5px Marianne, Arial, Helvetica, sans-serif'; g.textAlign = 'center'; g.fillText(String(n), x + w / 2, y + 8.5); } x += w; });
+      g.fillStyle = '#000'; g.font = 'bold 10.5px Marianne, Arial, Helvetica, sans-serif'; g.textAlign = 'left'; g.fillText(String(sum), lw + full + 6, y + 8); y += rowH;
     });
-    g.fillStyle = '#333'; g.font = '10px Arial, Helvetica, sans-serif'; g.textAlign = 'left';
+    g.fillStyle = '#333'; g.font = '10px Marianne, Arial, Helvetica, sans-serif'; g.textAlign = 'left';
     lines.forEach(function (t, i) { g.fillText(t, 1, y + 12 + i * 16); });
     return { src: cv.toDataURL('image/png'), w: W, h: H };
   }
@@ -11152,7 +11172,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     }).catch(function () { return null; });
   }
   function statsPdfHtml(S) {
-    var F = 'font-family:Arial,Helvetica,sans-serif;', B10 = F + 'font-size:13.33px;line-height:1.4;', S8 = F + 'font-size:10.67px;line-height:1.3;';
+    var F = 'font-family:Marianne,Arial,Helvetica,sans-serif;', B10 = F + 'font-size:13.33px;line-height:1.4;', S8 = F + 'font-size:10.67px;line-height:1.3;';
     var td = 'padding:3px 6px;border-top:0;border-bottom:1px solid #ddd;', num = 'text-align:right;white-space:nowrap;';
     var h = function (t) { return '<div style="' + F + 'font-weight:bold;font-size:13.33px;margin:16px 0 4px;">' + esc(t) + '</div>'; };
     var date = fmtDate(todaySec());
@@ -13107,13 +13127,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // Bloc-marque façon charte graphique de l'État : pictogramme tricolore + intitulé (Arial Bold 12pt) en zone bloc-marque,
   // devise en petit sous le pictogramme, filet séparateur, puis titre du document (Arial Bold 12pt) en zone contenu.
   function pageHtml(title, inner) {
-    return '<div style="font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.55; color: #161616;">\n' +
-      '  <div style="margin-bottom: 20px;">' + window.__BLOC_FALLBACK + '</div>\n' +
-      '  <div style="border-bottom: 1px solid #000091; margin-bottom: 28px;"></div>\n' +
-      '  <h1 style="font-family: Arial, sans-serif; font-weight: bold; font-size: 12pt; margin: 0 0 20px;">' + title + '</h1>\n' + inner + '\n</div>';
+    return '<div style="font-family: Marianne, Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.55; color: #161616;">\n' +
+      '  <div style="margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' +
+      '  <h1 style="font-family: Marianne, Arial, sans-serif; font-weight: bold; font-size: 12pt; margin: 0 0 20px;">' + title + '</h1>\n' + inner + '\n</div>';
   }
   // Conversion HTML → PDF A4 : le modèle est rendu hors écran puis paginé par jsPDF (via html2canvas).
-  function buildPdfFromHtml(html, opts) { return window.__withBloc(html).then(function (h) { return buildPdfFromHtmlRaw(h, opts); }); } // l'en-tête du ministère remplace le repère <!--bloc-marque-->
+  function buildPdfFromHtml(html, opts) { return window.__fontsReady().then(function () { return window.__withBloc(html); }).then(function (h) { return buildPdfFromHtmlRaw(h, opts); }); } // l'en-tête du ministère remplace le repère <!--bloc-marque-->
   function buildPdfFromHtmlRaw(html) {
     return new Promise(function (resolve, reject) {
       if (!(window.jspdf && window.jspdf.jsPDF)) return reject(new Error('la bibliothèque de génération de PDF n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
@@ -15155,7 +15174,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       (S.sites.length ? S.sites.map(function (s) { return '<tr' + (s.actif ? '' : ' class="row-off"') + '><th scope="row">' + esc(s.name) + '</th><td>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—') + '</td><td>' + esc([s.contact, s.tel].filter(Boolean).join(' · ') || '—') + '</td><td>' + esc(s.aff || '—') + '</td><td>' + (s.actif ? 'Oui' : 'Non') + '</td><td>' + btn('editsite', 'Modifier', ' data-id="' + s.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun site.</td></tr>') + '</tbody></table></div>' +
       '<p style="margin:.75rem 0 1.5rem">' + btn('addsite', 'Ajouter un site') + '</p>' +
       '<h3 class="bo-h3">Besoins en cadres par date et par site</h3>' +
-      '<div class="toolbar">' + monthPick('bmonth', mth, 'Mois', 'jdc-bm', true) + '<div class="tb-actions">' + ibtn('impbes', 'Importer des besoins (.csv, Excel, Calc)', 'upload') + ibtn('addbatch', 'Ajouter des besoins par lot (période et jours de la semaine)', 'calendar') + pbtn('addbes', 'Ajouter un besoin', 'plus') + '</div></div>';
+      '<div class="toolbar">' + monthPick('bmonth', mth, 'Mois', 'jdc-bm', true) + '<div class="tb-actions">' + ibtn('impbes', 'Importer des besoins (.csv, Excel, Calc)', 'upload') + ibtn('addbatch', 'Ajouter des besoins par lot', 'calendar') + pbtn('addbes', 'Ajouter un besoin', 'plus') + '</div></div>';
     if (U.form && /^(addbes|editbes|addbatch)$/.test(U.form.kind)) html += formBes();
     html += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Besoins en cadres</caption><thead><tr><th scope="col">Date</th><th scope="col">Site</th><th scope="col">Horaires</th><th scope="col">Cadres requis</th><th scope="col">Désignés</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
       (list.length ? list.map(function (b) { var n = filled(b); return '<tr><th scope="row">' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + '</th><td>' + esc(b.site || '—') + '</td><td>' + esc(hoursOf(b)) + '</td><td>' + b.nb + '</td><td>' + n + (n < b.nb ? ' <span class="fr-badge fr-badge--sm fr-badge--warning">reste ' + (b.nb - n) + '</span>' : ' <span class="fr-badge fr-badge--sm fr-badge--success">complet</span>') + '</td><td style="white-space:nowrap">' + btn('editbes', 'Modifier', ' data-id="' + b.id + '"') + ' ' + btn('dupbes', 'Dupliquer', ' data-id="' + b.id + '"') + ' ' + btn('delbes', 'Supprimer', ' data-id="' + b.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun besoin' + (mth ? ' ce mois-ci' : '') + '.</td></tr>') + '</tbody></table></div>';
@@ -15593,7 +15612,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var list = monthBes(m), unf = unfilledList(m), ans = answeredIn(m).sort(function (a, b) { return name(a).localeCompare(name(b), 'fr'); });
     var wrap = function (inner) { return '<div style="' + MF + 'color:#161616;width:1060px;background:#fff;box-sizing:border-box">' + inner + '</div>'; }, blocks = [];
     var head = (bm ? bm.html : '<div style="font-weight:bold;font-size:15px;text-transform:uppercase;line-height:1.15">Ministère de l’intérieur – Gendarmerie nationale</div>') +
-      '<div style="border-bottom:3px solid #000091;padding-bottom:8px;margin:12px 0 14px"><div style="font-size:22px;font-weight:bold;margin-top:4px">Journées défense et citoyenneté – ' + esc(monthLabel(m)) + '</div><div style="font-size:11px;color:#555">Établi le ' + esc(fmtFr(todayIso())) + '</div></div>';
+      '<div style="margin:12px 0 14px"><div style="font-size:22px;font-weight:bold;margin-top:4px">Journées défense et citoyenneté – ' + esc(monthLabel(m)) + '</div><div style="font-size:11px;color:#555">Établi le ' + esc(fmtFr(todayIso())) + '</div></div>';
     var tabs = planningMatrixHtml(list, 500), title1 = '<div style="font-size:15px;font-weight:bold;margin:0 0 8px">1. Vue planning</div>', legend = '<div style="font-size:10px;color:#555;margin-top:2px">Bordure verte : complet ; orange : à pourvoir ; case grisée : pas de besoin ce jour-là sur ce site.</div>';
     tabs.forEach(function (t, i) { blocks.push(wrap((i === 0 ? head + title1 : '') + t + (i === tabs.length - 1 ? legend : ''))); });
     // Rappel des coordonnées des sites concernés ce mois-ci
@@ -15681,7 +15700,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var site = U.psite && S.sBy[U.psite] ? S.sBy[U.psite].name : '';
     window.__docHeader(1060).then(function (bm) {
       var MF = 'font-family:Marianne,Arial,Helvetica,sans-serif;', wrap = function (inner) { return '<div style="' + MF + 'color:#161616;width:1060px;background:#fff;box-sizing:border-box">' + inner + '</div>'; };
-      var head = (bm ? bm.html : '<div style="font-weight:bold;font-size:15px;text-transform:uppercase">Ministère de l’intérieur – Gendarmerie nationale</div>') + '<div style="border-bottom:3px solid #000091;padding-bottom:8px;margin:12px 0 14px"><div style="font-size:22px;font-weight:bold;margin-top:4px">Journées défense et citoyenneté – ' + esc(label) + (site ? ' – ' + esc(site) : '') + '</div><div style="font-size:11px;color:#555">Établi le ' + esc(fmtFr(todayIso())) + '</div></div>';
+      var head = (bm ? bm.html : '<div style="font-weight:bold;font-size:15px;text-transform:uppercase">Ministère de l’intérieur – Gendarmerie nationale</div>') + '<div style="margin:12px 0 14px"><div style="font-size:22px;font-weight:bold;margin-top:4px">Journées défense et citoyenneté – ' + esc(label) + (site ? ' – ' + esc(site) : '') + '</div><div style="font-size:11px;color:#555">Établi le ' + esc(fmtFr(todayIso())) + '</div></div>';
       var tabs = planningMatrixHtml(list, 500), legend = '<div style="font-size:10px;color:#555;margin-top:2px">Bordure verte : complet ; orange : à pourvoir ; case grisée : pas de besoin ce jour-là sur ce site.</div>';
       return buildPdf(tabs.map(function (t, i) { return wrap((i === 0 ? head : '') + t + (i === tabs.length - 1 ? legend : '')); }));
     }).then(function (ab) {
