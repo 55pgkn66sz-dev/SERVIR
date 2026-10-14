@@ -2590,7 +2590,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.3</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -7222,7 +7222,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var SV = {
     hd: {
       grp: 'helpdesk', title: 'Demandes Helpdesk', word: 'demande', tableRe: /helpdesk/, doneLabel: 'Traité', doneTitle: 'Marquer la demande comme traitée',
-      cols: { nigend: ['nigend'], who: ['demandeur'], aff: ['affectation'], type: ['type'], module: ['module'], msg: ['demande', 'message'], email: ['email', 'mail', 'courriel', 'e mail'], pj: ['pj'], done: ['traite'], created: ['cree le', 'creee le'], doneAt: ['traite le'] },
+      cols: { nigend: ['nigend'], who: ['demandeur'], aff: ['affectation'], type: ['type'], module: ['module'], msg: ['demande', 'message'], email: ['email', 'mail', 'courriel', 'e mail'], pj: ['pj'], done: ['traite', 'traitee', 'statut', 'etat', 'etat demande', 'etat de la demande'], created: ['cree le', 'creee le'], doneAt: ['traite le'] },
       vars: ['DEMANDEUR', 'NIGEND', 'AFFECTATION', 'TYPE', 'MODULE', 'DEMANDE', 'DATE_DEMANDE', 'DATE_TRAITEMENT', 'DATE_DU_JOUR'],
       hint: 'Le tableau relit la table Helpdesk (colonnes Nigend, Demandeur, Affectation, Type, Module, Demande, Email, PJ, Traité, Créé le, Traité le). Cliquez sur une ligne pour voir la demande et les coordonnées du demandeur.'
     },
@@ -7272,16 +7272,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     });
   }
   function svDemo(k) {
-    var now = Math.floor(Date.now() / 86400000) * 86400, c = function (id, t) { return { id: id, label: id, type: t || 'Text', formula: false, choices: null }; };
+    var now = Math.floor(Date.now() / 86400000) * 86400, c = function (id, t, ch) { return { id: id, label: id, type: t || 'Text', formula: false, choices: ch || null }; };
     if (k === 'hd') {
-      var all = [c('Nigend'), c('Demandeur'), c('Affectation'), c('Type'), c('Module'), c('Demande'), c('Email'), c('PJ', 'Attachments'), c('Traité', 'Bool'), c('Créé le', 'DateTime:Europe/Paris'), c('Traité le', 'DateTime:Europe/Paris')];
+      var all = [c('Nigend'), c('Demandeur'), c('Affectation'), c('Type'), c('Module'), c('Demande'), c('Email'), c('PJ', 'Attachments'), c('Traité', 'Choice', ['Traitée', 'En attente', 'Nouvelle demande']), c('Créé le', 'DateTime:Europe/Paris'), c('Traité le', 'DateTime:Europe/Paris')];
       var R = function (id, nig, who, aff, type, mod, msg, mail, done, cr, dn) { return { id: id, Nigend: nig, Demandeur: who, Affectation: aff, Type: type, Module: mod, Demande: msg, Email: mail, PJ: null, 'Traité': done, 'Créé le': now - cr * 86400 + 32400, 'Traité le': dn == null ? null : now - dn * 86400 + 50000 }; };
       return { meta: svMeta(k, 'Helpdesk', all), rows: [
-        R(1, '2019-1120', 'PERRIN Camille', 'GD 38', 'Signaler une anomalie', 'Réservistes RO1/RS/RC', 'Impossible d’ouvrir la fiche d’un réserviste : la fenêtre se fige après le clic sur « Modifier ».', 'camille.perrin@example.fr', false, 6),
-        R(2, '2011-0384', 'LEFÈVRE Antoine', 'GD 74', 'Poser une question', 'Réservations', 'Comment annuler un créneau VMP déjà confirmé à l’antenne médicale ?', 'antoine.lefevre@example.fr', false, 1),
-        R(3, '2022-0555', 'GARNIER Lucas', 'GD 73', 'Proposer une amélioration', 'Candidats', 'Pourrait-on filtrer les candidats par département d’origine ?', 'lucas.garnier@example.fr', true, 9, 5),
-        R(4, '2008-0210', 'ROBIN Sophie', 'GD 01', 'Poser une question', 'Statistiques', 'Les effectifs affichés incluent-ils les réservistes suspendus ?', 'sophie.robin@example.fr', true, 3, 3),
-        R(5, '2015-0999', 'DUPONT Marc', 'GD 38', 'Signaler une anomalie', 'Candidats', 'Le bouton Admettre comme réserviste ne répond pas.', '', false, 0)
+        R(1, '2019-1120', 'PERRIN Camille', 'GD 38', 'Signaler une anomalie', 'Réservistes RO1/RS/RC', 'Impossible d’ouvrir la fiche d’un réserviste : la fenêtre se fige après le clic sur « Modifier ».', 'camille.perrin@example.fr', 'En attente', 6),
+        R(2, '2011-0384', 'LEFÈVRE Antoine', 'GD 74', 'Poser une question', 'Réservations', 'Comment annuler un créneau VMP déjà confirmé à l’antenne médicale ?', 'antoine.lefevre@example.fr', 'Nouvelle demande', 1),
+        R(3, '2022-0555', 'GARNIER Lucas', 'GD 73', 'Proposer une amélioration', 'Candidats', 'Pourrait-on filtrer les candidats par département d’origine ?', 'lucas.garnier@example.fr', 'Traitée', 9, 5),
+        R(4, '2008-0210', 'ROBIN Sophie', 'GD 01', 'Poser une question', 'Statistiques', 'Les effectifs affichés incluent-ils les réservistes suspendus ?', 'sophie.robin@example.fr', 'Traitée', 3, 3),
+        R(5, '2015-0999', 'DUPONT Marc', 'GD 38', 'Signaler une anomalie', 'Candidats', 'Le bouton Admettre comme réserviste ne répond pas.', '', 'Nouvelle demande', 0)
       ] };
     }
     var all2 = [c('Nigend'), c('Grade'), c('NOM'), c('Prénom'), c('Email'), c('Choix affectation'), c('Affectation'), c('Fonction'), c('Droits ouverts', 'Bool')];
@@ -7310,9 +7310,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function svSecs(v) { if (typeof v === 'number') return v > 1e11 ? v / 1000 : v; if (typeof v === 'string' && v) { var t = Date.parse(v); return isNaN(t) ? null : t / 1000; } return null; }
   function svFmt(sec, time) { return sec == null ? '' : new Date(sec * 1000).toLocaleString('fr-FR', time ? { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' } : { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric' }); }
   function svHasTime(k, key) { var c = svCol(k, key); return !!c && /^DateTime/.test(c.type); }
+  // Valeur « en attente » d'une colonne texte ou liste à choix (Non, En attente, À traiter, Nouvelle, En cours…) : la demande n'est pas traitée.
+  function svIsWaitWord(v) { return /^(non|no|false|0|faux)( |$)|attente|a traiter|a faire|nouveau|nouvelle|en cours|pas /.test(loose(svStr(v))); }
+  // Colonne à choix avec une valeur « En attente » : la demande peut alors être nouvelle, en attente ou traitée.
+  function svWaitChoice(k) { var c = svCol(k, 'done'); return c && /^Choice/.test(c.type) ? (c.choices || []).filter(function (x) { return /attente/.test(loose(x)); })[0] || null : null; }
+  function svIsHold(k, row) { return !!svWaitChoice(k) && /attente/.test(loose(svStr(svRaw(k, row, 'done')))); }
   function svIsDone(k, row) {
     var v = svRaw(k, row, 'done'); if (v === true) return true; if (!v) return false;
-    return !/^(non|no|false|0|faux)$/.test(loose(svStr(v)));
+    return !svIsWaitWord(v);
   }
   function svWho(k, row) {
     if (k === 'hd') return svT(k, row, 'who') || svT(k, row, 'nigend') || 'Demandeur inconnu';
@@ -7334,6 +7339,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var S = SVS[k], terms = fold(S.q).split(/\s+/).filter(Boolean), keys = Object.keys(SV[k].cols);
     var list = S.rows.filter(function (r) {
       var d = svIsDone(k, r); if (S.f === 'todo' && d) return false; if (S.f === 'done' && !d) return false;
+      if (S.f === 'hold' && (d || !svIsHold(k, r))) return false; if (S.f === 'new' && (d || svIsHold(k, r))) return false;
       if (!terms.length) return true;
       var hay = fold(keys.map(function (key) { return svT(k, r, key); }).join(' '));
       return terms.every(function (t) { return hay.indexOf(t) !== -1; });
@@ -7352,8 +7358,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var list = S.meta ? svRowsView(k) : [];
     el('rows').innerHTML = list.map(function (r) {
       var done = svIsDone(k, r), mail = validMail(svT(k, r, 'email')), act = done
-        ? (mail ? '<button type="button" class="icon-btn" data-svact="mail" data-k="' + k + '" data-id="' + r.id + '" title="Écrire au demandeur" aria-label="Écrire au demandeur"><span class="fr-icon-mail-line" aria-hidden="true"></span></button>' : '<span class="fr-badge fr-badge--sm fr-badge--success">' + (k === 'hd' ? 'Traitée' : 'Ouverts') + '</span>')
+        ? (mail ? '<button type="button" class="icon-btn" data-svact="mail" data-k="' + k + '" data-id="' + r.id + '" title="Écrire au demandeur" aria-label="Écrire au demandeur"><span class="fr-icon-mail-line" aria-hidden="true"></span></button>' : '<span class="fr-badge fr-badge--sm fr-badge--success">' + (k === 'hd' ? 'Traitée' : 'Ouverts') + '</span>') +
+          ' <button type="button" class="icon-btn" data-svact="wait" data-k="' + k + '" data-id="' + r.id + '" title="Remettre en attente" aria-label="Remettre en attente"><span class="fr-icon-arrow-go-back-line" aria-hidden="true"></span></button>'
         : '<button type="button" class="btn secondary sm" data-svact="done" data-k="' + k + '" data-id="' + r.id + '" title="' + esc(SV[k].doneTitle + (mail ? ' et préparer le courriel au demandeur' : '')) + '">' + esc(SV[k].doneLabel) + '</button>';
+      if (!done && svWaitChoice(k)) act = svIsHold(k, r) ? '<span class="fr-badge fr-badge--sm fr-badge--info">En attente</span> ' + act
+        : '<button type="button" class="icon-btn" data-svact="wait" data-k="' + k + '" data-id="' + r.id + '" title="Mettre en attente" aria-label="Mettre en attente"><span class="fr-icon-time-line" aria-hidden="true"></span></button> ' + act;
       var cells = k === 'hd'
         ? '<td>' + (esc(svFmt(svSecs(svRaw(k, r, 'created')))) || '—') + svBadge(svDelay(k, r)) + '</td><td>' + esc(svWho(k, r)) + '</td><td>' + esc(svT(k, r, 'module') || '—') + '</td>'
         : '<td>' + esc(svWho(k, r)) + '</td><td>' + esc(svT(k, r, 'nigend') || '—') + '</td><td>' + esc(svAff(k, r) || '—') + '</td><td>' + esc(svT(k, r, 'fonction') || '—') + '</td>';
@@ -7365,7 +7374,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     else if (!list.length) { st.hidden = false; st.innerHTML = S.rows.length ? '<strong>Aucun résultat</strong>Aucune ' + SV[k].word + ' ne correspond à votre recherche.' : '<strong>Aucune ' + SV[k].word + '</strong>La table est vide.'; }
     else st.hidden = true;
     var n = svPending(k);
-    el('count').textContent = S.meta ? list.length + (list.length > 1 ? ' lignes' : ' ligne') + ' · ' + n + ' à traiter' : '';
+    el('count').textContent = S.meta ? list.length + (list.length > 1 ? ' lignes' : ' ligne') + ' · ' + n + ' à traiter' + (svWaitChoice(k) && S.rows.filter(function (r) { return svIsHold(k, r); }).length ? ' (dont ' + S.rows.filter(function (r) { return svIsHold(k, r); }).length + ' en attente)' : '') : '';
     el('msg').innerHTML = S.msg ? '<div class="doc-alert success" role="status" style="margin:0 0 1rem"><p>' + esc(S.msg) + '</p></div>' : '';
     window.__svCounts = window.__svCounts || {}; window.__svCounts[SV[k].grp] = S.meta ? n : 0;
     if (window.__refreshBoTabs) window.__refreshBoTabs();
@@ -7375,9 +7384,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function svDoneValue(col, done) {
     if (/^Bool/.test(col.type)) return done;
     if (/^(Int|Numeric)/.test(col.type)) return done ? 1 : 0;
-    if (!done) return '';
-    var yes = (col.choices || []).filter(function (c) { return /^(oui|ouvert|ok|fait|traite|true)/.test(loose(c)); })[0];
-    return yes || (col.choices && col.choices.length ? col.choices[0] : 'Oui');
+    // Liste à choix : « Traité » / « En attente » (ou équivalents) ; sans choix « en attente » dans la liste, la cellule est vidée.
+    var ch = col.choices || [];
+    if (!done) return ch.filter(function (c) { return /attente/.test(loose(c)); })[0] || ch.filter(function (c) { return svIsWaitWord(c); })[0] || '';
+    var yes = ch.filter(function (c) { return /^(oui|ouvert|ok|fait|traite|true)/.test(loose(c)); })[0] || ch.filter(function (c) { return !svIsWaitWord(c); })[0];
+    return yes || 'Oui';
   }
   function svNowFor(col) { var now = Math.floor(Date.now() / 1000); return /^Date$/.test(col.type) ? Math.floor(now / 86400) * 86400 : now; }
   function svUpdate(k, id, fields) {
@@ -7390,7 +7401,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function svMark(k, id, done, withMail) {
     var S = SVS[k], row = svRow(k, id), dc = svCol(k, 'done'), ac = svCol(k, 'doneAt'); if (!row || !dc) return Promise.resolve();
     if (dc.formula) { S.msg = ''; return Promise.reject(new Error('la colonne « ' + dc.label + ' » est une formule : elle ne peut pas être modifiée ici')); }
-    var f = {}; f[dc.id] = svDoneValue(dc, done);
+    var wasDone = svIsDone(k, row), f = {}; f[dc.id] = svDoneValue(dc, done);
     if (ac && !ac.formula) f[ac.id] = done ? svNowFor(ac) : null;
     return svUpdate(k, id, f).then(function () { return svLoad(k); }).then(function () {
       var who = svWho(k, svRow(k, id) || row);
@@ -7398,7 +7409,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         var r2 = svRow(k, id) || row, mail = validMail(svT(k, r2, 'email'));
         if (withMail && mail) { svMail(k, id); S.msg = (k === 'hd' ? 'Demande' : 'Accès') + ' de ' + who + ' marqué' + (k === 'hd' ? 'e' : '') + ' comme ' + (k === 'hd' ? 'traité' : 'ouvert') + (k === 'hd' ? 'e' : '') + ' ; courriel préparé dans votre messagerie : vérifiez-le puis envoyez-le.'; }
         else S.msg = (k === 'hd' ? 'Demande' : 'Accès') + ' de ' + who + ' enregistré' + (k === 'hd' ? 'e' : '') + ' comme ' + (k === 'hd' ? 'traité' : 'ouvert') + (k === 'hd' ? 'e' : '') + (withMail && !mail ? ' (aucune adresse mail valide : pas de courriel).' : '.');
-      } else S.msg = 'Demande de ' + who + ' rouverte.';
+      } else S.msg = (k === 'hd' ? 'Demande' : 'Accès') + ' de ' + who + (wasDone ? ' remis' : ' mis') + (k === 'hd' ? 'e' : '') + ' en attente.';
       svRenderList(k);
     });
   }
@@ -7461,7 +7472,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var demande, demandeur;
     if (k === 'hd') {
       demande = svKv('Type', esc(svT(k, row, 'type'))) + svKv('Module', esc(svT(k, row, 'module'))) +
-        svKv('État', done ? 'Traitée' + (dn != null ? ' le ' + esc(svFmt(dn, svHasTime(k, 'doneAt'))) : '') : 'En attente de traitement') +
+        svKv('État', done ? 'Traitée' + (dn != null ? ' le ' + esc(svFmt(dn, svHasTime(k, 'doneAt'))) : '') : svIsHold(k, row) ? 'En attente' : svWaitChoice(k) ? 'Nouvelle demande' : 'En attente de traitement') +
         svKv('Message', svT(k, row, 'msg') ? '<p class="sv-msg">' + esc(svT(k, row, 'msg')) + '</p>' : '') +
         (svCol(k, 'pj') ? '<dt>Pièces jointes</dt><dd class="sv-atts" id="w-sv-atts">' + (M.atts ? svAttsHtml(M.atts) : (M.attIds && M.attIds.length ? 'Chargement…' : '<span class="hint" style="font-weight:400">Aucune</span>')) + '</dd>' : '');
       demandeur = svKv('Nom', esc(svWho(k, row))) + svKv('Nigend', esc(svT(k, row, 'nigend'))) + svKv('Affectation', esc(svT(k, row, 'aff')));
@@ -7471,8 +7482,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     }
     if (k === 'hd') demandeur += svKv('Courriel', ok ? '<a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>' : '<span class="hint" style="font-weight:400">' + (mail ? esc(mail) + ' (adresse invalide)' : 'non renseigné') + '</span>');
     var act = done
-      ? '<button type="button" class="btn" data-svm="mail"' + (ok ? '' : ' disabled title="Aucune adresse mail valide"') + '>Écrire au demandeur</button> <button type="button" class="btn secondary" data-svm="reopen"' + (M.busy ? ' disabled' : '') + '>Rouvrir la demande</button>'
+      ? '<button type="button" class="btn" data-svm="mail"' + (ok ? '' : ' disabled title="Aucune adresse mail valide"') + '>Écrire au demandeur</button> <button type="button" class="btn secondary" data-svm="reopen"' + (M.busy ? ' disabled' : '') + '>Remettre en attente</button>'
       : '<label class="x-check" style="margin:0 1rem 0 0"><input type="checkbox" id="w-sv-mailck"' + (M.mail && ok ? ' checked' : '') + (ok ? '' : ' disabled') + '> Préparer le courriel au demandeur</label>' +
+        (svWaitChoice(k) && !svIsHold(k, row) ? '<button type="button" class="btn secondary" data-svm="reopen"' + (M.busy ? ' disabled' : '') + '>Mettre en attente</button> ' : '') +
         '<button type="button" class="btn" data-svm="done"' + (M.busy ? ' disabled' : '') + '>' + (M.busy ? 'Enregistrement…' : esc(k === 'hd' ? 'Marquer comme traitée' : 'Marquer les droits comme ouverts')) + '</button>';
     $('svmodal-body').innerHTML = (M.err ? '<div class="doc-alert error" role="alert" style="margin:0 0 1rem"><p>' + esc(M.err) + '</p></div>' : '') +
       '<section class="cf-section"><h3>' + (k === 'hd' ? 'La demande' : 'La demande d’accès') + '</h3><dl class="sv-dl">' + demande + '</dl></section>' +
@@ -7553,7 +7565,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       sec.innerHTML = '<div class="head"><h2>' + esc(SV[k].title) + '</h2></div><p class="lead" style="margin-left:0">' + esc(SV[k].hint) + '</p>' +
         '<div id="w-sv-' + k + '-msg" aria-live="polite"></div>' +
         '<div class="toolbar"><div class="tb-field"><label for="w-sv-' + k + '-q">Rechercher</label><input class="input" id="w-sv-' + k + '-q" type="search" style="min-width:16rem" placeholder="Nom, Nigend, ' + (k === 'hd' ? 'module, message' : 'affectation, fonction') + '…" autocomplete="off"></div>' +
-        '<div class="tb-field"><label for="w-sv-' + k + '-f">Afficher</label><select class="select" id="w-sv-' + k + '-f"><option value="todo">À traiter</option><option value="done">' + (k === 'hd' ? 'Traitées' : 'Droits ouverts') + '</option><option value="all">Toutes</option></select></div>' +
+        '<div class="tb-field"><label for="w-sv-' + k + '-f">Afficher</label><select class="select" id="w-sv-' + k + '-f"><option value="todo">À traiter</option>' + (k === 'hd' ? '<option value="new">Nouvelles</option><option value="hold">En attente</option>' : '') + '<option value="done">' + (k === 'hd' ? 'Traitées' : 'Droits ouverts') + '</option><option value="all">Toutes</option></select></div>' +
         '<button type="button" class="btn secondary btn-iconly ico-refresh" data-svact="refresh" data-k="' + k + '" title="Actualiser le tableau">Actualiser</button>' +
         '<div class="count" id="w-sv-' + k + '-count" aria-live="polite"></div></div>' +
         '<div class="table-wrap"><table><thead id="w-sv-' + k + '-thead"></thead><tbody id="w-sv-' + k + '-rows"></tbody></table><div id="w-sv-' + k + '-state" class="state" hidden></div></div>' +
@@ -7576,6 +7588,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         var a = b.getAttribute('data-svact'), k = b.getAttribute('data-k'), id = Number(b.getAttribute('data-id'));
         if (a === 'refresh') { SVS[k].msg = ''; svLoad(k); }
         else if (a === 'done') { b.disabled = true; svMark(k, id, true, true).catch(function (err) { SVS[k].msg = ''; SVS[k].error = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; svRenderList(k); }); }
+        else if (a === 'wait') { b.disabled = true; svMark(k, id, false).catch(function (err) { SVS[k].msg = ''; SVS[k].error = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; svRenderList(k); }); }
         else if (a === 'mail') svMail(k, id);
         return;
       }
