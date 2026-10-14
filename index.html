@@ -2594,7 +2594,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.8</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.9</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -2891,18 +2891,30 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var big = file.size > 10 * 1024 * 1024, mo = (file.size / 1048576).toFixed(2).replace('.', ',');
       function msgOf(e) { return typeof e === 'string' ? e : (e && e.message) || ''; }
       function netFail(e) { return e instanceof TypeError || /NetworkError|Failed to fetch|Load failed|network/i.test(msgOf(e)); }
+      // Le fichier est d'abord copié en mémoire : un fichier adossé au disque (glissé-déposé, sélecteur) peut devenir illisible pendant l'envoi (Safari : « Load failed »).
+      var mem = null;
+      function local() {
+        if (mem) return Promise.resolve(mem);
+        if (!file.arrayBuffer) return Promise.resolve(file);
+        return file.arrayBuffer().then(function (ab) { return (mem = new File([ab], file.name, { type: file.type || 'application/octet-stream' })); });
+      }
       function once() {
-        var stage = 'auth', host = '';
-        return api.getToken().then(function (t) {
+        var stage = 'read', host = '';
+        return local().then(function (f) {
+          stage = 'auth';
+          return api.getToken().then(function (t) { return [f, t]; });
+        }).then(function (ft) {
+          var f = ft[0], t = ft[1];
           stage = 'upload'; try { host = new URL(t.baseUrl).host; } catch (x) {}
-          var fd = new FormData(); fd.append('upload', file, file.name);
+          var fd = new FormData(); fd.append('upload', f, file.name);
           return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
-        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e); err.stage = stage; err.host = host; throw err; });
+        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e) && stage !== 'read'; err.stage = stage; err.host = host; throw err; });
       }
       return once().catch(function (e) {
+        if (e.stage === 'read') throw new Error('le fichier « ' + file.name + ' » ne peut pas être lu sur votre poste (' + e.message.replace(/\.+$/, '') + ') : enregistrez-le dans un dossier local (pas un lecteur réseau ni un téléchargement en cours) puis redéposez-le');
         if (!e.net) throw e;
         tokenCache = null;
         if (e.stage === 'upload' && big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le puis réessayez');
@@ -7904,18 +7916,30 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var big = file.size > 10 * 1024 * 1024, mo = (file.size / 1048576).toFixed(2).replace('.', ',');
       function msgOf(e) { return typeof e === 'string' ? e : (e && e.message) || ''; }
       function netFail(e) { return e instanceof TypeError || /NetworkError|Failed to fetch|Load failed|network/i.test(msgOf(e)); }
+      // Le fichier est d'abord copié en mémoire : un fichier adossé au disque (glissé-déposé, sélecteur) peut devenir illisible pendant l'envoi (Safari : « Load failed »).
+      var mem = null;
+      function local() {
+        if (mem) return Promise.resolve(mem);
+        if (!file.arrayBuffer) return Promise.resolve(file);
+        return file.arrayBuffer().then(function (ab) { return (mem = new File([ab], file.name, { type: file.type || 'application/octet-stream' })); });
+      }
       function once() {
-        var stage = 'auth', host = '';
-        return api.getToken().then(function (t) {
+        var stage = 'read', host = '';
+        return local().then(function (f) {
+          stage = 'auth';
+          return api.getToken().then(function (t) { return [f, t]; });
+        }).then(function (ft) {
+          var f = ft[0], t = ft[1];
           stage = 'upload'; try { host = new URL(t.baseUrl).host; } catch (x) {}
-          var fd = new FormData(); fd.append('upload', file, file.name);
+          var fd = new FormData(); fd.append('upload', f, file.name);
           return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
-        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e); err.stage = stage; err.host = host; throw err; });
+        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e) && stage !== 'read'; err.stage = stage; err.host = host; throw err; });
       }
       return once().catch(function (e) {
+        if (e.stage === 'read') throw new Error('le fichier « ' + file.name + ' » ne peut pas être lu sur votre poste (' + e.message.replace(/\.+$/, '') + ') : enregistrez-le dans un dossier local (pas un lecteur réseau ni un téléchargement en cours) puis redéposez-le');
         if (!e.net) throw e;
         tokenCache = null;
         if (e.stage === 'upload' && big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le puis réessayez');
