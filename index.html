@@ -692,7 +692,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .bo-tab-hint { margin: -.75rem 0 1.25rem; color: var(--muted); font-size: .875rem; }
   #page-bo[data-tab] [data-grp] { display: none; }
   #page-bo[data-tab="helpdesk"] [data-grp="helpdesk"], #page-bo[data-tab="acces"] [data-grp="acces"], #page-bo[data-tab="apercu"] [data-grp="apercu"] { display: block; }
-  #page-bo[data-tab="jdc"] [data-grp="jdc"], #page-bo[data-tab="faq"] [data-grp="faq"], #page-bo[data-tab="tuto"] [data-grp="tuto"], #page-bo[data-tab="accueil"] [data-grp="accueil"], #page-bo[data-tab="courriels"] [data-grp="courriels"], #page-bo[data-tab="documents"] [data-grp="documents"], #page-bo[data-tab="reglages"] [data-grp="reglages"] { display: block; }
+  #page-bo[data-tab="jdc"] [data-grp="jdc"], #page-bo[data-tab="faq"] [data-grp="faq"], #page-bo[data-tab="tuto"] [data-grp="tuto"], #page-bo[data-tab="accueil"] [data-grp="accueil"], #page-bo[data-tab="courriels"] [data-grp="courriels"], #page-bo[data-tab="documents"] [data-grp="documents"], #page-bo[data-tab="reglages"] [data-grp="reglages"], #page-bo[data-tab="emploi"] [data-grp="emploi"] { display: block; }
   .miss-line { margin-top: .15rem; font-size: .8125rem; color: var(--muted); }
   .ms { position: relative; }
   .ms-btn { text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -953,6 +953,8 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   @media (max-width: 991px) { .gs-results { left: 0; width: auto; } }
   .nav-soon { gap: .5rem; }
   .nav-soon .fr-badge { margin-left: .5rem; }
+  #menu-emp .nav-row.nav-soon { justify-content: flex-start; cursor: default; color: var(--muted, #666); }
+  #menu-emp .nav-row.nav-soon:hover { background: transparent; }
   .info-tip { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-left: .25rem; border-radius: 4px; color: var(--muted); cursor: help; vertical-align: middle; text-transform: none; } /* même pictogramme « i » que la légende des tableaux */
   .info-tip:hover, .info-tip.is-open, .info-tip:focus { background: var(--blue-tint); color: var(--blue); }
   .info-tip [class^="fr-icon-"] { --icon-size: 1rem; }
@@ -1000,6 +1002,25 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .jdc-tab:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
   .jdc-body > * + * { margin-top: 1rem; }
   .jdc-card { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; background: var(--bg); }
+  .pos-tl { border: 1px solid var(--border-default-grey); border-radius: .375rem; overflow-x: auto; background: var(--bg); }
+  .pos-tl__row { display: grid; grid-template-columns: 9rem minmax(46rem, 1fr); border-top: 1px solid var(--border-default-grey); min-width: 55rem; }
+  .pos-tl__row:first-child { border-top: 0; }
+  .pos-tl__s { padding: .4rem .5rem; font-size: .8125rem; font-weight: 700; background: var(--bg-alt); position: sticky; left: 0; z-index: 1; }
+  .pos-tl__g { display: grid; grid-template-columns: repeat(var(--n), minmax(1.5rem, 1fr)); align-items: center; row-gap: 2px; padding: .25rem 0; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / var(--n) - 1px), var(--border-default-grey) calc(100% / var(--n) - 1px), var(--border-default-grey) calc(100% / var(--n))); }
+  .pos-tl__head .pos-tl__g { padding: 0; background: var(--bg-alt); }
+  .pos-tl__head .pos-tl__g span { text-align: center; font-size: .7rem; color: var(--muted); padding: .35rem 0; border-left: 1px solid var(--border-default-grey); }
+  .pos-tl__head .pos-tl__g span.is-we { background: rgba(0, 0, 0, .05); }
+  .pos-tl__bar { all: unset; box-sizing: border-box; cursor: pointer; margin: 0 2px; padding: .25rem .5rem; border-radius: .25rem; font-size: .75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; z-index: 0; }
+  .pos-tl__bar.is-ok { background: #18753c; } .pos-tl__bar.is-part { background: #b34000; } .pos-tl__bar.is-none { background: #ce0500; }
+  .pos-tl__bar:hover { filter: brightness(1.12); } .pos-tl__bar:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .pos-tl__bar:hover, .pos-tl__bar:focus-visible { filter: brightness(1.12); box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor; z-index: 2; position: relative; }
+  .pos-tip { position: fixed; z-index: 3000; max-width: 21rem; background: #fff; color: #161616; border: 1px solid var(--border-default-grey, #ddd); border-radius: .375rem; box-shadow: 0 6px 18px rgba(0, 0, 0, .22); padding: .6rem .75rem; font-size: .8125rem; line-height: 1.4; pointer-events: none; }
+  .pos-tip[hidden] { display: none; }
+  .pos-tip__s { margin: .4rem 0 .25rem; color: #555; }
+  .pos-tip__r { margin-top: .35rem; padding-top: .35rem; border-top: 1px solid #e5e5e5; }
+  .pos-tip__f { margin-top: .5rem; color: #000091; font-weight: 700; }
+  tr.pos-hl > * { background: var(--blue-tint, #e3e3fd) !important; }
+  .pos-role { margin: .75rem 0 .25rem; font-size: 1rem; display: flex; gap: .5rem; align-items: center; }
   .jdc-card__h { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
   .jdc-as, .jdc-pick, .jdc-rules { list-style: none; margin: 0 0 .75rem; padding: 0; }
   .jdc-as li, .jdc-pick li, .jdc-rules li { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; padding: .4rem 0; border-top: 1px solid var(--border-default-grey); }
@@ -1480,7 +1501,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
                   </div>
                   <div class="fr-col-12 fr-col-lg-7">
                     <ul class="nav-rows">
-                      <li><a class="nav-row" href="#" target="_self" data-page="jdc-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
+                      <li><div class="nav-row nav-soon" id="nav-pos-soon" role="link" aria-disabled="true" tabindex="0" title="Bientôt disponible">Mission Poséidon <span class="fr-badge fr-badge--sm fr-badge--new fr-badge--no-icon">Prochainement</span></div></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="emp-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                     </ul>
                   </div>
                 </div>
@@ -1547,6 +1569,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
   <!-- ===== Back office ===== -->
   <div id="w-view-admin" hidden>
+    <section class="step" data-grp="emploi">
+      <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Formulaires de disponibilités et de candidatures</h2></div>
+      <p class="lead">Liens des formulaires Grist externes, rappelés dans les courriels et les PDF des pages JDC et Mission Poséidon (variable {{LIEN_FORMULAIRE}}).</p>
+      <div class="cf-field" style="max-width:48rem;margin-bottom:1rem"><label for="w-emp-jdc">Journée défense et citoyenneté : formulaire de disponibilités</label><input class="input" id="w-emp-jdc" type="url" placeholder="https://grist.numerique.gouv.fr/…/forms/…" autocomplete="off"></div>
+      <div class="cf-field" style="max-width:48rem"><label for="w-emp-pos">Mission Poséidon : formulaire de candidatures</label><input class="input" id="w-emp-pos" type="url" placeholder="https://grist.numerique.gouv.fr/…/forms/…" autocomplete="off"></div>
+    </section>
     <section class="step">
       <div class="head"><div class="badge-num" aria-hidden="true">1</div><h2>Bloc d’introduction (facultatif)</h2></div>
       <p class="lead">Affiché avant les articles, sur la page Bienvenue. En Markdown (ou en HTML) ; non repris dans le sommaire (navigation rapide).</p>
@@ -2595,7 +2623,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.12</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.63.2</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -6380,6 +6408,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     opts: {}, draft: { intro: '', articles: [], counters: [], faq: [], tuto: [], sign: [] }, counts: {}, lastCM: null,
     openArticle: null, openCounter: null, openFaq: null, openTuto: null, openSign: null, introEditor: null, articleEditor: null // un seul éditeur Markdown monté à la fois
   };
+  // Liens des formulaires Grist externes (disponibilités JDC, candidatures Poséidon) : réglés dans le back office, rubrique Emploi.
+  // Le lien JDC saisi autrefois dans les réglages de la page JDC (options.jdc.form) est repris tant que la rubrique n'a pas été enregistrée.
+  function emploiOf(o) {
+    var e = o && o.emploi, old = state.opts.jdc && state.opts.jdc.form;
+    return { jdc: String(e ? e.jdc || '' : old || ''), pos: String(e && e.pos || '') };
+  }
   function cfg() {
     var o = state.opts.welcome, arts = o && Array.isArray(o.articles) ? o.articles : null;
     return {
@@ -6389,6 +6423,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       faq: (o && Array.isArray(o.faq) ? o.faq : DEFAULT_FAQ).map(function (f) { return { q: f.q || '', a: f.a || '' }; }),
       sign: normSign(o && o.signataires),
       suivi: svTpl(o && o.suivi),
+      emploi: emploiOf(o),
       tuto: (o && Array.isArray(o.tuto) ? o.tuto : DEFAULT_TUTO).map(function (t) { return { icon: t.icon || '', title: t.title || '', page: t.page || '', target: t.target || '', body: t.body || '' }; })
     };
   }
@@ -7155,7 +7190,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var openIdx = arts.indexOf(state.openArticle); // -1 si aucun (ou si l'article ouvert vient d'être supprimé)
     if (openIdx !== -1) mountArticleEditor(openIdx);
   }
-  function renderAdminForm() { renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); svRenderTpl(); } // le bloc d'introduction se monte à l'ouverture de son détail
+  function renderEmploi() { var e = state.draft.emploi || { jdc: '', pos: '' }; $('emp-jdc').value = e.jdc; $('emp-pos').value = e.pos; }
+  ['emp-jdc', 'emp-pos'].forEach(function (id) { $(id).addEventListener('input', function (ev) { state.draft.emploi = state.draft.emploi || { jdc: '', pos: '' }; state.draft.emploi[id.slice(4)] = ev.target.value; setDirty(true); }); });
+  function renderAdminForm() { renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); svRenderTpl(); renderEmploi(); } // le bloc d'introduction se monte à l'ouverture de son détail
   function setDirty(d) {
     $('bo-state').textContent = d ? '● Modifications non enregistrées' : 'Configuration à jour';
     $('bo-state').classList.toggle('is-dirty', d);
@@ -7200,10 +7237,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var f = first && first.querySelector('input[data-wf=title]'); if (f) f.focus();
   });
   function cancelWel() {
-    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign, suivi: cfg().suivi };
+    state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign, suivi: cfg().suivi, emploi: cfg().emploi };
     state.openArticle = null; state.openCounter = null; state.openFaq = null; state.openTuto = null; state.openSign = null;
     $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut, y compris après Annuler
-    renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); svRenderTpl(); setDirty(false);
+    renderCounters(); renderArticles(); renderFaqAdmin(); renderTutoAdmin(); renderSignAdmin(); svRenderTpl(); renderEmploi(); setDirty(false);
   }
   function saveWel() {
     var arts = state.draft.articles, cnt = state.draft.counters, i;
@@ -7240,6 +7277,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       faq: fq.map(function (f) { return { q: f.q.trim(), a: f.a }; }),
       signataires: normSign(sg),
       suivi: svTpl(state.draft.suivi),
+      emploi: { jdc: String(state.draft.emploi && state.draft.emploi.jdc || '').trim(), pos: String(state.draft.emploi && state.draft.emploi.pos || '').trim() },
       tuto: tt.map(function (t) { return { icon: (t.icon || '').trim(), title: t.title.trim(), page: t.page || '', target: (t.target || '').trim(), body: t.body }; })
     };
     return Promise.resolve(saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return refreshCounters(); }).then(function () { render(); renderFaq(); setDirty(false); $('saved').hidden = false; });
@@ -7656,6 +7694,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   })();
 
   window.WEL = {
+    // Liens des formulaires externes (rubrique Emploi du back office) : { jdc, pos }
+    emploiLinks: function () { return emploiOf(state.opts.welcome); },
     // Signataire en vigueur (par défaut : aujourd'hui) : { nom, qualite } ; utilisé par les variables {{SIGNATAIRE}} des modèles de contrat.
     signataire: function (iso) { return currentSigner(cfg().sign, iso); },
     // Modèles de courriel du suivi des demandes (éditeur unique du back office) : texte du brouillon.
@@ -7711,7 +7751,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     refresh: function () { render(); renderFaq(); },
     // L'éditeur Markdown (CodeMirror) mesure le texte à l'initialisation : la section doit déjà être visible, donc on l'affiche avant de la construire.
     openAdmin: function () {
-      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign, suivi: cfg().suivi };
+      state.draft = { intro: cfg().intro, articles: cfg().articles, counters: cfg().counters, faq: cfg().faq, tuto: cfg().tuto, sign: cfg().sign, suivi: cfg().suivi, emploi: cfg().emploi };
       state.openArticle = null; state.openCounter = null; state.openFaq = null; state.openTuto = null; state.openSign = null;
       $('intro-details').open = false; destroyIntroEditor(); // repliés par défaut
       $('saved').hidden = true; $('view-admin').hidden = false; renderAdminForm(); setDirty(false);
@@ -14349,14 +14389,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 })();
 // Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
-  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo', jdc: 'page-jdc', 'jdc-stat': 'page-jdc-stat' };
+  var pages = { welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo', jdc: 'page-jdc', 'emp-stat': 'page-emp-stat', pos: 'page-pos' };
   // Anciennes clés (liens #go:, étapes du tutoriel, page mémorisée) : « Réservations » est réparti entre les menus Réservistes (VMP) et Candidats (VEMI, tests psy).
   // Fraîcheur des données par page : relues au plus toutes les 20 s à l'affichage (et après toute écriture : window.__dataDirty).
   var fresh = {};
   function stale(k) { var t = Date.now(); if (fresh[k] && t - fresh[k] < 20000) return false; fresh[k] = t; return true; }
   window.__dataDirty = function () { fresh = {}; };
-  var ALIAS = { rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' };
-  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office', jdc: 'Journée défense et citoyenneté (JDC)', 'jdc-stat': 'Statistiques JDC' };
+  var ALIAS = { 'jdc-stat': 'emp-stat', 'pos-stat': 'emp-stat', rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' };
+  var titles = { welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office', jdc: 'Journée défense et citoyenneté (JDC)', 'emp-stat': 'Statistiques Emploi', pos: 'Mission Poséidon' };
   // Page affichée : bouton du menu « courant », titre du document, page retrouvée à la réouverture (aussi appelée au changement d'onglet de Réservations).
   function mark(p) {
     window.__page = p;
@@ -14372,7 +14412,30 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (p !== 'bo') { try { localStorage.setItem('widgetPage', p); } catch (e) {} } // le back office n'est jamais la page retrouvée à la réouverture
   }
   window.__markPage = mark;
+  // Mission Poséidon : annoncée « Prochainement » dans le menu ; 5 clics rapides sur la ligne la déverrouillent pour la session du navigateur (page et onglet des statistiques).
+  function posOpen() { try { return sessionStorage.getItem('posUnlocked') === '1'; } catch (e) { return !!window.__posUnlocked; } }
+  var posClicks = [];
+  document.addEventListener('click', function (e) { // phase de capture : le menu déroulant (DSFR) ne se referme pas aux premiers clics ; élément « div » (pas un lien) pour la même raison
+    var a = e.target.closest('#nav-pos-soon'); if (!a) return; e.preventDefault(); e.stopPropagation();
+    var t = Date.now(); posClicks.push(t); posClicks = posClicks.filter(function (x) { return t - x < 3000; });
+    if (posClicks.length < 5) return;
+    posClicks = []; window.__posUnlocked = true; try { sessionStorage.setItem('posUnlocked', '1'); } catch (err) {}
+    show('pos');
+    try { var sub = a.closest('.fr-collapse'); if (sub && window.dsfr) { window.dsfr(sub).collapse.conceal(); setTimeout(function () { if (sub.classList.contains('fr-collapse--expanded')) window.dsfr(sub).collapse.conceal(); }, 450); } } catch (err) {}
+  }, true);
+  // Statistiques Emploi : deux onglets, JDC et Poséidon (chacun relit ses tables à l'affichage).
+  function showEmpStat() {
+    var open = posOpen(), t = window.__empStatTab === 'pos' && open ? 'pos' : 'jdc', hj = document.getElementById('jdc-stat-host'), hp = document.getElementById('pos-stat-host'); if (!hj || !hp) return; // page pas encore construite (réouverture du widget)
+    Array.prototype.forEach.call(document.querySelectorAll('#emp-stat-tabs [data-est]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-est') === t)); });
+    document.getElementById('emp-stat-tabs').hidden = !open; // Poséidon verrouillée : un seul onglet (JDC), donc pas de barre d'onglets
+    hj.hidden = t !== 'jdc'; hp.hidden = t !== 'pos';
+    if (t === 'jdc' && window.JDC) window.JDC.show(hj, 'stats');
+    if (t === 'pos' && window.POS) window.POS.show(hp, 'stats');
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('#emp-stat-tabs [data-est]'); if (!b) return; window.__empStatTab = b.getAttribute('data-est'); showEmpStat(); });
   function show(p) {
+    if (p === 'pos' && !posOpen()) p = 'welcome'; // page Poséidon verrouillée (voir ci-dessus)
+    if (p === 'jdc-stat' || p === 'pos-stat') window.__empStatTab = p === 'pos-stat' ? 'pos' : 'jdc'; // anciennes cibles : l'onglet correspondant
     p = ALIAS[p] || p;
     Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = pages[k] !== pages[p]; });
     mark(p);
@@ -14382,7 +14445,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (p === 'pmg-stat' && window.RES && stale(p)) window.RES.refreshCandStats();
     if (/^rsv-/.test(p) && window.RSV) window.RSV.showPage(p, !stale('rsv'));
     if (p === 'jdc' && window.JDC) window.JDC.show(document.getElementById('jdc-host'), 'main');
-    if (p === 'jdc-stat' && window.JDC) window.JDC.show(document.getElementById('jdc-stat-host'), 'stats');
+    if (p === 'emp-stat') showEmpStat();
+    if (p === 'pos' && window.POS) window.POS.show(document.getElementById('pos-host'), 'main');
     if (window.__refreshActiveFilters) window.__refreshActiveFilters();
     window.scrollTo(0, 0);
   }
@@ -15031,8 +15095,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function pbtn(act, label, ico, extra) { return '<button type="button" class="btn sm ico-' + ico + '" data-j="' + act + '" title="' + esc(label) + '"' + (extra || '') + '>' + esc(label) + '</button>'; } // action principale : bouton compact avec pictogramme, en dernier à droite
   function tag(t, c) { return '<span class="fr-tag fr-tag--sm' + (c ? ' tag-c-' + c : '') + '">' + esc(t) + '</span>'; }
   function info(t) { return '<span class="info-tip" tabindex="0" role="note" aria-label="' + esc(t) + '" data-tip="' + esc(t) + '"><span class="fr-icon-information-line" aria-hidden="true"></span></span>'; } // légende en infobulle « i »
+  function boLink() { try { return String((window.WEL && window.WEL.emploiLinks ? window.WEL.emploiLinks().jdc : '') || ''); } catch (e) { return ''; } } // lien du formulaire : réglé en back office (rubrique Emploi)
   function render() {
     if (!R) return;
+    S.cfg.form = boLink();
     if (S.loaded) fillFromRes();
     var stat = U.mode === 'stats', adm = !stat && isAdm(U.tab), tabBtn = function (t) { return '<button type="button" class="jdc-tab" role="tab" aria-selected="' + (U.tab === t[0]) + '" data-j="tab" data-v="' + t[0] + '">' + t[1] + (t[0] === 'des' && S.loaded && findConflicts().length ? ' <span class="fr-badge fr-badge--sm fr-badge--error" title="Conflits de désignation">⚠ ' + findConflicts().length + '</span>' : '') + '</button>'; };
     var head = stat ? '' : adm ? '<div class="jdc-tabs" role="tablist" aria-label="Gestion">' + btn('tab', '‹ Retour', ' data-v="' + (U.lastMain || 'plan') + '"') + ADM_TABS.map(tabBtn).join('') + '</div>'
@@ -15052,8 +15118,19 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
   function reducedMotionJdc() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
   var ADD_KIND = /^(addres|addresbatch|addresman|addnon|impanim)$/; // formulaires de la fenêtre « Ajouter un animateur »
+  function pickSpec() { // « Désigner un autre animateur » : tous les animateurs actifs de la liste, même sans disponibilité déclarée pour cette date
+    var b = S.bBy[U.pick.besId]; if (!b) return null;
+    var qq = loose(U.pick.q || ''), as = assigned(b).filter(activeDes).map(function (d) { return d.animId; });
+    var cands = ranked(b, S.anim.filter(function (a) { return a.actif && as.indexOf(a.id) === -1 && (!qq || loose(name(a) + ' ' + a.nigend + ' ' + a.aff + ' ' + a.statut).indexOf(qq) !== -1); }), null), shown = cands.slice(0, 12);
+    return { title: 'Désigner un autre animateur', html: '<div style="padding:0 .25rem 1rem"><p class="hint">' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + ' · ' + esc(b.site || '—') + ' · ' + esc(hoursOf(b)) + '. Tout animateur actif de la liste peut être désigné, même sans avoir déclaré de disponibilité pour cette date (plafonds, habilitation et une seule JDC par jour restent respectés).</p>' +
+      '<div class="cf-field"><label for="jf-apq">Rechercher un animateur (nom, prénom, Nigend, affectation)</label><input class="input" type="search" id="jf-apq" data-j="apq" value="' + esc(U.pick.q || '') + '" autocomplete="off"></div>' +
+      '<ul class="jdc-pick">' + (shown.length ? shown.map(function (a) { var bl = blockers(a, b), av = isAvail(a, b);
+        return '<li><span>' + esc(name(a)) + ' ' + tag(a.statut, a.statut === 'Réserviste' ? 'blue' : 'grey') + ' <span class="hint">' + esc(a.aff || '') + ' · ' + countAnim(a.id, b.date.slice(0, 7)) + (a.max != null ? ' / ' + a.max : '') + ' ce mois · ' + (av ? 'disponible' : 'disponibilité non déclarée') + '</span>' + (bl.length ? '<br><span style="color:var(--text-default-error)">' + esc(bl.join(', ')) + '</span>' : '') + '</span>' + btn('assign', 'Désigner', ' data-bes="' + b.id + '" data-anim="' + a.id + '"' + (bl.length ? ' disabled' : '')) + '</li>'; }).join('') : '<li class="hint">Aucun animateur ne correspond.</li>') + '</ul>' +
+      (cands.length > shown.length ? '<p class="hint">' + (cands.length - shown.length) + ' autre(s) : précisez la recherche.</p>' : '') + '<div class="cf-actions">' + btn('dlgx', 'Fermer') + '</div></div>' };
+  }
   function dlgSpec() {
     if (U.dlg) return U.dlg;
+    if (U.pick) return pickSpec();
     var f = U.form; if (!f || !ADD_KIND.test(f.kind)) return null;
     var cur = f.kind === 'addnon' ? 'act' : f.kind === 'impanim' ? 'imp' : 'res';
     var tabs = '<div class="jdc-tabs" role="tablist" aria-label="Type d’animateur">' + [['res', 'Réserviste'], ['act', 'Actif'], ['imp', 'Importer un fichier']].map(function (t) { return '<button type="button" class="jdc-tab" role="tab" aria-selected="' + (cur === t[0]) + '" data-j="addtab" data-v="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>';
@@ -15269,6 +15346,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       var bl = blockers(a, b), cm = countAnim(a.id, b.date.slice(0, 7)), av = isAvail(a, b);
       return '<tr' + (bl.length ? ' class="row-off"' : '') + '><th scope="row">' + esc(name(a)) + '<br><span class="hint">' + esc(a.aff || '') + '</span></th><td>' + cm + (a.max != null ? ' / ' + a.max : '') + '</td><td>' + countAnim(a.id, b.date.slice(0, 4)) + '</td><td>' + (av ? 'oui' : '<span class="hint">non déclarée</span>') + '</td><td>' + (function () { var dd = dispoOf(a); return dd && dd.sites.length ? (wantsSite(a, b) ? '<strong>' : '') + 'oui' + (wantsSite(a, b) ? '</strong> (site coché)' : ' (autres sites)') : '<span class="hint">tous</span>'; })() + '</td><td>' + (bl.length ? '<span style="color:var(--text-default-error)">' + esc(bl.join(', ')) + '</span>' : '<span class="hint">—</span>') + '</td><td>' + btn('assign', 'Désigner', ' data-bes="' + b.id + '" data-anim="' + a.id + '"' + (bl.length ? ' disabled' : '')) + '</td></tr>';
     }).join('') + '</tbody></table></div>' : '<p class="hint">Aucun animateur' + (U.onlyDispo ? ' disponible pour cette date (décochez « Seulement les animateurs disponibles » pour voir les autres)' : '') + '.</p>') + '</details>';
+    html += '<p style="margin:.5rem 0 0">' + btn('pickanim', 'Désigner un autre animateur…', ' data-id="' + b.id + '"') + '</p>';
     return html + '</section>';
   }
 
@@ -15419,7 +15497,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 
   /* ----- Réglages ----- */
   function vReg() {
-    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), html = '<section class="cf-section"><h3>Lien de réservation (formulaire de disponibilités)</h3><div class="cf-field" style="max-width:48rem"><label for="jr-form">Lien du formulaire Grist externe ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Le formulaire ne propose que les dates à venir : les dates passées sont retirées à chaque ouverture du widget.') + '</label><input class="input" id="jr-form" data-jr="form" value="' + esc(c.form) + '" placeholder="https://grist.numerique.gouv.fr/…/forms/…"></div>' + openMonthsHtml(c.openMonths, 'data-jopen') + openDatesHtml() + '</section>';
+    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), html = '<section class="cf-section"><h3>Lien de réservation (formulaire de disponibilités)</h3><p style="margin:0 0 .75rem">' + (S.cfg.form ? 'Lien actuel : <a href="' + esc(S.cfg.form) + '" target="_blank" rel="noopener noreferrer">' + esc(S.cfg.form) + '</a>' : '<strong>Lien non renseigné.</strong>') + ' ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Il se règle dans le back office, rubrique Emploi. Le formulaire ne propose que les dates à venir : les dates passées sont retirées à chaque ouverture du widget.') + ' ' + btn('gobo', 'Modifier dans le back office') + '</p>' + openMonthsHtml(c.openMonths, 'data-jopen') + openDatesHtml() + '</section>';
     html += '<section class="cf-section"><h3>Règles de priorité de la répartition ' + info('Cochez et classez les règles : la première départage d’abord, les suivantes les égalités, puis l’ordre alphabétique. « Grade croissant » : du moins au plus gradé (GAV/GA2, GA1, BRI, BRC, MDL/GND, MDC, ADJ, ADC, MAJ, ASP, SLT, LTN, CNE, CEN/CDT, LCL, COL ; « / » = même rang) dans la catégorie visée, l’autre catégorie passant après. Plafonds mensuels, habilitation et une seule JDC par jour sont toujours respectés.') + '</h3><ol class="jdc-rules">' +
       c.rules.map(function (r, i) { var lab = RULES.filter(function (x) { return x[0] === r.id; })[0][1]; return '<li><label class="ed-check"><input type="checkbox" data-jrule="' + i + '"' + (r.on ? ' checked' : '') + '> ' + esc(lab) + '</label><span>' + btn('ruleup', '↑', ' data-i="' + i + '" aria-label="Monter"' + (i === 0 ? ' disabled' : '')) + ' ' + btn('ruledown', '↓', ' data-i="' + i + '" aria-label="Descendre"' + (i === c.rules.length - 1 ? ' disabled' : '')) + '</span></li>'; }).join('') + '</ol></section>';
     html += '<section class="cf-section"><h3>Modèles de courriels ' + info('Courriels préparés dans votre messagerie, destinataires en Cci. Cliquez sur une variable pour l’insérer dans le champ en cours.') + '</h3>' + Object.keys(DEF_TPL).map(function (k) {
@@ -15545,7 +15623,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function openRelance() {
     var m = U.relM || mths(), PM = m, dst = S.anim.filter(function (a) { return a.actif && a.email && datesIn(a, m) === 0; });
     U.dlg = { title: 'Relancer les animateurs sans réponse', kind: 'relance', html: '<div style="padding:0 .25rem 1rem"><p>Courriel en <strong>Cci</strong> à <strong>' + dst.length + '</strong> animateur' + (dst.length > 1 ? 's' : '') + ' actif' + (dst.length > 1 ? 's' : '') + ' qui n’' + (dst.length > 1 ? 'ont' : 'a') + ' donné aucune disponibilité pour ' + esc(monthLabel(m)) + (dst.length ? ' : ' + esc(dst.map(function (a) { return a.nom; }).join(', ')) : '') + '.</p><div class="cf-grid"><div class="cf-field"><label for="ji-p">Période</label>' + periodSelect(PM, ' data-j="relper"') + '</div><div class="cf-field"><label for="ji-d">Date limite de réponse</label><input type="date" class="input" id="ji-d" value="' + esc(U.relD || addDays(todayIso(), 3)) + '"></div></div>' +
-      (S.cfg.form ? '' : '<p class="hint" style="color:var(--text-default-warning)">Le lien du formulaire n’est pas renseigné (⚙ puis Réglages).</p>') + '<div class="cf-actions">' + btn('relanceok', 'Ouvrir le courriel', dst.length ? '' : ' disabled', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
+      (S.cfg.form ? '' : '<p class="hint" style="color:var(--text-default-warning)">Le lien du formulaire n’est pas renseigné (back office, rubrique Emploi).</p>') + '<div class="cf-actions">' + btn('relanceok', 'Ouvrir le courriel', dst.length ? '' : ' disabled', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
     render();
   }
   function relanceOk() {
@@ -15555,7 +15633,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function openInvite() {
     var m = mths(), PM = (S.cfg.openMonths || []).filter(function (x) { return x >= todayIso().slice(0, 7); })[0] || m, dst = S.anim.filter(function (a) { return a.actif && a.email; });
     U.dlg = { title: 'Inviter à donner ses disponibilités', kind: 'invite', html: '<div style="padding:0 .25rem 1rem"><p>Courriel en <strong>Cci</strong> à <strong>' + dst.length + '</strong> animateur' + (dst.length > 1 ? 's' : '') + ' actif' + (dst.length > 1 ? 's' : '') + ' (avec une adresse).</p><div class="cf-grid"><div class="cf-field"><label for="ji-p">Période</label>' + periodSelect(PM) + '</div><div class="cf-field"><label for="ji-d">Date limite de réponse</label><input type="date" class="input" id="ji-d" value="' + esc(addDays(todayIso(), 7)) + '"></div></div>' +
-      openMonthsHtml(S.cfg.openMonths, 'data-jodlg') + (S.cfg.form ? '' : '<p class="hint" style="color:var(--text-default-warning)">Le lien du formulaire n’est pas renseigné (⚙ puis Réglages).</p>') + '<div class="cf-actions">' + btn('inviteok', 'Ouvrir le courriel', dst.length ? '' : ' disabled', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
+      openMonthsHtml(S.cfg.openMonths, 'data-jodlg') + (S.cfg.form ? '' : '<p class="hint" style="color:var(--text-default-warning)">Le lien du formulaire n’est pas renseigné (back office, rubrique Emploi).</p>') + '<div class="cf-actions">' + btn('inviteok', 'Ouvrir le courriel', dst.length ? '' : ' disabled', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
     render();
   }
   function inviteOk() {
@@ -15570,7 +15648,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function openSendPlan() {
     var m = mths(), dst = planRecipients(m), unf = unfilledList(m).length, nAns = answeredIn(m).length;
     U.dlg = { title: 'Envoyer le planning – ' + monthLabel(m), kind: 'plan', html: '<div style="padding:0 .25rem 1rem"><p>Courriel en <strong>Cci</strong> à <strong>' + dst.length + '</strong> militaire' + (dst.length > 1 ? 's' : '') + ' : ceux qui ont donné des disponibilités ce mois-ci (' + nAns + ') et les animateurs désignés.</p>' +
-      '<p>Pièce jointe : <strong>PDF</strong> (planning et désignations) ' + info('Le PDF contient la vue planning, les coordonnées des sites et le récapitulatif des désignations des militaires ayant donné des disponibilités. Le corps du message rappelle ' + (unf ? 'les besoins non pourvus et ' : '') + 'le lien de réservation.') + (S.cfg.form ? '' : ' <strong>Lien de réservation non renseigné</strong> (Réglages).') + '</p>' +
+      '<p>Pièce jointe : <strong>PDF</strong> (planning et désignations) ' + info('Le PDF contient la vue planning, les coordonnées des sites et le récapitulatif des désignations des militaires ayant donné des disponibilités. Le corps du message rappelle ' + (unf ? 'les besoins non pourvus et ' : '') + 'le lien de réservation.') + (S.cfg.form ? '' : ' <strong>Lien de réservation non renseigné</strong> (back office, rubrique Emploi).') + '</p>' +
       '<div id="jp-st" class="hint" role="status" style="margin-top:.5rem"></div><div class="cf-actions" style="flex-wrap:wrap">' + btn('planok', 'Ouvrir le courriel et télécharger le PDF', dst.length ? '' : ' disabled', 'btn') + btn('planeml', 'Brouillon .eml avec le PDF joint', dst.length ? '' : ' disabled') + btn('planpdf', 'Télécharger le PDF seul') + btn('dlgx', 'Annuler') + '</div><p class="hint">Brouillon .eml : <strong>Ctrl + E (⌘ + E sur Mac)</strong> pour pouvoir modifier et envoyer. ' + info('« Ouvrir le courriel » prépare le message (destinataires en Cci) et télécharge le PDF à glisser en pièce jointe. Le brouillon .eml contient déjà le PDF.') + '</p></div>' };
     render();
   }
@@ -15803,8 +15881,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'pper') { U.pper = b.getAttribute('data-v'); if (U.pper === 'week') { U.week = ''; } return render(); }
     if (j === 'wprev' || j === 'wnext') { U.week = addDays(curWeek(), j === 'wprev' ? -7 : 7); U.month = U.week.slice(0, 7); return render(); }
     if (j === 'gotodes') { var gb = S.bBy[id]; if (gb) { U.month = gb.date.slice(0, 7); U.tab = 'des'; U.lastMain = 'des'; U.form = null; U.focusBes = gb.id; } render(); if (gb) setTimeout(focusBes, 40); return; }
-    if (j === 'dlgx') { U.dlg = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; return render(); }
+    if (j === 'dlgx') { U.dlg = null; U.pick = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; return render(); }
+    if (j === 'pickanim') { U.pick = { besId: id, q: '' }; return render(); }
     if (j === 'resmode') { var fo = U.form; U.form = { kind: b.getAttribute('data-v') === 'batch' ? 'addresbatch' : 'addres', q: fo.q || '', sel: fo.sel || {}, max: fo.max || '' }; return render(); }
+    if (j === 'gobo') { if (window.__showPage) window.__showPage('bo'); if (window.__showBoTab) window.__showBoTab('emploi'); return; }
     if (j === 'reload') { S.loading = null; return loadAll().then(render); }
     if (j === 'formx') { U.form = null; return render(); }
     if (j === 'manualres') {
@@ -15869,6 +15949,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var t = e.target;
     if (t.getAttribute('data-j') === 'q') { U.q = t.value; var pos = t.selectionStart; render(); var n = R.querySelector('#jdc-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
     if (t.getAttribute('data-j') === 'bmax') { U.form.max = t.value; return; }
+    if (t.getAttribute('data-j') === 'apq') { U.pick.q = t.value; var pa = t.selectionStart; render(); var na = R.querySelector('#jf-apq'); if (na) { na.focus(); na.setSelectionRange(pa, pa); } return; }
     if (t.getAttribute('data-j') === 'pq') { U.form.q = t.value; var p2_ = t.selectionStart; render(); var n2 = R.querySelector('#jf-pq'); if (n2) { n2.focus(); n2.setSelectionRange(p2_, p2_); } return; }
     if (t.getAttribute('data-jr') === 'form') U.draft.form = t.value;
     var jt = t.getAttribute('data-jt'); if (jt) { var kk = jt.split('.'); U.draft.tpl[kk[0]][kk[1]] = t.value; }
@@ -15894,18 +15975,711 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function mount(el) {
     if (R === el) return; R = el; R.classList.add('jdc-root');
     R.addEventListener('click', onClick); R.addEventListener('input', onInput); R.addEventListener('change', onChange);
-    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && (U.dlg || (U.form && ADD_KIND.test(U.form.kind)))) { U.dlg = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; render(); } });
+    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && (U.dlg || U.pick || (U.form && ADD_KIND.test(U.form.kind)))) { U.dlg = null; U.pick = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; render(); } });
   }
   // Le formulaire ne doit proposer que des dates à venir : la liste est nettoyée à chaque ouverture du widget (et au retour sur l'onglet du navigateur, au plus une fois par heure),
   // pas seulement quand la page JDC est affichée.
   var lastBg = 0;
   function background() { if (!IN_GRIST || Date.now() - lastBg < 3600000) return; lastBg = Date.now(); S.loading = null; loadAll(); }
   if (IN_GRIST) { setTimeout(background, 4000); document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') background(); }); }
+  window.__empKit = { compose: compose, buildEml: buildEml, buildPdf: buildPdf, b64OfBuf: b64OfBuf, saveBlob: saveBlob, copyText: copyText }; // outils de courriel et de PDF partagés avec la page Mission Poséidon
   window.JDC = {
     mount: mount,
     show: function (el, mode) { // mode « stats » : page Statistiques ; sinon page principale (planning, désignations, gestion)
       U.mode = mode === 'stats' ? 'stats' : 'main'; if (U.mode === 'main' && U.tab === 'stats') U.tab = 'plan';
       mount(el); var o = window.__getOpts ? window.__getOpts() : {}; if (!U.draft) S.cfg = normCfg(o && o.jdc);
+      U.month = U.month || nextMonth(); render(); return loadAll().then(render);
+    }
+  };
+})();
+</script>
+<script>
+/* Mission Poséidon : missions proposées par périodes (et non par jours), sur plusieurs sites. Tous les réservistes peuvent postuler (pas de liste d'animateurs, pas de personnel actif).
+   Pour chaque mission : un chef de détachement, un chef de détachement adjoint et le reste de l'équipe. Candidatures remontées par un formulaire Grist externe (lien réglé en back office,
+   rubrique Emploi), désignations, planning (frise et tableau, PDF paysage), statistiques et courriels (adresses en copie cachée).
+   Tables Grist (CSV fournis dans le dossier poseidon) : Poseidon_Sites, Poseidon_Missions, Poseidon_Semaines_ouvertes (facultative), Poseidon_Candidatures, Poseidon_Designations.
+   Hors de Grist : données de démonstration. */
+(function () {
+  'use strict';
+  var IN_GRIST = !!(window.grist && window.parent !== window);
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function loose(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+  function fmtFr(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'], MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function monthLabel(ym) { var m = /^(\d{4})-(\d{2})/.exec(ym || ''); return m ? MONTHS[+m[2] - 1] + ' ' + m[1] : ''; }
+  function toIso(v) {
+    if (typeof v === 'number') { var d = new Date((v > 1e11 ? v / 1000 : v) * 1000); return d.getUTCFullYear() + '-' + p2(d.getUTCMonth() + 1) + '-' + p2(d.getUTCDate()); }
+    var s = String(v == null ? '' : v).trim(), m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s); if (m) return m[1] + '-' + m[2] + '-' + m[3];
+    m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/.exec(s); return m ? m[3] + '-' + p2(+m[2]) + '-' + p2(+m[1]) : '';
+  }
+  function isoToSec(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : null; }
+  function addDays(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.getUTCFullYear() + '-' + p2(d.getUTCMonth() + 1) + '-' + p2(d.getUTCDate()); }
+  function diffDays(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
+  function tsKey(v) { if (typeof v === 'number') return v > 1e11 ? v / 1000 : v; var t = Date.parse(String(v || '').replace(' ', 'T')); return isNaN(t) ? 0 : t / 1000; }
+  function truthy(v) { return v === true || /^(oui|o|true|vrai|1|x|yes)$/i.test(String(v == null ? '' : v).trim()); }
+  function uniq(a) { var s = {}; return a.filter(function (x) { var k = String(x).toLowerCase(); if (!x || s[k]) return false; s[k] = true; return true; }); }
+  function weekStartOf(iso) { var d = new Date(iso + 'T00:00:00Z'); return addDays(iso, -((d.getUTCDay() + 1) % 7)); } // samedi qui débute la semaine contenant cette date
+  function isoWeekNum(iso) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); var y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); return Math.ceil(((d - y0) / 86400000 + 1) / 7); }
+  // Semaine de mission : du samedi au samedi suivant (jour de relève : la personne qui part et celle qui arrive sont présentes). Numéro = semaine ISO du lundi qui suit le samedi de départ.
+  function weekObj(sat) { var end = addDays(sat, 7), n = isoWeekNum(addDays(sat, 2)); return { key: sat, num: n, start: sat, end: end, last: addDays(sat, 6), label: 'Semaine ' + n + ' · du samedi ' + fmtFr(sat) + ' au samedi ' + fmtFr(end) }; }
+  function monthDays(ym) { var m = /^(\d{4})-(\d{2})$/.exec(ym); return m ? new Date(Date.UTC(+m[1], +m[2], 0)).getUTCDate() : 30; }
+
+  /* ---------- Rôles d'une mission ---------- */
+  var ROLES = [
+    { k: 'cd', label: 'Chef de détachement', short: 'Chef de détachement', db: 'Chef de détachement', col: 'CD' },
+    { k: 'cda', label: 'Chef de détachement adjoint', short: 'Adjoint', db: 'Chef de détachement adjoint', col: 'CDA' },
+    { k: 'eq', label: 'Reste de l’équipe', short: 'Exécutant', db: 'Exécutant', col: 'Équipe' }
+  ];
+  function roleDef(k) { return ROLES.filter(function (r) { return r.k === k; })[0]; }
+  function roleOf(text) { var t = loose(text); return /adjoint|cda/.test(t) ? 'cda' : /chef|detachement|^cd$/.test(t) ? 'cd' : 'eq'; }
+
+  /* ---------- Configuration enregistrée dans les options du widget (options.pos) : modèles de courriels ---------- */
+  var DEF_TPL = {
+    appel: { label: 'Appel à candidatures (aux réservistes)', subject: 'Mission Poséidon : appel à candidatures', body: 'Bonjour,\n\nDes missions Poséidon sont ouvertes aux réservistes :\n{{MISSIONS}}\n\nPour vous porter candidat, indiquez les semaines où vous êtes disponible (une mission dure en général deux semaines ; vous pouvez ne proposer qu’une semaine) :\n{{LIEN_FORMULAIRE}}\n\nCordialement,\nLe bureau Poséidon', vars: ['MISSIONS', 'LIEN_FORMULAIRE'] },
+    planning: { label: 'Envoi du planning (aux désignés)', subject: 'Mission Poséidon : planning – {{PERIODE}}', body: 'Bonjour,\n\nVous trouverez ci-joint le planning des missions Poséidon ({{PERIODE}}) avec les désignations.\n\n{{BESOINS_NON_POURVUS}}\n\nPour vous porter candidat : {{LIEN_FORMULAIRE}}\n\nMerci de confirmer votre disponibilité en répondant à ce message.\n\nCordialement,\nLe bureau Poséidon', vars: ['PERIODE', 'BESOINS_NON_POURVUS', 'LIEN_FORMULAIRE'] },
+    annul: { label: 'Annulation d’une désignation (au réserviste)', subject: 'Mission Poséidon ({{PERIODE}}) : annulation de votre désignation', body: 'Bonjour {{PRENOM}},\n\nVotre désignation à la mission Poséidon {{PERIODE}} ({{SITE}}, rôle : {{ROLE}}) est annulée.\n\nCordialement,\nLe bureau Poséidon', vars: ['PRENOM', 'NOM', 'PERIODE', 'SITE', 'ROLE'] }
+  };
+  function normCfg(o) {
+    o = o || {}; var tpl = {};
+    Object.keys(DEF_TPL).forEach(function (k) { var t = o.tpl && o.tpl[k] || {}; tpl[k] = { subject: typeof t.subject === 'string' ? t.subject : DEF_TPL[k].subject, body: typeof t.body === 'string' ? t.body : DEF_TPL[k].body }; });
+    var om = (Array.isArray(o.openMonths) ? o.openMonths : []).filter(function (m, i, a) { return /^\d{4}-\d{2}$/.test(m) && a.indexOf(m) === i; }).sort();
+    return { openMonths: om, tpl: tpl };
+  }
+
+  /* ---------- Tables ---------- */
+  var TDEF = {
+    sites: { name: 'Poseidon_Sites', re: /^poseidon sites?$/, cols: { site: ['site', 'nom', 'lieu'], adresse: ['adresse'], cp: ['code postal', 'cp'], ville: ['ville'], contact: ['contact'], tel: ['telephone', 'tel'], actif: ['actif'], aff: ['affectation', 'groupement'] } },
+    mis: { name: 'Poseidon_Missions', re: /^poseidon missions?$/, cols: { site: ['site', 'lieu'], debut: ['debut', 'date de debut', 'du'], fin: ['fin', 'date de fin', 'au'], cd: ['nb chefs de detachement', 'chefs de detachement', 'nb cd', 'cd'], cda: ['nb adjoints', 'adjoints', 'nb cda', 'cda'], eq: ['nb executants', 'executants', 'nb equipiers', 'equipiers', 'nb equipe', 'equipe'], comm: ['commentaire'] } },
+    open: { name: 'Poseidon_Semaines_ouvertes', re: /^poseidon (semaines?|missions?) ouvertes?$/, opt: true, cols: { lib: ['libelle', 'mission'] } },
+    cand: { name: 'Poseidon_Candidatures', re: /^poseidon candidatures?$/, cols: { ts: ['horodatage', 'date de reponse'], nigend: ['nigend'], email: ['email', 'mail', 'courriel'], weeks: ['semaines', 'semaines choisies', 'disponibilites', 'missions', 'periodes'], weeksTxt: ['semaines texte', 'texte semaines', 'missions texte', 'texte missions'], comm: ['commentaire'] } },
+    des: { name: 'Poseidon_Designations', re: /^poseidon designations?$/, cols: { mis: ['mission'], debut: ['debut', 'date de debut', 'du'], fin: ['fin', 'date de fin', 'au'], nigend: ['nigend'], nom: ['reserviste', 'identite', 'nom'], role: ['role'], statut: ['statut'], dd: ['date designation'], dc: ['informe le', 'date information', 'date convocation'], comm: ['commentaire'] } }
+  };
+  var S = { cfg: normCfg(null), T: {}, loaded: false, loading: null, error: '', sites: [], mis: [], cand: [], des: [], weeks: [], weekBy: {}, misBy: {}, sBy: {}, openBy: {}, dm: {} };
+  function woChoices(wo) { try { var o = JSON.parse(wo || '{}'); return Array.isArray(o.choices) ? o.choices : null; } catch (e) { return null; } }
+  function pickCol(all, names) { var n = names.map(loose); return all.filter(function (c) { return n.indexOf(loose(c.label)) !== -1 || n.indexOf(loose(c.id)) !== -1; })[0] || null; }
+  function colsFor(def, all) { var o = {}; Object.keys(def.cols).forEach(function (k) { o[k] = pickCol(all, def.cols[k]); }); return o; }
+  function colMeta(id, label, type, ref) { return { id: id, label: label, type: type || 'Text', ref: ref || '' }; }
+  var demoSeq = 100;
+  function demoData() {
+    var base = todayIso(), nm = new Date(); nm.setDate(1); nm.setMonth(nm.getMonth() + 1); var first = nm.getFullYear() + '-' + p2(nm.getMonth() + 1) + '-01';
+    var nn = new Date(); nn.setDate(1); nn.setMonth(nn.getMonth() + 2); var first2 = nn.getFullYear() + '-' + p2(nn.getMonth() + 1) + '-01';
+    var W0 = weekStartOf(first); if (W0 < first) W0 = addDays(W0, 7); var W = [0, 1, 2, 3, 4].map(function (i) { return addDays(W0, 7 * i); }), V0 = weekStartOf(first2); if (V0 < first2) V0 = addDays(V0, 7);
+    function mk(name, keys, types, rows) { var cols = {}; keys.forEach(function (k, i) { var t = types[i] || 'Text', ref = /^Ref(List)?:/.test(t) ? t.split(':')[1] : ''; cols[k] = colMeta(k, k, t, ref); }); return { name: name, cols: cols, rows: rows }; }
+    var T = {};
+    T.sites = mk('Poseidon_Sites', ['site', 'adresse', 'cp', 'ville', 'contact', 'tel', 'actif', 'aff'], ['Text', 'Text', 'Text', 'Text', 'Text', 'Text', 'Bool', 'Text'], [
+      { id: 1, site: 'Site de Toulon', adresse: '3 quai de la Marine', cp: '83000', ville: 'Toulon', contact: 'Capitaine Durand', tel: '04 94 00 00 01', actif: true, aff: 'GD 83' },
+      { id: 2, site: 'Site de Marseille', adresse: '10 boulevard du Littoral', cp: '13002', ville: 'Marseille', contact: 'Adjudant Martin', tel: '04 91 00 00 02', actif: true, aff: 'GD 13' },
+      { id: 3, site: 'Site de Nice', adresse: '25 promenade des Anglais', cp: '06000', ville: 'Nice', contact: 'Lieutenant Roux', tel: '04 93 00 00 03', actif: true, aff: 'GD 06' }]);
+    T.mis = mk('Poseidon_Missions', ['site', 'debut', 'fin', 'cd', 'cda', 'eq', 'comm'], ['Ref:Poseidon_Sites', 'Date', 'Date', 'Int', 'Int', 'Int', 'Text'], [
+      { id: 1, site: 1, debut: isoToSec(W[0]), fin: isoToSec(addDays(W[1], 7)), cd: 1, cda: 1, eq: 4, comm: '' },
+      { id: 2, site: 2, debut: isoToSec(W[1]), fin: isoToSec(addDays(W[2], 7)), cd: 1, cda: 1, eq: 3, comm: '' },
+      { id: 3, site: 3, debut: isoToSec(W[2]), fin: isoToSec(addDays(W[3], 7)), cd: 1, cda: 1, eq: 2, comm: 'Renfort estival' },
+      { id: 4, site: 1, debut: isoToSec(V0), fin: isoToSec(addDays(V0, 14)), cd: 1, cda: 1, eq: 4, comm: '' }]);
+    var all = W.concat([V0, addDays(V0, 7)]).map(weekObj);
+    T.open = mk('Poseidon_Semaines_ouvertes', ['lib'], ['Text'], all.map(function (w, i) { return { id: i + 1, lib: w.label }; }));
+    function lab(idx) { return idx.map(function (i) { return all[i].label; }).join('; '); }
+    function ids(idx) { return ['L'].concat(idx.map(function (i) { return i + 1; })); }
+    var now = Math.floor(Date.now() / 1000);
+    T.cand = mk('Poseidon_Candidatures', ['ts', 'nigend', 'email', 'weeks', 'weeksTxt', 'comm'], ['DateTime:Europe/Paris', 'Text', 'Text', 'RefList:Poseidon_Semaines_ouvertes', 'Text', 'Text'], [
+      { id: 1, ts: now - 86400 * 3, nigend: '2011-0384', email: '', weeks: ids([0, 1, 2]), weeksTxt: lab([0, 1, 2]), comm: '' },
+      { id: 2, ts: now - 86400 * 2, nigend: '2019-1120', email: '', weeks: ids([0, 2, 3]), weeksTxt: lab([0, 2, 3]), comm: 'Une semaine seulement possible' },
+      { id: 3, ts: now - 86400, nigend: '2022-0555', email: '', weeks: ids([0, 1, 2, 3, 5, 6]), weeksTxt: lab([0, 1, 2, 3, 5, 6]), comm: '' },
+      { id: 4, ts: now - 3600, nigend: '9999-0000', email: 'inconnu@gendarmerie.interieur.gouv.fr', weeks: ids([0]), weeksTxt: lab([0]), comm: 'Exemple : réponse d’une personne absente de la table Réservistes' }]);
+    T.des = mk('Poseidon_Designations', ['mis', 'nigend', 'nom', 'role', 'debut', 'fin', 'statut', 'dd', 'dc', 'comm'], ['Ref:Poseidon_Missions', 'Text', 'Text', 'Choice', 'Date', 'Date', 'Text', 'Date', 'Date', 'Text'], [
+      { id: 1, mis: 1, nigend: '2011-0384', nom: 'ADJ LEFÈVRE Antoine', role: 'Chef de détachement', debut: isoToSec(W[0]), fin: isoToSec(addDays(W[1], 7)), statut: 'Confirmé', dd: isoToSec(base), dc: isoToSec(base), comm: '' }]);
+    return T;
+  }
+  function loadAll() {
+    if (S.loading) return S.loading;
+    var p;
+    if (!IN_GRIST) { if (!S.demo) S.demo = demoData(); S.T = S.demo; p = Promise.resolve(); }
+    else {
+      p = Promise.all([grist.docApi.listTables(), grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]).then(function (r) {
+        var names = r[0], T = r[1], C = r[2], out = {}, missing = [];
+        Object.keys(TDEF).forEach(function (k) {
+          var name = names.filter(function (x) { return TDEF[k].re.test(loose(x)); })[0]; if (!name) { if (!TDEF[k].opt) missing.push(TDEF[k].name); return; }
+          var tid = T.id[T.tableId.indexOf(name)], all = [];
+          for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) all.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], ref: /^Ref(List)?:/.test(C.type[i]) ? C.type[i].split(':')[1] : '', choices: woChoices(C.widgetOptions && C.widgetOptions[i]) });
+          out[k] = { name: name, cols: colsFor(TDEF[k], all), rows: [] };
+        });
+        if (missing.length) throw new Error('table(s) introuvable(s) dans ce document : ' + missing.join(', ') + '. Importez les fichiers .csv du dossier poseidon.');
+        return Promise.all(Object.keys(out).map(function (k) { return grist.docApi.fetchTable(out[k].name).then(function (t) { out[k].rows = (t.id || []).map(function (id, n) { var row = { id: id }; Object.keys(t).forEach(function (c) { if (c !== 'id' && Array.isArray(t[c])) row[c] = t[c][n]; }); return row; }); }); })).then(function () { S.T = out; });
+      });
+    }
+    S.loading = p.then(function () { S.error = ''; rebuild(); S.loaded = true; scheduleSync(); }, function (e) { S.error = (e && e.message) || String(e); S.loaded = false; }).then(function () { S.loading = null; });
+    return S.loading;
+  }
+  function raw(tk, row, ck) { var c = S.T[tk].cols[ck]; return c ? row[c.id] : undefined; }
+  function txt(v) { return v == null || v === false ? '' : (Array.isArray(v) ? v.slice(v[0] === 'L' ? 1 : 0).join(', ') : String(v).trim()); }
+  function listOf(v) { return Array.isArray(v) ? v.slice(v[0] === 'L' ? 1 : 0) : String(v == null ? '' : v).split(/[;\n]+/); }
+  function num(v, dflt) { var n = Number(v); return v === '' || v == null || isNaN(n) ? dflt : n; }
+  function missionLabel(m) { return m.site + ' · ' + periodText(m); }
+  function periodText(m) { return m.debut === m.fin ? 'le ' + fmtFr(m.debut) : 'du ' + fmtFr(m.debut) + ' au ' + fmtFr(m.fin); }
+  function rebuild() {
+    var T = S.T, lbl = {};
+    S.sites = T.sites.rows.map(function (r) { return { id: r.id, name: txt(raw('sites', r, 'site')), adresse: txt(raw('sites', r, 'adresse')), cp: txt(raw('sites', r, 'cp')), ville: txt(raw('sites', r, 'ville')), contact: txt(raw('sites', r, 'contact')), tel: txt(raw('sites', r, 'tel')), aff: txt(raw('sites', r, 'aff')), actif: T.sites.cols.actif ? truthy(raw('sites', r, 'actif')) : true }; });
+    S.sBy = {}; S.sites.forEach(function (s) { S.sBy[s.id] = s; });
+    S.mis = T.mis.rows.map(function (r) {
+      var sv = raw('mis', r, 'site'), sc = T.mis.cols.site, isRef = sc && sc.ref && typeof sv === 'number', site = isRef ? (S.sBy[sv] ? S.sBy[sv].name : '') : txt(sv), sid = isRef ? sv : (S.sites.filter(function (s) { return loose(s.name) === loose(site); })[0] || {}).id;
+      var d = toIso(raw('mis', r, 'debut')), f = toIso(raw('mis', r, 'fin')) || d;
+      var m = { id: r.id, siteId: sid, site: site, debut: d, fin: f < d ? d : f, cd: num(raw('mis', r, 'cd'), 1), cda: num(raw('mis', r, 'cda'), 1), eq: num(raw('mis', r, 'eq'), 0), comm: txt(raw('mis', r, 'comm')) };
+      m.label = missionLabel(m); return m;
+    }).filter(function (m) { return m.debut; });
+    S.misBy = {}; S.mis.forEach(function (m) { S.misBy[m.id] = m; lbl[loose(m.label)] = m.id; });
+    var wk = {}; // semaines civiles (lundi → dimanche) touchées par au moins une mission : celles que propose le formulaire
+    S.mis.forEach(function (m) { m.weeks = []; for (var mon = weekStartOf(m.debut); mon < m.fin || (m.fin === m.debut && mon <= m.fin); mon = addDays(mon, 7)) { wk[mon] = wk[mon] || weekObj(mon); m.weeks.push(wk[mon]); } });
+    S.weekBy = wk; S.weeks = Object.keys(wk).sort().map(function (k) { return wk[k]; });
+    S.openBy = {}; if (T.open && T.open.cols.lib) T.open.rows.forEach(function (r) { S.openBy[r.id] = txt(raw('open', r, 'lib')); });
+    S.cand = T.cand.rows.map(function (r) {
+      var cc = T.cand.cols, keys = [], tx = cc.weeksTxt ? txt(raw('cand', r, 'weeksTxt')) : '';
+      function add(k) { if (k && keys.indexOf(k) === -1) keys.push(k); }
+      function item(label) { // « Semaine 45 · du 02/11/2026 au 08/11/2026 » : la première date donne la semaine ; un ancien libellé de mission donne toutes ses semaines
+        label = String(label || '').trim(); if (!label) return;
+        var id = lbl[loose(label)]; if (id != null) { S.misBy[id].weeks.forEach(function (w) { add(w.key); }); return; }
+        var mt = /(\d{4}-\d{2}-\d{2})|(\d{1,2}\/\d{1,2}\/\d{4})/.exec(label); if (mt) { var iso = toIso(mt[0]); if (iso) add(weekStartOf(iso)); }
+      }
+      if (tx) tx.split(/[;\n]+/).forEach(item);
+      else if (cc.weeks) listOf(raw('cand', r, 'weeks')).forEach(function (x) { if (typeof x === 'number') item(S.openBy[x] || ''); else item(x); });
+      return { id: r.id, ts: raw('cand', r, 'ts'), nigend: txt(raw('cand', r, 'nigend')), email: txt(raw('cand', r, 'email')), weeks: keys, comm: txt(raw('cand', r, 'comm')) };
+    });
+    var dm = {}; S.cand.slice().sort(function (a, b) { return tsKey(a.ts) - tsKey(b.ts) || a.id - b.id; }).forEach(function (r) { var k = loose(r.nigend) || loose(r.email); if (k) dm[k] = r; }); S.dm = dm; // dernière réponse de chaque personne
+    S.des = T.des.rows.map(function (r) {
+      var mv = raw('des', r, 'mis'), mid = typeof mv === 'number' ? (S.misBy[mv] ? mv : null) : (lbl[loose(txt(mv))] != null ? lbl[loose(txt(mv))] : null), m = mid != null ? S.misBy[mid] : null;
+      var d0 = toIso(raw('des', r, 'debut')), d1 = toIso(raw('des', r, 'fin')); // période de la désignation : toute la mission, ou une partie (une semaine) ; colonnes absentes : toute la mission
+      var db = m ? (d0 || m.debut) : '', fi = m ? (d1 || m.fin) : ''; if (m && fi < db) { db = m.debut; fi = m.fin; }
+      return { id: r.id, misId: mid, nigend: txt(raw('des', r, 'nigend')), nom: txt(raw('des', r, 'nom')), role: roleOf(txt(raw('des', r, 'role'))), debut: db, fin: fi, statut: txt(raw('des', r, 'statut')) || 'Désigné', dd: toIso(raw('des', r, 'dd')), dc: toIso(raw('des', r, 'dc')), comm: txt(raw('des', r, 'comm')) };
+    }).filter(function (d) { return d.misId != null && d.nigend; });
+  }
+  /* ----- écriture ----- */
+  function enc(tk, ck, v) {
+    var c = S.T[tk].cols[ck], t = String(c.type || 'Text').split(':')[0];
+    if (t === 'Ref') return v && v.id != null ? v.id : 0;
+    if (t === 'RefList') return ['L'].concat((v || []).map(function (x) { return x.id; }));
+    if (v && typeof v === 'object' && !Array.isArray(v)) return v.text;
+    if (t === 'Date') return v ? isoToSec(v) : null;
+    if (t === 'DateTime') return v ? tsKey(v) : null;
+    if (t === 'Bool') return !!v;
+    if (t === 'Int' || t === 'Numeric') return v === '' || v == null ? null : Number(v);
+    return v == null ? '' : String(v);
+  }
+  function fieldsOf(tk, obj) { var f = {}; Object.keys(obj).forEach(function (k) { var c = S.T[tk].cols[k]; if (c) f[c.id] = enc(tk, k, obj[k]); }); return f; }
+  function write(op, tk, id, obj) {
+    var T = S.T[tk], f = obj ? fieldsOf(tk, obj) : null;
+    if (!IN_GRIST) {
+      if (op === 'create') { var row = { id: ++demoSeq }; Object.keys(f).forEach(function (k) { row[k] = f[k]; }); T.rows.push(row); }
+      else if (op === 'update') T.rows.forEach(function (r) { if (r.id === id) Object.keys(f).forEach(function (k) { r[k] = f[k]; }); });
+      else T.rows = T.rows.filter(function (r) { return r.id !== id; });
+      S.T[tk] = T; rebuild(); if (tk === 'mis') scheduleSync(); return Promise.resolve();
+    }
+    var t = grist.getTable(T.name), pr = op === 'create' ? t.create({ fields: f }) : op === 'update' ? t.update({ id: id, fields: f }) : t.destroy(id);
+    return Promise.resolve(pr).then(function () { S.loading = null; return loadAll(); }).then(function (r) { if (tk === 'mis') scheduleSync(); return r; });
+  }
+  function writeMany(tk, objs) {
+    if (!objs.length) return Promise.resolve();
+    var T = S.T[tk], fs = objs.map(function (o) { return fieldsOf(tk, o); });
+    if (!IN_GRIST) { fs.forEach(function (f) { var row = { id: ++demoSeq }; Object.keys(f).forEach(function (k) { row[k] = f[k]; }); T.rows.push(row); }); rebuild(); return Promise.resolve(); }
+    return Promise.resolve(grist.getTable(T.name).create(fs.map(function (f) { return { fields: f }; }))).then(function () { S.loading = null; return loadAll(); });
+  }
+  function sref(s) { return s ? { id: s.id, text: s.name } : { id: 0, text: '' }; }
+  function mref(m) { return { id: m.id, text: m.label }; }
+
+  /* ----- Liste des semaines proposées par le formulaire : tenue à jour automatiquement (semaines non terminées des missions) ----- */
+  function inOpenMonths(w) { var om = (S.cfg && S.cfg.openMonths) || []; return !om.length || om.indexOf(w.start.slice(0, 7)) !== -1 || om.indexOf(w.last.slice(0, 7)) !== -1; } // aucun mois choisi : toutes les semaines ; sinon celles dont un jour tombe dans un mois choisi
+  function desiredOpen() { var t = todayIso(); return S.weeks.filter(function (w) { return w.end >= t && inOpenMonths(w); }).map(function (w) { return w.label; }); }
+  function openMonthChoices(sel) { var t = todayIso().slice(0, 7), o = {}; S.weeks.forEach(function (w) { [w.start.slice(0, 7), w.last.slice(0, 7)].forEach(function (m) { if (m >= t) o[m] = 1; }); }); (sel || []).forEach(function (m) { if (m >= t) o[m] = 1; }); return Object.keys(o).sort(); }
+  function openMonthsHtml(sel, attr) {
+    var ch = openMonthChoices(sel); if (!ch.length) return '<p class="hint">Aucune mission à venir : ajoutez des missions pour pouvoir ouvrir des semaines dans le formulaire.</p>';
+    return '<fieldset class="cf-field" style="border:0;padding:0"><legend style="font-weight:700">Mois proposés dans le formulaire ' + info('Aucun mois coché : toutes les semaines à venir des missions ; sinon seulement les semaines dont au moins un jour tombe dans un mois coché.') + '</legend><div style="display:flex;gap:.25rem 1.25rem;flex-wrap:wrap">' + ch.map(function (m) { return '<label class="ed-check"><input type="checkbox" ' + attr + '="' + m + '"' + (sel.indexOf(m) !== -1 ? ' checked' : '') + '> ' + esc(monthLabel(m)) + '</label>'; }).join('') + '</div></fieldset>';
+  }
+  function syncOpen() {
+    if (!S.T.open || S.syncing || !S.loaded) return Promise.resolve(false);
+    if (!S.T.open.cols.lib) { S.syncErr = 'colonne « Libelle » introuvable dans la table « ' + S.T.open.name + ' » (elle doit s’appeler Libelle).'; return Promise.resolve(false); }
+    var want = uniq(desiredOpen()), have = {}, del = [], add;
+    S.T.open.rows.forEach(function (r) { var l = txt(raw('open', r, 'lib')); (have[l] = have[l] || []).push(r.id); });
+    add = want.filter(function (l) { return !have[l]; });
+    Object.keys(have).forEach(function (l) { if (want.indexOf(l) === -1) del = del.concat(have[l]); else have[l].slice(1).forEach(function (id) { del.push(id); }); });
+    if (!add.length && !del.length) { S.syncErr = ''; S.syncInfo = { added: 0, removed: 0 }; return Promise.resolve(false); }
+    S.syncing = true;
+    return writeMany('open', add.map(function (l) { return { lib: l }; })).then(function () { return del.reduce(function (p, id) { return p.then(function () { return write('destroy', 'open', id); }); }, Promise.resolve()); })
+      .then(function () { S.syncing = false; S.syncErr = ''; S.syncInfo = { added: add.length, removed: del.length }; return true; }, function (e) { S.syncing = false; S.syncErr = (e && e.message) || String(e); return false; });
+  }
+  function scheduleSync() { clearTimeout(S.syncT); S.syncT = setTimeout(function () { syncOpen().then(function (ch) { if ((ch || S.syncErr) && R && U.tab) render(); }); }, 700); }
+  function syncBanner() { return S.syncErr ? '<div class="doc-alert error" role="alert"><p><strong>Semaines du formulaire non mises à jour</strong> (table Poseidon_Semaines_ouvertes) : ' + esc(S.syncErr) + '</p></div>' : ''; }
+
+  /* ---------- Réservistes (table Réservistes du widget) ---------- */
+  var pc = { n: -1, list: [], map: {} };
+  function people() {
+    var n = window.RES && window.RES.count ? window.RES.count() : 0; if (pc.n === n && pc.list.length) return pc;
+    var l = window.RES && window.RES.jdcPeople ? window.RES.jdcPeople() : [], m = {}; l.forEach(function (p) { m[loose(p.nigend)] = p; }); pc = { n: n, list: l, map: m }; return pc;
+  }
+  function person(nig) { return people().map[loose(nig)] || null; }
+  function pname(nig) { var p = person(nig); return p ? [p.grade, p.nom, p.prenom].filter(Boolean).join(' ') : String(nig); }
+
+  /* ---------- Règles métier ---------- */
+  function activeDes(d) { return ['annule', 'refuse'].indexOf(loose(d.statut)) === -1; }
+  function assigned(m) { return S.des.filter(function (d) { return d.misId === m.id; }); }
+  function actives(m) { return assigned(m).filter(activeDes); }
+  function covers(d, w) { return (d.debut < w.end && d.fin > w.start) || (d.debut === d.fin && d.debut >= w.start && d.debut < w.end); } // semaine = [samedi, samedi suivant[ : une désignation du samedi 7 au samedi 14 ne couvre pas la semaine du 14
+  function cnt(m, k, w) { return actives(m).filter(function (d) { return d.role === k && covers(d, w); }).length; } // personnes désignées dans ce rôle pendant cette semaine
+  function needTotal(m) { return (m.cd + m.cda + m.eq) * m.weeks.length; } // postes-semaines à pourvoir
+  function filledTotal(m) { var n = 0; ROLES.forEach(function (r) { m.weeks.forEach(function (w) { n += Math.min(m[r.k], cnt(m, r.k, w)); }); }); return n; }
+  function gaps(m, k) { return m.weeks.map(function (w) { return { w: w, def: m[k] - cnt(m, k, w) }; }).filter(function (g) { return g.def > 0; }); } // semaines où le rôle n'est pas complet
+  function isWhole(d, m) { return d.debut <= m.debut && d.fin >= m.fin; }
+  function weeksOf(d, m) { return m.weeks.filter(function (w) { return covers(d, w); }); }
+  function spanShort(d, m) { var ws = weeksOf(d, m); return ws.length ? 'sem. ' + ws.map(function (w) { return w.num; }).join(', ') : fmtFr(d.debut).slice(0, 5) + ' → ' + fmtFr(d.fin).slice(0, 5); }
+  function spanText(d, m) { return isWhole(d, m) ? periodText(m) : 'du ' + fmtFr(d.debut) + ' au ' + fmtFr(d.fin) + ' (' + spanShort(d, m) + ')'; }
+  function overlap(a, b) { return a.debut <= b.fin && b.debut <= a.fin; } // intervalles fermés : finir une mission un samedi et en commencer une autre ce samedi-là est un chevauchement
+  function clash(a, b) { return a.misId === b.misId ? ((a.debut < b.fin && b.debut < a.fin) || (a.debut === a.fin && a.debut >= b.debut && a.debut < b.fin) || (b.debut === b.fin && b.debut >= a.debut && b.debut < a.fin)) : overlap(a, b); } // dans une même mission, deux semaines qui se suivent ne s'opposent pas
+  function inMonth(m, ym) { return m.debut <= ym + '-31' && m.fin >= ym + '-01'; }
+  function byDebut(a, b) { return a.debut < b.debut ? -1 : a.debut > b.debut ? 1 : (a.site < b.site ? -1 : a.site > b.site ? 1 : a.id - b.id); }
+  function yearCount(nig, year) { // semaines de mission déjà effectuées ou prévues dans l'année
+    return S.des.filter(activeDes).reduce(function (n, d) { var m = S.misBy[d.misId]; return loose(d.nigend) === loose(nig) && m && m.debut.slice(0, 4) === String(year) ? n + weeksOf(d, m).length : n; }, 0);
+  }
+  function blockedWeeks(nig, m) { // semaines de la mission où le réserviste est déjà pris : sur cette mission (même semaine) ou sur une autre mission (un jour en commun, samedi de relève compris)
+    var o = {}; S.des.filter(activeDes).forEach(function (d) {
+      if (loose(d.nigend) !== loose(nig)) return; var mm = S.misBy[d.misId]; if (!mm) return;
+      m.weeks.forEach(function (w) { if (d.misId === m.id ? covers(d, w) : (d.debut <= w.end && d.fin >= w.start)) o[w.key] = mm; });
+    }); return o;
+  }
+  function blockText(nig, m) {
+    var b = blockedWeeks(nig, m), seen = {}, out = []; Object.keys(b).forEach(function (k) { var o = b[k]; if (seen[o.id]) return; seen[o.id] = 1; out.push(o.id === m.id ? 'déjà désigné sur cette mission' : 'déjà désigné sur ' + o.site + ' (' + periodText(o) + ')'); }); return out;
+  }
+  function availWeeks(c, m) { return m.weeks.filter(function (w) { return c && c.weeks.indexOf(w.key) !== -1; }); } // semaines de la mission cochées par le réserviste
+  function targetWeeks(m, nig, role, spec) { // semaines visées par une désignation : disponibilités du réserviste ('avail'), toute la mission ('all') ou une semaine ('w:<lundi>'), moins les semaines complètes ou déjà prises
+    var c = S.dm[loose(nig)], base = spec === 'all' ? m.weeks : /^w:/.test(spec) ? m.weeks.filter(function (w) { return w.key === spec.slice(2); }) : availWeeks(c, m), bl = blockedWeeks(nig, m);
+    return { base: base, free: base.filter(function (w) { return cnt(m, role, w) < m[role] && !bl[w.key]; }), blocked: base.filter(function (w) { return bl[w.key]; }) };
+  }
+  function runsOf(ws) { var out = [], cur = null; ws.forEach(function (w) { if (cur && addDays(cur[cur.length - 1].key, 7) === w.key) cur.push(w); else out.push(cur = [w]); }); return out; }
+  function findConflicts() {
+    var by = {}, out = []; S.des.filter(activeDes).forEach(function (d) { (by[loose(d.nigend)] = by[loose(d.nigend)] || []).push(d); });
+    Object.keys(by).forEach(function (k) { var l = by[k]; for (var i = 0; i < l.length; i++) for (var j = i + 1; j < l.length; j++) if (clash(l[i], l[j])) out.push({ ds: [l[i], l[j]] }); });
+    return out;
+  }
+  function conflictIds() { var o = {}; findConflicts().forEach(function (c) { c.ds.forEach(function (d) { o[d.id] = 1; }); }); return o; }
+  function gradeKey(nig, role) { var p = person(nig), g = window.__gradeRank ? window.__gradeRank(p ? p.grade : '') : 500; return role === 'eq' ? g : (g >= 500 ? 1 : -g); } // chefs : les plus gradés d'abord ; équipe : les moins gradés d'abord
+  function cmpKeys(x, y) { for (var i = 0; i < x.length; i++) { if (x[i] < y[i]) return -1; if (x[i] > y[i]) return 1; } return 0; }
+  function volunteers(m) { // réservistes ayant coché au moins une semaine de la mission (dernière réponse), encore libres sur l'une d'elles
+    return Object.keys(S.dm).map(function (k) { return S.dm[k]; }).filter(function (c) { var av = availWeeks(c, m), bl = blockedWeeks(c.nigend, m); return c.nigend && av.some(function (w) { return !bl[w.key]; }); })
+      .map(function (c) { return { c: c, k: [availWeeks(c, m).length === m.weeks.length ? 0 : 1, yearCount(c.nigend, m.debut.slice(0, 4)), gradeKey(c.nigend, 'cd'), loose(pname(c.nigend))] }; })
+      .sort(function (a, b) { return cmpKeys(a.k, b.k); }).map(function (x) { return x.c; });
+  }
+  /* ---------- Courriels (adresses en copie cachée) ---------- */
+  function fill(t, vars) { return String(t || '').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; }); }
+  function kit() { return window.__empKit || {}; }
+  function formLink() { try { return String((window.WEL && window.WEL.emploiLinks ? window.WEL.emploiLinks().pos : '') || ''); } catch (e) { return ''; } }
+  function linkText() { return formLink() || '(lien du formulaire à renseigner dans le back office, rubrique Emploi)'; }
+  function unfilledText(list) {
+    return list.filter(function (m) { return needTotal(m) - filledTotal(m) > 0; }).map(function (m) {
+      var miss = ROLES.map(function (r) { var g = gaps(m, r.k); if (!g.length) return ''; var mx = Math.max.apply(null, g.map(function (x) { return x.def; })); return mx + ' ' + r.short.toLowerCase() + (mx > 1 && r.k === 'eq' ? 's' : '') + (g.length < m.weeks.length ? ' (semaine' + (g.length > 1 ? 's ' : ' ') + g.map(function (x) { return x.w.num; }).join(', ') + ')' : ''); }).filter(Boolean).join(', ');
+      return '- ' + m.site + ', ' + periodText(m) + ' : ' + miss;
+    }).join('\n');
+  }
+  /* ---------- Interface ---------- */
+  var R = null, U = { tab: 'plan', month: '', psite: '', form: null, msg: null, dlg: null, pick: null, draft: null, bmonth: '', mode: 'main' };
+  function nextMonth() { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1); return d.getFullYear() + '-' + p2(d.getMonth() + 1); }
+  var TABS = [['plan', 'Planning'], ['des', 'Désignations']], ADM_TABS = [['mis', 'Missions'], ['sites', 'Sites'], ['reg', 'Réglages']];
+  function isAdm(t) { return ADM_TABS.some(function (x) { return x[0] === t; }); }
+  function mths() { return U.month || (U.month = nextMonth()); }
+  function msgHtml() { return U.msg ? '<div class="doc-alert ' + U.msg.type + '" role="' + (U.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(U.msg.text) + '</p></div>' : ''; }
+  function setMsg(type, text) { U.msg = text ? { type: type, text: text } : null; }
+  function btn(act, label, extra, cls) { return '<button type="button" class="btn ' + (cls || 'secondary sm') + '" data-j="' + act + '"' + (extra || '') + '>' + label + '</button>'; }
+  function ibtn(act, label, ico, extra) { return '<button type="button" class="btn secondary btn-ghost btn-iconly ico-' + ico + '" data-j="' + act + '" title="' + esc(label) + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
+  function pbtn(act, label, ico, extra) { return '<button type="button" class="btn sm ico-' + ico + '" data-j="' + act + '" title="' + esc(label) + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
+  function tag(t, c) { return '<span class="fr-tag fr-tag--sm' + (c ? ' tag-c-' + c : '') + '">' + esc(t) + '</span>'; }
+  function info(t) { return '<span class="info-tip" tabindex="0" role="note" aria-label="' + esc(t) + '" data-tip="' + esc(t) + '"><span class="fr-icon-information-line" aria-hidden="true"></span></span>'; }
+  function badge(m) { var n = filledTotal(m), t = needTotal(m); return '<span class="fr-badge fr-badge--sm fr-badge--' + (n >= t ? 'success' : n ? 'warning' : 'error') + '" title="Postes pourvus sur postes à pourvoir, comptés par semaine de mission (un poste sur deux semaines compte pour 2)">' + n + ' / ' + t + (n >= t ? ' complet' : ' à pourvoir') + '</span>'; }
+  function monthPick(key, val, label, id, allowEmpty) {
+    var m = /^(\d{4})-(\d{2})$/.exec(val || ''), y = m ? m[1] : (allowEmpty ? '' : todayIso().slice(0, 4)), mo = m ? m[2] : '';
+    return '<div class="tb-field"><span class="ppe-sig-l" id="' + id + '-l">' + label + '</span><div class="jdc-mp" data-mp="' + key + '" role="group" aria-labelledby="' + id + '-l" style="display:flex;gap:.5rem"><select class="select" data-jmp="m" aria-label="Mois" style="width:auto;min-width:9.5rem">' + (allowEmpty ? '<option value="">Tous les mois</option>' : '') + MONTHS.map(function (n, i) { var v = p2(i + 1); return '<option value="' + v + '"' + (v === mo ? ' selected' : '') + '>' + n.charAt(0).toUpperCase() + n.slice(1) + '</option>'; }).join('') + '</select><input type="number" class="input" data-jmp="y" aria-label="Année" min="2020" max="2100" value="' + esc(y) + '" style="width:6rem"></div></div>';
+  }
+  function siteFilter() { return '<div class="tb-field"><label for="pos-psite">Site</label><select class="select" id="pos-psite" data-j="psite"><option value="">Tous les sites</option>' + S.sites.map(function (s) { return '<option value="' + s.id + '"' + (String(U.psite) === String(s.id) ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></div>'; }
+  function render() {
+    if (!R) return;
+    var stat = U.mode === 'stats', adm = !stat && isAdm(U.tab), tabBtn = function (t) { return '<button type="button" class="jdc-tab" role="tab" aria-selected="' + (U.tab === t[0]) + '" data-j="tab" data-v="' + t[0] + '">' + t[1] + (t[0] === 'des' && S.loaded && findConflicts().length ? ' <span class="fr-badge fr-badge--sm fr-badge--error" title="Conflits de désignation">⚠ ' + findConflicts().length + '</span>' : '') + '</button>'; };
+    var head = stat ? '' : adm ? '<div class="jdc-tabs" role="tablist" aria-label="Gestion">' + btn('tab', '‹ Retour', ' data-v="' + (U.lastMain || 'plan') + '"') + ADM_TABS.map(tabBtn).join('') + '</div>'
+      : '<div class="jdc-tabs" role="tablist">' + TABS.map(tabBtn).join('') + '<button type="button" class="btn secondary btn-ghost btn-iconly ico-gear jdc-gear" data-j="tab" data-v="' + (U.lastAdm || 'mis') + '" title="Gestion : missions, sites et réglages">Missions, sites et réglages</button></div>';
+    var body = '';
+    if (S.error) body = '<div class="doc-alert error" role="alert"><p>Poséidon : ' + esc(S.error) + '</p></div>' + btn('reload', 'Réessayer');
+    else if (!S.loaded) body = '<p class="hint">Chargement…</p>';
+    else body = stat ? vStats() : ({ mis: vMis, sites: vSites, plan: vPlan, des: vDes, reg: vReg })[U.tab]();
+    var keep = R.querySelector('.jdc-body'), sc = keep ? keep.scrollTop : 0; hideTip();
+    R.innerHTML = (IN_GRIST ? '' : '<p class="hint" style="margin:0 0 .75rem">Données de démonstration (hors de Grist).</p>') + head + msgHtml() + '<div class="jdc-body">' + body + '</div>';
+    renderDlg();
+  }
+  function reducedMotion() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  function focusMis() { // depuis le planning : la fiche de la mission cliquée est amenée à l'écran et brièvement mise en évidence
+    var id = U.focusMis; U.focusMis = null; var el = id && R && R.querySelector('#pos-m-' + id); if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' }); el.classList.add('jdc-hit'); setTimeout(function () { el.classList.remove('jdc-hit'); }, 2600);
+  }
+  function dlgSpec() {
+    if (U.dlg) return U.dlg;
+    if (!U.pick) return null;
+    var m = S.misBy[U.pick.misId]; if (!m) return null;
+    var q = loose(U.pick.q || ''), spec = U.pick.span || 'all', pl = people();
+    var list = pl.list.filter(function (p) { return (!q || loose(p.nom + ' ' + p.prenom + ' ' + p.nigend + ' ' + p.aff + ' ' + p.grade).indexOf(q) !== -1); }).sort(function (a, b) { return (a.nom + a.prenom).localeCompare(b.nom + b.prenom, 'fr'); });
+    var shown = list.slice(0, 12);
+    var html = '<div style="padding:0 .25rem 1rem"><p class="hint">' + esc(m.site) + ' · ' + esc(periodText(m)) + '. Tout réserviste de la table Réservistes peut être désigné, même sans avoir postulé.</p>' +
+      '<div class="cf-field"><label for="pos-pspan">Période de la désignation</label><select class="select" id="pos-pspan" data-j="pspan"><option value="all">Toute la mission (' + esc(periodText(m)) + ')</option>' + m.weeks.map(function (w) { return '<option value="w:' + w.key + '"' + (spec === 'w:' + w.key ? ' selected' : '') + '>' + esc(w.label) + ' seulement</option>'; }).join('') + '</select></div>' +
+      '<div class="cf-field"><label for="pos-pq">Rechercher un réserviste (nom, prénom, Nigend, affectation)</label><input class="input" type="search" id="pos-pq" data-j="pq" value="' + esc(U.pick.q || '') + '" autocomplete="off"></div>' +
+      (pl.list.length ? '<ul class="jdc-pick">' + (shown.length ? shown.map(function (p) { return '<li><span>' + esc([p.grade, p.nom, p.prenom].filter(Boolean).join(' ')) + ' <span class="hint">' + esc(p.nigend + (p.aff ? ' · ' + p.aff : '')) + '</span></span><span style="display:flex;gap:.25rem;flex-wrap:wrap">' + roleButtons(m, p.nigend, spec) + '</span></li>'; }).join('') : '<li class="hint">Aucun réserviste ne correspond.</li>') + '</ul>' + (list.length > shown.length ? '<p class="hint">' + (list.length - shown.length) + ' autre(s) : précisez la recherche.</p>' : '') : '<p class="hint">La liste des réservistes n’est pas encore chargée : ouvrez la page Réservistes une fois, puis revenez ici.</p>') +
+      '<div class="cf-actions">' + btn('dlgx', 'Fermer') + '</div></div>';
+    return { title: 'Désigner un réserviste', html: html };
+  }
+  function renderDlg() {
+    var old = R.querySelector('.jdc-ov'); if (old) old.remove(); var spec = dlgSpec(); if (!spec) return;
+    var ov = document.createElement('div'); ov.className = 'modal-overlay is-open jdc-ov'; ov.setAttribute('role', 'presentation');
+    ov.innerHTML = '<div class="modal-column"><div class="modal-dialog" role="dialog" aria-modal="true" aria-label="' + esc(spec.title) + '"><div class="modal-header"><div style="min-width:0"><h2 class="modal-title">' + esc(spec.title) + '</h2></div><div class="modal-actions"><button class="round-btn" type="button" data-j="dlgx" aria-label="Fermer" title="Fermer">✕</button></div></div>' + spec.html + '</div></div>';
+    R.appendChild(ov);
+  }
+  function roleButtons(m, nig, spec) { // un bouton par rôle : désactivé si le rôle est complet ou si le réserviste est déjà pris sur la période visée
+    return ROLES.map(function (r) {
+      var t = targetWeeks(m, nig, r.k, spec), ok = m[r.k] > 0 && t.free.length > 0;
+      var why = !m[r.k] ? 'Aucune place pour ce rôle dans cette mission' : !t.base.length ? 'Aucune semaine à désigner' : !t.free.length ? (t.blocked.length ? 'Déjà désigné sur cette période' : 'Rôle complet sur la période') : 'Désigner comme ' + r.label.toLowerCase() + (t.free.length < t.base.length ? ' (' + t.free.map(function (w) { return 'semaine ' + w.num; }).join(', ') + ' seulement)' : '');
+      return '<button type="button" class="btn secondary sm" data-j="assign" data-mis="' + m.id + '" data-nig="' + esc(nig) + '" data-role="' + r.k + '" data-span="' + esc(spec) + '"' + (ok ? '' : ' disabled') + ' title="' + esc(why) + '">' + esc(r.short) + '</button>';
+    }).join('');
+  }
+  /* ----- Planning ----- */
+  function monthList() { return S.mis.filter(function (m) { return inMonth(m, mths()) && (!U.psite || m.siteId === Number(U.psite)); }).sort(byDebut); }
+  function lines(m, k) { // personnes désignées dans un rôle (avec leur semaine quand ce n'est pas toute la mission), puis ce qui reste à pourvoir
+    var out = actives(m).filter(function (d) { return d.role === k; }).sort(function (a, b) { return a.debut < b.debut ? -1 : a.debut > b.debut ? 1 : 0; }).map(function (d) { return esc(pname(d.nigend)) + (isWhole(d, m) ? '' : ' <span style="color:#555">(' + esc(spanShort(d, m)) + ')</span>'); });
+    var g = gaps(m, k); if (g.length) { var mx = Math.max.apply(null, g.map(function (x) { return x.def; })); out.push('<span style="color:#b34000">à pourvoir' + (mx > 1 ? ' ×' + mx : '') + (g.length < m.weeks.length ? ' (S' + g.map(function (x) { return x.w.num; }).join(', S') + ')' : '') + '</span>'); }
+    return out;
+  }
+  function timeline(list, ym) {
+    var N = monthDays(ym), first = ym + '-01', last = ym + '-' + p2(N), lanes = [], bySite = {};
+    list.forEach(function (m) { (bySite[m.site || '—'] = bySite[m.site || '—'] || []).push(m); });
+    var head = '<div class="pos-tl__row pos-tl__head"><div class="pos-tl__s"></div><div class="pos-tl__g" style="--n:' + N + '">' + Array.apply(null, Array(N)).map(function (_, i) { var iso = ym + '-' + p2(i + 1), wd = new Date(iso + 'T00:00:00Z').getUTCDay(); return '<span class="' + (wd === 0 || wd === 6 ? 'is-we' : '') + '" title="' + esc(DAYS[wd] + ' ' + fmtFr(iso)) + '">' + (i + 1) + '</span>'; }).join('') + '</div></div>';
+    Object.keys(bySite).sort().forEach(function (site) {
+      var rows = []; bySite[site].sort(byDebut).forEach(function (m) { var r = rows.filter(function (row) { return row[row.length - 1].fin < m.debut; })[0]; if (r) r.push(m); else rows.push([m]); });
+      rows.forEach(function (row, i) {
+        lanes.push('<div class="pos-tl__row"><div class="pos-tl__s">' + (i === 0 ? esc(site) : '') + '</div><div class="pos-tl__g" style="--n:' + N + '">' + row.map(function (m) {
+          var a = Math.max(1, diffDays(first, m.debut) + 1), b = Math.min(N, diffDays(first, m.fin) + 1), n = filledTotal(m), t = needTotal(m), st = n >= t ? 'ok' : n ? 'part' : 'none';
+          return '<button type="button" class="pos-tl__bar is-' + st + '" data-j="gotodes" data-id="' + m.id + '" style="grid-column:' + a + ' / ' + (b + 1) + '" aria-label="' + esc(m.site + ', ' + periodText(m) + ' : ' + n + ' sur ' + t + ' postes-semaines pourvus. Ouvrir les désignations.') + '">' + esc(fmtFr(m.debut).slice(0, 5) + (m.fin !== m.debut ? ' → ' + fmtFr(m.fin).slice(0, 5) : '')) + ' · ' + n + '/' + t + '</button>';
+        }).join('') + '</div></div>');
+      });
+    });
+    return '<div class="pos-tl" role="group" aria-label="Frise des missions de ' + esc(monthLabel(ym)) + '">' + head + lanes.join('') + '</div><p class="hint" style="margin:.25rem 0 0">Barre verte : mission complète ; orange : partiellement pourvue ; rouge : personne désigné. Cliquez sur une barre pour désigner.</p>';
+  }
+  /* ----- Survol d'une barre de la frise : bulle de détail (site, période, désignés par rôle, semaines à pourvoir) et ligne du tableau mise en évidence ----- */
+  var tip = null, hlRow = null;
+  function tipHtml(m) {
+    var n = filledTotal(m), t = needTotal(m);
+    return '<strong>' + esc(m.site || '—') + '</strong><br>' + esc(periodText(m)) + ' · ' + m.weeks.length + ' semaine' + (m.weeks.length > 1 ? 's' : '') + (m.comm ? '<br><em>' + esc(m.comm) + '</em>' : '') +
+      '<div class="pos-tip__s">' + n + ' / ' + t + ' postes-semaines pourvus</div>' + ROLES.map(function (r) { if (!m[r.k]) return ''; var l = lines(m, r.k); return '<div class="pos-tip__r"><b>' + esc(r.label) + '</b> (' + m[r.k] + ')<br>' + (l.length ? l.join('<br>') : '<span style="color:#b34000">à pourvoir</span>') + '</div>'; }).join('') + '<div class="pos-tip__f">Cliquer pour désigner</div>';
+  }
+  function hideTip() { if (tip) tip.hidden = true; if (hlRow) { hlRow.classList.remove('pos-hl'); hlRow = null; } }
+  function showTip(bar) {
+    var m = S.misBy[Number(bar.getAttribute('data-id'))]; if (!m) return;
+    if (!tip) { tip = document.createElement('div'); tip.className = 'pos-tip'; tip.setAttribute('role', 'tooltip'); tip.hidden = true; document.body.appendChild(tip); }
+    tip.innerHTML = tipHtml(m); tip.hidden = false;
+    var r = bar.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, x = Math.min(Math.max(8, r.left), window.innerWidth - w - 8), y = r.top - h - 8; if (y < 8) y = r.bottom + 8;
+    tip.style.left = x + 'px'; tip.style.top = Math.max(8, Math.min(y, window.innerHeight - h - 8)) + 'px';
+    if (hlRow) hlRow.classList.remove('pos-hl'); hlRow = R.querySelector('tr[data-mis="' + m.id + '"]'); if (hlRow) hlRow.classList.add('pos-hl');
+  }
+  function planTable(list) {
+    return '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Missions Poséidon</caption><thead><tr><th scope="col">Période</th><th scope="col">Site</th><th scope="col">Chef de détachement</th><th scope="col">Adjoint</th><th scope="col">Équipe</th><th scope="col">Pourvu</th><th scope="col"><span class="fr-sr-only">Action</span></th></tr></thead><tbody>' +
+      list.map(function (m) {
+        function cell(k) { var l = lines(m, k); return l.length ? l.join('<br>') : '<span class="hint">—</span>'; }
+        return '<tr data-mis="' + m.id + '"><th scope="row">' + esc(periodText(m)) + '<br><span class="hint">' + m.weeks.length + ' semaine' + (m.weeks.length > 1 ? 's' : '') + '</span></th><td>' + esc(m.site || '—') + '</td><td>' + cell('cd') + '</td><td>' + cell('cda') + '</td><td>' + cell('eq') + '</td><td>' + badge(m) + '</td><td>' + btn('gotodes', 'Désigner', ' data-id="' + m.id + '"') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  function vPlan() {
+    var m = mths(), list = monthList(), html = '<div class="toolbar">' + monthPick('month', m, 'Mois', 'pos-m') + siteFilter() + '<div class="tb-actions">' + ibtn('csv', 'Exporter le planning (.csv)', 'download') + ibtn('print', 'Imprimer le planning (PDF paysage)', 'print') + pbtn('sendplan', 'Envoyer le planning', 'mail') + '</div></div>';
+    if (!list.length) return html + '<p class="hint">Aucune mission en ' + esc(monthLabel(m)) + (U.psite ? ' sur ce site' : '') + '. Ajoutez des missions dans la gestion (⚙ puis Missions).</p>';
+    return html + timeline(list, m) + '<div style="margin-top:1.25rem">' + planTable(list) + '</div>';
+  }
+
+  /* ----- Désignations ----- */
+  function vDes() {
+    var m = mths(), list = S.mis.filter(function (x) { return inMonth(x, m); }).sort(byDebut), need = 0, got = 0;
+    list.forEach(function (x) { need += needTotal(x); got += filledTotal(x); });
+    var dm = Object.keys(S.dm).map(function (k) { return S.dm[k]; }), inM = dm.filter(function (c) { return list.some(function (x) { return availWeeks(c, x).length; }); }), unknown = inM.filter(function (c) { return !person(c.nigend); });
+    var html = '<div class="toolbar">' + monthPick('month', m, 'Mois', 'pos-m') + '<div class="tb-actions">' + ibtn('appel', 'Inviter les réservistes à postuler (cci)', 'mail') + '</div></div>' +
+      '<p class="hint">' + list.length + ' mission' + (list.length > 1 ? 's' : '') + ' · ' + got + ' / ' + need + ' poste' + (need > 1 ? 's' : '') + '-semaine pourvu' + (got > 1 ? 's' : '') + ' (un poste sur deux semaines compte pour 2) · ' + inM.length + ' réserviste' + (inM.length > 1 ? 's ont' : ' a') + ' postulé ce mois-ci' +
+      (unknown.length && people().list.length ? ' · ' + unknown.length + ' réponse' + (unknown.length > 1 ? 's' : '') + ' d’une personne absente de la table Réservistes (' + esc(unknown.map(function (c) { return c.nigend || c.email; }).join(', ')) + ')' : '') + '.</p>' + syncBanner();
+    if (!S.T.open) html += '<div class="doc-alert warning" role="status"><p>La table Poseidon_Semaines_ouvertes est absente : la liste des semaines du formulaire n’est pas tenue à jour (voir la procédure de mise en place).</p></div>';
+    var cf = findConflicts(); if (cf.length) html += '<div class="doc-alert warning" role="alert"><p><strong>' + cf.length + ' conflit' + (cf.length > 1 ? 's' : '') + ' :</strong> ' + esc(cf.map(function (c) { return pname(c.ds[0].nigend) + ' est désigné sur deux missions qui se chevauchent'; }).join(' ; ')) + '.</p></div>';
+    if (!list.length) return html + '<p class="hint">Aucune mission ce mois-ci : renseignez-les dans la gestion (⚙ puis Missions).</p>';
+    return html + list.map(cardMis).join('');
+  }
+  function cardMis(m) {
+    var cid = conflictIds(), vol = volunteers(m), nw = m.weeks.length;
+    var html = '<section class="jdc-card" id="pos-m-' + m.id + '"><div class="jdc-card__h"><div><strong>' + esc(periodText(m)) + '</strong> · ' + esc(m.site || '—') + ' · ' + nw + ' semaine' + (nw > 1 ? 's' : '') + (m.comm ? ' · <span class="hint">' + esc(m.comm) + '</span>' : '') + '</div>' + badge(m) + '</div>';
+    html += ROLES.map(function (r) {
+      var as = assigned(m).filter(function (d) { return d.role === r.k; }).sort(function (a, b) { return a.debut < b.debut ? -1 : a.debut > b.debut ? 1 : 0; }), want = m[r.k];
+      if (!want && !as.length) return '';
+      var wb = m.weeks.map(function (w) { var n = cnt(m, r.k, w); return '<span class="fr-badge fr-badge--sm fr-badge--' + (n >= want ? 'success' : n ? 'warning' : 'error') + '" title="' + esc(w.label) + '">S' + w.num + ' : ' + n + ' / ' + want + '</span>'; }).join(' ');
+      return '<h4 class="pos-role">' + esc(r.label) + ' ' + wb + '</h4>' +
+        (as.length ? '<ul class="jdc-as">' + as.map(function (d) { var act = activeDes(d), cf = act && cid[d.id], sp = isWhole(d, m) ? 'toute la mission' : spanText(d, m);
+          return '<li' + (act ? '' : ' class="is-off"') + '><span>' + esc(pname(d.nigend)) + ' <span class="hint">· ' + esc(sp) + '</span>' + (person(d.nigend) ? '' : ' <span class="hint">(hors table Réservistes)</span>') + (cf ? ' <span class="fr-badge fr-badge--sm fr-badge--error">conflit : déjà désigné sur une période qui se chevauche</span>' : '') + '</span><span style="display:flex;gap:.5rem;align-items:center">' + (act && d.dc ? '<span class="hint">informé le ' + esc(fmtFr(d.dc)) + '</span>' : '') + (act ? btn('cancel', 'Retirer', ' data-id="' + d.id + '"') : btn('delrow', 'Supprimer', ' data-id="' + d.id + '"')) + '</span></li>'; }).join('') + '</ul>' : '<p class="hint" style="margin:0 0 .5rem">Personne désigné.</p>');
+    }).join('');
+    html += '<details class="jdc-cands"' + (needTotal(m) > filledTotal(m) ? ' open' : '') + '><summary>Réservistes disponibles (' + vol.length + ')</summary>' + (vol.length ? '<div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Réserviste</th><th scope="col">Disponible</th><th scope="col">Semaines cette année</th><th scope="col">Remarque</th><th scope="col">Désigner comme</th></tr></thead><tbody>' + vol.map(function (c) {
+      var av = availWeeks(c, m), bl = blockText(c.nigend, m), whole = av.length === nw;
+      return '<tr><th scope="row">' + esc(pname(c.nigend)) + '<br><span class="hint">' + esc((person(c.nigend) || {}).aff || (person(c.nigend) ? '' : 'hors table Réservistes')) + '</span></th><td>' + (whole ? 'toute la mission' : '<strong>' + av.map(function (w) { return 'semaine ' + w.num; }).join(', ') + '</strong> <span class="hint">seulement</span>') + '</td><td>' + yearCount(c.nigend, m.debut.slice(0, 4)) + '</td><td>' + (bl.length ? '<span style="color:var(--text-default-error)">' + esc(bl.join(', ')) + '</span>' : c.comm ? esc(c.comm) : '<span class="hint">—</span>') + '</td><td style="white-space:nowrap">' + roleButtons(m, c.nigend, 'avail') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="hint">Aucun réserviste disponible pour cette mission.</p>') +
+      '<p style="margin:.5rem 0 0">' + btn('pick', 'Désigner un autre réserviste…', ' data-id="' + m.id + '"') + '</p></details>';
+    return html + '</section>';
+  }
+  /* ----- Statistiques ----- */
+  function vStats() {
+    var years = uniq(S.mis.map(function (m) { return m.debut.slice(0, 4); }).concat([todayIso().slice(0, 4)])).sort(), y = U.sy || todayIso().slice(0, 4);
+    var list = S.mis.filter(function (m) { return m.debut.slice(0, 4) === y; }), need = 0, got = 0, bySite = {}, byRole = {}, per = {};
+    ROLES.forEach(function (r) { byRole[r.k] = { need: 0, got: 0 }; });
+    list.forEach(function (m) {
+      need += needTotal(m); got += filledTotal(m); var b = bySite[m.site || '—'] = bySite[m.site || '—'] || { n: 0, need: 0, got: 0, days: 0 }; b.n++; b.need += needTotal(m); b.got += filledTotal(m); b.days += m.weeks.length;
+      ROLES.forEach(function (r) { byRole[r.k].need += m[r.k] * m.weeks.length; m.weeks.forEach(function (w) { byRole[r.k].got += Math.min(m[r.k], cnt(m, r.k, w)); }); });
+      actives(m).forEach(function (d) { var k = loose(d.nigend), p = per[k] = per[k] || { nig: d.nigend, n: 0, days: 0, roles: {} }; p.n++; p.days += weeksOf(d, m).length; p.roles[d.role] = (p.roles[d.role] || 0) + 1; });
+    });
+    var pct = function (a, b) { return b ? Math.round(a * 100 / b) : 0; }, bar = function (a, b) { var p = pct(a, b); return '<span class="jdc-bar' + (p < 50 ? ' is-low' : '') + '" role="img" aria-label="' + p + ' %"><span style="width:' + p + '%"></span></span>' + p + ' %'; };
+    var cands = Object.keys(S.dm).map(function (k) { return S.dm[k]; }).filter(function (c) { return list.some(function (m) { return availWeeks(c, m).length; }); }), top = Object.keys(per).map(function (k) { return per[k]; }).sort(function (a, b) { return b.n - a.n || b.days - a.days || loose(pname(a.nig)).localeCompare(loose(pname(b.nig))); });
+    var html = '<div class="toolbar"><div class="tb-field"><label for="pos-sy">Année</label><select class="select" id="pos-sy" data-j="sy">' + years.map(function (v) { return '<option' + (v === y ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select></div></div>';
+    if (!list.length) return html + '<p class="hint">Aucune mission en ' + esc(y) + '.</p>';
+    html += '<div class="bo-tiles" style="margin-bottom:1.5rem"><div class="bo-tile"><span class="bo-tile__n">' + list.length + '</span><span class="bo-tile__l">Missions</span><span class="bo-tile__s">' + Object.keys(bySite).length + ' site(s)</span></div>' +
+      '<div class="bo-tile"><span class="bo-tile__n">' + got + ' / ' + need + '</span><span class="bo-tile__l">Postes-semaines pourvus</span><span class="bo-tile__s">' + pct(got, need) + ' %</span></div>' +
+      '<div class="bo-tile"><span class="bo-tile__n">' + top.length + '</span><span class="bo-tile__l">Réservistes désignés</span><span class="bo-tile__s">' + cands.length + ' candidat(s)</span></div></div>';
+    html += '<h3 class="bo-h3">Par rôle</h3><div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Rôle</th><th scope="col">Postes-semaines</th><th scope="col">Pourvus</th><th scope="col">Taux</th></tr></thead><tbody>' + ROLES.map(function (r) { var o = byRole[r.k]; return '<tr><th scope="row">' + esc(r.label) + '</th><td>' + o.need + '</td><td>' + o.got + '</td><td>' + bar(o.got, o.need) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    html += '<h3 class="bo-h3">Par site</h3><div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Site</th><th scope="col">Missions</th><th scope="col">Semaines</th><th scope="col">Postes-semaines</th><th scope="col">Pourvus</th><th scope="col">Taux</th></tr></thead><tbody>' + Object.keys(bySite).sort().map(function (s) { var o = bySite[s]; return '<tr><th scope="row">' + esc(s) + '</th><td>' + o.n + '</td><td>' + o.days + '</td><td>' + o.need + '</td><td>' + o.got + '</td><td>' + bar(o.got, o.need) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    html += '<h3 class="bo-h3">Réservistes désignés (' + top.length + ')</h3>' + (top.length ? '<div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Réserviste</th><th scope="col">Missions</th><th scope="col">Semaines</th><th scope="col">Rôles</th></tr></thead><tbody>' + top.slice(0, 30).map(function (p) { return '<tr><th scope="row">' + esc(pname(p.nig)) + '</th><td>' + p.n + '</td><td>' + p.days + '</td><td>' + esc(Object.keys(p.roles).map(function (k) { return roleDef(k).short + ' ×' + p.roles[k]; }).join(', ')) + '</td></tr>'; }).join('') + '</tbody></table></div>' + (top.length > 30 ? '<p class="hint">30 premiers sur ' + top.length + '.</p>' : '') : '<p class="hint">Aucune désignation.</p>');
+    return html;
+  }
+
+  /* ----- Gestion : missions et sites ----- */
+  function vMis() {
+    var mth = U.bmonth, list = S.mis.filter(function (m) { return !mth || inMonth(m, mth); }).sort(byDebut);
+    var html = '<h3 class="bo-h3">Missions par période et par site</h3><div class="toolbar">' + monthPick('bmonth', mth, 'Mois', 'pos-bm', true) + '<div class="tb-actions">' + pbtn('addmis', 'Ajouter une mission', 'plus') + '</div></div>';
+    if (U.form && /^(addmis|editmis)$/.test(U.form.kind)) html += formMis();
+    html += syncBanner() + '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Missions Poséidon</caption><thead><tr><th scope="col">Période</th><th scope="col">Site</th><th scope="col">Chef</th><th scope="col">Adjoint</th><th scope="col">Équipe</th><th scope="col">Désignés</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
+      (list.length ? list.map(function (m) { return '<tr data-mis="' + m.id + '"><th scope="row">' + esc(periodText(m)) + '</th><td>' + esc(m.site || '—') + '</td><td>' + m.cd + '</td><td>' + m.cda + '</td><td>' + m.eq + '</td><td>' + badge(m) + '</td><td style="white-space:nowrap">' + btn('editmis', 'Modifier', ' data-id="' + m.id + '"') + ' ' + btn('dupmis', 'Dupliquer', ' data-id="' + m.id + '"') + ' ' + btn('delmis', 'Supprimer', ' data-id="' + m.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="7">Aucune mission' + (mth ? ' ce mois-ci' : '') + '.</td></tr>') + '</tbody></table></div>';
+    return html;
+  }
+  function siteSelect(v) { return '<select class="select" id="jf-site" data-jf="site"><option value="">— Choisir —</option>' + S.sites.filter(function (s) { return s.actif || s.id === v; }).map(function (s) { return '<option value="' + s.id + '"' + (s.id === v ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select>'; }
+  function formMis() {
+    var f = U.form, a = f.data || {}, ed = f.kind === 'editmis';
+    function nbf(id, l, v) { return '<div class="cf-field"><label for="jf-' + id + '">' + l + '</label><input type="number" min="0" class="input" id="jf-' + id + '" data-jf="' + id + '" value="' + esc(v == null ? '' : v) + '"></div>'; }
+    return '<section class="cf-section"><h3>' + (ed ? 'Modifier la mission' : 'Ajouter une mission') + '</h3><div class="cf-grid">' +
+      '<div class="cf-field"><label for="jf-site">Site*</label>' + siteSelect(a.siteId) + '</div><div class="cf-field"><label for="jf-debut">Début*</label><input type="date" class="input" id="jf-debut" data-jf="debut" value="' + esc(a.debut || '') + '"></div><div class="cf-field"><label for="jf-fin">Fin*</label><input type="date" class="input" id="jf-fin" data-jf="fin" value="' + esc(a.fin || '') + '"></div>' +
+      nbf('cd', 'Chefs de détachement ' + info('Un seul chef de détachement par mission en général.'), a.cd == null ? 1 : a.cd) + nbf('cda', 'Chefs de détachement adjoints', a.cda == null ? 1 : a.cda) + nbf('eq', 'Reste de l’équipe (nombre de personnes)', a.eq == null ? '' : a.eq) +
+      '<div class="cf-field"><label for="jf-comm">Commentaire</label><input class="input" id="jf-comm" data-jf="comm" value="' + esc(a.comm || '') + '"></div></div>' +
+      '<div class="cf-actions">' + btn('savemis', ed ? 'Enregistrer' : 'Ajouter', '', 'btn') + btn('formx', 'Annuler') + '</div></section>';
+  }
+  function vSites() {
+    var html = '<h3 class="bo-h3">Sites de la mission</h3>' + (U.form && /^(addsite|editsite)$/.test(U.form.kind) ? formSite() : '') +
+      '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Sites Poséidon</caption><thead><tr><th scope="col">Site</th><th scope="col">Adresse</th><th scope="col">Contact</th><th scope="col">Affectation</th><th scope="col">Actif</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
+      (S.sites.length ? S.sites.map(function (s) { return '<tr' + (s.actif ? '' : ' class="row-off"') + '><th scope="row">' + esc(s.name) + '</th><td>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—') + '</td><td>' + esc([s.contact, s.tel].filter(Boolean).join(' · ') || '—') + '</td><td>' + esc(s.aff || '—') + '</td><td>' + (s.actif ? 'Oui' : 'Non') + '</td><td>' + btn('editsite', 'Modifier', ' data-id="' + s.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun site.</td></tr>') + '</tbody></table></div>' +
+      '<p style="margin:.75rem 0">' + pbtn('addsite', 'Ajouter un site', 'plus') + '</p>';
+    return html;
+  }
+  function formSite() {
+    var a = U.form.data || {}, ed = U.form.kind === 'editsite';
+    function f(id, l, v) { return '<div class="cf-field"><label for="jf-' + id + '">' + l + '</label><input class="input" id="jf-' + id + '" data-jf="' + id + '" value="' + esc(v || '') + '"></div>'; }
+    return '<section class="cf-section"><h3>' + (ed ? 'Modifier le site' : 'Ajouter un site') + '</h3><div class="cf-grid">' + f('name', 'Site*', a.name) + f('adresse', 'Adresse', a.adresse) + f('cp', 'Code postal', a.cp) + f('ville', 'Ville', a.ville) + f('contact', 'Contact', a.contact) + f('tel', 'Téléphone', a.tel) + f('aff', 'Affectation (groupement)', a.aff) +
+      '<div class="cf-field"><label for="jf-actif">Actif</label><select class="select" id="jf-actif" data-jf="actif"><option value="1"' + (a.actif !== false ? ' selected' : '') + '>Oui</option><option value="0"' + (a.actif === false ? ' selected' : '') + '>Non</option></select></div></div>' +
+      '<div class="cf-actions">' + btn('savesite', ed ? 'Enregistrer' : 'Ajouter', '', 'btn') + btn('formx', 'Annuler') + '</div></section>';
+  }
+  function vReg() {
+    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), link = formLink(), ds = S.T.open && S.T.open.cols.lib ? uniq(S.T.open.rows.map(function (r) { return txt(raw('open', r, 'lib')); })) : [];
+    var html = '<section class="cf-section"><h3>Formulaire de candidatures</h3><p style="margin:0 0 .75rem">' + (link ? 'Lien actuel : <a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' + esc(link) + '</a>' : '<strong>Lien non renseigné.</strong>') + ' ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Il se règle dans le back office, rubrique Emploi. Le formulaire propose les semaines (numéro, dates de début et de fin) des missions non terminées, sans choix de site : les semaines passées sont retirées à chaque ouverture du widget.') + ' ' + btn('gobo', 'Modifier dans le back office') + '</p>' +
+      openMonthsHtml(c.openMonths, 'data-jopen') + (S.T.open ? '<p style="margin:.5rem 0 0">Semaines actuellement proposées par le formulaire (' + ds.length + ') ' + btn('syncopen', 'Actualiser maintenant') + '</p>' + syncBanner() : '<p class="hint">Table Poseidon_Semaines_ouvertes absente : la liste des semaines du formulaire n’est pas tenue à jour.</p>') + '</section>';
+    html += '<section class="cf-section"><h3>Modèles de courriels ' + info('Courriels préparés dans votre messagerie, destinataires en Cci. Cliquez sur une variable pour l’insérer dans le champ en cours.') + '</h3>' + Object.keys(DEF_TPL).map(function (k) {
+      return '<details class="mail-block"><summary>' + esc(DEF_TPL[k].label) + '</summary><div class="mail-body"><div class="cf-field"><label for="jt-' + k + '-s">Objet</label><input class="input" id="jt-' + k + '-s" data-jt="' + k + '.subject" value="' + esc(c.tpl[k].subject) + '"></div><div class="cf-field"><label for="jt-' + k + '-b">Message</label><textarea class="textarea" rows="8" id="jt-' + k + '-b" data-jt="' + k + '.body">' + esc(c.tpl[k].body) + '</textarea></div><div class="bo-tpl-vars">' +
+        DEF_TPL[k].vars.map(function (v) { return '<button type="button" class="fr-tag fr-tag--sm bo-vartag" data-j="var" data-k="' + k + '" data-v="{{' + v + '}}">{{' + v + '}}</button>'; }).join('') + '</div><p>' + btn('tplreset', 'Rétablir le texte par défaut', ' data-k="' + k + '"') + '</p></div></details>';
+    }).join('') + '</section>';
+    return html + '<div class="cf-actions">' + btn('savecfg', 'Enregistrer les réglages', '', 'btn') + btn('cancelcfg', 'Annuler les modifications') + '</div>';
+  }
+
+  /* ---------- Actions ---------- */
+  function fail(e) { setMsg('error', 'Opération impossible : ' + ((e && e.message) || e) + '.'); render(); }
+  function done(text) { setMsg('success', text); render(); }
+  function readForm() { var o = {}; Array.prototype.forEach.call(R.querySelectorAll('[data-jf]'), function (e) { o[e.getAttribute('data-jf')] = e.value; }); return o; }
+  function saveSite() {
+    var f = readForm(), ed = U.form.kind === 'editsite'; if (!String(f.name || '').trim()) { setMsg('error', 'Le nom du site est obligatoire.'); return render(); }
+    var obj = { site: f.name.trim(), adresse: f.adresse, cp: f.cp, ville: f.ville, contact: f.contact, tel: f.tel, aff: f.aff, actif: f.actif !== '0' };
+    write(ed ? 'update' : 'create', 'sites', ed ? U.form.id : null, obj).then(function () { U.form = null; done(ed ? 'Site modifié.' : 'Site ajouté.'); }, fail);
+  }
+  function saveMis() {
+    var f = readForm(), ed = U.form.kind === 'editmis', s = S.sBy[Number(f.site)];
+    if (!s) { setMsg('error', 'Choisissez le site.'); return render(); }
+    if (!f.debut || !f.fin) { setMsg('error', 'Renseignez les dates de début et de fin.'); return render(); }
+    if (f.fin < f.debut) { setMsg('error', 'La fin de la mission précède son début.'); return render(); }
+    var cd = Number(f.cd || 0), cda = Number(f.cda || 0), eq = Number(f.eq || 0);
+    if (cd + cda + eq < 1) { setMsg('error', 'Indiquez au moins un poste à pourvoir.'); return render(); }
+    var obj = { site: sref(s), debut: f.debut, fin: f.fin, cd: cd, cda: cda, eq: eq, comm: f.comm };
+    write(ed ? 'update' : 'create', 'mis', ed ? U.form.id : null, obj).then(function () { U.form = null; done(ed ? 'Mission modifiée.' : 'Mission ajoutée.'); }, fail);
+  }
+  var assigning = {};
+  function assign(misId, nig, role, spec) {
+    var m = S.misBy[misId], key = misId + '|' + nig + '|' + role + '|' + spec; if (!m || assigning[key]) return;
+    var t = targetWeeks(m, nig, role, spec);
+    if (!t.free.length) { setMsg('error', pname(nig) + ' : ' + (!m[role] ? 'aucune place pour ce rôle dans cette mission' : !t.base.length ? 'aucune semaine à désigner' : t.blocked.length ? blockText(nig, m).join(', ') : 'le rôle « ' + roleDef(role).label.toLowerCase() + ' » est déjà pourvu sur la période') + '.'); return render(); }
+    var runs = runsOf(t.free).map(function (r) { return { debut: r[0].start < m.debut ? m.debut : r[0].start, fin: r[r.length - 1].end > m.fin ? m.fin : r[r.length - 1].end }; });
+    if (!(S.T.des.cols.debut && S.T.des.cols.fin) && runs.some(function (r) { return r.debut !== m.debut || r.fin !== m.fin; })) { setMsg('error', 'Désignation sur une partie de la mission impossible : ajoutez les colonnes Debut et Fin (type Date) à la table ' + S.T.des.name + '.'); return render(); }
+    assigning[key] = true;
+    runs.reduce(function (p, r) { return p.then(function () { return write('create', 'des', null, { mis: mref(m), nigend: nig, nom: pname(nig), role: roleDef(role).db, debut: r.debut, fin: r.fin, statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }); }); }, Promise.resolve())
+      .then(function () { delete assigning[key]; setMsg('', ''); render(); }, function (e) { delete assigning[key]; fail(e); });
+  }
+  function openCancel(d) {
+    var m = S.misBy[d.misId], p = person(d.nigend), mail = p && p.mail;
+    U.dlg = { title: 'Retirer la désignation', html: '<div style="padding:0 .25rem 1rem"><p>Retirer <strong>' + esc(pname(d.nigend)) + '</strong> de la mission « ' + esc(m.site + ', ' + spanText(d, m)) + ' » (' + esc(roleDef(d.role).label.toLowerCase()) + ') ? Le réserviste a déjà été informé' + (d.dc ? ' le ' + esc(fmtFr(d.dc)) : '') + '.</p>' +
+      '<label class="ed-check"><input type="checkbox" id="jc-mail"' + (mail ? ' checked' : ' disabled') + '> Préparer un courriel pour le prévenir' + (mail ? '' : ' (aucune adresse mail connue)') + '</label>' +
+      '<div class="cf-actions">' + btn('cancelok', 'Retirer la désignation', ' data-id="' + d.id + '"', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
+    render();
+  }
+  function cancelOk(id) {
+    var d = S.des.filter(function (x) { return x.id === id; })[0]; if (!d) return; var m = S.misBy[d.misId], p = person(d.nigend), box = R.querySelector('#jc-mail'), note = '';
+    if (box && box.checked && p && p.mail) { var t = S.cfg.tpl.annul; note = (kit().compose || function () { return ''; })({ to: [p.mail], subject: fill(t.subject, { PERIODE: spanText(d, m), SITE: m.site }), body: fill(t.body, { PRENOM: p.prenom || '', NOM: p.nom || '', PERIODE: spanText(d, m), SITE: m.site, ROLE: roleDef(d.role).label.toLowerCase() }) }); }
+    write('destroy', 'des', id).then(function () { U.dlg = null; done('Désignation retirée' + (box && box.checked ? ' ; courriel préparé dans votre messagerie.' : '.') + (note ? ' ' + note : '')); }, fail);
+  }
+  function weekIn(w, sel) { return !sel.length || sel.indexOf(w.start.slice(0, 7)) !== -1 || sel.indexOf(w.last.slice(0, 7)) !== -1; }
+  function appelMissions(sel) { var t = todayIso(); return S.mis.filter(function (x) { return x.fin >= t && x.weeks.some(function (w) { return weekIn(w, sel); }); }).sort(byDebut); } // missions à venir concernées par les mois choisis (aucun mois : toutes)
+  function openAppel() {
+    var pl = people().list, affs = uniq(pl.map(function (p) { return p.aff; })).sort();
+    U.dlg = { title: 'Inviter les réservistes à postuler', html: '<div style="padding:0 .25rem 1rem">' + (pl.length ? '<div class="cf-field"><label for="ja-aff">Réservistes concernés</label><select class="select" id="ja-aff" data-j="appelaff"><option value="">Tous les réservistes (' + pl.filter(function (p) { return p.mail; }).length + ' avec une adresse mail)</option>' + affs.map(function (a) { return '<option value="' + esc(a) + '">Affectation : ' + esc(a) + ' (' + pl.filter(function (p) { return p.aff === a && p.mail; }).length + ')</option>'; }).join('') + '</select></div>' : '<p class="hint">La liste des réservistes n’est pas chargée : ouvrez la page Réservistes une fois, puis revenez ici.</p>') +
+      openMonthsHtml(S.cfg.openMonths, 'data-jodlg') +
+      '<p class="hint">Le courriel (destinataires en <strong>Cci</strong>) rappelle les missions des mois choisis qui restent à pourvoir et le lien du formulaire. Les mois cochés sont aussi ceux que le formulaire propose.' + (formLink() ? '' : ' <strong>Lien du formulaire non renseigné</strong> (back office, rubrique Emploi).') + '</p><div class="cf-actions">' + btn('appelok', 'Ouvrir le courriel', pl.length ? '' : ' disabled', 'btn') + btn('dlgx', 'Annuler') + '</div></div>' };
+    render();
+  }
+  function appelOk() {
+    var aff = (R.querySelector('#ja-aff') || {}).value || '', sel = Array.prototype.map.call(R.querySelectorAll('input[data-jodlg]:checked'), function (e) { return e.getAttribute('data-jodlg'); }).sort(), changed = JSON.stringify(sel) !== JSON.stringify(S.cfg.openMonths || []), list = appelMissions(sel);
+    var dst = people().list.filter(function (p) { return p.mail && (!aff || p.aff === aff); }).map(function (p) { return p.mail; }); if (!dst.length) { setMsg('error', 'Aucun réserviste avec une adresse mail pour cette sélection.'); U.dlg = null; return render(); }
+    var t = S.cfg.tpl.appel, body = fill(t.body, { MISSIONS: unfilledText(list) || list.map(function (x) { return '- ' + x.site + ', ' + periodText(x); }).join('\n'), LIEN_FORMULAIRE: linkText() });
+    var note = kit().compose({ bcc: dst, subject: fill(t.subject, {}), body: body }); U.dlg = null; // le courriel d'abord (pendant le clic), puis la liste des semaines du formulaire
+    var ok = function (txt) { done('Courriel ouvert pour ' + dst.length + ' réserviste' + (dst.length > 1 ? 's' : '') + ' (Cci).' + (txt ? ' ' + txt : '') + (note ? ' ' + note : '')); };
+    if (!changed) return ok('');
+    var c = normCfg(S.cfg); c.openMonths = sel; c = normCfg(c);
+    persistCfg(c).then(function () { S.syncing = false; return syncOpen(); }).then(function () { ok(sel.length ? 'Le formulaire ne propose plus que les semaines de ' + sel.map(monthLabel).join(', ') + '.' : 'Le formulaire propose toutes les semaines à venir.'); }, fail);
+  }
+  /* ----- Planning : destinataires, PDF, courriel avec pièce jointe ----- */
+  function planRecipients(m) { var seen = {}, out = []; S.mis.filter(function (x) { return inMonth(x, m); }).forEach(function (x) { actives(x).forEach(function (d) { var p = person(d.nigend), k = loose(d.nigend); if (p && p.mail && !seen[k]) { seen[k] = 1; out.push(p.mail); } }); }); return out; }
+  function planVars(m) { var u = unfilledText(S.mis.filter(function (x) { return inMonth(x, m); }).sort(byDebut)); return { PERIODE: monthLabel(m), BESOINS_NON_POURVUS: u ? 'Postes encore à pourvoir :\n' + u : '', LIEN_FORMULAIRE: linkText() }; }
+  function planBody(m) { var t = S.cfg.tpl.planning, v = planVars(m), b = fill(t.body, v).replace(/\n{3,}/g, '\n\n').trim(); if (v.BESOINS_NON_POURVUS && t.body.indexOf('{{BESOINS_NON_POURVUS}}') === -1) b += '\n\n' + v.BESOINS_NON_POURVUS; if (formLink() && t.body.indexOf('{{LIEN_FORMULAIRE}}') === -1) b += '\n\nPour vous porter candidat : ' + formLink(); return b; }
+  function planBlocks(m, bm) {
+    var MF = 'font-family:Marianne,Arial,Helvetica,sans-serif;', wrap = function (inner) { return '<div style="' + MF + 'color:#161616;width:1060px;background:#fff;box-sizing:border-box">' + inner + '</div>'; };
+    var list = S.mis.filter(function (x) { return inMonth(x, m) && (!U.psite || x.siteId === Number(U.psite)); }).sort(byDebut), th = 'style="border:1px solid #999;padding:5px 7px;background:#e8e8f8;text-align:left;font-size:12px"', td = 'style="border:1px solid #999;padding:5px 7px;vertical-align:top;font-size:12px"';
+    var head = (bm ? bm.html : '<div style="font-weight:bold;font-size:15px;text-transform:uppercase">Ministère de l’intérieur – Gendarmerie nationale</div>') + '<div style="margin:12px 0 14px"><div style="font-size:22px;font-weight:bold;margin-top:4px">Mission Poséidon – ' + esc(monthLabel(m)) + '</div><div style="font-size:11px;color:#555">Établi le ' + esc(fmtFr(todayIso())) + '</div></div>';
+    function table(rows) {
+      return '<table style="border-collapse:collapse;width:100%"><thead><tr><th ' + th + '>Période</th><th ' + th + '>Site</th><th ' + th + '>Chef de détachement</th><th ' + th + '>Adjoint</th><th ' + th + '>Équipe</th></tr></thead><tbody>' + rows.map(function (x) {
+        function c(k) { var l = lines(x, k); return l.length ? l.join('<br>') : '—'; }
+        return '<tr><td ' + td + '>' + esc(periodText(x)) + '</td><td ' + td + '>' + esc(x.site) + '</td><td ' + td + '>' + c('cd') + '</td><td ' + td + '>' + c('cda') + '</td><td ' + td + '>' + c('eq') + '</td></tr>'; }).join('') + '</tbody></table>';
+    }
+    var blocks = [], chunks = []; for (var i = 0; i < list.length; i += 7) chunks.push(list.slice(i, i + 7));
+    chunks.forEach(function (ch, i) { blocks.push(wrap((i === 0 ? head : '') + table(ch))); });
+    var used = uniq(list.map(function (x) { return x.siteId; })).map(function (id) { return S.sBy[id]; }).filter(Boolean);
+    if (used.length) blocks.push(wrap('<div style="font-weight:bold;font-size:14px;margin:6px 0">Coordonnées des sites</div><table style="border-collapse:collapse;width:100%"><thead><tr><th ' + th + '>Site</th><th ' + th + '>Adresse</th><th ' + th + '>Contact</th></tr></thead><tbody>' + used.map(function (s) { return '<tr><td ' + td + '>' + esc(s.name) + '</td><td ' + td + '>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ')) + '</td><td ' + td + '>' + esc([s.contact, s.tel].filter(Boolean).join(' · ')) + '</td></tr>'; }).join('') + '</tbody></table>'));
+    if (formLink()) blocks.push(wrap('<div style="font-size:12px">Pour vous porter candidat : ' + esc(formLink()) + '</div>'));
+    return blocks;
+  }
+  function planPdf(m) { var st = R.querySelector('#jp-st'); if (st) st.textContent = 'Génération du PDF…'; return window.__docHeader(1060).then(function (bm) { return kit().buildPdf(planBlocks(m, bm)); }); }
+  function markInformed(m) { var up = []; S.mis.filter(function (x) { return inMonth(x, m); }).forEach(function (x) { actives(x).forEach(function (d) { if (!d.dc) up.push(d); }); }); return up.reduce(function (p, d) { return p.then(function () { return write('update', 'des', d.id, { dc: todayIso() }); }); }, Promise.resolve()); }
+  function openSendPlan() {
+    var m = mths(), dst = planRecipients(m);
+    U.dlg = { title: 'Envoyer le planning – ' + monthLabel(m), html: '<div style="padding:0 .25rem 1rem"><p>Courriel en <strong>Cci</strong> aux <strong>' + dst.length + '</strong> réserviste' + (dst.length > 1 ? 's' : '') + ' désigné' + (dst.length > 1 ? 's' : '') + ' ce mois-ci (avec une adresse mail). Pièce jointe : <strong>PDF</strong> du planning, avec les coordonnées des sites.' + (formLink() ? '' : ' <strong>Lien du formulaire non renseigné</strong> (back office, rubrique Emploi).') + '</p>' +
+      '<div id="jp-st" class="hint" role="status" style="margin-top:.5rem"></div><div class="cf-actions" style="flex-wrap:wrap">' + btn('planok', 'Ouvrir le courriel et télécharger le PDF', dst.length ? '' : ' disabled', 'btn') + btn('planeml', 'Brouillon .eml avec le PDF joint', dst.length ? '' : ' disabled') + btn('planpdf', 'Télécharger le PDF seul') + btn('dlgx', 'Annuler') + '</div><p class="hint">Brouillon .eml : <strong>Ctrl + E (⌘ + E sur Mac)</strong> pour pouvoir modifier et envoyer. ' + info('« Ouvrir le courriel » prépare le message (destinataires en Cci) et télécharge le PDF à glisser en pièce jointe. Le brouillon .eml contient déjà le PDF.') + '</p></div>' };
+    render();
+  }
+  function stErr(prefix, e) { var st = R.querySelector('#jp-st'); if (st) { st.style.color = 'var(--text-default-error)'; st.textContent = prefix + ((e && e.message) || e) + '.'; } }
+  function planOk() {
+    var m = mths(), dst = planRecipients(m), nm = 'Planning_Poseidon_' + m + '.pdf', K = kit();
+    var note = K.compose({ bcc: dst, subject: fill(S.cfg.tpl.planning.subject, planVars(m)), body: planBody(m) });
+    planPdf(m).then(function (ab) { K.saveBlob(new Blob([ab], { type: 'application/pdf' }), nm); return markInformed(m).then(function () { U.dlg = null; done('Courriel ouvert pour ' + dst.length + ' réserviste' + (dst.length > 1 ? 's' : '') + ' (Cci) et PDF téléchargé (' + nm + ') : glissez-le dans le courriel comme pièce jointe.' + (note ? ' ' + note : '')); }); }).catch(function (e) { stErr('Le courriel est ouvert, mais le PDF est impossible : ', e); });
+  }
+  function planEml() {
+    var m = mths(), dst = planRecipients(m), nm = 'Planning_Poseidon_' + m + '.pdf', K = kit();
+    planPdf(m).then(function (ab) {
+      var eml = K.buildEml({ bcc: dst, subject: fill(S.cfg.tpl.planning.subject, planVars(m)), body: planBody(m), attName: nm, attB64: K.b64OfBuf(ab) });
+      K.saveBlob(new Blob([eml], { type: 'message/rfc822' }), 'Planning_Poseidon_' + m + '.eml');
+      return markInformed(m).then(function () { U.dlg = null; done('Brouillon de courriel téléchargé (Planning_Poseidon_' + m + '.eml) : ouvrez-le dans votre messagerie ; le PDF est joint et ' + dst.length + ' réserviste' + (dst.length > 1 ? 's sont' : ' est') + ' en Cci. Faites Ctrl + E (⌘ + E sur Mac) pour pouvoir modifier et envoyer le message.'); });
+    }).catch(function (e) { stErr('PDF impossible : ', e); });
+  }
+  function planPdfOnly() { var m = mths(); planPdf(m).then(function (ab) { kit().saveBlob(new Blob([ab], { type: 'application/pdf' }), 'Planning_Poseidon_' + m + '.pdf'); var st = R.querySelector('#jp-st'); if (st) st.textContent = 'PDF téléchargé.'; }).catch(function (e) { stErr('PDF impossible : ', e); }); }
+  // Impression : PDF A4 paysage (en-tête du ministère) ouvert dans le lecteur PDF, sans titre, URL ni pagination du navigateur.
+  function printPlan() {
+    var m = mths(), list = monthList(); if (!list.length) { setMsg('error', 'Aucune mission à imprimer en ' + monthLabel(m) + '.'); return render(); }
+    var w = window.open('', '_blank'); try { if (w) w.document.write('<!doctype html><title>Planning Poséidon</title><p style="font-family:sans-serif">Préparation de l’impression…</p>'); } catch (e) {}
+    window.__docHeader(1060).then(function (bm) { return kit().buildPdf(planBlocks(m, bm)); }).then(function (ab) {
+      var blob = new Blob([ab], { type: 'application/pdf' });
+      if (!w || w.closed) { kit().saveBlob(blob, 'Planning_Poseidon.pdf'); setMsg('success', 'La fenêtre d’impression a été bloquée par le navigateur : le PDF du planning a été téléchargé, ouvrez-le pour l’imprimer.'); return render(); }
+      w.location.href = URL.createObjectURL(blob); var fired = false; function go() { if (fired) return; fired = true; try { w.focus(); w.print(); } catch (e) {} } w.onload = go; setTimeout(go, 1500);
+    }).catch(function (e) { try { if (w) w.close(); } catch (x) {} setMsg('error', 'Impression impossible : ' + ((e && e.message) || e) + '.'); render(); });
+  }
+  function exportCsv() {
+    var m = mths(), rows = [['Début', 'Fin', 'Site', 'Chef de détachement', 'Adjoint', 'Équipe', 'Postes équipe']];
+    monthList().forEach(function (x) { function n(k) { return actives(x).filter(function (d) { return d.role === k; }).map(function (d) { return pname(d.nigend) + (isWhole(d, x) ? '' : ' (' + spanShort(d, x) + ')'); }).join(' ; '); } rows.push([fmtFr(x.debut), fmtFr(x.fin), x.site, n('cd'), n('cda'), n('eq'), x.eq]); });
+    var t = '﻿' + rows.map(function (r) { return r.map(function (c) { c = String(c == null ? '' : c); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';'); }).join('\r\n');
+    kit().saveBlob(new Blob([t], { type: 'text/csv;charset=utf-8' }), 'planning_Poseidon_' + m + '.csv');
+  }
+  function persistCfg(c) {
+    var cur = window.__getOpts ? window.__getOpts() : {}, o = {}; Object.keys(cur || {}).forEach(function (k) { o[k] = cur[k]; }); o.pos = c;
+    return Promise.resolve(IN_GRIST ? grist.setOptions(o) : null).then(function () { S.cfg = c; if (window.__pushOpts) window.__pushOpts(o); });
+  }
+
+  /* ---------- Événements ---------- */
+  function onClick(e) {
+    var b = e.target.closest('[data-j]'); if (!b || b.disabled) return; var j = b.getAttribute('data-j'), id = Number(b.getAttribute('data-id'));
+    if (j === 'tab') { var nt = b.getAttribute('data-v'); if (isAdm(nt)) U.lastAdm = nt; else U.lastMain = nt; U.tab = nt; U.form = null; setMsg('', ''); U.draft = null; return render(); }
+    if (j === 'gotodes') { var gm = S.misBy[id]; if (gm) { U.month = gm.debut.slice(0, 7); U.tab = 'des'; U.lastMain = 'des'; U.form = null; U.focusMis = gm.id; } render(); if (gm) setTimeout(focusMis, 40); return; }
+    if (j === 'dlgx') { U.dlg = null; U.pick = null; return render(); }
+    if (j === 'reload') { S.loading = null; return loadAll().then(render); }
+    if (j === 'formx') { U.form = null; return render(); }
+    if (j === 'gobo') { if (window.__showPage) window.__showPage('bo'); if (window.__showBoTab) window.__showBoTab('emploi'); return; }
+    if (j === 'syncopen') { S.syncing = false; return syncOpen().then(function (ch) { var i = S.syncInfo || {}; setMsg(S.syncErr ? 'error' : 'success', S.syncErr ? 'Mise à jour impossible : ' + S.syncErr : (ch ? 'Liste du formulaire mise à jour : ' + i.added + ' semaine(s) ajoutée(s), ' + i.removed + ' retirée(s).' : 'La liste du formulaire est déjà à jour.')); render(); }); }
+    if (j === 'addsite') { U.form = { kind: 'addsite', data: {} }; return render(); }
+    if (j === 'editsite') { U.form = { kind: 'editsite', id: id, data: S.sBy[id] }; return render(); }
+    if (j === 'savesite') return saveSite();
+    if (j === 'addmis') { U.form = { kind: 'addmis', data: { debut: U.bmonth ? U.bmonth + '-01' : '', cd: 1, cda: 1 } }; return render(); }
+    if (j === 'editmis') { var mm = S.misBy[id]; U.form = { kind: 'editmis', id: id, data: { siteId: mm.siteId, debut: mm.debut, fin: mm.fin, cd: mm.cd, cda: mm.cda, eq: mm.eq, comm: mm.comm } }; return render(); }
+    if (j === 'dupmis') { var md = S.misBy[id]; U.form = { kind: 'addmis', data: { siteId: md.siteId, debut: '', fin: '', cd: md.cd, cda: md.cda, eq: md.eq, comm: md.comm } }; return render(); }
+    if (j === 'delmis') { var mx = S.misBy[id], n = assigned(mx).length; if (!window.confirm(n ? 'Cette mission a ' + n + ' désignation(s) : elles seront aussi supprimées. Continuer ?' : 'Supprimer cette mission ?')) return; return assigned(mx).reduce(function (pp, d) { return pp.then(function () { return write('destroy', 'des', d.id); }); }, Promise.resolve()).then(function () { return write('destroy', 'mis', id); }).then(function () { done('Mission supprimée.'); }, fail); }
+    if (j === 'savemis') return saveMis();
+    if (j === 'assign') { b.disabled = true; return assign(Number(b.getAttribute('data-mis')), b.getAttribute('data-nig'), b.getAttribute('data-role'), b.getAttribute('data-span') || 'avail'); }
+    if (j === 'pick') { U.pick = { misId: id, q: '', span: 'all' }; return render(); }
+    if (j === 'cancel') { var d = S.des.filter(function (x) { return x.id === id; })[0]; if (!d) return; if (!d.dc) return write('destroy', 'des', id).then(render, fail); return openCancel(d); }
+    if (j === 'delrow') return write('destroy', 'des', id).then(render, fail);
+    if (j === 'cancelok') return cancelOk(id);
+    if (j === 'appel') return openAppel();
+    if (j === 'appelok') return appelOk();
+    if (j === 'sendplan') return openSendPlan();
+    if (j === 'planok') return planOk();
+    if (j === 'planeml') return planEml();
+    if (j === 'planpdf') return planPdfOnly();
+    if (j === 'csv') return exportCsv();
+    if (j === 'print') return printPlan();
+    if (j === 'var') { var kk = b.getAttribute('data-k'), el = R.querySelector('[data-jt="' + kk + '.body"]'), f = document.activeElement && document.activeElement.matches('[data-jt^="' + kk + '."]') ? document.activeElement : el, s0 = f.selectionStart == null ? f.value.length : f.selectionStart; f.value = f.value.slice(0, s0) + b.getAttribute('data-v') + f.value.slice(f.selectionEnd == null ? s0 : f.selectionEnd); f.focus(); f.selectionStart = f.selectionEnd = s0 + b.getAttribute('data-v').length; f.dispatchEvent(new Event('input', { bubbles: true })); return; }
+    if (j === 'tplreset') { var kr = b.getAttribute('data-k'); U.draft.tpl[kr] = { subject: DEF_TPL[kr].subject, body: DEF_TPL[kr].body }; return render(); }
+    if (j === 'savecfg') { var c = normCfg(U.draft); return persistCfg(c).then(function () { U.draft = null; S.syncing = false; scheduleSync(); done('Réglages enregistrés.'); }, fail); }
+    if (j === 'cancelcfg') { U.draft = null; setMsg('', ''); return render(); }
+  }
+  function onInput(e) {
+    var t = e.target;
+    if (t.getAttribute('data-j') === 'pq') { U.pick.q = t.value; var pos = t.selectionStart; render(); var n = R.querySelector('#pos-pq'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
+    var jt = t.getAttribute('data-jt'); if (jt) { var kk = jt.split('.'); U.draft.tpl[kk[0]][kk[1]] = t.value; }
+  }
+  function onChange(e) {
+    var t = e.target, j = t.getAttribute('data-j');
+    if (t.hasAttribute('data-jmp')) {
+      var w = t.closest('[data-mp]'), key = w.getAttribute('data-mp'), mm = w.querySelector('select').value, yy = w.querySelector('input').value || todayIso().slice(0, 4);
+      if (/^\d{4}$/.test(yy) && (mm || key !== 'bmonth')) U[key] = yy + '-' + (mm || '01'); else if (!mm) U[key] = '';
+      return render();
+    }
+    if (t.hasAttribute('data-jopen')) { var om = U.draft.openMonths = U.draft.openMonths || [], mv = t.getAttribute('data-jopen'), oi = om.indexOf(mv); if (t.checked && oi === -1) om.push(mv); if (!t.checked && oi !== -1) om.splice(oi, 1); om.sort(); return render(); }
+    if (j === 'psite') { U.psite = t.value; return render(); }
+    if (j === 'pspan') { U.pick.span = t.value; return render(); }
+    if (j === 'sy') { U.sy = t.value; return render(); }
+  }
+  function mount(el) {
+    if (R === el) return; R = el; R.classList.add('jdc-root');
+    R.addEventListener('click', onClick); R.addEventListener('input', onInput); R.addEventListener('change', onChange);
+    R.addEventListener('mouseover', function (ev) { var b = ev.target.closest('.pos-tl__bar'); if (b) showTip(b); });
+    R.addEventListener('mouseout', function (ev) { var b = ev.target.closest('.pos-tl__bar'); if (b && !b.contains(ev.relatedTarget)) hideTip(); });
+    R.addEventListener('focusin', function (ev) { var b = ev.target.closest('.pos-tl__bar'); if (b) showTip(b); });
+    R.addEventListener('focusout', function (ev) { if (ev.target.closest('.pos-tl__bar')) hideTip(); });
+    window.addEventListener('scroll', hideTip, true);
+    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideTip(); if (ev.key === 'Escape' && (U.dlg || U.pick)) { U.dlg = null; U.pick = null; render(); } });
+  }
+  window.POS = {
+    mount: mount,
+    show: function (el, mode) { // mode « stats » : page Statistiques ; sinon page principale (planning, désignations, gestion)
+      U.mode = mode === 'stats' ? 'stats' : 'main'; mount(el); var o = window.__getOpts ? window.__getOpts() : {}; if (!U.draft) S.cfg = normCfg(o && o.pos);
       U.month = U.month || nextMonth(); render(); return loadAll().then(render);
     }
   };
@@ -16537,10 +17311,16 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   var jdcWrap = document.createElement('div'); jdcWrap.className = 'wrap fr-container';
   jdcWrap.innerHTML = '<h1 class="fr-h4" style="margin:0 0 1rem">Journée défense et citoyenneté (JDC)</h1><div id="jdc-host" class="jdc-host"></div>';
   pageJdc.appendChild(jdcWrap); pageBo.insertAdjacentElement('afterend', pageJdc);
-  var pageJdcStat = document.createElement('div'); pageJdcStat.id = 'page-jdc-stat'; pageJdcStat.hidden = true;
-  var jdcStatWrap = document.createElement('div'); jdcStatWrap.className = 'wrap fr-container';
-  jdcStatWrap.innerHTML = '<h1 class="fr-h4" style="margin:0 0 1rem">Statistiques des journées défense et citoyenneté</h1><div id="jdc-stat-host" class="jdc-host"></div>';
-  pageJdcStat.appendChild(jdcStatWrap); pageJdc.insertAdjacentElement('afterend', pageJdcStat);
+  var pageEmpStat = document.createElement('div'); pageEmpStat.id = 'page-emp-stat'; pageEmpStat.hidden = true;
+  var empStatWrap = document.createElement('div'); empStatWrap.className = 'wrap fr-container';
+  empStatWrap.innerHTML = '<h1 class="fr-h4" style="margin:0 0 1rem">Statistiques Emploi</h1><div class="jdc-tabs" id="emp-stat-tabs" role="tablist" aria-label="Statistiques Emploi"><button type="button" class="jdc-tab" role="tab" data-est="jdc" aria-selected="true">JDC</button><button type="button" class="jdc-tab" role="tab" data-est="pos" aria-selected="false">Poséidon</button></div><div id="jdc-stat-host" class="jdc-host"></div><div id="pos-stat-host" class="jdc-host" hidden></div>';
+  pageEmpStat.appendChild(empStatWrap); pageJdc.insertAdjacentElement('afterend', pageEmpStat);
+  // Pages Mission Poséidon (menu Emploi) : planning / désignations / gestion, et statistiques.
+  var pagePos = document.createElement('div'); pagePos.id = 'page-pos'; pagePos.hidden = true;
+  var posWrap = document.createElement('div'); posWrap.className = 'wrap fr-container';
+  posWrap.innerHTML = '<h1 class="fr-h4" style="margin:0 0 1rem">Mission Poséidon</h1><div id="pos-host" class="jdc-host"></div>';
+  pagePos.appendChild(posWrap); pageEmpStat.insertAdjacentElement('afterend', pagePos);
+  if (/^(jdc|pos|emp-stat)$/.test(window.__page || '') && window.__showPage) window.__showPage(window.__page); // réouverture du widget sur une page Emploi : les pages viennent d'être construites
 
   // Sources de données : un seul bloc, en tête, avec un récapitulatif par page (les éléments gardent leurs identifiants : chaque page les alimente comme avant).
   var sources = document.createElement('details'); sources.className = 'bo-sources'; sources.id = 'bo-all-sources'; // replié par défaut
@@ -16635,6 +17415,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     ['tuto', 'Tutoriel', 'Étapes de la visite guidée (bouton « Tutoriel » de l’en-tête).', 'Contenu'],
     ['courriels', 'Courriels', 'Modèles et réglages des courriels préparés depuis les fiches et les réservations.', 'Modèles'],
     ['documents', 'Documents et contrats', 'Modèles HTML convertis en PDF : lettres, ESR, PPE, contrats et avenants, signataires.', 'Modèles'],
+    ['emploi', 'Emploi', 'Liens des formulaires externes de la page JDC et de la page Mission Poséidon.', 'Configuration'],
     ['reglages', 'Réglages avancés', 'Sources de données et colonnes : à modifier seulement si une colonne est introuvable.', 'Configuration']
   ];
   var tabsEl = document.createElement('nav'); tabsEl.className = 'bo-tabs'; tabsEl.setAttribute('role', 'tablist'); tabsEl.setAttribute('aria-orientation', 'vertical'); tabsEl.setAttribute('aria-label', 'Rubriques du back office');
