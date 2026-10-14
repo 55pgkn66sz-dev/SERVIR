@@ -22,6 +22,7 @@
     };
     // Données modifiées (écriture, ou changement signalé par Grist sur la table liée) : les tables de données sont relues à la prochaine demande.
     window.__dropData = function () { Object.keys(keep).forEach(function (k) { if (k.charAt(0) !== '_' && k.charAt(0) !== '@') delete keep[k]; }); flight = {}; };
+    window.__dropMeta = function () { delete keep['_grist_Tables']; delete keep['_grist_Tables_column']; delete keep['@tables']; }; // métadonnées relues à la prochaine demande
     var rawGet = G.getTable.bind(G);
     G.getTable = function (id) {
       var t = rawGet(id);
@@ -2594,7 +2595,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.9</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.60.12</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -2899,7 +2900,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         return file.arrayBuffer().then(function (ab) { return (mem = new File([ab], file.name, { type: file.type || 'application/octet-stream' })); });
       }
       function once() {
-        var stage = 'read', host = '';
+        var stage = 'read', host = '', t0 = Date.now();
         return local().then(function (f) {
           stage = 'auth';
           return api.getToken().then(function (t) { return [f, t]; });
@@ -2911,7 +2912,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
-        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e) && stage !== 'read'; err.stage = stage; err.host = host; throw err; });
+        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e) && stage !== 'read'; err.stage = stage; err.host = host; err.ms = Date.now() - t0; throw err; });
       }
       return once().catch(function (e) {
         if (e.stage === 'read') throw new Error('le fichier « ' + file.name + ' » ne peut pas être lu sur votre poste (' + e.message.replace(/\.+$/, '') + ') : enregistrez-le dans un dossier local (pas un lecteur réseau ni un téléchargement en cours) puis redéposez-le');
@@ -2920,9 +2921,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         if (e.stage === 'upload' && big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le puis réessayez');
         return once().catch(function (e2) {
           if (!e2.net) throw e2;
-          throw new Error(e2.stage === 'auth'
+          // Diagnostic : une lecture (GET) sur le même serveur aboutit-elle ? Et combien de temps l'envoi a-t-il tenu avant d'échouer ?
+          var probe = e2.stage !== 'upload' ? Promise.resolve('') : api.getToken().then(function (t) { return fetch(t.baseUrl + '/tables?auth=' + encodeURIComponent(t.token)); })
+            .then(function (r) { return ' Diagnostic : la lecture sur le même serveur fonctionne (HTTP ' + r.status + '), seul l’envoi du fichier est bloqué, après ' + (e2.ms / 1000).toFixed(1).replace('.', ',') + ' s.'; },
+              function () { return ' Diagnostic : la lecture sur le même serveur échoue aussi (après ' + (e2.ms / 1000).toFixed(1).replace('.', ',') + ' s pour l’envoi).'; });
+          return probe.then(function (diag) { throw new Error(e2.stage === 'auth'
             ? 'Grist n’a pas délivré l’autorisation d’envoi de fichiers (' + e2.message.replace(/\.+$/, '') + '). Rechargez la page ; si cela persiste, vérifiez le niveau d’accès accordé au widget dans Grist (accès complet au document requis)'
-            : 'la requête d’envoi de « ' + file.name + ' » (' + mo + ' Mo) vers le serveur Grist' + (e2.host ? ' (' + e2.host + ')' : '') + ' est bloquée avant toute réponse (' + e2.message.replace(/\.+$/, '') + '). Causes possibles : pare-feu, proxy ou extension du navigateur, ou serveur Grist qui n’accepte pas les envois depuis ce widget. Essayez en navigation privée ou depuis un autre réseau');
+            : 'la requête d’envoi de « ' + file.name + ' » (' + mo + ' Mo) vers le serveur Grist' + (e2.host ? ' (' + e2.host + ')' : '') + ' est bloquée avant toute réponse (' + e2.message.replace(/\.+$/, '') + '). Causes possibles : pare-feu, proxy ou extension du navigateur, ou serveur Grist qui n’accepte pas les envois depuis ce widget. Essayez en navigation privée ou depuis un autre réseau.' + diag); });
         });
       });
     },
@@ -7875,13 +7880,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   var api = IN_GRIST ? {
     listTables: function () { return grist.docApi.listTables().then(function (l) { return l.filter(function (t) { return t.indexOf('_grist') !== 0; }); }); },
-    listColumns: function (table) {
+    listColumns: function (table, again) {
       return Promise.all([grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]).then(function (r) {
         var T = r[0], C = r[1], tid = T.id[T.tableId.indexOf(table)], out = [];
         for (var i = 0; i < C.id.length; i++) {
           if (C.parentId[i] === tid && !/^(gristHelper_|manualSort)/.test(C.colId[i])) out.push({ id: C.colId[i], label: C.label[i] || C.colId[i], type: C.type[i], pos: C.parentPos[i], formula: !!C.isFormula[i] && (!C.formula || !!String(C.formula[i] || '').trim()), choices: window.__gradeChoices(C.label[i] || C.colId[i], choicesOf(C.widgetOptions && C.widgetOptions[i])), choiceOptions: choiceOptionsOf(C.widgetOptions && C.widgetOptions[i]) });
         }
         out.sort(function (a, b) { return a.pos - b.pos; });
+        // Liste de colonnes bien plus courte que la précédente (relecture transitoire des métadonnées) : relue une fois sans le cache, plutôt que d'afficher une fiche amputée.
+        var seen = (window.__colsSeen = window.__colsSeen || {});
+        if (!again && out.length < (seen[table] || 0) * 0.8) { if (window.__dropMeta) window.__dropMeta(); return api.listColumns(table, true); }
+        if (out.length > (seen[table] || 0)) seen[table] = out.length;
         return out;
       });
     },
@@ -7924,7 +7933,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         return file.arrayBuffer().then(function (ab) { return (mem = new File([ab], file.name, { type: file.type || 'application/octet-stream' })); });
       }
       function once() {
-        var stage = 'read', host = '';
+        var stage = 'read', host = '', t0 = Date.now();
         return local().then(function (f) {
           stage = 'auth';
           return api.getToken().then(function (t) { return [f, t]; });
@@ -7936,7 +7945,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
-        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e) && stage !== 'read'; err.stage = stage; err.host = host; throw err; });
+        }).catch(function (e) { var err = new Error(msgOf(e) || String(e)); err.net = netFail(e) && stage !== 'read'; err.stage = stage; err.host = host; err.ms = Date.now() - t0; throw err; });
       }
       return once().catch(function (e) {
         if (e.stage === 'read') throw new Error('le fichier « ' + file.name + ' » ne peut pas être lu sur votre poste (' + e.message.replace(/\.+$/, '') + ') : enregistrez-le dans un dossier local (pas un lecteur réseau ni un téléchargement en cours) puis redéposez-le');
@@ -7945,9 +7954,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         if (e.stage === 'upload' && big) throw new Error('le fichier « ' + file.name + ' » (' + mo + ' Mo) dépasse sans doute la taille maximale des pièces jointes de Grist (10 Mo par défaut) : réduisez-le puis réessayez');
         return once().catch(function (e2) {
           if (!e2.net) throw e2;
-          throw new Error(e2.stage === 'auth'
+          // Diagnostic : une lecture (GET) sur le même serveur aboutit-elle ? Et combien de temps l'envoi a-t-il tenu avant d'échouer ?
+          var probe = e2.stage !== 'upload' ? Promise.resolve('') : api.getToken().then(function (t) { return fetch(t.baseUrl + '/tables?auth=' + encodeURIComponent(t.token)); })
+            .then(function (r) { return ' Diagnostic : la lecture sur le même serveur fonctionne (HTTP ' + r.status + '), seul l’envoi du fichier est bloqué, après ' + (e2.ms / 1000).toFixed(1).replace('.', ',') + ' s.'; },
+              function () { return ' Diagnostic : la lecture sur le même serveur échoue aussi (après ' + (e2.ms / 1000).toFixed(1).replace('.', ',') + ' s pour l’envoi).'; });
+          return probe.then(function (diag) { throw new Error(e2.stage === 'auth'
             ? 'Grist n’a pas délivré l’autorisation d’envoi de fichiers (' + e2.message.replace(/\.+$/, '') + '). Rechargez la page ; si cela persiste, vérifiez le niveau d’accès accordé au widget dans Grist (accès complet au document requis)'
-            : 'la requête d’envoi de « ' + file.name + ' » (' + mo + ' Mo) vers le serveur Grist' + (e2.host ? ' (' + e2.host + ')' : '') + ' est bloquée avant toute réponse (' + e2.message.replace(/\.+$/, '') + '). Causes possibles : pare-feu, proxy ou extension du navigateur, ou serveur Grist qui n’accepte pas les envois depuis ce widget. Essayez en navigation privée ou depuis un autre réseau');
+            : 'la requête d’envoi de « ' + file.name + ' » (' + mo + ' Mo) vers le serveur Grist' + (e2.host ? ' (' + e2.host + ')' : '') + ' est bloquée avant toute réponse (' + e2.message.replace(/\.+$/, '') + '). Causes possibles : pare-feu, proxy ou extension du navigateur, ou serveur Grist qui n’accepte pas les envois depuis ce widget. Essayez en navigation privée ou depuis un autre réseau.' + diag); });
         });
       });
     },
@@ -8726,9 +8739,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
   var ICON_DELETE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
   // Colonne des documents : « PJ », à défaut la première colonne de type Pièces jointes de la table.
+  var PJ_GOOD = {}; // dernière colonne de pièces jointes trouvée : conservée si la liste des colonnes est transitoirement incomplète
   function pjCol(c) {
-    var p = findCol(c.table, 'PJ'); if (p && typeBase(p.type) === 'Attachments') return p;
-    return (state.colsByTable[c.table] || []).filter(function (x) { return typeBase(x.type) === 'Attachments'; })[0] || null;
+    var p = findCol(c.table, 'PJ'), r = p && typeBase(p.type) === 'Attachments' ? p
+      : (state.colsByTable[c.table] || []).filter(function (x) { return typeBase(x.type) === 'Attachments'; })[0] || null;
+    if (r) PJ_GOOD[c.table] = r; else if (PJ_GOOD[c.table] && colsIncomplete(c.table)) return PJ_GOOD[c.table];
+    return r;
   }
   function nomPjCol(c) { var n = findCol(c.table, 'Nom PJ'); return n && !n.formula ? n : null; }
   function attIds(item, colId) { return toList(item.raw[colId]).map(Number); }
@@ -8999,12 +9015,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     }).then(function () { if (!$('modal').hidden) renderModal(); })
       .catch(function (err) { P.busy = false; P.error = 'Génération impossible : ' + ((err && err.message) || err) + '.'; renderModal(); });
   }
-  // Onglets de la fiche : colonnes configurées + « Documents » (toujours proposé si la table a une colonne de pièces jointes).
+  // Onglets de la fiche : colonnes configurées + « Documents » (toujours proposé ; sans colonne de pièces jointes, l'onglet l'explique).
   var DOCS_TAB ={ key: 'docs', title: 'Documents', cardTitle: 'Documents du réserviste' };
   function modalTabs(c) {
     var tabs = TAB_DEFS.filter(function (t) { return (c.tabs[t.key] || []).length; });
     if (!tabs.length) tabs = TAB_DEFS.slice(0, 1);
-    return pjCol(c) ? tabs.concat(DOCS_TAB) : tabs;
+    var ci = -1; tabs.forEach(function (t, i) { if (t.key === 'comm') ci = i; }); // Documents juste avant Commentaires (en dernier si cet onglet n'est pas affiché)
+    return ci < 0 ? tabs.concat(DOCS_TAB) : tabs.slice(0, ci).concat(DOCS_TAB, tabs.slice(ci));
   }
 
   function renderModal() {
