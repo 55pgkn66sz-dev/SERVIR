@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SERVIR</title>
-<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<!-- API des widgets Grist : d'abord celle du serveur Grist de l'administration (docs.getgrist.com est bloqué par le proxy : 403), puis celle de Grist public. Les scripts restent chargés dans l'ordre, sans async ni defer. -->
+<script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+<script>if (!window.grist) document.write('<script src="https://docs.getgrist.com/grist-plugin-api.js"><\/script>');</script>
 <script>
 /* Dans Grist (le widget est dans un iframe) sans l'API Grist : script bloqué (protection renforcée contre le pistage de Firefox, bloqueur de contenu, réseau). Le widget afficherait alors
    ses données de démonstration comme s'il était hors de Grist : on affiche à la place un message explicite, sans jamais choisir les données de test d'après un minuteur. */
@@ -14,8 +16,8 @@
   document.addEventListener('DOMContentLoaded', function () {
     var o = document.createElement('div'); o.setAttribute('role', 'alert');
     o.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;color:#161616;font:16px/1.5 Marianne,Arial,sans-serif;padding:2rem;overflow:auto';
-    o.innerHTML = '<h1 style="font-size:1.5rem;margin:0 0 1rem">L’API Grist n’a pas pu être chargée</h1><p>Le widget est ouvert dans Grist, mais le script <code>docs.getgrist.com/grist-plugin-api.js</code> n’a pas été chargé : les données de démonstration ne sont donc pas affichées, pour ne pas vous induire en erreur.</p>' +
-      '<ul><li>Firefox : la protection renforcée contre le pistage (icône de bouclier) ou un bloqueur de contenu peut bloquer ce script. Désactivez-la pour ce site.</li><li>Vérifiez la connexion réseau et que docs.getgrist.com n’est pas filtré.</li><li>Rechargez ensuite sans le cache : Ctrl + Maj + R (⌘ + Maj + R sur Mac).</li></ul>' +
+    o.innerHTML = '<h1 style="font-size:1.5rem;margin:0 0 1rem">L’API Grist n’a pas pu être chargée</h1><p>Le widget est ouvert dans Grist, mais le script <code>grist-plugin-api.js</code> n’a été chargé ni depuis <code>grist.numerique.gouv.fr</code> ni depuis <code>docs.getgrist.com</code> : les données de démonstration ne sont donc pas affichées, pour ne pas vous induire en erreur.</p>' +
+      '<ul><li>Un proxy ou un pare-feu peut bloquer ces adresses (erreur « 403 Forbidden » du proxy) : faites autoriser <code>grist.numerique.gouv.fr</code> par votre administrateur réseau.</li><li>Firefox : la protection renforcée contre le pistage (icône de bouclier) ou un bloqueur de contenu peut aussi bloquer ce script.</li><li>Rechargez ensuite sans le cache : Ctrl + Maj + R (⌘ + Maj + R sur Mac).</li></ul>' +
       '<p><button type="button" id="grist-retry" style="padding:.5rem 1rem;font:inherit;cursor:pointer">Recharger</button></p>';
     document.body.appendChild(o); document.getElementById('grist-retry').addEventListener('click', function () { location.reload(); });
   });
@@ -2679,7 +2681,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.3</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
