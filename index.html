@@ -2663,7 +2663,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.1</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -2953,6 +2953,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       });
     },
     attachmentUrl: function (id) { return api.getToken().then(function (t) { return t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token); }); },
+    // Grist refuse (sans réponse lisible : « Load failed » / « NetworkError ») une écriture par jeton qui ne déclenche pas de pré-contrôle CORS : l'en-tête X-Requested-With est donc obligatoire ;
+    // le Content-Type multipart ne doit pas être fixé à la main (le navigateur y ajoute la « boundary »).
     // Envoi d'une pièce jointe en deux étapes : (1) autorisation d'accès demandée à Grist, (2) envoi du fichier au serveur du document.
     // « NetworkError » = aucune réponse lisible à l'une de ces étapes ; l'erreur peut être un texte brut (renvoyé par Grist) ou un TypeError (fetch).
     // Un fichier de 10 Mo ou moins est renvoyé une fois avec une autorisation neuve ; le message final dit à quelle étape l'envoi a échoué.
@@ -2976,7 +2978,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
           var f = ft[0], t = ft[1];
           stage = 'upload'; try { host = new URL(t.baseUrl).host; } catch (x) {}
           var fd = new FormData(); fd.append('upload', f, file.name);
-          return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
+          return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd }).then(function (r) {
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
@@ -6673,7 +6675,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (!IN_GRIST) return Promise.resolve(1);
     return grist.docApi.getAccessToken({ readOnly: false }).then(function (t) {
       var fd = new FormData(); fd.append('upload', file, file.name);
-      return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) { if (!r.ok) throw new Error('envoi de la capture refusé (' + r.status + ')'); return r.json(); }).then(function (ids) { return ids[0]; });
+      return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd }).then(function (r) { if (!r.ok) throw new Error('envoi de la capture refusé (' + r.status + ')'); return r.json(); }).then(function (ids) { return ids[0]; });
     });
   }
   function openHelpdesk(module, opener, opts) {
@@ -7998,6 +8000,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       });
     },
     attachmentUrl: function (id) { return api.getToken().then(function (t) { return t.baseUrl + '/attachments/' + id + '/download?auth=' + encodeURIComponent(t.token); }); },
+    // Grist refuse (sans réponse lisible : « Load failed » / « NetworkError ») une écriture par jeton qui ne déclenche pas de pré-contrôle CORS : l'en-tête X-Requested-With est donc obligatoire ;
+    // le Content-Type multipart ne doit pas être fixé à la main (le navigateur y ajoute la « boundary »).
     // Envoi d'une pièce jointe en deux étapes : (1) autorisation d'accès demandée à Grist, (2) envoi du fichier au serveur du document.
     // « NetworkError » = aucune réponse lisible à l'une de ces étapes ; l'erreur peut être un texte brut (renvoyé par Grist) ou un TypeError (fetch).
     // Un fichier de 10 Mo ou moins est renvoyé une fois avec une autorisation neuve ; le message final dit à quelle étape l'envoi a échoué.
@@ -8021,7 +8025,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
           var f = ft[0], t = ft[1];
           stage = 'upload'; try { host = new URL(t.baseUrl).host; } catch (x) {}
           var fd = new FormData(); fd.append('upload', f, file.name);
-          return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', body: fd }).then(function (r) {
+          return fetch(t.baseUrl + '/attachments?auth=' + encodeURIComponent(t.token), { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd }).then(function (r) {
             if (!r.ok) { if (r.status === 401 || r.status === 403) tokenCache = null; throw new Error(r.status === 413 ? 'fichier « ' + file.name + ' » trop volumineux (' + mo + ' Mo)' : 'envoi refusé (' + r.status + ')'); }
             return r.json();
           }).then(function (ids) { return ids[0]; });
