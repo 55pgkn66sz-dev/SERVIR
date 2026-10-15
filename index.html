@@ -6,6 +6,22 @@
 <title>SERVIR</title>
 <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 <script>
+/* Dans Grist (le widget est dans un iframe) sans l'API Grist : script bloqué (protection renforcée contre le pistage de Firefox, bloqueur de contenu, réseau). Le widget afficherait alors
+   ses données de démonstration comme s'il était hors de Grist : on affiche à la place un message explicite, sans jamais choisir les données de test d'après un minuteur. */
+(function () {
+  var framed = false; try { framed = window.self !== window.top; } catch (e) { framed = true; }
+  if (!framed || window.grist) return; window.__GRIST_BLOCKED = true;
+  document.addEventListener('DOMContentLoaded', function () {
+    var o = document.createElement('div'); o.setAttribute('role', 'alert');
+    o.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;color:#161616;font:16px/1.5 Marianne,Arial,sans-serif;padding:2rem;overflow:auto';
+    o.innerHTML = '<h1 style="font-size:1.5rem;margin:0 0 1rem">L’API Grist n’a pas pu être chargée</h1><p>Le widget est ouvert dans Grist, mais le script <code>docs.getgrist.com/grist-plugin-api.js</code> n’a pas été chargé : les données de démonstration ne sont donc pas affichées, pour ne pas vous induire en erreur.</p>' +
+      '<ul><li>Firefox : la protection renforcée contre le pistage (icône de bouclier) ou un bloqueur de contenu peut bloquer ce script. Désactivez-la pour ce site.</li><li>Vérifiez la connexion réseau et que docs.getgrist.com n’est pas filtré.</li><li>Rechargez ensuite sans le cache : Ctrl + Maj + R (⌘ + Maj + R sur Mac).</li></ul>' +
+      '<p><button type="button" id="grist-retry" style="padding:.5rem 1rem;font:inherit;cursor:pointer">Recharger</button></p>';
+    document.body.appendChild(o); document.getElementById('grist-retry').addEventListener('click', function () { location.reload(); });
+  });
+})();
+</script>
+<script>
 /* Performance : les métadonnées du document (liste des tables, colonnes) sont relues des dizaines de fois par les différentes pages au démarrage ;
    elles sont gardées 45 s en mémoire ; les données d'une table sont gardées 15 s (une même table est demandée par plusieurs pages : candidats, réservistes, réservations).
    Toute écriture (création, mise à jour, suppression) invalide les compteurs de fraîcheur des pages (window.__dataDirty). */
@@ -2663,7 +2679,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.2</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -6285,12 +6301,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
   /* ---------- Démarrage ---------- */
   if (IN_GRIST) {
-    grist.ready({ requiredAccess: 'full' });
     var timer;
     function soon(ms) { clearTimeout(timer); timer = setTimeout(load, ms || 80); } // options, table liée et enregistrements arrivent ensemble au démarrage : un seul chargement
     grist.onOptions(function (o) { state.opts = o || {}; soon(); if (window.WEL) window.WEL.setOptions(o); if (window.RES) window.RES.setOptions(o); if (window.RSV) window.RSV.setOptions(o); });
     grist.onRecords(function () { if (window.__dropData) window.__dropData(); soon(150); });
     grist.selectedTable.getTableId().then(function (t) { state.boundTable = t; soon(); }).catch(function () {});
+    grist.ready({ requiredAccess: 'full' }); // après la définition de onOptions / onRecords : aucun message initial ne peut être manqué
   } else {
     $('demo').hidden = false;
     state.boundTable = 'Candidats_PMG';
