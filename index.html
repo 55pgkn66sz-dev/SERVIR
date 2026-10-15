@@ -747,11 +747,14 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .toolbar .btn.btn-ghost { background: transparent; border-color: transparent; color: var(--blue); border-radius: 6px; min-width: 36px; width: auto; max-width: 36px; min-height: 36px; overflow: hidden; padding: 0 7px; justify-content: flex-start; transition: max-width .28s ease, background-color .15s ease, padding .28s ease; }
   .jdc-tabs .btn.btn-ghost { background: transparent; border-color: transparent; color: var(--blue); border-radius: 6px; min-width: 36px; width: auto; max-width: 36px; min-height: 36px; overflow: hidden; padding: 0 7px; justify-content: flex-start; transition: max-width .28s ease, background-color .15s ease, padding .28s ease; }
   /* Au survol ou au focus clavier, l'icône se déplie en bouton : le libellé complet apparaît à droite de l'icône. */
-  .toolbar .btn.btn-ghost:hover, .toolbar .btn.btn-ghost:focus-visible { max-width: 22rem; font-size: .875rem; padding: 0 12px 0 7px; }
-  .jdc-tabs .btn.btn-ghost:hover, .jdc-tabs .btn.btn-ghost:focus-visible { max-width: 22rem; font-size: .875rem; padding: 0 12px 0 7px; }
-  .toolbar .btn.btn-ghost:hover::before, .toolbar .btn.btn-ghost:focus-visible::before { margin-right: .5rem !important; }
-  .jdc-tabs .btn.btn-ghost:hover::before, .jdc-tabs .btn.btn-ghost:focus-visible::before { margin-right: .5rem !important; }
-  @media (prefers-reduced-motion: reduce) { .toolbar .btn.btn-ghost { transition: none; } }
+  /* Le libellé se déplie vers la gauche dans une pastille accolée à l'icône (::after, hors flux) : l'icône ne bouge pas et la mise en page non plus
+     (avant, le bouton s'élargissait dans le flux : l'icône reculait sous le pointeur et la barre d'actions pouvait passer à la ligne). */
+  .toolbar .btn.btn-ghost, .jdc-tabs .btn.btn-ghost { position: relative; overflow: visible; justify-content: center; padding: 0; }
+  .toolbar .btn.btn-ghost::after, .jdc-tabs .btn.btn-ghost::after { content: attr(title); position: absolute; right: 100%; top: 0; bottom: 0; display: flex; align-items: center; max-width: 0; padding: 0; overflow: hidden; opacity: 0; white-space: nowrap; font-size: .875rem; font-weight: 500; background: var(--blue-tint); color: var(--blue); border-radius: 6px 0 0 6px; pointer-events: none; z-index: 6; transition: max-width .25s ease, padding .25s ease, opacity .15s ease; }
+  .toolbar .btn.btn-ghost:hover::after, .toolbar .btn.btn-ghost:focus-visible::after, .jdc-tabs .btn.btn-ghost:hover::after, .jdc-tabs .btn.btn-ghost:focus-visible::after { max-width: min(22rem, 48vw); padding: 0 .75rem 0 .9rem; opacity: 1; text-overflow: ellipsis; }
+  .toolbar .btn.btn-ghost:hover:not(:disabled), .toolbar .btn.btn-ghost:focus-visible, .jdc-tabs .btn.btn-ghost:hover:not(:disabled), .jdc-tabs .btn.btn-ghost:focus-visible { border-radius: 0 6px 6px 0; }
+  .toolbar .btn.btn-ghost:disabled::after, .jdc-tabs .btn.btn-ghost:disabled::after { display: none; }
+  @media (prefers-reduced-motion: reduce) { .toolbar .btn.btn-ghost, .toolbar .btn.btn-ghost::after, .jdc-tabs .btn.btn-ghost::after { transition: none; } }
   .toolbar .btn.btn-ghost:hover:not(:disabled) { background: var(--blue-tint); border-color: transparent; }
   .jdc-tabs .btn.btn-ghost:hover:not(:disabled) { background: var(--blue-tint); border-color: transparent; }
   .toolbar .btn.btn-ghost::before { width: 1.3rem !important; height: 1.3rem !important; }
@@ -953,8 +956,6 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   @media (max-width: 991px) { .gs-results { left: 0; width: auto; } }
   .nav-soon { gap: .5rem; }
   .nav-soon .fr-badge { margin-left: .5rem; }
-  #menu-emp .nav-row.nav-soon { justify-content: flex-start; cursor: default; color: var(--muted, #666); }
-  #menu-emp .nav-row.nav-soon:hover { background: transparent; }
   .info-tip { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; margin-left: .25rem; border-radius: 4px; color: var(--muted); cursor: help; vertical-align: middle; text-transform: none; } /* même pictogramme « i » que la légende des tableaux */
   .info-tip:hover, .info-tip.is-open, .info-tip:focus { background: var(--blue-tint); color: var(--blue); }
   .info-tip [class^="fr-icon-"] { --icon-size: 1rem; }
@@ -1011,15 +1012,54 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .pos-tl__head .pos-tl__g span { text-align: center; font-size: .7rem; color: var(--muted); padding: .35rem 0; border-left: 1px solid var(--border-default-grey); }
   .pos-tl__head .pos-tl__g span.is-we { background: rgba(0, 0, 0, .05); }
   .pos-tl__bar { all: unset; box-sizing: border-box; cursor: pointer; margin: 0 2px; padding: .25rem .5rem; border-radius: .25rem; font-size: .75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; z-index: 0; }
-  .pos-tl__bar.is-ok { background: #18753c; } .pos-tl__bar.is-part { background: #b34000; } .pos-tl__bar.is-none { background: #ce0500; }
+  /* « !important » : la règle générale du DSFR (button:not(:disabled):hover) éclaircit sinon le fond au survol et le texte blanc devient illisible */
+  .pos-tl__bar.is-ok, .pos-tl__bar.is-ok:hover { background: #18753c !important; } .pos-tl__bar.is-part, .pos-tl__bar.is-part:hover { background: #b34000 !important; } .pos-tl__bar.is-none, .pos-tl__bar.is-none:hover { background: #ce0500 !important; }
+  .pos-tl__bar, .pos-tl__bar:hover { color: #fff !important; }
   .pos-tl__bar:hover { filter: brightness(1.12); } .pos-tl__bar:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
-  .pos-tl__bar:hover, .pos-tl__bar:focus-visible { filter: brightness(1.12); box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor; z-index: 2; position: relative; }
+  .pos-tl__bar:hover, .pos-tl__bar:focus-visible { filter: brightness(1.12); outline: 2px solid #161616; outline-offset: 1px; }
   .pos-tip { position: fixed; z-index: 3000; max-width: 21rem; background: #fff; color: #161616; border: 1px solid var(--border-default-grey, #ddd); border-radius: .375rem; box-shadow: 0 6px 18px rgba(0, 0, 0, .22); padding: .6rem .75rem; font-size: .8125rem; line-height: 1.4; pointer-events: none; }
   .pos-tip[hidden] { display: none; }
   .pos-tip__s { margin: .4rem 0 .25rem; color: #555; }
   .pos-tip__r { margin-top: .35rem; padding-top: .35rem; border-top: 1px solid #e5e5e5; }
   .pos-tip__f { margin-top: .5rem; color: #000091; font-weight: 700; }
   tr.pos-hl > * { background: var(--blue-tint, #e3e3fd) !important; }
+  tr.row-click { cursor: pointer; } tr.row-click:hover > * { background: var(--row-hover, #f6f6f6); } tr.row-click:focus-visible { outline: 2px solid #0a76f6; outline-offset: -2px; }
+  /* mois proposés dans le formulaire : étiquettes à cocher (case masquée, état annoncé par la case et repris visuellement) */
+  .mtag { display: inline-flex; cursor: pointer; }
+  .mtag .fr-tag { cursor: pointer; margin: 0; }
+  .mtag:hover .fr-tag { background-color: var(--blue-tint, #e3e3fd); }
+  .mtag input:checked + .fr-tag, .mtag:hover input:checked + .fr-tag { background-color: var(--blue, #000091); color: #fff; }
+  .mtag input:checked + .fr-tag::before { content: '✓'; margin-right: .35rem; font-weight: 700; }
+  .mtag input:focus-visible + .fr-tag { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .pos-card > summary { cursor: pointer; list-style: none; padding: .1rem 0; }
+  .pos-card > summary::-webkit-details-marker { display: none; }
+  .pos-ch { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; justify-content: space-between; }
+  .pos-ch > div:first-child::before { content: '▸'; display: inline-block; width: 1.1rem; color: var(--blue); }
+  .pos-card[open] .pos-ch > div:first-child::before { content: '▾'; }
+  .pos-prog { display: flex; align-items: center; gap: .5rem; }
+  .pos-prog .jdc-bar { margin-right: 0; }
+  .pos-gridwrap { overflow-x: auto; margin-top: .75rem; }
+  table.pos-grid { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 4px; min-width: 32rem; }
+  .pos-grid th { text-align: left; font-weight: 400; font-size: .8125rem; color: var(--muted); padding: 2px 4px; }
+  .pos-grid tbody th { font-weight: 700; color: var(--ink); width: 22%; vertical-align: top; padding-top: .55rem; }
+  .pos-grid td { vertical-align: top; padding: 2px 4px; }
+  .pos-grid td > .pos-slot + .pos-slot { margin-top: 4px; }
+  .pos-whole { display: block; margin-top: 2px; font-size: .75rem; }
+  .pos-slot { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 2.25rem; padding: .25rem .6rem; border-radius: .375rem; font-size: .8125rem; cursor: pointer; }
+  .pos-slot.is-ok { background: #b8fec9; color: #0d5028; border: 1px solid #18753c; }
+  .pos-slot.is-cf { background: #ffe9e6; color: #6e0b07; border-color: #ce0500; }
+  .pos-slot.is-empty { border: 1px dashed var(--border-default-grey, #bbb); color: var(--muted); }
+  .pos-slot.is-empty:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-tint); }
+  .pos-slot.is-sel { border: 1.5px solid var(--blue); background: var(--blue-tint); color: var(--blue); }
+  .pos-slot.is-ok:hover .pos-slot__x { color: #ce0500; }
+  .pos-slot:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+  .pos-slot__n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pos-panel { margin-top: .75rem; border: 1px solid var(--blue); border-radius: .5rem; padding: .75rem 1rem; background: var(--bg); }
+  .pos-panel__h { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; } .pos-panel__h .round-btn { margin-left: auto; }
+  .pos-panel__t { margin: .75rem 0 .25rem; font-size: .8125rem; font-weight: 700; color: var(--muted); }
+  .pos-cand { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem 0; border-top: 1px solid var(--border-default-grey, #ddd); }
+  .pos-cand__n { font-weight: 500; } .pos-cand__s { font-size: .8125rem; color: var(--muted); } .pos-cand__b { display: flex; gap: .5rem; }
+  .jdc-slots { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; } .jdc-slots .pos-slot { width: auto; min-width: 11rem; }
   .pos-role { margin: .75rem 0 .25rem; font-size: 1rem; display: flex; gap: .5rem; align-items: center; }
   .jdc-card__h { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
   .jdc-as, .jdc-pick, .jdc-rules { list-style: none; margin: 0 0 .75rem; padding: 0; }
@@ -1501,7 +1541,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
                   </div>
                   <div class="fr-col-12 fr-col-lg-7">
                     <ul class="nav-rows">
-                      <li><div class="nav-row nav-soon" id="nav-pos-soon" role="link" aria-disabled="true" tabindex="0" title="Bientôt disponible">Mission Poséidon <span class="fr-badge fr-badge--sm fr-badge--new fr-badge--no-icon">Prochainement</span></div></li>
+                      <li><a class="nav-row" href="#" target="_self" data-page="pos">Mission Poséidon<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                       <li><a class="nav-row" href="#" target="_self" data-page="emp-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                     </ul>
                   </div>
@@ -2623,7 +2663,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.63.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -14412,29 +14452,16 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (p !== 'bo') { try { localStorage.setItem('widgetPage', p); } catch (e) {} } // le back office n'est jamais la page retrouvée à la réouverture
   }
   window.__markPage = mark;
-  // Mission Poséidon : annoncée « Prochainement » dans le menu ; 5 clics rapides sur la ligne la déverrouillent pour la session du navigateur (page et onglet des statistiques).
-  function posOpen() { try { return sessionStorage.getItem('posUnlocked') === '1'; } catch (e) { return !!window.__posUnlocked; } }
-  var posClicks = [];
-  document.addEventListener('click', function (e) { // phase de capture : le menu déroulant (DSFR) ne se referme pas aux premiers clics ; élément « div » (pas un lien) pour la même raison
-    var a = e.target.closest('#nav-pos-soon'); if (!a) return; e.preventDefault(); e.stopPropagation();
-    var t = Date.now(); posClicks.push(t); posClicks = posClicks.filter(function (x) { return t - x < 3000; });
-    if (posClicks.length < 5) return;
-    posClicks = []; window.__posUnlocked = true; try { sessionStorage.setItem('posUnlocked', '1'); } catch (err) {}
-    show('pos');
-    try { var sub = a.closest('.fr-collapse'); if (sub && window.dsfr) { window.dsfr(sub).collapse.conceal(); setTimeout(function () { if (sub.classList.contains('fr-collapse--expanded')) window.dsfr(sub).collapse.conceal(); }, 450); } } catch (err) {}
-  }, true);
   // Statistiques Emploi : deux onglets, JDC et Poséidon (chacun relit ses tables à l'affichage).
   function showEmpStat() {
-    var open = posOpen(), t = window.__empStatTab === 'pos' && open ? 'pos' : 'jdc', hj = document.getElementById('jdc-stat-host'), hp = document.getElementById('pos-stat-host'); if (!hj || !hp) return; // page pas encore construite (réouverture du widget)
+    var open = true, t = window.__empStatTab === 'pos' ? 'pos' : 'jdc', hj = document.getElementById('jdc-stat-host'), hp = document.getElementById('pos-stat-host'); if (!hj || !hp) return; // page pas encore construite (réouverture du widget)
     Array.prototype.forEach.call(document.querySelectorAll('#emp-stat-tabs [data-est]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-est') === t)); });
-    document.getElementById('emp-stat-tabs').hidden = !open; // Poséidon verrouillée : un seul onglet (JDC), donc pas de barre d'onglets
     hj.hidden = t !== 'jdc'; hp.hidden = t !== 'pos';
     if (t === 'jdc' && window.JDC) window.JDC.show(hj, 'stats');
     if (t === 'pos' && window.POS) window.POS.show(hp, 'stats');
   }
   document.addEventListener('click', function (e) { var b = e.target.closest('#emp-stat-tabs [data-est]'); if (!b) return; window.__empStatTab = b.getAttribute('data-est'); showEmpStat(); });
   function show(p) {
-    if (p === 'pos' && !posOpen()) p = 'welcome'; // page Poséidon verrouillée (voir ci-dessus)
     if (p === 'jdc-stat' || p === 'pos-stat') window.__empStatTab = p === 'pos-stat' ? 'pos' : 'jdc'; // anciennes cibles : l'onglet correspondant
     p = ALIAS[p] || p;
     Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = pages[k] !== pages[p]; });
@@ -14981,7 +15008,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function openDatesHtml() { // état de la liste des dates proposées par le formulaire
     if (!S.T.open) return '';
     var ds = S.T.open.cols.date ? uniq(S.T.open.rows.map(function (r) { return toIso(raw('open', r, 'date')); }).filter(Boolean)).sort() : [];
-    return '<p style="margin:.5rem 0 0">Dates actuellement proposées par le formulaire (' + ds.length + ') : ' + (ds.length ? esc(ds.map(function (d) { return fmtFr(d).slice(0, 5); }).join(', ')) : 'aucune') + '. ' + btn('syncopen', 'Actualiser maintenant') + '</p>';
+    return '<div style="margin:.75rem 0 0"><div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem"><strong>Dates actuellement proposées par le formulaire (' + ds.length + ')</strong>' + btn('syncopen', 'Actualiser maintenant') + '</div>' +
+      (ds.length ? '<ul style="margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:.35rem">' + ds.map(function (d) { return '<li>' + tag(dow(d).slice(0, 3) + '. ' + fmtFr(d).slice(0, 5), 'blue') + '</li>'; }).join('') + '</ul>' : '<span class="hint">Aucune date proposée.</span>') + '</div>';
   }
   function sref(s) { return s ? { id: s.id, text: s.name } : { id: 0, text: '' }; }
   function bref(b) { return { id: b.id, text: b.label }; }
@@ -15084,7 +15112,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
 
   /* ---------- Interface ---------- */
-  var R = null, U = { pview: 'cal', pper: 'month', week: '', psite: '', tab: 'plan', month: '', year: '', q: '', form: null, msg: null, dlg: null, onlyDispo: true, bq: '', bmonth: '' };
+  var R = null, U = { pview: 'cal', pper: 'month', week: '', psite: '', onlyOpen: true, slotB: null, tab: 'plan', month: '', year: '', q: '', form: null, msg: null, dlg: null, onlyDispo: true, bq: '', bmonth: '' };
   function nextMonth() { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1); return d.getFullYear() + '-' + p2(d.getMonth() + 1); }
   var TABS = [['plan', 'Planning'], ['des', 'Désignations']], ADM_TABS = [['anim', 'Animateurs'], ['bes', 'Besoins'], ['reg', 'Réglages']]; // page cachée de gestion (⚙) : animateurs, besoins, réglages
   function isAdm(t) { return ADM_TABS.some(function (x) { return x[0] === t; }); }
@@ -15110,6 +15138,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var keep = R.querySelector('.jdc-body'), sc = keep ? keep.scrollTop : 0;
     R.innerHTML = (IN_GRIST ? '' : '<p class="hint" style="margin:0 0 .75rem">Données de démonstration (hors de Grist).</p>') + head + msgHtml() + '<div class="jdc-body">' + body + '</div>';
     renderDlg();
+    if (U.refocusQ) { U.refocusQ = false; var qi = R.querySelector('#jdc-q'); if (qi) { var ln = qi.value.length; qi.focus({ preventScroll: true }); try { qi.setSelectionRange(ln, ln); } catch (e) {} } }
+    if (U.scrollPanel) { U.scrollPanel = false; var pn = R.querySelector('#jdc-panel'); if (pn && pn.scrollIntoView) { pn.scrollIntoView({ block: 'nearest', behavior: reducedMotionJdc() ? 'auto' : 'smooth' }); var qf = pn.querySelector('#jdc-aq'); if (qf) qf.focus({ preventScroll: true }); } }
+    if (U.scrollForm) { U.scrollForm = false; var fs = R.querySelector('.jdc-body .cf-section'); if (fs && fs.scrollIntoView) fs.scrollIntoView({ block: 'center' }); } // modification d'une ligne : le formulaire en ligne est amené à l'écran
   }
   // Depuis le planning : la fiche de la date cliquée est amenée à l'écran et brièvement mise en évidence.
   function focusBes() {
@@ -15157,18 +15188,46 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function monthBar(extra) { return '<div class="toolbar">' + monthPick('month', mths(), 'Mois', 'jdc-m') + '' + (extra || '') + '</div>'; }
 
   /* ----- Animateurs ----- */
+  /* Filtres des animateurs : comme sur les pages Candidats et Réservistes, des étiquettes proposées au clic dans le champ de recherche (cumulatives : un choix par catégorie ou plusieurs), et les filtres actifs en étiquettes sous la barre. */
+  function afState() { var F = U.af; if (!F || !Array.isArray(F.st)) F = U.af = { st: [], aff: [], act: [], alert: [] }; return F; }
+  function afItems() {
+    var out = [], affs = uniq(S.anim.map(function (a) { return a.aff; })).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+    [['Réserviste', 'Réservistes'], ['Actif', 'Actifs (non réservistes)']].forEach(function (x) { out.push({ sec: 'Par statut', k: 'st', v: x[0], l: x[1] }); });
+    affs.forEach(function (a) { out.push({ sec: 'Par affectation', k: 'aff', v: a, l: a }); });
+    out.push({ sec: 'En service', k: 'act', v: '1', l: 'En service' }, { sec: 'En service', k: 'act', v: '0', l: 'Hors service' });
+    out.push({ sec: 'Alertes', k: 'alert', v: 'cap', l: 'Plafond atteint ce mois' }, { sec: 'Alertes', k: 'alert', v: 'hab', l: 'Habilitation à renouveler (60 jours)' });
+    return out;
+  }
+  function afOn(it) { return afState()[it.k].indexOf(it.v) !== -1; }
+  function afAny() { var F = afState(); return F.st.length + F.aff.length + F.act.length + F.alert.length > 0; }
+  function afMatch(a, ym, soon) {
+    var F = afState();
+    if (F.st.length && F.st.indexOf(a.statut) === -1) return false;
+    if (F.aff.length && F.aff.indexOf(a.aff) === -1) return false;
+    if (F.act.length && F.act.indexOf(a.actif ? '1' : '0') === -1) return false;
+    if (F.alert.length && !F.alert.some(function (k) { return k === 'cap' ? (a.max != null && countAnim(a.id, ym) >= a.max) : !!(a.hab && a.hab <= soon); })) return false;
+    return true;
+  }
+  function afPanel(items) {
+    var secs = [], by = {}; items.forEach(function (it, i) { var k = it.sec; if (!by[k]) { by[k] = { t: k, li: [] }; secs.push(by[k]); } by[k].li.push('<li><button type="button" class="fr-tag sp-tag" data-j="afx" data-i="' + i + '" aria-pressed="' + afOn(it) + '">' + esc(it.l) + '</button></li>'); });
+    return '<div class="sp-panel" id="jdc-sp" role="dialog" aria-label="Filtres et affichages rapides"><div class="sp-head"><button type="button" class="sp-reset" data-j="afreset">Réinitialiser les filtres</button><button type="button" class="sp-close" data-j="spclose">Fermer <span aria-hidden="true">×</span></button></div>' +
+      secs.map(function (g) { return '<p class="sp-title">' + esc(g.t) + '</p><ul class="sp-list">' + g.li.join('') + '</ul>'; }).join('') + '</div>';
+  }
   function vAnim() {
-    var q = loose(U.q), ym = todayIso().slice(0, 7), yr = todayIso().slice(0, 4);
-    var list = S.anim.filter(function (a) { return !q || loose(name(a) + ' ' + a.nigend + ' ' + a.aff).indexOf(q) !== -1; }).sort(function (a, b) { return name(a).localeCompare(name(b), 'fr'); });
-    var html = '<div class="toolbar"><div class="tb-field tb-search"><label for="jdc-q">Rechercher un militaire</label><input class="input" type="search" id="jdc-q" data-j="q" placeholder="Nom, Nigend, affectation…" value="' + esc(U.q) + '"></div>' +
+    var q = loose(U.q), ym = todayIso().slice(0, 7), yr = todayIso().slice(0, 4), soon = addDays(todayIso(), 60), items = afItems();
+    var all = S.anim.length, list = S.anim.filter(function (a) { return (!q || loose(name(a) + ' ' + a.nigend + ' ' + a.aff + ' ' + a.statut).indexOf(q) !== -1) && afMatch(a, ym, soon); }).sort(function (a, b) { return name(a).localeCompare(name(b), 'fr'); });
+    var act = items.filter(afOn);
+    var html = '<div class="toolbar"><div class="tb-field tb-search"><label for="jdc-q">Rechercher un militaire</label><div class="fr-search-bar" role="search"><input class="fr-input" type="search" id="jdc-q" data-j="q" placeholder="Nom, Nigend, affectation…" value="' + esc(U.q) + '" autocomplete="off" aria-haspopup="dialog" aria-controls="jdc-sp" aria-expanded="' + !!(U.spOpen && !q) + '"><button type="button" class="fr-btn" title="Rechercher" data-j="qfocus">Rechercher</button></div>' + (U.spOpen && !q ? afPanel(items) : '') + '</div>' +
       '<div class="tb-actions">' + (S.anim.length ? ibtn('update', 'Mettre à jour : coordonnées des réservistes, maximum de désignations', 'refresh') : '') + pbtn('addanim', 'Ajouter un animateur', 'plus') + '</div></div>';
+    if (act.length) html += '<div class="sp-active" role="group" aria-label="Filtres actifs"><span class="sp-active__t">Filtres actifs</span>' + act.map(function (it) { return '<button type="button" class="fr-tag fr-tag--sm fr-tag--dismiss sp-act-tag" data-j="afdel" data-i="' + items.indexOf(it) + '" title="' + esc(it.sec) + '" aria-label="Retirer le filtre ' + esc(it.l) + '">' + esc(it.l) + '</button>'; }).join('') + '</div>';
+    html += '<p class="hint" role="status" style="margin:0 0 .5rem">' + list.length + (list.length < all ? ' sur ' + all : '') + ' militaire' + (all > 1 ? 's' : '') + '</p>';
     if (U.form && U.form.kind === 'editanim') html += formAnim();
-    html += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Militaires habilités à animer des JDC</caption><thead><tr><th scope="col">Militaire</th><th scope="col">Statut</th><th scope="col">Affectation</th><th scope="col">Max / mois</th><th scope="col">Ce mois</th><th scope="col">Année</th><th scope="col">Habilité jusqu’au</th><th scope="col">En service</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
+    html += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Militaires habilités à animer des JDC</caption><thead><tr><th scope="col">Militaire</th><th scope="col">Statut</th><th scope="col">Affectation</th><th scope="col">Max / mois</th><th scope="col">Ce mois</th><th scope="col">Année</th><th scope="col">Habilité jusqu’au</th><th scope="col">En service</th></tr></thead><tbody>' +
       (list.length ? list.map(function (a) {
         var cm = countAnim(a.id, ym), over = a.max != null && cm >= a.max;
-        return '<tr' + (a.actif ? '' : ' class="row-off"') + '><th scope="row">' + esc(name(a)) + '</th><td>' + tag(a.statut, a.statut === 'Réserviste' ? 'blue' : 'grey') + '</td><td>' + esc(a.aff || '—') + '</td><td>' + (a.max == null ? 'illimité' : a.max) + '</td><td>' + (over ? '<strong style="color:var(--text-default-error)">' + cm + '</strong>' : cm) + '</td><td>' + countAnim(a.id, yr) + '</td><td>' + (a.hab ? fmtFr(a.hab) : '—') + '</td>' +
-          '<td><button type="button" class="btn secondary sm" data-j="toggleanim" data-id="' + a.id + '" aria-pressed="' + a.actif + '">' + (a.actif ? 'Oui' : 'Non') + '</button></td><td>' + btn('editanim', 'Modifier', ' data-id="' + a.id + '"') + '</td></tr>';
-      }).join('') : '<tr><td class="is-empty" colspan="9">Aucun militaire. Ajoutez un réserviste ou un militaire actif.</td></tr>') + '</tbody></table></div>';
+        return '<tr class="row-click' + (a.actif ? '' : ' row-off') + '" tabindex="0" data-j="editanim" data-id="' + a.id + '" title="Cliquer pour modifier"><th scope="row">' + esc(name(a)) + '</th><td>' + tag(a.statut, a.statut === 'Réserviste' ? 'blue' : 'grey') + '</td><td>' + esc(a.aff || '—') + '</td><td>' + (a.max == null ? 'illimité' : a.max) + '</td><td>' + (over ? '<strong style="color:var(--text-default-error)">' + cm + '</strong>' : cm) + '</td><td>' + countAnim(a.id, yr) + '</td><td>' + (a.hab ? fmtFr(a.hab) : '—') + '</td>' +
+          '<td><button type="button" class="btn secondary sm" data-j="toggleanim" data-id="' + a.id + '" aria-pressed="' + a.actif + '">' + (a.actif ? 'Oui' : 'Non') + '</button></td></tr>';
+      }).join('') : '<tr><td class="is-empty" colspan="8">' + (all ? 'Aucun militaire ne correspond aux filtres.' : 'Aucun militaire. Ajoutez un réserviste ou un militaire actif.') + '</td></tr>') + '</tbody></table></div>';
     return html;
   }
 
@@ -15288,14 +15347,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function vBes() {
     var mth = U.bmonth, list = S.bes.filter(function (b) { return !mth || b.date.indexOf(mth) === 0; }).sort(byDate);
     var html = '<h3 class="bo-h3">Sites (lieux)</h3>' + (U.form && /^(addsite|editsite)$/.test(U.form.kind) ? formSite() : '') +
-      '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Sites de JDC</caption><thead><tr><th scope="col">Site</th><th scope="col">Adresse</th><th scope="col">Contact</th><th scope="col">Affectation</th><th scope="col">Actif</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
-      (S.sites.length ? S.sites.map(function (s) { return '<tr' + (s.actif ? '' : ' class="row-off"') + '><th scope="row">' + esc(s.name) + '</th><td>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—') + '</td><td>' + esc([s.contact, s.tel].filter(Boolean).join(' · ') || '—') + '</td><td>' + esc(s.aff || '—') + '</td><td>' + (s.actif ? 'Oui' : 'Non') + '</td><td>' + btn('editsite', 'Modifier', ' data-id="' + s.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun site.</td></tr>') + '</tbody></table></div>' +
+      '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Sites de JDC</caption><thead><tr><th scope="col">Site</th><th scope="col">Adresse</th><th scope="col">Contact</th><th scope="col">Affectation</th><th scope="col">Actif</th></tr></thead><tbody>' +
+      (S.sites.length ? S.sites.map(function (s) { return '<tr class="row-click' + (s.actif ? '' : ' row-off') + '" tabindex="0" data-j="editsite" data-id="' + s.id + '" title="Cliquer pour modifier"><th scope="row">' + esc(s.name) + '</th><td>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—') + '</td><td>' + esc([s.contact, s.tel].filter(Boolean).join(' · ') || '—') + '</td><td>' + esc(s.aff || '—') + '</td><td>' + (s.actif ? 'Oui' : 'Non') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="5">Aucun site.</td></tr>') + '</tbody></table></div>' +
       '<p style="margin:.75rem 0 1.5rem">' + btn('addsite', 'Ajouter un site') + '</p>' +
       '<h3 class="bo-h3">Besoins en cadres par date et par site</h3>' +
       '<div class="toolbar">' + monthPick('bmonth', mth, 'Mois', 'jdc-bm', true) + '<div class="tb-actions">' + ibtn('impbes', 'Importer des besoins (.csv, Excel, Calc)', 'upload') + ibtn('addbatch', 'Ajouter des besoins par lot', 'calendar') + pbtn('addbes', 'Ajouter un besoin', 'plus') + '</div></div>';
     if (U.form && /^(addbes|editbes|addbatch)$/.test(U.form.kind)) html += formBes();
     html += '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Besoins en cadres</caption><thead><tr><th scope="col">Date</th><th scope="col">Site</th><th scope="col">Horaires</th><th scope="col">Cadres requis</th><th scope="col">Désignés</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
-      (list.length ? list.map(function (b) { var n = filled(b); return '<tr><th scope="row">' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + '</th><td>' + esc(b.site || '—') + '</td><td>' + esc(hoursOf(b)) + '</td><td>' + b.nb + '</td><td>' + n + (n < b.nb ? ' <span class="fr-badge fr-badge--sm fr-badge--warning">reste ' + (b.nb - n) + '</span>' : ' <span class="fr-badge fr-badge--sm fr-badge--success">complet</span>') + '</td><td style="white-space:nowrap">' + btn('editbes', 'Modifier', ' data-id="' + b.id + '"') + ' ' + btn('dupbes', 'Dupliquer', ' data-id="' + b.id + '"') + ' ' + btn('delbes', 'Supprimer', ' data-id="' + b.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun besoin' + (mth ? ' ce mois-ci' : '') + '.</td></tr>') + '</tbody></table></div>';
+      (list.length ? list.map(function (b) { var n = filled(b); return '<tr class="row-click" tabindex="0" data-j="editbes" data-id="' + b.id + '" title="Cliquer pour modifier"><th scope="row">' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + '</th><td>' + esc(b.site || '—') + '</td><td>' + esc(hoursOf(b)) + '</td><td>' + b.nb + '</td><td>' + n + (n < b.nb ? ' <span class="fr-badge fr-badge--sm fr-badge--warning">reste ' + (b.nb - n) + '</span>' : ' <span class="fr-badge fr-badge--sm fr-badge--success">complet</span>') + '</td><td style="white-space:nowrap">' + btn('dupbes', 'Dupliquer', ' data-id="' + b.id + '"') + ' ' + btn('delbes', 'Supprimer', ' data-id="' + b.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun besoin' + (mth ? ' ce mois-ci' : '') + '.</td></tr>') + '</tbody></table></div>';
     return html;
   }
   function formSite() {
@@ -15321,35 +15380,47 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 
   /* ----- Désignation ----- */
   function vDes() {
-    var m = mths(), list = S.bes.filter(function (b) { return b.date.indexOf(m) === 0; }).sort(byDate), need = 0, got = 0;
-    list.forEach(function (b) { need += b.nb; got += Math.min(b.nb, filled(b)); });
+    var m = mths(), all = S.bes.filter(function (b) { return b.date.indexOf(m) === 0 && (!U.psite || b.siteId === Number(U.psite)); }).sort(byDate), need = 0, got = 0;
+    all.forEach(function (b) { need += b.nb; got += Math.min(b.nb, filled(b)); });
+    var list = U.onlyOpen ? all.filter(function (b) { return filled(b) < b.nb || (U.slotB && U.slotB.besId === b.id); }) : all, hidden = all.length - list.length;
     var answered = {}, actifs = S.anim.filter(function (a) { return a.actif; }); actifs.forEach(function (a) { if (dispoOf(a)) answered[a.id] = 1; });
     var unknown = Object.keys(S.dm).filter(function (k) { return !S.anim.some(function (a) { return loose(a.nigend) === k || (a.email && loose(a.email) === k); }); });
-    var html = monthBar('<div class="tb-field"><label class="ed-check" style="margin-top:1.6rem"><input type="checkbox" data-j="onlydispo"' + (U.onlyDispo ? ' checked' : '') + '> Seulement les animateurs disponibles</label></div><div class="tb-actions">' + ibtn('invite', 'Inviter à donner ses disponibilités (cci)', 'mail') + ibtn('relance', 'Relancer ceux qui n’ont pas répondu (cci)', 'refresh') + pbtn('propose', 'Proposer une répartition', 'filter') + '</div>') +
-      '<p class="hint">' + list.length + ' date' + (list.length > 1 ? 's' : '') + ' · ' + got + ' / ' + need + ' cadre' + (need > 1 ? 's' : '') + ' désigné' + (got > 1 ? 's' : '') + ' · ' + Object.keys(answered).length + ' animateur' + (Object.keys(answered).length > 1 ? 's' : '') + ' sur ' + actifs.length + ' ont répondu au formulaire' +
-      (unknown.length ? ' · ' + unknown.length + ' réponse' + (unknown.length > 1 ? 's' : '') + ' d’une personne absente de la liste (' + esc(unknown.map(function (k) { var r = S.dm[k]; return r.nigend || r.email; }).join(', ')) + ')' : '') + '.</p>';
+    function tile(n, l, w) { return '<div class="bo-tile' + (w ? ' is-warn' : '') + '" style="cursor:default"><span class="bo-tile__n">' + n + '</span><span class="bo-tile__l">' + l + '</span></div>'; }
+    var sites = '<div class="tb-field"><label for="jdc-dsite">Site</label><select class="select" id="jdc-dsite" data-j="psite"><option value="">Tous les sites</option>' + S.sites.map(function (x) { return '<option value="' + x.id + '"' + (String(U.psite) === String(x.id) ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></div>';
+    var html = '<div class="bo-tiles" style="margin-bottom:1rem">' + tile(all.length, 'Dates du mois') + tile(got + ' / ' + need, 'Cadres désignés') + tile(need - got, 'À pourvoir', need - got > 0) + tile(Object.keys(answered).length + ' / ' + actifs.length, 'Animateurs ayant répondu') + '</div>' +
+      '<div class="toolbar">' + monthPick('month', m, 'Mois', 'jdc-m') + sites + '<div class="tb-field"><label class="ed-check" style="margin-top:1.6rem"><input type="checkbox" data-j="onlyopen"' + (U.onlyOpen ? ' checked' : '') + '> À pourvoir seulement</label></div><div class="tb-actions">' + ibtn('invite', 'Inviter à donner ses disponibilités (cci)', 'mail') + ibtn('relance', 'Relancer ceux qui n’ont pas répondu (cci)', 'refresh') + pbtn('propose', 'Proposer une répartition', 'filter') + '</div></div>' +
+      '<p class="hint">Cliquez sur un créneau « Désigner… » pour choisir un animateur ; cliquez sur un nom pour retirer la désignation.' + (unknown.length ? ' · ' + unknown.length + ' réponse' + (unknown.length > 1 ? 's' : '') + ' d’une personne absente de la liste (' + esc(unknown.map(function (k) { var r = S.dm[k]; return r.nigend || r.email; }).join(', ')) + ')' : '') + '</p>';
     html += syncBanner();
     if (!S.T.open) html += '<div class="doc-alert warning" role="status"><p>La table JDC_Dates_ouvertes est absente : la liste des dates du formulaire n’est pas tenue à jour (voir la procédure de mise en place).</p></div>';
-    if (!list.length) return html + '<p class="hint">Aucun besoin ce mois-ci : renseignez-les dans la gestion (⚙ puis Besoins).</p>';
-    return html + conflictBanner(m) + list.map(function (b) { return cardBes(b); }).join('');
+    if (!all.length) return html + '<p class="hint">Aucun besoin ce mois-ci : renseignez-les dans la gestion (⚙ puis Besoins).</p>';
+    if (!list.length) return html + conflictBanner(m) + '<p class="hint">Tout est pourvu ce mois-ci (' + hidden + ' date' + (hidden > 1 ? 's' : '') + ' complète' + (hidden > 1 ? 's' : '') + ' masquée' + (hidden > 1 ? 's' : '') + ' : décochez « À pourvoir seulement » pour les afficher).</p>';
+    return html + conflictBanner(m) + list.map(cardBes).join('') + (hidden ? '<p class="hint">' + hidden + ' date' + (hidden > 1 ? 's' : '') + ' complète' + (hidden > 1 ? 's' : '') + ' masquée' + (hidden > 1 ? 's' : '') + '.</p>' : '');
   }
   function cardBes(b) {
-    var as = assigned(b), n = filled(b), site = S.sBy[b.siteId];
-    var cands = S.anim.filter(function (a) { return a.actif && !as.some(function (d) { return d.animId === a.id && activeDes(d); }) && (!U.onlyDispo || isAvail(a, b)); });
-    cands = ranked(b, cands, null);
-    var html = '<section class="jdc-card" id="jdc-b-' + b.id + '"><div class="jdc-card__h"><div><strong>' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + '</strong> · ' + esc(b.site || '—') + ' · ' + esc(hoursOf(b)) + '</div><span class="fr-badge fr-badge--sm fr-badge--' + (n >= b.nb ? 'success' : 'warning') + '">' + n + ' / ' + b.nb + (n >= b.nb ? ' complet' : ' à pourvoir') + '</span></div>';
-    html += as.length ? '<ul class="jdc-as">' + as.map(function (d) {
-      var a = S.aBy[d.animId], act = activeDes(d), cf = act && conflictIds()[d.id];
-      return '<li' + (act ? '' : ' class="is-off"') + '><span>' + esc(name(a)) + ' ' + tag(a.statut, a.statut === 'Réserviste' ? 'blue' : 'grey') + (cf ? ' <span class="fr-badge fr-badge--sm fr-badge--error">conflit : déjà désigné ailleurs ce jour</span>' : '') + '</span><span style="display:flex;gap:.5rem;align-items:center">' + (act && d.dc ? '<span class="hint">informé le ' + esc(fmtFr(d.dc)) + '</span>' : '') + (act ? btn('cancel', 'Retirer', ' data-id="' + d.id + '"') : btn('delrow', 'Supprimer', ' data-id="' + d.id + '"')) + '</span></li>';
-    }).join('') + '</ul>' : '<p class="hint">Aucun animateur désigné.</p>';
-    if (n < b.nb || cands.length) html += '<details class="jdc-cands"' + (n < b.nb ? ' open' : '') + '><summary>' + (U.onlyDispo ? 'Disponibles' : 'Animateurs') + ' (' + cands.length + ')</summary>' + (cands.length ? '<div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Animateur</th><th scope="col">Ce mois</th><th scope="col">Année</th><th scope="col">Disponible</th><th scope="col">Sites souhaités</th><th scope="col">Remarque</th><th scope="col"><span class="fr-sr-only">Action</span></th></tr></thead><tbody>' + cands.map(function (a) {
-      var bl = blockers(a, b), cm = countAnim(a.id, b.date.slice(0, 7)), av = isAvail(a, b);
-      return '<tr' + (bl.length ? ' class="row-off"' : '') + '><th scope="row">' + esc(name(a)) + '<br><span class="hint">' + esc(a.aff || '') + '</span></th><td>' + cm + (a.max != null ? ' / ' + a.max : '') + '</td><td>' + countAnim(a.id, b.date.slice(0, 4)) + '</td><td>' + (av ? 'oui' : '<span class="hint">non déclarée</span>') + '</td><td>' + (function () { var dd = dispoOf(a); return dd && dd.sites.length ? (wantsSite(a, b) ? '<strong>' : '') + 'oui' + (wantsSite(a, b) ? '</strong> (site coché)' : ' (autres sites)') : '<span class="hint">tous</span>'; })() + '</td><td>' + (bl.length ? '<span style="color:var(--text-default-error)">' + esc(bl.join(', ')) + '</span>' : '<span class="hint">—</span>') + '</td><td>' + btn('assign', 'Désigner', ' data-bes="' + b.id + '" data-anim="' + a.id + '"' + (bl.length ? ' disabled' : '')) + '</td></tr>';
-    }).join('') + '</tbody></table></div>' : '<p class="hint">Aucun animateur' + (U.onlyDispo ? ' disponible pour cette date (décochez « Seulement les animateurs disponibles » pour voir les autres)' : '') + '.</p>') + '</details>';
-    html += '<p style="margin:.5rem 0 0">' + btn('pickanim', 'Désigner un autre animateur…', ' data-id="' + b.id + '"') + '</p>';
-    return html + '</section>';
+    var as = assigned(b), act = as.filter(activeDes), off = as.filter(function (d) { return !activeDes(d); }), n = act.length, cid = conflictIds(), pct = b.nb ? Math.min(100, Math.round(Math.min(n, b.nb) * 100 / b.nb)) : 0;
+    var slots = act.map(function (d) {
+      var a = S.aBy[d.animId], cf = cid[d.id];
+      return '<button type="button" class="pos-slot is-ok' + (cf ? ' is-cf' : '') + '" data-j="cancel" data-id="' + d.id + '" title="' + esc(name(a) + ' (' + a.statut + ')' + (d.dc ? ' · informé le ' + fmtFr(d.dc) : '') + (cf ? ' · conflit : déjà désigné ailleurs ce jour' : '') + ' — cliquer pour retirer') + '"><span class="pos-slot__n">' + esc(name(a)) + (cf ? ' ⚠' : '') + '</span><span class="pos-slot__x" aria-hidden="true">✕</span></button>';
+    });
+    var sel = U.slotB && U.slotB.besId === b.id;
+    for (var i = n; i < b.nb; i++) slots.push('<button type="button" class="pos-slot is-empty' + (sel ? ' is-sel' : '') + '" data-j="slotb" data-id="' + b.id + '" aria-expanded="' + !!sel + '"><span class="pos-slot__n">Désigner…</span><span aria-hidden="true">+</span></button>');
+    return '<section class="jdc-card" id="jdc-b-' + b.id + '"><div class="pos-ch"><div><strong>' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + '</strong> · ' + esc(b.site || '—') + ' · ' + esc(hoursOf(b)) + (b.comm ? ' · <span class="hint">' + esc(b.comm) + '</span>' : '') + '</div>' +
+      '<div class="pos-prog"><span class="hint">' + n + ' / ' + b.nb + (n >= b.nb ? ' · complet' : '') + '</span><span class="jdc-bar' + (pct < 50 ? ' is-low' : '') + '" role="img" aria-label="' + pct + ' %"><span style="width:' + pct + '%"></span></span></div></div>' +
+      '<div class="jdc-slots">' + slots.join('') + '</div>' +
+      (off.length ? '<p class="hint" style="margin:.5rem 0 0">Désignations annulées : ' + off.map(function (d) { return esc(name(S.aBy[d.animId])) + ' ' + btn('delrow', 'Supprimer', ' data-id="' + d.id + '"'); }).join(' · ') + '</p>' : '') +
+      (sel ? panelBes(b) : '') + '</section>';
   }
-
+  function panelBes(b) { // choix d'un animateur pour la date : disponibles d'abord (règles de priorité), recherche dans toute la liste
+    var q = loose(U.slotB.q || ''), as = assigned(b).filter(activeDes).map(function (d) { return d.animId; });
+    var cands = ranked(b, S.anim.filter(function (a) { return a.actif && as.indexOf(a.id) === -1 && (!U.onlyDispo || isAvail(a, b)) && (!q || loose(name(a) + ' ' + a.nigend + ' ' + a.aff + ' ' + a.statut).indexOf(q) !== -1); }), null), shown = cands.slice(0, 12);
+    return '<div class="pos-panel" id="jdc-panel" role="region" aria-label="Choisir un animateur"><div class="pos-panel__h"><strong>Animateurs pour le ' + esc(dow(b.date) + ' ' + fmtFr(b.date)) + '</strong><label class="ed-check" style="margin-left:1rem"><input type="checkbox" data-j="onlydispo"' + (U.onlyDispo ? ' checked' : '') + '> Seulement les disponibles</label><button type="button" class="round-btn" data-j="slotbx" aria-label="Fermer" title="Fermer">✕</button></div>' +
+      '<div class="cf-field"><label class="fr-sr-only" for="jdc-aq">Rechercher un animateur</label><input class="input" type="search" id="jdc-aq" data-j="aq" placeholder="Rechercher un animateur (nom, Nigend, affectation)" value="' + esc(U.slotB.q || '') + '" autocomplete="off"></div>' +
+      (shown.length ? shown.map(function (a) {
+        var bl = blockers(a, b), av = isAvail(a, b), cm = countAnim(a.id, b.date.slice(0, 7)), dd = dispoOf(a), site = dd && dd.sites.length ? (wantsSite(a, b) ? 'site souhaité' : 'autres sites souhaités') : '';
+        return '<div class="pos-cand"><div><div class="pos-cand__n">' + esc(name(a)) + ' ' + tag(a.statut, a.statut === 'Réserviste' ? 'blue' : 'grey') + '</div><div class="pos-cand__s"' + (bl.length ? ' style="color:var(--text-default-error)"' : '') + '>' + esc(bl.length ? bl.join(', ') : [av ? 'Disponible' : 'Disponibilité non déclarée', cm + (a.max != null ? ' / ' + a.max : '') + ' ce mois', countAnim(a.id, b.date.slice(0, 4)) + ' sur l’année', a.aff, site].filter(Boolean).join(' · ')) + '</div></div>' +
+          '<div class="pos-cand__b">' + btn('assign', 'Désigner', ' data-bes="' + b.id + '" data-anim="' + a.id + '"' + (bl.length ? ' disabled' : ''), 'sm') + '</div></div>';
+      }).join('') + (cands.length > shown.length ? '<p class="hint">' + (cands.length - shown.length) + ' autre(s) : précisez la recherche.</p>' : '') : '<p class="hint">Aucun animateur' + (U.onlyDispo ? ' disponible' : '') + ' ne correspond' + (U.onlyDispo ? ' (décochez « Seulement les disponibles » pour voir les autres)' : '') + '.</p>') + '</div>';
+  }
   /* ----- Planning ----- */
   function vPlanList() {
     var m = mths(), list = S.bes.filter(function (b) { return b.date.indexOf(m) === 0; }).sort(byDate);
@@ -15497,7 +15568,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 
   /* ----- Réglages ----- */
   function vReg() {
-    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), html = '<section class="cf-section"><h3>Lien de réservation (formulaire de disponibilités)</h3><p style="margin:0 0 .75rem">' + (S.cfg.form ? 'Lien actuel : <a href="' + esc(S.cfg.form) + '" target="_blank" rel="noopener noreferrer">' + esc(S.cfg.form) + '</a>' : '<strong>Lien non renseigné.</strong>') + ' ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Il se règle dans le back office, rubrique Emploi. Le formulaire ne propose que les dates à venir : les dates passées sont retirées à chaque ouverture du widget.') + ' ' + btn('gobo', 'Modifier dans le back office') + '</p>' + openMonthsHtml(c.openMonths, 'data-jopen') + openDatesHtml() + '</section>';
+    var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), html = '<section class="cf-section"><h3>Lien de réservation (formulaire de disponibilités)</h3><p style="margin:0 0 .75rem">' + (S.cfg.form ? 'Lien actuel : <a href="' + esc(S.cfg.form) + '" target="_blank" rel="noopener noreferrer">' + esc(S.cfg.form) + '</a>' : '<strong>Lien non renseigné</strong> (à saisir dans le back office, rubrique Emploi).') + ' ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Il se règle dans le back office, rubrique Emploi. Le formulaire ne propose que les dates à venir : les dates passées sont retirées à chaque ouverture du widget.') + '</p>' + openMonthsHtml(c.openMonths, 'data-jopen') + openDatesHtml() + '</section>';
     html += '<section class="cf-section"><h3>Règles de priorité de la répartition ' + info('Cochez et classez les règles : la première départage d’abord, les suivantes les égalités, puis l’ordre alphabétique. « Grade croissant » : du moins au plus gradé (GAV/GA2, GA1, BRI, BRC, MDL/GND, MDC, ADJ, ADC, MAJ, ASP, SLT, LTN, CNE, CEN/CDT, LCL, COL ; « / » = même rang) dans la catégorie visée, l’autre catégorie passant après. Plafonds mensuels, habilitation et une seule JDC par jour sont toujours respectés.') + '</h3><ol class="jdc-rules">' +
       c.rules.map(function (r, i) { var lab = RULES.filter(function (x) { return x[0] === r.id; })[0][1]; return '<li><label class="ed-check"><input type="checkbox" data-jrule="' + i + '"' + (r.on ? ' checked' : '') + '> ' + esc(lab) + '</label><span>' + btn('ruleup', '↑', ' data-i="' + i + '" aria-label="Monter"' + (i === 0 ? ' disabled' : '')) + ' ' + btn('ruledown', '↓', ' data-i="' + i + '" aria-label="Descendre"' + (i === c.rules.length - 1 ? ' disabled' : '')) + '</span></li>'; }).join('') + '</ol></section>';
     html += '<section class="cf-section"><h3>Modèles de courriels ' + info('Courriels préparés dans votre messagerie, destinataires en Cci. Cliquez sur une variable pour l’insérer dans le champ en cours.') + '</h3>' + Object.keys(DEF_TPL).map(function (k) {
@@ -15555,7 +15626,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (assigned(b).some(function (d) { return d.animId === aId && activeDes(d); })) { setMsg('error', name(a) + ' est déjà désigné pour cette date.'); return render(); }
     var bl = blockers(a, b); if (bl.length) { setMsg('error', name(a) + ' : ' + bl.join(', ') + '.'); return render(); }
     assigning[key] = true;
-    write('create', 'des', null, { bes: bref(b), anim: aref(a), statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }).then(function () { delete assigning[key]; setMsg('', ''); render(); }, function (e) { delete assigning[key]; fail(e); });
+    write('create', 'des', null, { bes: bref(b), anim: aref(a), statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }).then(function () { delete assigning[key]; setMsg('', ''); if (U.slotB && U.slotB.besId === bId && filled(b) >= b.nb) U.slotB = null; render(); }, function (e) { delete assigning[key]; fail(e); });
   }
   // Volontaires pour le créneau d'une désignation retirée : animateurs actifs qui ont déclaré être disponibles (date + site), classés selon les règles de priorité.
   function volunteersFor(d) {
@@ -15862,7 +15933,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function openMonthChoices(sel) { var t = todayIso().slice(0, 7), o = {}; S.bes.forEach(function (b) { if (b.date.slice(0, 7) >= t) o[b.date.slice(0, 7)] = 1; }); (sel || []).forEach(function (m) { if (m >= t) o[m] = 1; }); return Object.keys(o).sort(); }
   function openMonthsHtml(sel, attr) {
     var ch = openMonthChoices(sel); if (!ch.length) return '<p class="hint">Aucun besoin à venir : ajoutez des besoins pour pouvoir ouvrir des dates dans le formulaire.</p>';
-    return '<fieldset class="cf-field" style="border:0;padding:0"><legend style="font-weight:700">Mois proposés dans le formulaire ' + info('Aucun mois coché : toutes les dates à venir ; sinon seulement celles des mois cochés.') + '</legend><div style="display:flex;gap:.25rem 1.25rem;flex-wrap:wrap">' + ch.map(function (m) { return '<label class="ed-check"><input type="checkbox" ' + attr + '="' + m + '"' + (sel.indexOf(m) !== -1 ? ' checked' : '') + '> ' + esc(monthLabel(m)) + '</label>'; }).join('') + '</div></fieldset>';
+    return '<fieldset class="cf-field" style="border:0;padding:0"><legend style="font-weight:700">Mois proposés dans le formulaire ' + info('Aucun mois coché : toutes les dates à venir ; sinon seulement celles des mois cochés.') + '</legend><div style="display:flex;gap:.25rem 1.25rem;flex-wrap:wrap">' + ch.map(function (m) { return '<label class="mtag"><input type="checkbox" class="fr-sr-only" ' + attr + '="' + m + '"' + (sel.indexOf(m) !== -1 ? ' checked' : '') + '><span class="fr-tag">' + esc(monthLabel(m)) + '</span></label>'; }).join('') + '</div></fieldset>';
   }
   function persistCfg(c) {
     var cur = window.__getOpts ? window.__getOpts() : {}, o = {}; Object.keys(cur || {}).forEach(function (k) { o[k] = cur[k]; }); o.jdc = c;
@@ -15883,8 +15954,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'gotodes') { var gb = S.bBy[id]; if (gb) { U.month = gb.date.slice(0, 7); U.tab = 'des'; U.lastMain = 'des'; U.form = null; U.focusBes = gb.id; } render(); if (gb) setTimeout(focusBes, 40); return; }
     if (j === 'dlgx') { U.dlg = null; U.pick = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; return render(); }
     if (j === 'pickanim') { U.pick = { besId: id, q: '' }; return render(); }
+    if (j === 'slotb') { U.slotB = U.slotB && U.slotB.besId === id ? null : { besId: id, q: '' }; U.scrollPanel = !!U.slotB; return render(); }
+    if (j === 'slotbx') { U.slotB = null; return render(); }
     if (j === 'resmode') { var fo = U.form; U.form = { kind: b.getAttribute('data-v') === 'batch' ? 'addresbatch' : 'addres', q: fo.q || '', sel: fo.sel || {}, max: fo.max || '' }; return render(); }
     if (j === 'gobo') { if (window.__showPage) window.__showPage('bo'); if (window.__showBoTab) window.__showBoTab('emploi'); return; }
+    if (j === 'afx' || j === 'afdel') { var it = afItems()[Number(b.getAttribute('data-i'))]; if (!it) return; var arr = afState()[it.k], ix = arr.indexOf(it.v); if (ix === -1) arr.push(it.v); else arr.splice(ix, 1); U.refocusQ = j === 'afx'; return render(); }
+    if (j === 'afreset') { U.af = { st: [], aff: [], act: [], alert: [] }; U.refocusQ = U.spOpen; return render(); }
+    if (j === 'spclose') { U.spOpen = false; return render(); }
+    if (j === 'qfocus') { U.spOpen = true; U.refocusQ = true; return render(); }
     if (j === 'reload') { S.loading = null; return loadAll().then(render); }
     if (j === 'formx') { U.form = null; return render(); }
     if (j === 'manualres') {
@@ -15910,15 +15987,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'tplanim') return tplAnimCsv();
     if (j === 'importanim') { var ri = U.form.res; return writeMany('anim', ri.items).then(function () { U.form = null; done(ri.items.length + ' animateur' + (ri.items.length > 1 ? 's importés' : ' importé') + '.'); }, fail); }
     if (j === 'addnon') { U.form = { kind: 'addnon', data: {} }; return render(); }
-    if (j === 'editanim') { var a = S.aBy[id]; U.form = { kind: 'editanim', id: id, data: a }; return render(); }
+    if (j === 'editanim') { U.scrollForm = true; var a = S.aBy[id]; U.form = { kind: 'editanim', id: id, data: a }; return render(); }
     if (j === 'saveanim') return saveAnim();
     if (j === 'toggleanim') { var an = S.aBy[id]; return write('update', 'anim', id, { actif: !an.actif }).then(render, fail); }
     if (j === 'addsite') { U.form = { kind: 'addsite', data: {} }; return render(); }
-    if (j === 'editsite') { U.form = { kind: 'editsite', id: id, data: S.sBy[id] }; return render(); }
+    if (j === 'editsite') { U.scrollForm = true; U.form = { kind: 'editsite', id: id, data: S.sBy[id] }; return render(); }
     if (j === 'savesite') return saveSite();
     if (j === 'addbes') { U.form = { kind: 'addbes', data: { date: U.bmonth ? U.bmonth + '-01' : '' } }; return render(); }
     if (j === 'addbatch') { U.form = { kind: 'addbatch', data: { days: ['4'] } }; return render(); }
-    if (j === 'editbes') { var bb = S.bBy[id]; U.form = { kind: 'editbes', id: id, data: { date: bb.date, siteId: bb.siteId, nb: bb.nb, hd: bb.hd, hf: bb.hf, comm: bb.comm } }; return render(); }
+    if (j === 'editbes') { U.scrollForm = true; var bb = S.bBy[id]; U.form = { kind: 'editbes', id: id, data: { date: bb.date, siteId: bb.siteId, nb: bb.nb, hd: bb.hd, hf: bb.hf, comm: bb.comm } }; return render(); }
     if (j === 'dupbes') { var bd = S.bBy[id]; U.form = { kind: 'addbes', data: { date: '', siteId: bd.siteId, nb: bd.nb, hd: bd.hd, hf: bd.hf, comm: bd.comm } }; return render(); }
     if (j === 'delbes') { var bx = S.bBy[id], n = assigned(bx).length; if (n && !window.confirm('Ce besoin a ' + n + ' désignation(s) : elles seront aussi supprimées. Continuer ?')) return; if (!n && !window.confirm('Supprimer ce besoin ?')) return; return assigned(bx).reduce(function (pp, d) { return pp.then(function () { return write('destroy', 'des', d.id); }); }, Promise.resolve()).then(function () { return write('destroy', 'bes', id); }).then(function () { done('Besoin supprimé.'); }, fail); }
     if (j === 'savebes') return saveBes();
@@ -15947,8 +16024,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
   function onInput(e) {
     var t = e.target;
-    if (t.getAttribute('data-j') === 'q') { U.q = t.value; var pos = t.selectionStart; render(); var n = R.querySelector('#jdc-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
+    if (t.getAttribute('data-j') === 'q') { U.q = t.value; if (U.q) U.spOpen = false; else if (U.tab === 'anim') U.spOpen = true; var pos = t.selectionStart; render(); var n = R.querySelector('#jdc-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
     if (t.getAttribute('data-j') === 'bmax') { U.form.max = t.value; return; }
+    if (t.getAttribute('data-j') === 'aq') { U.slotB.q = t.value; var pq = t.selectionStart; render(); var nq = R.querySelector('#jdc-aq'); if (nq) { nq.focus(); nq.setSelectionRange(pq, pq); } return; }
     if (t.getAttribute('data-j') === 'apq') { U.pick.q = t.value; var pa = t.selectionStart; render(); var na = R.querySelector('#jf-apq'); if (na) { na.focus(); na.setSelectionRange(pa, pa); } return; }
     if (t.getAttribute('data-j') === 'pq') { U.form.q = t.value; var p2_ = t.selectionStart; render(); var n2 = R.querySelector('#jf-pq'); if (n2) { n2.focus(); n2.setSelectionRange(p2_, p2_); } return; }
     if (t.getAttribute('data-jr') === 'form') U.draft.form = t.value;
@@ -15968,6 +16046,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (j === 'sy') { U.sy = t.value; return render(); }
     if (j === 'sm') { U.sm = t.value; return render(); }
     if (j === 'onlydispo') { U.onlyDispo = t.checked; return render(); }
+    if (j === 'onlyopen') { U.onlyOpen = t.checked; return render(); }
     if (t.hasAttribute('data-jsel')) { U.form.sel[t.getAttribute('data-jsel')] = t.checked; return render(); }
     if (t.hasAttribute('data-jopen')) { var om = U.draft.openMonths = U.draft.openMonths || [], mv = t.getAttribute('data-jopen'), oi = om.indexOf(mv); if (t.checked && oi === -1) om.push(mv); if (!t.checked && oi !== -1) om.splice(oi, 1); om.sort(); return render(); }
     if (t.hasAttribute('data-jrule')) { U.draft.rules[Number(t.getAttribute('data-jrule'))].on = t.checked; }
@@ -15975,7 +16054,13 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function mount(el) {
     if (R === el) return; R = el; R.classList.add('jdc-root');
     R.addEventListener('click', onClick); R.addEventListener('input', onInput); R.addEventListener('change', onChange);
-    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && (U.dlg || U.pick || (U.form && ADD_KIND.test(U.form.kind)))) { U.dlg = null; U.pick = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; render(); } });
+    R.addEventListener('focusin', function (ev) { if (ev.target.id === 'jdc-q' && U.tab === 'anim' && !U.spOpen && !U.q) { U.spOpen = true; U.refocusQ = true; render(); } });
+    R.addEventListener('click', function (ev) { if (ev.target.id === 'jdc-q' && U.tab === 'anim' && !U.spOpen && !U.q) { U.spOpen = true; U.refocusQ = true; render(); } });
+    R.addEventListener('mousedown', function (ev) { if (ev.target.closest && ev.target.closest('#jdc-sp')) ev.preventDefault(); }); // garde le focus dans le champ de recherche
+    document.addEventListener('mousedown', function (ev) { if (U.spOpen && R && R.contains(ev.target) && !ev.target.closest('.tb-search')) { U.spOpen = false; render(); } else if (U.spOpen && R && !R.contains(ev.target)) { U.spOpen = false; if (R.offsetParent) render(); } });
+    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && U.spOpen) { ev.preventDefault(); ev.stopPropagation(); U.spOpen = false; render(); return; } });
+    R.addEventListener('keydown', function (ev) { var tr = ev.target.closest && ev.target.closest('tr[data-j]'); if (tr && ev.target === tr && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); onClick({ target: tr }); } }); // ligne cliquable : Entrée ou espace ouvre la modification
+    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && U.slotB && !U.dlg && !U.pick) { U.slotB = null; render(); return; } if (ev.key === 'Escape' && (U.dlg || U.pick || (U.form && ADD_KIND.test(U.form.kind)))) { U.dlg = null; U.pick = null; if (U.form && ADD_KIND.test(U.form.kind)) U.form = null; render(); } });
   }
   // Le formulaire ne doit proposer que des dates à venir : la liste est nettoyée à chaque ouverture du widget (et au retour sur l'onglet du navigateur, au plus une fois par heure),
   // pas seulement quand la page JDC est affichée.
@@ -16191,7 +16276,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function openMonthChoices(sel) { var t = todayIso().slice(0, 7), o = {}; S.weeks.forEach(function (w) { [w.start.slice(0, 7), w.last.slice(0, 7)].forEach(function (m) { if (m >= t) o[m] = 1; }); }); (sel || []).forEach(function (m) { if (m >= t) o[m] = 1; }); return Object.keys(o).sort(); }
   function openMonthsHtml(sel, attr) {
     var ch = openMonthChoices(sel); if (!ch.length) return '<p class="hint">Aucune mission à venir : ajoutez des missions pour pouvoir ouvrir des semaines dans le formulaire.</p>';
-    return '<fieldset class="cf-field" style="border:0;padding:0"><legend style="font-weight:700">Mois proposés dans le formulaire ' + info('Aucun mois coché : toutes les semaines à venir des missions ; sinon seulement les semaines dont au moins un jour tombe dans un mois coché.') + '</legend><div style="display:flex;gap:.25rem 1.25rem;flex-wrap:wrap">' + ch.map(function (m) { return '<label class="ed-check"><input type="checkbox" ' + attr + '="' + m + '"' + (sel.indexOf(m) !== -1 ? ' checked' : '') + '> ' + esc(monthLabel(m)) + '</label>'; }).join('') + '</div></fieldset>';
+    return '<fieldset class="cf-field" style="border:0;padding:0"><legend style="font-weight:700">Mois proposés dans le formulaire ' + info('Aucun mois coché : toutes les semaines à venir des missions ; sinon seulement les semaines dont au moins un jour tombe dans un mois coché.') + '</legend><div style="display:flex;gap:.25rem 1.25rem;flex-wrap:wrap">' + ch.map(function (m) { return '<label class="mtag"><input type="checkbox" class="fr-sr-only" ' + attr + '="' + m + '"' + (sel.indexOf(m) !== -1 ? ' checked' : '') + '><span class="fr-tag">' + esc(monthLabel(m)) + '</span></label>'; }).join('') + '</div></fieldset>';
   }
   function syncOpen() {
     if (!S.T.open || S.syncing || !S.loaded) return Promise.resolve(false);
@@ -16277,7 +16362,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     }).join('\n');
   }
   /* ---------- Interface ---------- */
-  var R = null, U = { tab: 'plan', month: '', psite: '', form: null, msg: null, dlg: null, pick: null, draft: null, bmonth: '', mode: 'main' };
+  var R = null, U = { tab: 'plan', month: '', psite: '', onlyOpen: true, expand: {}, slot: null, form: null, msg: null, dlg: null, pick: null, draft: null, bmonth: '', mode: 'main' };
   function nextMonth() { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1); return d.getFullYear() + '-' + p2(d.getMonth() + 1); }
   var TABS = [['plan', 'Planning'], ['des', 'Désignations']], ADM_TABS = [['mis', 'Missions'], ['sites', 'Sites'], ['reg', 'Réglages']];
   function isAdm(t) { return ADM_TABS.some(function (x) { return x[0] === t; }); }
@@ -16307,6 +16392,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var keep = R.querySelector('.jdc-body'), sc = keep ? keep.scrollTop : 0; hideTip();
     R.innerHTML = (IN_GRIST ? '' : '<p class="hint" style="margin:0 0 .75rem">Données de démonstration (hors de Grist).</p>') + head + msgHtml() + '<div class="jdc-body">' + body + '</div>';
     renderDlg();
+    if (U.scrollForm) { U.scrollForm = false; var fs = R.querySelector('.jdc-body .cf-section'); if (fs && fs.scrollIntoView) fs.scrollIntoView({ block: 'center' }); }
+    if (U.scrollPanel) { U.scrollPanel = false; var pn = R.querySelector('#pos-panel'); if (pn && pn.scrollIntoView) { pn.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' }); var sq = pn.querySelector('#pos-sq'); if (sq) sq.focus({ preventScroll: true }); } }
   }
   function reducedMotion() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
   function focusMis() { // depuis le planning : la fiche de la mission cliquée est amenée à l'écran et brièvement mise en évidence
@@ -16315,6 +16402,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
   function dlgSpec() {
     if (U.dlg) return U.dlg;
+    var fm = U.form;
+    if (fm && /^(addmis|addbatch|editmis)$/.test(fm.kind)) { // « Ajouter une mission » : mission individuelle ou missions récurrentes (modification : formulaire seul)
+      var edit = fm.kind === 'editmis', tabs = edit ? '' : '<div class="jdc-tabs" role="tablist" aria-label="Type d’ajout">' + [['one', 'Une mission'], ['batch', 'Missions récurrentes']].map(function (t) { var on = (t[0] === 'batch') === (fm.kind === 'addbatch'); return '<button type="button" class="jdc-tab" role="tab" aria-selected="' + on + '" data-j="addtab" data-v="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>';
+      return { title: edit ? 'Modifier la mission' : 'Ajouter une mission', html: '<div style="padding:0 .25rem 1rem">' + tabs + (fm.kind === 'addbatch' ? formBatch() : formMis()) + '</div>' };
+    }
     if (!U.pick) return null;
     var m = S.misBy[U.pick.misId]; if (!m) return null;
     var q = loose(U.pick.q || ''), spec = U.pick.span || 'all', pl = people();
@@ -16393,33 +16485,74 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 
   /* ----- Désignations ----- */
   function vDes() {
-    var m = mths(), list = S.mis.filter(function (x) { return inMonth(x, m); }).sort(byDebut), need = 0, got = 0;
-    list.forEach(function (x) { need += needTotal(x); got += filledTotal(x); });
-    var dm = Object.keys(S.dm).map(function (k) { return S.dm[k]; }), inM = dm.filter(function (c) { return list.some(function (x) { return availWeeks(c, x).length; }); }), unknown = inM.filter(function (c) { return !person(c.nigend); });
-    var html = '<div class="toolbar">' + monthPick('month', m, 'Mois', 'pos-m') + '<div class="tb-actions">' + ibtn('appel', 'Inviter les réservistes à postuler (cci)', 'mail') + '</div></div>' +
-      '<p class="hint">' + list.length + ' mission' + (list.length > 1 ? 's' : '') + ' · ' + got + ' / ' + need + ' poste' + (need > 1 ? 's' : '') + '-semaine pourvu' + (got > 1 ? 's' : '') + ' (un poste sur deux semaines compte pour 2) · ' + inM.length + ' réserviste' + (inM.length > 1 ? 's ont' : ' a') + ' postulé ce mois-ci' +
-      (unknown.length && people().list.length ? ' · ' + unknown.length + ' réponse' + (unknown.length > 1 ? 's' : '') + ' d’une personne absente de la table Réservistes (' + esc(unknown.map(function (c) { return c.nigend || c.email; }).join(', ')) + ')' : '') + '.</p>' + syncBanner();
+    var m = mths(), all = S.mis.filter(function (x) { return inMonth(x, m) && (!U.psite || x.siteId === Number(U.psite)); }).sort(byDebut), need = 0, got = 0;
+    all.forEach(function (x) { need += needTotal(x); got += filledTotal(x); });
+    var list = U.onlyOpen ? all.filter(function (x) { return needTotal(x) > filledTotal(x) || (U.slot && U.slot.misId === x.id); }) : all, hidden = all.length - list.length;
+    var dm = Object.keys(S.dm).map(function (k) { return S.dm[k]; }), inM = dm.filter(function (c) { return all.some(function (x) { return availWeeks(c, x).length; }); }), unknown = inM.filter(function (c) { return !person(c.nigend); });
+    function tile(n, l, w) { return '<div class="bo-tile' + (w ? ' is-warn' : '') + '" style="cursor:default"><span class="bo-tile__n">' + n + '</span><span class="bo-tile__l">' + l + '</span></div>'; }
+    var html = '<div class="bo-tiles" style="margin-bottom:1rem">' + tile(all.length, 'Missions du mois') + tile(got + ' / ' + need, 'Postes-semaines pourvus') + tile(need - got, 'À pourvoir', need - got > 0) + tile(inM.length, 'Volontaires ce mois-ci') + '</div>' +
+      '<div class="toolbar">' + monthPick('month', m, 'Mois', 'pos-m') + siteFilter() + '<div class="tb-field"><label class="ed-check" style="margin-top:1.6rem"><input type="checkbox" data-j="onlyopen"' + (U.onlyOpen ? ' checked' : '') + '> À pourvoir seulement</label></div><div class="tb-actions">' + ibtn('appel', 'Inviter les réservistes à postuler (cci)', 'mail') + '</div></div>' +
+      '<p class="hint">Cliquez sur un créneau « Désigner… » pour choisir un réserviste ; cliquez sur un nom pour retirer la désignation. Les compteurs sont des postes-semaines (un poste sur une mission de deux semaines compte pour 2).' +
+      (unknown.length && people().list.length ? ' · ' + unknown.length + ' réponse' + (unknown.length > 1 ? 's' : '') + ' d’une personne absente de la table Réservistes (' + esc(unknown.map(function (c) { return c.nigend || c.email; }).join(', ')) + ')' : '') + '</p>' + syncBanner();
     if (!S.T.open) html += '<div class="doc-alert warning" role="status"><p>La table Poseidon_Semaines_ouvertes est absente : la liste des semaines du formulaire n’est pas tenue à jour (voir la procédure de mise en place).</p></div>';
     var cf = findConflicts(); if (cf.length) html += '<div class="doc-alert warning" role="alert"><p><strong>' + cf.length + ' conflit' + (cf.length > 1 ? 's' : '') + ' :</strong> ' + esc(cf.map(function (c) { return pname(c.ds[0].nigend) + ' est désigné sur deux missions qui se chevauchent'; }).join(' ; ')) + '.</p></div>';
-    if (!list.length) return html + '<p class="hint">Aucune mission ce mois-ci : renseignez-les dans la gestion (⚙ puis Missions).</p>';
-    return html + list.map(cardMis).join('');
+    if (!all.length) return html + '<p class="hint">Aucune mission ce mois-ci : renseignez-les dans la gestion (⚙ puis Missions).</p>';
+    if (!list.length) return html + '<p class="hint">Tout est pourvu ce mois-ci (' + hidden + ' mission' + (hidden > 1 ? 's' : '') + ' complète' + (hidden > 1 ? 's' : '') + ' masquée' + (hidden > 1 ? 's' : '') + ' : décochez « À pourvoir seulement » pour les afficher).</p>';
+    return html + list.map(cardMis).join('') + (hidden ? '<p class="hint">' + hidden + ' mission' + (hidden > 1 ? 's' : '') + ' complète' + (hidden > 1 ? 's' : '') + ' masquée' + (hidden > 1 ? 's' : '') + '.</p>' : '');
   }
-  function cardMis(m) {
-    var cid = conflictIds(), vol = volunteers(m), nw = m.weeks.length;
-    var html = '<section class="jdc-card" id="pos-m-' + m.id + '"><div class="jdc-card__h"><div><strong>' + esc(periodText(m)) + '</strong> · ' + esc(m.site || '—') + ' · ' + nw + ' semaine' + (nw > 1 ? 's' : '') + (m.comm ? ' · <span class="hint">' + esc(m.comm) + '</span>' : '') + '</div>' + badge(m) + '</div>';
-    html += ROLES.map(function (r) {
-      var as = assigned(m).filter(function (d) { return d.role === r.k; }).sort(function (a, b) { return a.debut < b.debut ? -1 : a.debut > b.debut ? 1 : 0; }), want = m[r.k];
-      if (!want && !as.length) return '';
-      var wb = m.weeks.map(function (w) { var n = cnt(m, r.k, w); return '<span class="fr-badge fr-badge--sm fr-badge--' + (n >= want ? 'success' : n ? 'warning' : 'error') + '" title="' + esc(w.label) + '">S' + w.num + ' : ' + n + ' / ' + want + '</span>'; }).join(' ');
-      return '<h4 class="pos-role">' + esc(r.label) + ' ' + wb + '</h4>' +
-        (as.length ? '<ul class="jdc-as">' + as.map(function (d) { var act = activeDes(d), cf = act && cid[d.id], sp = isWhole(d, m) ? 'toute la mission' : spanText(d, m);
-          return '<li' + (act ? '' : ' class="is-off"') + '><span>' + esc(pname(d.nigend)) + ' <span class="hint">· ' + esc(sp) + '</span>' + (person(d.nigend) ? '' : ' <span class="hint">(hors table Réservistes)</span>') + (cf ? ' <span class="fr-badge fr-badge--sm fr-badge--error">conflit : déjà désigné sur une période qui se chevauche</span>' : '') + '</span><span style="display:flex;gap:.5rem;align-items:center">' + (act && d.dc ? '<span class="hint">informé le ' + esc(fmtFr(d.dc)) + '</span>' : '') + (act ? btn('cancel', 'Retirer', ' data-id="' + d.id + '"') : btn('delrow', 'Supprimer', ' data-id="' + d.id + '"')) + '</span></li>'; }).join('') + '</ul>' : '<p class="hint" style="margin:0 0 .5rem">Personne désigné.</p>');
+  function seatHtml(m, r, w, d, idx) { // un créneau : personne désignée (clic = retirer) ou créneau libre (clic = choisir)
+    if (d) {
+      var cf = conflictIds()[d.id], span = isWhole(d, m) ? 'toute la mission' : spanShort(d, m);
+      return '<button type="button" class="pos-slot is-ok' + (cf ? ' is-cf' : '') + '" data-j="cancel" data-id="' + d.id + '" title="' + esc(pname(d.nigend) + ' · ' + span + (d.dc ? ' · informé le ' + fmtFr(d.dc) : '') + ' — cliquer pour retirer') + '"><span class="pos-slot__n">' + esc(pname(d.nigend)) + (cf ? ' ⚠' : '') + '</span><span class="pos-slot__x" aria-hidden="true">✕</span></button>';
+    }
+    var sel = U.slot && U.slot.misId === m.id && U.slot.role === r.k && U.slot.week === w.key;
+    return '<button type="button" class="pos-slot is-empty' + (sel ? ' is-sel' : '') + '" data-j="slot" data-mis="' + m.id + '" data-role="' + r.k + '" data-week="' + w.key + '" aria-expanded="' + !!sel + '"><span class="pos-slot__n">Désigner…</span><span aria-hidden="true">+</span></button>';
+  }
+  function gridHtml(m) {
+    var nw = m.weeks.length, th = '<th scope="col"></th>' + m.weeks.map(function (w) { return '<th scope="col" title="' + esc(w.label) + '">S' + w.num + ' · ' + fmtFr(w.start).slice(0, 5) + ' → ' + fmtFr(w.end).slice(0, 5) + '</th>'; }).join('');
+    var rows = ROLES.map(function (r) {
+      var want = m[r.k]; if (!want && !actives(m).some(function (d) { return d.role === r.k; })) return '';
+      var per = m.weeks.map(function (w) { return actives(m).filter(function (d) { return d.role === r.k && covers(d, w); }).sort(function (a, b) { return a.id - b.id; }); });
+      var head = '<th scope="row">' + esc(r.label) + (want > 1 ? ' <span class="hint">(' + want + ')</span>' : '') + '</th>';
+      var whole = want === 1 && nw > 1 && per[0].length === 1 && per.every(function (l) { return l.length === 1 && l[0].id === per[0][0].id; }); // un seul titulaire sur toute la mission : une cellule pleine largeur
+      if (whole) return '<tr>' + head + '<td colspan="' + nw + '">' + seatHtml(m, r, null, per[0][0]) + '<span class="hint pos-whole">toute la mission' + (per[0][0].dc ? ' · informé le ' + esc(fmtFr(per[0][0].dc)) : '') + '</span></td></tr>';
+      return '<tr>' + head + m.weeks.map(function (w, i) {
+        var seats = per[i].map(function (d) { return seatHtml(m, r, w, d); }), free = Math.max(0, want - per[i].length);
+        for (var k = 0; k < free; k++) seats.push(seatHtml(m, r, w, null));
+        return '<td>' + seats.join('') + '</td>';
+      }).join('') + '</tr>';
     }).join('');
-    html += '<details class="jdc-cands"' + (needTotal(m) > filledTotal(m) ? ' open' : '') + '><summary>Réservistes disponibles (' + vol.length + ')</summary>' + (vol.length ? '<div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Réserviste</th><th scope="col">Disponible</th><th scope="col">Semaines cette année</th><th scope="col">Remarque</th><th scope="col">Désigner comme</th></tr></thead><tbody>' + vol.map(function (c) {
-      var av = availWeeks(c, m), bl = blockText(c.nigend, m), whole = av.length === nw;
-      return '<tr><th scope="row">' + esc(pname(c.nigend)) + '<br><span class="hint">' + esc((person(c.nigend) || {}).aff || (person(c.nigend) ? '' : 'hors table Réservistes')) + '</span></th><td>' + (whole ? 'toute la mission' : '<strong>' + av.map(function (w) { return 'semaine ' + w.num; }).join(', ') + '</strong> <span class="hint">seulement</span>') + '</td><td>' + yearCount(c.nigend, m.debut.slice(0, 4)) + '</td><td>' + (bl.length ? '<span style="color:var(--text-default-error)">' + esc(bl.join(', ')) + '</span>' : c.comm ? esc(c.comm) : '<span class="hint">—</span>') + '</td><td style="white-space:nowrap">' + roleButtons(m, c.nigend, 'avail') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="hint">Aucun réserviste disponible pour cette mission.</p>') +
-      '<p style="margin:.5rem 0 0">' + btn('pick', 'Désigner un autre réserviste…', ' data-id="' + m.id + '"') + '</p></details>';
-    return html + '</section>';
+    return '<div class="pos-gridwrap"><table class="pos-grid"><thead><tr>' + th + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  function panelHtml(m) { // choix d'un réserviste pour le créneau cliqué (rôle + semaine) : volontaires d'abord, puis recherche dans toute la table Réservistes
+    var sl = U.slot, w = S.weekBy[sl.week], r = roleDef(sl.role), q = loose(sl.q || ''); if (!w || !r) return '';
+    var vol = Object.keys(S.dm).map(function (k) { return S.dm[k]; }).filter(function (c) { return c.nigend && c.weeks.indexOf(w.key) !== -1; })
+      .map(function (c) { return { c: c, k: [availWeeks(c, m).length === nw(m) ? 0 : 1, yearCount(c.nigend, m.debut.slice(0, 4)), gradeKey(c.nigend, sl.role), loose(pname(c.nigend))] }; })
+      .sort(function (a, b) { return cmpKeys(a.k, b.k); }).map(function (x) { return x.c; });
+    if (q) vol = vol.filter(function (c) { return loose(pname(c.nigend) + ' ' + c.nigend).indexOf(q) !== -1; });
+    var volKeys = {}; Object.keys(S.dm).forEach(function (k) { if (S.dm[k].weeks.indexOf(w.key) !== -1) volKeys[loose(S.dm[k].nigend)] = 1; });
+    var others = q ? people().list.filter(function (p) { return !volKeys[loose(p.nigend)] && loose(p.nom + ' ' + p.prenom + ' ' + p.nigend + ' ' + p.aff + ' ' + p.grade).indexOf(q) !== -1; }).sort(function (a, b) { return (a.nom + a.prenom).localeCompare(b.nom + b.prenom, 'fr'); }).slice(0, 8) : [];
+    function row(nig, c) {
+      var t = targetWeeks(m, nig, sl.role, 'w:' + w.key), bl = blockedWeeks(nig, m)[w.key], av = c ? availWeeks(c, m) : [], aff = (person(nig) || {}).aff || (person(nig) ? '' : 'hors table Réservistes');
+      var sub = c ? (av.length === nw(m) ? 'Disponible toute la mission' : 'Disponible : ' + av.map(function (x) { return 'S' + x.num; }).join(', ') + ' seulement') : 'N’a pas postulé';
+      var why = bl ? 'Déjà désigné sur ' + bl.site + ' (' + periodText(bl) + ')' : (!t.free.length ? 'Rôle complet cette semaine' : '');
+      var tAll = nw(m) > 1 ? targetWeeks(m, nig, sl.role, 'all') : null, allOk = tAll && tAll.free.length === nw(m) && (!c || av.length === nw(m));
+      return '<div class="pos-cand"><div><div class="pos-cand__n">' + esc(pname(nig)) + '</div><div class="pos-cand__s"' + (why ? ' style="color:var(--text-default-error)"' : '') + '>' + esc(why || [sub, yearCount(nig, m.debut.slice(0, 4)) + ' sem. cette année', aff, c && c.comm ? c.comm : ''].filter(Boolean).join(' · ')) + '</div></div><div class="pos-cand__b">' +
+        '<button type="button" class="btn sm" data-j="assign" data-mis="' + m.id + '" data-nig="' + esc(nig) + '" data-role="' + sl.role + '" data-span="w:' + esc(w.key) + '"' + (why ? ' disabled' : '') + '>Désigner</button>' +
+        (allOk ? '<button type="button" class="btn secondary sm" data-j="assign" data-mis="' + m.id + '" data-nig="' + esc(nig) + '" data-role="' + sl.role + '" data-span="all" title="Désigner sur toutes les semaines de la mission">Toute la mission</button>' : '') + '</div></div>';
+    }
+    return '<div class="pos-panel" id="pos-panel" role="region" aria-label="Choisir un réserviste"><div class="pos-panel__h"><strong>' + esc(r.label) + ' · semaine ' + w.num + '</strong> <span class="hint">(' + esc(fmtFr(w.start).slice(0, 5) + ' → ' + fmtFr(w.end).slice(0, 5)) + ')</span><button type="button" class="round-btn" data-j="slotx" aria-label="Fermer" title="Fermer">✕</button></div>' +
+      '<div class="cf-field"><label class="fr-sr-only" for="pos-sq">Rechercher un réserviste</label><input class="input" type="search" id="pos-sq" data-j="sq" placeholder="Rechercher un réserviste (nom, Nigend, affectation)" value="' + esc(sl.q || '') + '" autocomplete="off"></div>' +
+      (vol.length ? '<p class="pos-panel__t">Volontaires pour cette semaine (' + vol.length + ')</p>' + vol.map(function (c) { return row(c.nigend, c); }).join('') : '<p class="hint">Aucun volontaire pour cette semaine' + (q ? ' ne correspond à la recherche' : '') + '.</p>') +
+      (others.length ? '<p class="pos-panel__t">Autres réservistes</p>' + others.map(function (x) { return row(x.nigend, null); }).join('') : (q ? '' : '<p class="hint">Tapez un nom pour chercher un réserviste qui n’a pas postulé.</p>')) + '</div>';
+  }
+  function nw(m) { return m.weeks.length; }
+  function cardMis(m) {
+    var n = filledTotal(m), t = needTotal(m), complete = n >= t, pct = t ? Math.round(n * 100 / t) : 0, nws = nw(m);
+    var open = U.expand[m.id] !== undefined ? U.expand[m.id] : !complete; if (U.slot && U.slot.misId === m.id) open = true;
+    return '<details class="jdc-card pos-card" id="pos-m-' + m.id + '" data-card="' + m.id + '"' + (open ? ' open' : '') + '><summary><div class="pos-ch"><div><strong>' + esc(periodText(m)) + '</strong> · ' + esc(m.site || '—') + ' · ' + nws + ' semaine' + (nws > 1 ? 's' : '') + (m.comm ? ' · <span class="hint">' + esc(m.comm) + '</span>' : '') + '</div>' +
+      '<div class="pos-prog" title="Postes-semaines pourvus sur postes-semaines à pourvoir"><span class="hint">' + n + ' / ' + t + (complete ? ' · complet' : '') + '</span><span class="jdc-bar' + (pct < 50 ? ' is-low' : '') + '" role="img" aria-label="' + pct + ' %"><span style="width:' + pct + '%"></span></span></div></div></summary>' +
+      gridHtml(m) + (U.slot && U.slot.misId === m.id ? panelHtml(m) : '') + '</details>';
   }
   /* ----- Statistiques ----- */
   function vStats() {
@@ -16448,25 +16581,37 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function vMis() {
     var mth = U.bmonth, list = S.mis.filter(function (m) { return !mth || inMonth(m, mth); }).sort(byDebut);
     var html = '<h3 class="bo-h3">Missions par période et par site</h3><div class="toolbar">' + monthPick('bmonth', mth, 'Mois', 'pos-bm', true) + '<div class="tb-actions">' + pbtn('addmis', 'Ajouter une mission', 'plus') + '</div></div>';
-    if (U.form && /^(addmis|editmis)$/.test(U.form.kind)) html += formMis();
     html += syncBanner() + '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Missions Poséidon</caption><thead><tr><th scope="col">Période</th><th scope="col">Site</th><th scope="col">Chef</th><th scope="col">Adjoint</th><th scope="col">Équipe</th><th scope="col">Désignés</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
-      (list.length ? list.map(function (m) { return '<tr data-mis="' + m.id + '"><th scope="row">' + esc(periodText(m)) + '</th><td>' + esc(m.site || '—') + '</td><td>' + m.cd + '</td><td>' + m.cda + '</td><td>' + m.eq + '</td><td>' + badge(m) + '</td><td style="white-space:nowrap">' + btn('editmis', 'Modifier', ' data-id="' + m.id + '"') + ' ' + btn('dupmis', 'Dupliquer', ' data-id="' + m.id + '"') + ' ' + btn('delmis', 'Supprimer', ' data-id="' + m.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="7">Aucune mission' + (mth ? ' ce mois-ci' : '') + '.</td></tr>') + '</tbody></table></div>';
+      (list.length ? list.map(function (m) { return '<tr class="row-click" tabindex="0" data-j="editmis" data-id="' + m.id + '" data-mis="' + m.id + '" title="Cliquer pour modifier"><th scope="row">' + esc(periodText(m)) + '</th><td>' + esc(m.site || '—') + '</td><td>' + m.cd + '</td><td>' + m.cda + '</td><td>' + m.eq + '</td><td>' + badge(m) + '</td><td style="white-space:nowrap">' + btn('dupmis', 'Dupliquer', ' data-id="' + m.id + '"') + ' ' + btn('delmis', 'Supprimer', ' data-id="' + m.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="7">Aucune mission' + (mth ? ' ce mois-ci' : '') + '.</td></tr>') + '</tbody></table></div>';
     return html;
   }
   function siteSelect(v) { return '<select class="select" id="jf-site" data-jf="site"><option value="">— Choisir —</option>' + S.sites.filter(function (s) { return s.actif || s.id === v; }).map(function (s) { return '<option value="' + s.id + '"' + (s.id === v ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select>'; }
+  function errHtml() { return U.form && U.form.err ? '<div class="doc-alert error" role="alert"><p>' + esc(U.form.err) + '</p></div>' : ''; }
   function formMis() {
     var f = U.form, a = f.data || {}, ed = f.kind === 'editmis';
     function nbf(id, l, v) { return '<div class="cf-field"><label for="jf-' + id + '">' + l + '</label><input type="number" min="0" class="input" id="jf-' + id + '" data-jf="' + id + '" value="' + esc(v == null ? '' : v) + '"></div>'; }
-    return '<section class="cf-section"><h3>' + (ed ? 'Modifier la mission' : 'Ajouter une mission') + '</h3><div class="cf-grid">' +
+    return '<section class="cf-section">' + errHtml() + '<div class="cf-grid">' +
       '<div class="cf-field"><label for="jf-site">Site*</label>' + siteSelect(a.siteId) + '</div><div class="cf-field"><label for="jf-debut">Début*</label><input type="date" class="input" id="jf-debut" data-jf="debut" value="' + esc(a.debut || '') + '"></div><div class="cf-field"><label for="jf-fin">Fin*</label><input type="date" class="input" id="jf-fin" data-jf="fin" value="' + esc(a.fin || '') + '"></div>' +
       nbf('cd', 'Chefs de détachement ' + info('Un seul chef de détachement par mission en général.'), a.cd == null ? 1 : a.cd) + nbf('cda', 'Chefs de détachement adjoints', a.cda == null ? 1 : a.cda) + nbf('eq', 'Reste de l’équipe (nombre de personnes)', a.eq == null ? '' : a.eq) +
       '<div class="cf-field"><label for="jf-comm">Commentaire</label><input class="input" id="jf-comm" data-jf="comm" value="' + esc(a.comm || '') + '"></div></div>' +
       '<div class="cf-actions">' + btn('savemis', ed ? 'Enregistrer' : 'Ajouter', '', 'btn') + btn('formx', 'Annuler') + '</div></section>';
   }
+  function formBatch() { // génération en bloc : missions consécutives de N semaines (samedi → samedi) entre deux dates, sur les sites cochés, avec les mêmes effectifs
+    var a = U.form.data || {}, sel = a.sites || S.sites.filter(function (s) { return s.actif; }).map(function (s) { return s.id; });
+    function nbf(id, l, v) { return '<div class="cf-field"><label for="jf-' + id + '">' + l + '</label><input type="number" min="0" class="input" id="jf-' + id + '" data-jf="' + id + '" value="' + esc(v == null ? '' : v) + '"></div>'; }
+    return '<section class="cf-section">' + errHtml() + '<p class="hint" style="margin:0 0 1rem">Crée des missions qui se suivent, du samedi au samedi (le samedi de fin est le samedi de début de la suivante), de la date de début à la date de fin, sur chacun des sites cochés, avec les mêmes effectifs. Les missions déjà existantes (même site, mêmes dates) ne sont pas recréées.</p><div class="cf-grid">' +
+      '<div class="cf-field"><label for="jf-from">Du* ' + info('Un samedi. Une autre date est avancée au samedi suivant.') + '</label><input type="date" class="input" id="jf-from" data-jf="from" value="' + esc(a.from || '') + '"></div>' +
+      '<div class="cf-field"><label for="jf-to">Jusqu’au* ' + info('Dernier jour couvert : la dernière mission doit se terminer au plus tard ce jour-là.') + '</label><input type="date" class="input" id="jf-to" data-jf="to" value="' + esc(a.to || '') + '"></div>' +
+      nbf('weeks', 'Durée d’une mission (semaines)*', a.weeks == null ? 2 : a.weeks) +
+      '<div class="cf-field"><span class="ppe-sig-l">Sites concernés*</span><div style="display:flex;gap:.25rem 1.25rem;flex-wrap:wrap">' + (S.sites.length ? S.sites.filter(function (s) { return s.actif; }).map(function (s) { return '<label class="ed-check"><input type="checkbox" data-jbs="' + s.id + '"' + (sel.indexOf(s.id) !== -1 ? ' checked' : '') + '> ' + esc(s.name) + '</label>'; }).join('') : '<span class="hint">Aucun site : ajoutez-en dans l’onglet Sites.</span>') + '</div></div>' +
+      nbf('cd', 'Chefs de détachement', a.cd == null ? 1 : a.cd) + nbf('cda', 'Chefs de détachement adjoints', a.cda == null ? 1 : a.cda) + nbf('eq', 'Exécutants (reste de l’équipe)', a.eq == null ? '' : a.eq) +
+      '<div class="cf-field"><label for="jf-comm">Commentaire</label><input class="input" id="jf-comm" data-jf="comm" value="' + esc(a.comm || '') + '"></div></div>' +
+      '<div class="cf-actions">' + btn('savebatch', 'Générer', '', 'btn') + btn('formx', 'Annuler') + '</div></section>';
+  }
   function vSites() {
     var html = '<h3 class="bo-h3">Sites de la mission</h3>' + (U.form && /^(addsite|editsite)$/.test(U.form.kind) ? formSite() : '') +
-      '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Sites Poséidon</caption><thead><tr><th scope="col">Site</th><th scope="col">Adresse</th><th scope="col">Contact</th><th scope="col">Affectation</th><th scope="col">Actif</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
-      (S.sites.length ? S.sites.map(function (s) { return '<tr' + (s.actif ? '' : ' class="row-off"') + '><th scope="row">' + esc(s.name) + '</th><td>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—') + '</td><td>' + esc([s.contact, s.tel].filter(Boolean).join(' · ') || '—') + '</td><td>' + esc(s.aff || '—') + '</td><td>' + (s.actif ? 'Oui' : 'Non') + '</td><td>' + btn('editsite', 'Modifier', ' data-id="' + s.id + '"') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="6">Aucun site.</td></tr>') + '</tbody></table></div>' +
+      '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Sites Poséidon</caption><thead><tr><th scope="col">Site</th><th scope="col">Adresse</th><th scope="col">Contact</th><th scope="col">Affectation</th><th scope="col">Actif</th></tr></thead><tbody>' +
+      (S.sites.length ? S.sites.map(function (s) { return '<tr class="row-click' + (s.actif ? '' : ' row-off') + '" tabindex="0" data-j="editsite" data-id="' + s.id + '" title="Cliquer pour modifier"><th scope="row">' + esc(s.name) + '</th><td>' + esc([s.adresse, [s.cp, s.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—') + '</td><td>' + esc([s.contact, s.tel].filter(Boolean).join(' · ') || '—') + '</td><td>' + esc(s.aff || '—') + '</td><td>' + (s.actif ? 'Oui' : 'Non') + '</td></tr>'; }).join('') : '<tr><td class="is-empty" colspan="5">Aucun site.</td></tr>') + '</tbody></table></div>' +
       '<p style="margin:.75rem 0">' + pbtn('addsite', 'Ajouter un site', 'plus') + '</p>';
     return html;
   }
@@ -16477,10 +16622,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       '<div class="cf-field"><label for="jf-actif">Actif</label><select class="select" id="jf-actif" data-jf="actif"><option value="1"' + (a.actif !== false ? ' selected' : '') + '>Oui</option><option value="0"' + (a.actif === false ? ' selected' : '') + '>Non</option></select></div></div>' +
       '<div class="cf-actions">' + btn('savesite', ed ? 'Enregistrer' : 'Ajouter', '', 'btn') + btn('formx', 'Annuler') + '</div></section>';
   }
+  function weekTags(labels) { // « Semaine 46 · du samedi 07/11/2026 au samedi 14/11/2026 » → étiquette « S46 · 07/11 → 14/11 », classées par date
+    var items = labels.map(function (l) { var m = /Semaine\s+(\d+).*?(\d{2}\/\d{2})\/(\d{4}).*?(\d{2}\/\d{2})\/\d{4}/.exec(l); return m ? { k: m[3] + '-' + m[2].split('/').reverse().join('-'), t: 'S' + m[1] + ' · ' + m[2] + ' → ' + m[4], full: l } : { k: l, t: l, full: l }; }).sort(function (a, b) { return a.k < b.k ? -1 : a.k > b.k ? 1 : 0; });
+    return items.length ? '<ul style="margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:.35rem">' + items.map(function (x) { return '<li title="' + esc(x.full) + '">' + tag(x.t, 'blue') + '</li>'; }).join('') + '</ul>' : '<span class="hint">Aucune semaine proposée.</span>';
+  }
   function vReg() {
     var c = U.draft || (U.draft = JSON.parse(JSON.stringify(S.cfg))), link = formLink(), ds = S.T.open && S.T.open.cols.lib ? uniq(S.T.open.rows.map(function (r) { return txt(raw('open', r, 'lib')); })) : [];
-    var html = '<section class="cf-section"><h3>Formulaire de candidatures</h3><p style="margin:0 0 .75rem">' + (link ? 'Lien actuel : <a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' + esc(link) + '</a>' : '<strong>Lien non renseigné.</strong>') + ' ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Il se règle dans le back office, rubrique Emploi. Le formulaire propose les semaines (numéro, dates de début et de fin) des missions non terminées, sans choix de site : les semaines passées sont retirées à chaque ouverture du widget.') + ' ' + btn('gobo', 'Modifier dans le back office') + '</p>' +
-      openMonthsHtml(c.openMonths, 'data-jopen') + (S.T.open ? '<p style="margin:.5rem 0 0">Semaines actuellement proposées par le formulaire (' + ds.length + ') ' + btn('syncopen', 'Actualiser maintenant') + '</p>' + syncBanner() : '<p class="hint">Table Poseidon_Semaines_ouvertes absente : la liste des semaines du formulaire n’est pas tenue à jour.</p>') + '</section>';
+    var html = '<section class="cf-section"><h3>Formulaire de candidatures</h3><p style="margin:0 0 .75rem">' + (link ? 'Lien actuel : <a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' + esc(link) + '</a>' : '<strong>Lien non renseigné</strong> (à saisir dans le back office, rubrique Emploi).') + ' ' + info('Rappelé dans les courriels ({{LIEN_FORMULAIRE}}). Il se règle dans le back office, rubrique Emploi. Le formulaire propose les semaines (numéro, dates de début et de fin) des missions non terminées, sans choix de site : les semaines passées sont retirées à chaque ouverture du widget.') + '</p>' +
+      openMonthsHtml(c.openMonths, 'data-jopen') + (S.T.open ? '<div style="margin:.75rem 0 0"><div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem"><strong>Semaines actuellement proposées par le formulaire (' + ds.length + ')</strong>' + btn('syncopen', 'Actualiser maintenant') + '</div>' + weekTags(ds) + '</div>' + syncBanner() : '<p class="hint">Table Poseidon_Semaines_ouvertes absente : la liste des semaines du formulaire n’est pas tenue à jour.</p>') + '</section>';
     html += '<section class="cf-section"><h3>Modèles de courriels ' + info('Courriels préparés dans votre messagerie, destinataires en Cci. Cliquez sur une variable pour l’insérer dans le champ en cours.') + '</h3>' + Object.keys(DEF_TPL).map(function (k) {
       return '<details class="mail-block"><summary>' + esc(DEF_TPL[k].label) + '</summary><div class="mail-body"><div class="cf-field"><label for="jt-' + k + '-s">Objet</label><input class="input" id="jt-' + k + '-s" data-jt="' + k + '.subject" value="' + esc(c.tpl[k].subject) + '"></div><div class="cf-field"><label for="jt-' + k + '-b">Message</label><textarea class="textarea" rows="8" id="jt-' + k + '-b" data-jt="' + k + '.body">' + esc(c.tpl[k].body) + '</textarea></div><div class="bo-tpl-vars">' +
         DEF_TPL[k].vars.map(function (v) { return '<button type="button" class="fr-tag fr-tag--sm bo-vartag" data-j="var" data-k="' + k + '" data-v="{{' + v + '}}">{{' + v + '}}</button>'; }).join('') + '</div><p>' + btn('tplreset', 'Rétablir le texte par défaut', ' data-k="' + k + '"') + '</p></div></details>';
@@ -16489,7 +16638,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
 
   /* ---------- Actions ---------- */
-  function fail(e) { setMsg('error', 'Opération impossible : ' + ((e && e.message) || e) + '.'); render(); }
+  function fail(e) { var t = 'Opération impossible : ' + ((e && e.message) || e) + '.'; if (U.form && /^(addmis|addbatch|editmis)$/.test(U.form.kind)) U.form.err = t; else setMsg('error', t); render(); }
+  function formErr(t) { U.form.err = t; render(); }
   function done(text) { setMsg('success', text); render(); }
   function readForm() { var o = {}; Array.prototype.forEach.call(R.querySelectorAll('[data-jf]'), function (e) { o[e.getAttribute('data-jf')] = e.value; }); return o; }
   function saveSite() {
@@ -16499,13 +16649,36 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
   function saveMis() {
     var f = readForm(), ed = U.form.kind === 'editmis', s = S.sBy[Number(f.site)];
-    if (!s) { setMsg('error', 'Choisissez le site.'); return render(); }
-    if (!f.debut || !f.fin) { setMsg('error', 'Renseignez les dates de début et de fin.'); return render(); }
-    if (f.fin < f.debut) { setMsg('error', 'La fin de la mission précède son début.'); return render(); }
+    U.form.data = { siteId: Number(f.site) || '', debut: f.debut, fin: f.fin, cd: f.cd, cda: f.cda, eq: f.eq, comm: f.comm }; U.form.err = '';
+    if (!s) return formErr('Choisissez le site.');
+    if (!f.debut || !f.fin) return formErr('Renseignez les dates de début et de fin.');
+    if (f.fin < f.debut) return formErr('La fin de la mission précède son début.');
     var cd = Number(f.cd || 0), cda = Number(f.cda || 0), eq = Number(f.eq || 0);
-    if (cd + cda + eq < 1) { setMsg('error', 'Indiquez au moins un poste à pourvoir.'); return render(); }
+    if (cd + cda + eq < 1) return formErr('Indiquez au moins un poste à pourvoir.');
     var obj = { site: sref(s), debut: f.debut, fin: f.fin, cd: cd, cda: cda, eq: eq, comm: f.comm };
     write(ed ? 'update' : 'create', 'mis', ed ? U.form.id : null, obj).then(function () { U.form = null; done(ed ? 'Mission modifiée.' : 'Mission ajoutée.'); }, fail);
+  }
+  function saveBatch() {
+    var f = readForm(), sites = Array.prototype.map.call(R.querySelectorAll('input[data-jbs]:checked'), function (e) { return Number(e.getAttribute('data-jbs')); });
+    U.form.data = { from: f.from, to: f.to, weeks: f.weeks, sites: sites, cd: f.cd, cda: f.cda, eq: f.eq, comm: f.comm };
+    U.form.err = ''; function err(t) { return formErr(t); }
+    var W = parseInt(f.weeks, 10), cd = Number(f.cd || 0), cda = Number(f.cda || 0), eq = Number(f.eq || 0);
+    if (!f.from || !f.to) return err('Renseignez la date de début et la date de fin.');
+    if (f.to < f.from) return err('La date de fin précède la date de début.');
+    if (!(W >= 1)) return err('La durée d’une mission est d’au moins une semaine.');
+    if (!sites.length) return err('Cochez au moins un site.');
+    if (cd + cda + eq < 1) return err('Indiquez au moins un poste à pourvoir.');
+    var start = weekStartOf(f.from); if (start < f.from) start = addDays(start, 7);
+    var periods = []; for (var d = start; addDays(d, 7 * W) <= f.to; d = addDays(d, 7 * W)) periods.push([d, addDays(d, 7 * W)]);
+    if (!periods.length) return err('Aucune mission de ' + W + ' semaine' + (W > 1 ? 's' : '') + ' (du samedi au samedi) ne tient entre le ' + fmtFr(f.from) + ' et le ' + fmtFr(f.to) + '.');
+    var have = {}; S.mis.forEach(function (m) { have[m.siteId + '|' + m.debut + '|' + m.fin] = 1; });
+    var objs = [], skipped = 0; periods.forEach(function (pr) { sites.forEach(function (id) { if (have[id + '|' + pr[0] + '|' + pr[1]]) skipped++; else objs.push({ site: sref(S.sBy[id]), debut: pr[0], fin: pr[1], cd: cd, cda: cda, eq: eq, comm: f.comm }); }); });
+    if (!objs.length) return err('Toutes ces missions existent déjà.');
+    var last = periods[periods.length - 1][1], notes = [];
+    if (start !== f.from) notes.push('début avancé au samedi ' + fmtFr(start));
+    if (last < f.to) notes.push('le ' + fmtFr(last) + ' au ' + fmtFr(f.to) + ' ne couvre pas une mission complète');
+    if (!window.confirm('Créer ' + objs.length + ' mission' + (objs.length > 1 ? 's' : '') + ' (' + periods.length + ' période' + (periods.length > 1 ? 's' : '') + ' × ' + sites.length + ' site' + (sites.length > 1 ? 's' : '') + ') du ' + fmtFr(start) + ' au ' + fmtFr(last) + (skipped ? ', ' + skipped + ' déjà existante' + (skipped > 1 ? 's ignorées' : ' ignorée') : '') + (notes.length ? ' (' + notes.join(' ; ') + ')' : '') + ' ?')) return;
+    writeMany('mis', objs).then(function () { scheduleSync(); U.form = null; done(objs.length + ' mission' + (objs.length > 1 ? 's créées' : ' créée') + (skipped ? ' (' + skipped + ' déjà existante' + (skipped > 1 ? 's ignorées' : ' ignorée') + ')' : '') + (notes.length ? ' : ' + notes.join(' ; ') : '') + '.'); }, fail);
   }
   var assigning = {};
   function assign(misId, nig, role, spec) {
@@ -16516,7 +16689,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (!(S.T.des.cols.debut && S.T.des.cols.fin) && runs.some(function (r) { return r.debut !== m.debut || r.fin !== m.fin; })) { setMsg('error', 'Désignation sur une partie de la mission impossible : ajoutez les colonnes Debut et Fin (type Date) à la table ' + S.T.des.name + '.'); return render(); }
     assigning[key] = true;
     runs.reduce(function (p, r) { return p.then(function () { return write('create', 'des', null, { mis: mref(m), nigend: nig, nom: pname(nig), role: roleDef(role).db, debut: r.debut, fin: r.fin, statut: 'Désigné', dd: todayIso(), dc: '', comm: '' }); }); }, Promise.resolve())
-      .then(function () { delete assigning[key]; setMsg('', ''); render(); }, function (e) { delete assigning[key]; fail(e); });
+      .then(function () { delete assigning[key]; setMsg('', ''); if (U.slot && U.slot.misId === m.id && U.slot.role === role) { var sw = S.weekBy[U.slot.week]; if (!sw || cnt(m, role, sw) >= m[role]) U.slot = null; } render(); }, function (e) { delete assigning[key]; fail(e); });
   }
   function openCancel(d) {
     var m = S.misBy[d.misId], p = person(d.nigend), mail = p && p.mail;
@@ -16617,22 +16790,26 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function onClick(e) {
     var b = e.target.closest('[data-j]'); if (!b || b.disabled) return; var j = b.getAttribute('data-j'), id = Number(b.getAttribute('data-id'));
     if (j === 'tab') { var nt = b.getAttribute('data-v'); if (isAdm(nt)) U.lastAdm = nt; else U.lastMain = nt; U.tab = nt; U.form = null; setMsg('', ''); U.draft = null; return render(); }
-    if (j === 'gotodes') { var gm = S.misBy[id]; if (gm) { U.month = gm.debut.slice(0, 7); U.tab = 'des'; U.lastMain = 'des'; U.form = null; U.focusMis = gm.id; } render(); if (gm) setTimeout(focusMis, 40); return; }
-    if (j === 'dlgx') { U.dlg = null; U.pick = null; return render(); }
+    if (j === 'gotodes') { var gm = S.misBy[id]; if (gm) { U.expand[gm.id] = true; U.month = gm.debut.slice(0, 7); U.tab = 'des'; U.lastMain = 'des'; U.form = null; U.focusMis = gm.id; } render(); if (gm) setTimeout(focusMis, 40); return; }
+    if (j === 'dlgx') { U.dlg = null; U.pick = null; if (U.form && /^(addmis|addbatch|editmis)$/.test(U.form.kind)) U.form = null; return render(); }
+    if (j === 'addtab') { var tv = b.getAttribute('data-v'), od = (U.form && U.form.data) || {}; U.form = tv === 'batch' ? { kind: 'addbatch', data: { weeks: 2, cd: 1, cda: 1 } } : { kind: 'addmis', data: { debut: od.debut || '', cd: 1, cda: 1 } }; return render(); }
     if (j === 'reload') { S.loading = null; return loadAll().then(render); }
     if (j === 'formx') { U.form = null; return render(); }
     if (j === 'gobo') { if (window.__showPage) window.__showPage('bo'); if (window.__showBoTab) window.__showBoTab('emploi'); return; }
     if (j === 'syncopen') { S.syncing = false; return syncOpen().then(function (ch) { var i = S.syncInfo || {}; setMsg(S.syncErr ? 'error' : 'success', S.syncErr ? 'Mise à jour impossible : ' + S.syncErr : (ch ? 'Liste du formulaire mise à jour : ' + i.added + ' semaine(s) ajoutée(s), ' + i.removed + ' retirée(s).' : 'La liste du formulaire est déjà à jour.')); render(); }); }
     if (j === 'addsite') { U.form = { kind: 'addsite', data: {} }; return render(); }
-    if (j === 'editsite') { U.form = { kind: 'editsite', id: id, data: S.sBy[id] }; return render(); }
+    if (j === 'editsite') { U.scrollForm = true; U.form = { kind: 'editsite', id: id, data: S.sBy[id] }; return render(); }
     if (j === 'savesite') return saveSite();
     if (j === 'addmis') { U.form = { kind: 'addmis', data: { debut: U.bmonth ? U.bmonth + '-01' : '', cd: 1, cda: 1 } }; return render(); }
     if (j === 'editmis') { var mm = S.misBy[id]; U.form = { kind: 'editmis', id: id, data: { siteId: mm.siteId, debut: mm.debut, fin: mm.fin, cd: mm.cd, cda: mm.cda, eq: mm.eq, comm: mm.comm } }; return render(); }
     if (j === 'dupmis') { var md = S.misBy[id]; U.form = { kind: 'addmis', data: { siteId: md.siteId, debut: '', fin: '', cd: md.cd, cda: md.cda, eq: md.eq, comm: md.comm } }; return render(); }
     if (j === 'delmis') { var mx = S.misBy[id], n = assigned(mx).length; if (!window.confirm(n ? 'Cette mission a ' + n + ' désignation(s) : elles seront aussi supprimées. Continuer ?' : 'Supprimer cette mission ?')) return; return assigned(mx).reduce(function (pp, d) { return pp.then(function () { return write('destroy', 'des', d.id); }); }, Promise.resolve()).then(function () { return write('destroy', 'mis', id); }).then(function () { done('Mission supprimée.'); }, fail); }
     if (j === 'savemis') return saveMis();
+    if (j === 'addbatch') { U.form = { kind: 'addbatch', data: { weeks: 2, cd: 1, cda: 1 } }; return render(); }
+    if (j === 'savebatch') return saveBatch();
     if (j === 'assign') { b.disabled = true; return assign(Number(b.getAttribute('data-mis')), b.getAttribute('data-nig'), b.getAttribute('data-role'), b.getAttribute('data-span') || 'avail'); }
-    if (j === 'pick') { U.pick = { misId: id, q: '', span: 'all' }; return render(); }
+    if (j === 'slot') { var sm = Number(b.getAttribute('data-mis')), sr = b.getAttribute('data-role'), sw = b.getAttribute('data-week'); U.slot = U.slot && U.slot.misId === sm && U.slot.role === sr && U.slot.week === sw ? null : { misId: sm, role: sr, week: sw, q: '' }; U.scrollPanel = !!U.slot; return render(); }
+    if (j === 'slotx') { U.slot = null; return render(); }
     if (j === 'cancel') { var d = S.des.filter(function (x) { return x.id === id; })[0]; if (!d) return; if (!d.dc) return write('destroy', 'des', id).then(render, fail); return openCancel(d); }
     if (j === 'delrow') return write('destroy', 'des', id).then(render, fail);
     if (j === 'cancelok') return cancelOk(id);
@@ -16651,6 +16828,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   }
   function onInput(e) {
     var t = e.target;
+    if (t.getAttribute('data-j') === 'sq') { U.slot.q = t.value; var ps = t.selectionStart; render(); var ns = R.querySelector('#pos-sq'); if (ns) { ns.focus(); ns.setSelectionRange(ps, ps); } return; }
     if (t.getAttribute('data-j') === 'pq') { U.pick.q = t.value; var pos = t.selectionStart; render(); var n = R.querySelector('#pos-pq'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
     var jt = t.getAttribute('data-jt'); if (jt) { var kk = jt.split('.'); U.draft.tpl[kk[0]][kk[1]] = t.value; }
   }
@@ -16663,18 +16841,21 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     }
     if (t.hasAttribute('data-jopen')) { var om = U.draft.openMonths = U.draft.openMonths || [], mv = t.getAttribute('data-jopen'), oi = om.indexOf(mv); if (t.checked && oi === -1) om.push(mv); if (!t.checked && oi !== -1) om.splice(oi, 1); om.sort(); return render(); }
     if (j === 'psite') { U.psite = t.value; return render(); }
+    if (j === 'onlyopen') { U.onlyOpen = t.checked; return render(); }
     if (j === 'pspan') { U.pick.span = t.value; return render(); }
     if (j === 'sy') { U.sy = t.value; return render(); }
   }
   function mount(el) {
     if (R === el) return; R = el; R.classList.add('jdc-root');
     R.addEventListener('click', onClick); R.addEventListener('input', onInput); R.addEventListener('change', onChange);
+    R.addEventListener('keydown', function (ev) { var tr = ev.target.closest && ev.target.closest('tr[data-j]'); if (tr && ev.target === tr && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); onClick({ target: tr }); } }); // ligne cliquable : Entrée ou espace ouvre la modification
+    R.addEventListener('toggle', function (ev) { var d = ev.target; if (d && d.getAttribute && d.getAttribute('data-card')) U.expand[Number(d.getAttribute('data-card'))] = d.open; }, true); // l'état ouvert / replié d'une mission est conservé
     R.addEventListener('mouseover', function (ev) { var b = ev.target.closest('.pos-tl__bar'); if (b) showTip(b); });
     R.addEventListener('mouseout', function (ev) { var b = ev.target.closest('.pos-tl__bar'); if (b && !b.contains(ev.relatedTarget)) hideTip(); });
     R.addEventListener('focusin', function (ev) { var b = ev.target.closest('.pos-tl__bar'); if (b) showTip(b); });
     R.addEventListener('focusout', function (ev) { if (ev.target.closest('.pos-tl__bar')) hideTip(); });
     window.addEventListener('scroll', hideTip, true);
-    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hideTip(); if (ev.key === 'Escape' && (U.dlg || U.pick)) { U.dlg = null; U.pick = null; render(); } });
+    R.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { hideTip(); if (U.slot && !U.dlg) { U.slot = null; render(); return; } } if (ev.key === 'Escape' && (U.dlg || U.pick || (U.form && /^(addmis|addbatch|editmis)$/.test(U.form.kind)))) { U.dlg = null; U.pick = null; if (U.form && /^(addmis|addbatch|editmis)$/.test(U.form.kind)) U.form = null; render(); } });
   }
   window.POS = {
     mount: mount,
