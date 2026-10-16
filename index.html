@@ -42,11 +42,18 @@
     window.__dropData = function () { Object.keys(keep).forEach(function (k) { if (k.charAt(0) !== '_' && k.charAt(0) !== '@') delete keep[k]; }); flight = {}; };
     window.__dropMeta = function () { delete keep['_grist_Tables']; delete keep['_grist_Tables_column']; delete keep['@tables']; }; // métadonnées relues à la prochaine demande
     var rawGet = G.getTable.bind(G);
+    // Refus des règles d'accès de Grist (« Blocked by row create access rules ») : message explicite pour l'utilisateur et l'administrateur du document.
+    function explain(e, table, op) {
+      var m = String((e && e.message) || e || ''), r = /Blocked by (.*?) access rules/i.exec(m); if (!r) throw e;
+      var verb = /create/i.test(r[1]) ? 'créer des lignes dans' : /delete|destroy/i.test(r[1]) ? 'supprimer des lignes de' : /update/i.test(r[1]) ? 'modifier' : /read/i.test(r[1]) ? 'lire' : 'agir sur';
+      var err = new Error('Grist refuse cette opération (« ' + m.replace(/\.+$/, '') + ' ») : les règles d’accès du document n’autorisent pas votre profil à ' + verb + ' la table « ' + (table || '?') + ' ». Demandez à l’administrateur du document de vérifier, dans les règles d’accès de cette table, l’autorisation pour votre groupe et les conditions éventuelles sur les colonnes renseignées par le widget');
+      err.aclBlocked = true; err.original = e; throw err;
+    }
     G.getTable = function (id) {
       var t = rawGet(id);
       ['create', 'update', 'upsert', 'destroy'].forEach(function (m) {
         if (typeof t[m] !== 'function') return; var f = t[m].bind(t);
-        t[m] = function () { return Promise.resolve(f.apply(null, arguments)).then(function (r) { window.__dropData(); if (window.__dataDirty) window.__dataDirty(); return r; }); };
+        t[m] = function () { return Promise.resolve(f.apply(null, arguments)).then(function (r) { window.__dropData(); if (window.__dataDirty) window.__dataDirty(); return r; }, function (e) { explain(e, id, m); }); };
       });
       return t;
     };
@@ -810,6 +817,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ico-mail { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z%27/%3E%3C/svg%3E"); }
   .ico-close { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z%27/%3E%3C/svg%3E"); }
   .ico-plus { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z%27/%3E%3C/svg%3E"); }
+  .ico-key { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 17v4M10 20l4-2M10 18l4 2M5 17v4M3 20l4-2M3 18l4 2M19 17v4M17 20l4-2M17 18l4 2M9 6a3 3 0 1 0 6 0a3 3 0 0 0-6 0M7 14a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2%27/%3E%3C/svg%3E"); } /* identifiants (accès) */
   .ico-download { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M13 10h5l-6 6-6-6h5V3h2v7zM4 19h16v2H4z%27/%3E%3C/svg%3E"); }
   .ico-filter { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z%27/%3E%3C/svg%3E"); }
   .ico-edit { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z%27/%3E%3C/svg%3E"); }
@@ -1826,8 +1834,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <button type="button" class="btn secondary btn-iconly ico-refresh" id="flt-reset" disabled title="Réinitialiser les filtres">Réinitialiser les filtres</button>
       <div class="count" id="count" aria-live="polite"></div>
       <div class="tb-actions">
-        <button type="button" class="btn secondary btn-ghost btn-iconly ico-edit" id="btn-bulk" title="Mettre à jour en bloc : modifier plusieurs candidats à la fois">Mettre à jour en bloc</button>
-        <button type="button" class="btn secondary btn-ghost btn-iconly ico-download" id="btn-export" title="Exporter la liste (.csv)">Exporter (.csv)</button>
+        <button type="button" class="btn secondary btn-ghost btn-iconly ico-edit" id="btn-bulk" title="Mise à jour en bloc">Mise à jour en bloc</button>
+        <button type="button" class="btn secondary btn-ghost btn-iconly ico-download" id="btn-export" title="Exporter les candidats">Exporter les candidats</button>
+        <button type="button" class="btn secondary btn-ghost btn-iconly ico-key" id="btn-access" title="Gérer les accès">Gérer les accès</button>
         <button type="button" class="btn sm ico-plus" id="btn-create" title="Créer une candidature">Créer une candidature</button>
       </div>
     </div>
@@ -1983,8 +1992,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <button type="button" class="btn secondary btn-iconly ico-refresh" id="r-flt-reset" disabled title="Réinitialiser les filtres">Réinitialiser les filtres</button>
       <div class="count" id="r-count" aria-live="polite"></div>
       <div class="tb-actions">
-        <button type="button" class="btn secondary btn-ghost btn-iconly ico-edit" id="r-btn-bulk" title="Mettre à jour en bloc : modifier plusieurs réservistes à la fois">Mettre à jour en bloc</button>
-        <button type="button" class="btn secondary btn-ghost btn-iconly ico-download" id="r-btn-export" title="Exporter la liste (.csv)">Exporter (.csv)</button>
+        <button type="button" class="btn secondary btn-ghost btn-iconly ico-edit" id="r-btn-bulk" title="Mise à jour en bloc">Mise à jour en bloc</button>
+        <button type="button" class="btn secondary btn-ghost btn-iconly ico-download" id="r-btn-export" title="Exporter les réservistes">Exporter les réservistes</button>
         <button type="button" class="btn sm ico-plus" id="r-btn-create" title="Créer un réserviste">Créer un réserviste</button>
       </div>
     </div>
@@ -2419,6 +2428,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <div id="x-mail-forms"></div>
     </section>
 
+    <section class="step" id="x-links" data-grp="courriels">
+      <div class="head"><h2>Liens de réservation</h2></div>
+      <p class="lead" style="margin-left:0">Lien envoyé aux personnes pour réserver leur créneau, un par type. Il est inséré dans les courriels par la variable <code>{{LIEN_RESERVATION}}</code> : ne l’écrivez pas dans les modèles. Laissé vide, la ligne qui contient la variable est retirée du message.</p>
+      <div class="fields">
+        <div><label for="x-f-link-vmp">Lien de réservation VMP</label><input class="input" type="url" id="x-f-link-vmp" placeholder="https://…" autocomplete="off" spellcheck="false"></div>
+        <div><label for="x-f-link-vemi">Lien de réservation VEMI</label><input class="input" type="url" id="x-f-link-vemi" placeholder="https://…" autocomplete="off" spellcheck="false"></div>
+        <div><label for="x-f-link-psy">Lien de réservation Tests psy</label><input class="input" type="url" id="x-f-link-psy" placeholder="https://…" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <p class="hint" id="x-links-note" role="status" hidden></p>
+    </section>
+
     <details class="bo-advanced">
       <summary>Options avancées · Réservations : tables</summary>
       <p class="hint">Les tables sont détectées automatiquement par leur nom. À modifier uniquement si l’une est « Introuvable » dans le récapitulatif ci-dessus.</p>
@@ -2630,6 +2650,22 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   </div>
 </div>
 
+<!-- ===== Accès : demandes d'accès (tests psychométriques, EAD - Bloc 1) pour les candidats cochés ou affichés ===== -->
+<div class="modal-overlay" id="accmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="accmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0">
+          <h2 class="modal-title" id="accmodal-title">Solliciter un accès</h2>
+          <p class="modal-sub">Choisissez la demande et les candidats concernés : un tableur est téléchargé, à joindre au message qui s’ouvre dans votre messagerie.</p>
+        </div>
+        <div class="modal-actions"><button class="round-btn" id="accmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div id="accmodal-body"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Invitation à réserver (VEMI ou tests psychométriques) des candidats sélectionnés ===== -->
 <div class="modal-overlay" id="invmodal" hidden>
   <div class="modal-column">
@@ -2681,7 +2717,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.4</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -2878,7 +2914,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var DEMO_COLS = [
     ['NID', 'Text'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Affectation', 'Choice'], ['Origine', 'Choice'], ['CRT', 'Text'], ['Civilité', 'Choice'], ['DDN', 'Date'], ['Lieu de naissance', 'Text'], ['Dpt', 'Text'],
     ['Numéro de téléphone', 'Text'], ['N_Cand', 'Text'], ['Email', 'Text'], ['Âge', 'Int'], ['Adresse', 'Text'], ['Code postal', 'Text'], ['Ville', 'Text'], ['Profession', 'Text'], ['N° candidature', 'Text'],
-    ['Date tests psy', 'DateTime:Europe/Paris'], ['Tests psy', 'Choice'], ['Dde BPRO', 'Bool'], ['Date VEMI', 'DateTime:Europe/Paris'], ['Antenne VEMI', 'Text'], ['VEMI', 'Choice'], ['Validité VEMI', 'Date'],
+    ['Date tests psy', 'DateTime:Europe/Paris'], ['Tests psy', 'Choice'], ['Dde BPRO', 'Bool'], ['Dde_accès_tests_psy', 'Date'], ['Date VEMI', 'DateTime:Europe/Paris'], ['Antenne VEMI', 'Text'], ['VEMI', 'Choice'], ['Validité VEMI', 'Date'],
     ['Etat candidature', 'Choice'], ['PMG', 'Choice'], ['Lettre intégration', 'Attachments'], ['Droits EAD', 'Bool'], ['Nigend', 'Text'], ['N° ESR', 'Text'], ['Grade', 'Choice'], ['Corps', 'Choice'],
     ['Date de début contrat', 'Date'], ['Date contrat', 'Date'], ['Convention', 'Attachments'], ['Commentaires', 'Text'], ['Acculturation', 'Bool'], ['Doublon', 'Bool'], ['Déjà ESR', 'Bool'],
     ['Création candidature', 'DateTime:Europe/Paris'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text'], ['Convocations', 'Attachments'], ['ESR', 'Attachments'],
@@ -3110,7 +3146,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       state.records.forEach(function (r) { valuesOfCol(r, col).forEach(function (x) { if (x !== '') v[x] = 1; }); });
       return { aff: Object.keys(v).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' }); }), affOn: filters.aff.slice(), statusDefault: statusIsDefault(),
         adv: { psy: advColValues(c, 'Tests psy'), vemi: advColValues(c, 'VEMI'), grade: advColValues(c, 'Grade'), corps: advColValues(c, 'Corps'), orig: advColValues(c, 'Origine') },
-        advOn: { psy: filters.psy.slice(), vemi: filters.vemi.slice(), grade: filters.grade.slice(), corps: filters.corps.slice(), esr: filters.esr.slice(), dup: filters.dup.slice(), orig: filters.orig.slice() } };
+        advOn: { psy: filters.psy.slice(), vemi: filters.vemi.slice(), grade: filters.grade.slice(), corps: filters.corps.slice(), esr: filters.esr.slice(), dup: filters.dup.slice(), orig: filters.orig.slice(), acc: filters.acc.slice() } };
     },
     toggleAdv: function (key, x) { var a = filters[key]; if (!a) return; var i = a.indexOf(x); if (i === -1) a.push(x); else a.splice(i, 1); renderList(); },
     toggleAff: function (x) { var i = filters.aff.indexOf(x); if (i === -1) filters.aff.push(x); else filters.aff.splice(i, 1); renderList(); },
@@ -3210,8 +3246,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   /* ----- Filtres de la liste : états de la candidature (choix multiples) et PMG ----- */
   // Par défaut, les candidatures « Rejet DRJ » et « Abandon » sont masquées : le filtre par état les laisse décochées et permet de les réafficher.
   // status : sélection d'états (null tant que les options ne sont pas connues) ; psy/vemi/grade/corps/esr/dup : filtre avancé (vide = tout afficher).
-  var filters = { status: null, pmg: [], aff: [], known: {}, all: [], psy: [], vemi: [], grade: [], corps: [], esr: [], dup: [], orig: [] }; // orig : recrutement (colonne Origine)
-  var ADV_KEYS = ['psy', 'vemi', 'grade', 'corps', 'esr', 'dup', 'orig'];
+  var filters = { status: null, pmg: [], aff: [], known: {}, all: [], psy: [], vemi: [], grade: [], corps: [], esr: [], dup: [], orig: [], acc: [] }; // orig : recrutement (colonne Origine) ; acc : accès à demander ('psy', 'ead')
+  var ADV_KEYS = ['psy', 'vemi', 'grade', 'corps', 'esr', 'dup', 'orig', 'acc'];
   var NO_STATUS = '__none__';                                  // candidatures sans état
   var NO_VALUE = '__vide__';                                   // valeur non renseignée, pour les filtres avancés à choix
   var filterSig = '';
@@ -3381,6 +3417,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAgePop(); }
     else if (e.key === 'Enter' && e.target.id === 'age-pop-d') { e.preventDefault(); saveAgePop(); }
   }, true);
+  // Accès à demander : tests psychométriques (pas de demande) ; EAD (droits non ouverts, pas de demande).
+  function accessToRequest(r, c, k) {
+    function empty(label) { var col = findCol(c.table, label), v = col ? r.raw[col.id] : null; return v == null || v === '' || v === false || (Array.isArray(v) && v.length <= 1); }
+    if (k === 'psy') return empty('Dde_accès_tests_psy');
+    if (k === 'ead') { var dc = findCol(c.table, 'Droits EAD'); return !(dc && isYes(r.raw[dc.id])) && empty('Dde_accès_EAD'); }
+    return true;
+  }
   function renderList() {
     var c = cfg(), q = norm($('q').value.trim()), terms = q ? q.split(/\s+/) : [], sCols = terms.length ? searchColumns(c) : [];
     renderFilters(c);
@@ -3399,7 +3442,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       .filter(function (r) { return matchesChoiceFilter(r, corpsCol, filters.corps); })
       .filter(function (r) { return matchesChoiceFilter(r, origCol, filters.orig); })
       .filter(function (r) { return matchesBoolFilter(r, esrCol, filters.esr); })
-      .filter(function (r) { return matchesBoolFilter(r, dupCol, filters.dup); });
+      .filter(function (r) { return matchesBoolFilter(r, dupCol, filters.dup); })
+      .filter(function (r) { return !filters.acc.length || filters.acc.some(function (k) { return accessToRequest(r, c, k); }); });
     list.sort(function (a, b) { return state.sortDir * a.id.localeCompare(b.id, 'fr', { sensitivity: 'base' }); });
     state.view = list; uiSave();
     // Sélection : seuls les candidats affichés restent sélectionnés.
@@ -5158,6 +5202,98 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     }
   }
 
+  /* ---------- Accès : demandes d'accès (tests psychométriques, EAD - Bloc 1) ---------- */
+  // Candidats proposés : les cochés, à défaut ceux de la vue active ; la liste reste modifiable dans la modale.
+  var ACC_KINDS = {
+    psy: { label: 'Solliciter un accès aux tests psychométriques', to: 'bpro.crj@gendarmerie.interieur.gouv.fr', cc: 'aissata.meite@gendarmerie.interieur.gouv.fr',
+      subject: 'Demande d’accès aux tests psychométriques', body: 'Bonjour,\n\nVeuillez trouver ci-joint une demande d’accès aux tests psychométriques.\n\nCordialement,',
+      file: 'Connexion_tests_psychométriques_RGIF_SGR_', dateCol: 'Dde_accès_tests_psy' },
+    ead: { label: 'Solliciter un accès à l’EAD - Bloc 1', todo: true }
+  };
+  var acc = null;
+  function openAccess() {
+    var c = cfg(); if (!c.table) return;
+    var picked = selItems(), items = state.view.slice(), on = {};
+    (picked.length ? picked : items).forEach(function (r) { on[r.raw.id] = true; });
+    acc = { kind: 'psy', items: items, on: on, fromSel: picked.length > 0, msg: null, busy: false };
+    renderAccess();
+    var ov = $('accmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('accmodal-body').querySelector('input, button'); if (f) f.focus(); }); });
+  }
+  function closeAccess() {
+    var ov = $('accmodal'); if (ov.hidden) return;
+    ov.classList.remove('is-open'); document.body.style.overflow = ''; acc = null;
+    setTimeout(function () { ov.hidden = true; }, 200); $('btn-access').focus();
+  }
+  function accChosen() { return acc.items.filter(function (r) { return acc.on[r.raw.id]; }); }
+  function accField(r, label) { var col = findCol(cfg().table, label), v = col ? r.raw[col.id] : null; return v == null ? '' : String(v).trim(); }
+  function renderAccess() {
+    if (!acc) return;
+    var k = ACC_KINDS[acc.kind], chosen = accChosen(), n = chosen.length, dc = k.dateCol ? findCol(cfg().table, k.dateCol) : null;
+    var rows = acc.items.map(function (r) {
+      var id = r.raw.id, num = accField(r, 'N° candidature'), prev = dc && r.raw[dc.id] ? textOfValue(dc, r.raw[dc.id]) : '';
+      return '<tr><td><label class="ed-check" style="margin:0"><input type="checkbox" data-acc="' + id + '"' + (acc.on[id] ? ' checked' : '') + '> ' + esc(r.id ? formatName(r.id) : '—') + '</label></td>' +
+        '<td>' + (num ? esc(num) : '<span class="hint">—</span>') + '</td>' + (dc ? '<td>' + (prev ? esc(prev) : '<span class="hint">—</span>') + '</td>' : '') + '</tr>';
+    }).join('');
+    $('accmodal-body').innerHTML =
+      '<fieldset class="inv-type"><legend>Demande</legend>' + Object.keys(ACC_KINDS).map(function (key) {
+        return '<label class="bulk-mode"><input type="radio" name="acc-kind" value="' + key + '"' + (acc.kind === key ? ' checked' : '') + '> ' + esc(ACC_KINDS[key].label) + '</label>';
+      }).join('') + '</fieldset>' +
+      (acc.msg ? '<div class="doc-alert ' + acc.msg.type + '" role="' + (acc.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(acc.msg.text) + '</p></div>' : '') +
+      (k.todo ? '<div class="doc-alert warning" role="status"><p>Cette demande n’est pas encore paramétrée (destinataires, message et tableur à définir).</p></div>' : '') +
+      '<div class="cf-actions" style="margin:0 0 12px"><button type="button" class="btn secondary sm" id="acc-all">Tout cocher</button><button type="button" class="btn secondary sm" id="acc-none">Tout décocher</button>' +
+      '<span class="hint" role="status" style="align-self:center">' + n + ' candidat' + (n > 1 ? 's' : '') + ' retenu' + (n > 1 ? 's' : '') + ' sur ' + acc.items.length + (acc.fromSel ? ' affichés (cochés dans la liste : présélectionnés)' : ' affichés') + '</span></div>' +
+      '<div class="table-wrap" style="max-height:18rem;overflow:auto"><table class="doc-table"><caption class="fr-sr-only">Candidats concernés</caption><thead><tr><th scope="col">Candidat</th><th scope="col">N° candidature</th>' + (dc ? '<th scope="col">Demandé le</th>' : '') + '</tr></thead><tbody>' +
+      (rows || '<tr><td class="is-empty" colspan="3">Aucun candidat affiché.</td></tr>') + '</tbody></table></div>' +
+      (k.dateCol && !dc ? '<p class="hint">Colonne « ' + esc(k.dateCol) + ' » introuvable dans la table : la date de la demande ne sera pas reportée.</p>' : '') +
+      '<div class="cf-actions"><button type="button" class="btn" id="acc-submit"' + (n && !k.todo && !acc.busy ? '' : ' disabled') + '>' + (acc.busy ? 'Préparation…' : 'Demander accès au BPRO') + '</button><button type="button" class="btn secondary" id="acc-cancel">Fermer</button></div>';
+  }
+  function accDateValue(col) { // date du jour au format de la colonne
+    var d = new Date(), t = String(col.type || '');
+    if (/^Date/.test(t)) return t.indexOf('DateTime') === 0 ? Math.floor(d.getTime() / 1000) : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 1000;
+    return todayFr();
+  }
+  function runAccess() {
+    var k = ACC_KINDS[acc.kind], chosen = accChosen(), c = cfg(); if (!chosen.length || k.todo) return;
+    var header = ['FA DE RATTACHEMENT', 'NUMÉRO CANDIDATURE', 'NOM', 'PRÉNOM'];
+    var rows = chosen.map(function (r) { return ['SGR DRJ RGIF', accField(r, 'N° candidature'), accField(r, 'NOM').toUpperCase(), accField(r, 'Prénom')]; });
+    var noNum = rows.filter(function (r) { return !r[1]; }).length, name = k.file + todayFr().replace(/\//g, '-') + '.xlsx';
+    var dc = findCol(c.table, k.dateCol), a = acc;
+    a.busy = true; a.msg = null; renderAccess();
+    (window.__writeXlsx ? window.__writeXlsx(name, header, rows, 'Demande') : Promise.reject(new Error('module de génération de tableur indisponible'))).then(function () {
+      openMailto(k.to, k.subject, k.body, k.cc);
+      if (!dc) return [];
+      var failed = [], v = accDateValue(dc), f = {}; f[dc.id] = v;
+      return chosen.reduce(function (p, r) { return p.then(function () { return api.updateFields(c.table, r.raw.id, f).catch(function (e) { failed.push(formatName(r.id) + ' (' + ((e && e.message) || e) + ')'); }); }); }, Promise.resolve())
+        .then(function () { return load(); }).then(function () { // fiches rechargées : la liste de la modale reprend les nouvelles valeurs
+          var byId = {}; state.view.forEach(function (r) { byId[r.raw.id] = r; }); a.items = a.items.map(function (r) { return byId[r.raw.id] || r; }); return failed; });
+    }).then(function (failed) {
+      a.busy = false;
+      a.msg = { type: failed.length ? 'warning' : 'success', text: 'Tableur « ' + name + ' » téléchargé (' + rows.length + ' candidat' + (rows.length > 1 ? 's' : '') + ') : joignez-le au message ouvert dans votre messagerie, puis envoyez-le.' +
+        (failed.length ? ' Date non reportée pour : ' + failed.join(', ') + '.' : '') +
+        (noNum ? ' Attention : ' + noNum + ' candidat' + (noNum > 1 ? 's sans' : ' sans') + ' N° de candidature.' : '') };
+      if (acc === a) renderAccess();
+    }).catch(function (e) { a.busy = false; a.msg = { type: 'error', text: 'Préparation impossible : ' + ((e && e.message) || e) + '.' }; if (acc === a) renderAccess(); });
+  }
+  $('btn-access').addEventListener('click', openAccess);
+  $('accmodal-close').addEventListener('click', closeAccess);
+  $('accmodal').addEventListener('mousedown', function (e) { if (e.target === $('accmodal')) closeAccess(); });
+  $('accmodal').addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); closeAccess(); } });
+  $('accmodal-body').addEventListener('click', function (e) {
+    if (!acc) return;
+    if (e.target.id === 'acc-all') { acc.items.forEach(function (r) { acc.on[r.raw.id] = true; }); renderAccess(); return; }
+    if (e.target.id === 'acc-none') { acc.on = {}; renderAccess(); return; }
+    if (e.target.id === 'acc-submit') { runAccess(); return; }
+    if (e.target.id === 'acc-cancel') { closeAccess(); return; }
+  });
+  $('accmodal-body').addEventListener('change', function (e) {
+    if (!acc) return;
+    if (e.target.name === 'acc-kind') { acc.kind = e.target.value; acc.msg = null; renderAccess(); var r = $('accmodal-body').querySelector('input[name="acc-kind"]:checked'); if (r) r.focus(); return; }
+    var id = e.target.getAttribute('data-acc'); if (!id) return;
+    if (e.target.checked) acc.on[id] = true; else delete acc.on[id];
+    acc.msg = null; renderAccess(); var again = $('accmodal-body').querySelector('[data-acc="' + id + '"]'); if (again) again.focus();
+  });
+
   /* ---------- Export .csv ---------- */
   // Colonnes non proposées à l'export (pièces jointes, données techniques, hors intérêt pour un export candidats).
   var EXPORT_EXCLUDE = [
@@ -5191,7 +5327,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<div class="ed-multi" role="group" aria-label="Colonnes à exporter" style="max-height:16rem">' + e.cols.map(function (col) {
         return '<label class="ed-check"><input type="checkbox" data-exp-col="' + esc(col.id) + '"' + (e.checked[col.id] ? ' checked' : '') + '> ' + esc(displayLabel(col)) + '</label>';
       }).join('') + '</div>' +
-      '<div class="cf-actions"><button type="button" class="btn" id="exp-submit"' + (nChecked ? '' : ' disabled') + '>Exporter</button><button type="button" class="btn secondary" id="exp-cancel">Annuler</button></div>';
+      '<div class="cf-actions"><button type="button" class="btn" id="exp-submit"' + (nChecked ? '' : ' disabled') + '>Exporter les candidats</button><button type="button" class="btn secondary" id="exp-cancel">Annuler</button></div>';
   }
   function runExport() {
     var e = state.exp; if (!e) return;
@@ -5201,7 +5337,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     downloadCsv('candidats_' + (e.selOnly ? 'selection_' : '') + todayFr().replace(/\//g, '-') + '.csv', [header].concat(rows));
     closeExport();
   }
-  $('btn-export').addEventListener('click', openExport);
+  $('btn-export').addEventListener('click', function () { openExport(selItems().length > 0); }); // lignes cochées, à défaut la vue active (recherche et filtres)
   $('expmodal-close').addEventListener('click', closeExport);
   $('expmodal').addEventListener('mousedown', function (e) { if (e.target === $('expmodal')) closeExport(); });
   $('expmodal').addEventListener('keydown', function (e) {
@@ -6459,7 +6595,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   ];
   var TUTO_PAGES = [['', '— Page courante —'], ['welcome', 'Bienvenue'], ['pmg', 'Candidats'], ['pmg-stat', 'Candidats · Statistiques'], ['res', 'Réservistes'], ['res-ren', 'Renouvellements'], ['res-ave', 'Avenants'], ['res-stat', 'Réservistes · Statistiques'], ['rsv-vmp', 'Convocations à la visite médicale périodique (VMP)'], ['rsv-vemi', 'Convocations à la visite d’expertise médicale initiale (VEMI)'], ['rsv-psy', 'Convocations aux tests psychométriques'], ['faq', 'FAQ']];
   var TUTO_TARGETS = [['', 'Aucun (carte centrée)'], ['#btn-tuto', 'Bouton Tutoriel'], ['#header-navigation', 'Menu principal'], ['#btn-create', 'Candidats : Créer une candidature'], ['#rows tr', 'Candidats : première ligne de la liste'],
-    ['#q', 'Candidats : recherche'], ['#btn-bulk', 'Candidats : Mettre à jour en bloc'], ['#btn-export', 'Candidats : Exporter (.csv)'], ['#r-q', 'Réservistes : recherche'], ['#r-rows tr', 'Réservistes : première ligne de la liste'], ['#r-btn-bulk', 'Réservistes : Mettre à jour en bloc'], ['#view-list .legend-btn', 'Candidats : légende des couleurs'], ['#r-view-list .legend-btn', 'Réservistes : légende des couleurs'], ['#r-btn-export', 'Réservistes : Exporter (.csv)'],
+    ['#q', 'Candidats : recherche'], ['#btn-bulk', 'Candidats : Mettre à jour en bloc'], ['#btn-export', 'Candidats : Exporter les candidats'], ['#r-q', 'Réservistes : recherche'], ['#r-rows tr', 'Réservistes : première ligne de la liste'], ['#r-btn-bulk', 'Réservistes : Mettre à jour en bloc'], ['#view-list .legend-btn', 'Candidats : légende des couleurs'], ['#r-view-list .legend-btn', 'Réservistes : légende des couleurs'], ['#r-btn-export', 'Réservistes : Exporter les réservistes'],
     ['#modal .modal-dialog', 'Candidats : fiche du candidat (modale)'], ['#modal-tabs', 'Candidats : onglets de la fiche'], ['#mt-info', 'Candidats : onglet Candidat'], ['#mt-mil', 'Candidats : onglet Renseignements militaires'], ['#mt-medico', 'Candidats : onglet Médico-statutaire'], ['#mt-docs', 'Candidats : onglet Documents'],
     ['#r-modal .modal-dialog', 'Réservistes : fiche du réserviste (modale)'], ['#r-modal-tabs', 'Réservistes : onglets de la fiche'], ['#r-mt-info', 'Réservistes : onglet Réserviste'], ['#r-mt-mil', 'Réservistes : onglet Renseignements militaires'], ['#r-mt-hab', 'Réservistes : onglet Médico-statutaire'], ['#r-mt-qual', 'Réservistes : onglet Qualifications'], ['#r-mt-docs', 'Réservistes : onglet Documents'],
     ['#x-rmodal .modal-dialog', 'Réservations : modale « Réserver »'], ['#x-rmodal [role=tablist]', 'Réservations : onglets de la modale « Réserver »'], ['#x-rmodal [role=tab]:nth-child(1)', 'Réservations : onglet Réserver un créneau'], ['#x-rmodal [role=tab]:nth-child(2)', 'Réservations : onglet Inviter à réserver'],
@@ -9797,7 +9933,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<div class="ed-multi" role="group" aria-label="Colonnes à exporter" style="max-height:16rem">' + e.cols.map(function (col) {
         return '<label class="ed-check"><input type="checkbox" data-exp-col="' + esc(col.id) + '"' + (e.checked[col.id] ? ' checked' : '') + '> ' + esc(displayLabel(col)) + '</label>';
       }).join('') + '</div>' +
-      '<div class="cf-actions"><button type="button" class="btn" id="exp-submit"' + (nChecked ? '' : ' disabled') + '>Exporter</button><button type="button" class="btn secondary" id="exp-cancel">Annuler</button></div>';
+      '<div class="cf-actions"><button type="button" class="btn" id="exp-submit"' + (nChecked ? '' : ' disabled') + '>Exporter les réservistes</button><button type="button" class="btn secondary" id="exp-cancel">Annuler</button></div>';
   }
   function runExport() {
     var e = state.exp; if (!e) return;
@@ -9866,7 +10002,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   $('vmpmodal-close').addEventListener('click', closeVmpRelance);
   $('vmpmodal').addEventListener('mousedown', function (e) { if (e.target === $('vmpmodal')) closeVmpRelance(); });
   $('vmpmodal').addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); closeVmpRelance(); } });
-  $('btn-export').addEventListener('click', openExport);
+  $('btn-export').addEventListener('click', function () { openExport(selItems().length > 0); }); // lignes cochées, à défaut la vue active (recherche et filtres)
   $('expmodal-close').addEventListener('click', closeExport);
   $('expmodal').addEventListener('mousedown', function (e) { if (e.target === $('expmodal')) closeExport(); });
   $('expmodal').addEventListener('keydown', function (e) {
@@ -10442,7 +10578,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         R.busy = false; R.done = msg; render();
         loadData().then(onRequestsChanged); // l'icône de la fiche prend la couleur de l'état de la nouvelle demande ; pages de suivi actualisées
         if (Object.keys(resFields).length || ficheTouched) load(); // fiche du réserviste actualisée
-      }).catch(function (e) { R.busy = false; R.error = 'Envoi impossible : ' + ((e && e.message) || e) + '.'; render(); });
+      }).catch(function (e) { R.busy = false; R.error = 'Envoi impossible : ' + ((e && e.message) || e) + '.' + (e && e.aclBlocked ? ' Colonnes écrites par le widget à la création : ' + Object.keys(fields).map(function (id) { var cc = findCol(R.table, id); return cc ? displayLabel(cc) : id; }).join(', ') + '.' : ''); render(); });
     }
     function addFiles(colId, list) {
       var R = st; if (!R || R.busy || !list || !list.length) return;
@@ -12201,6 +12337,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         '  <p>Le candidat est convoqué à la visite d’expertise médicale initiale (VEMI) le <strong>{{DATE}} {{HEURE}}</strong>, {{ANTENNE}}.</p>') }
     }
   };
+  // Lien de réservation (back office) : présent par défaut dans les invitations à réserver et les annulations (réserver un nouveau créneau).
+  TAB_ORDER.forEach(function (t) {
+    DEFAULT_MAIL[t].reservation.body = DEFAULT_MAIL[t].reservation.body.replace('\n\n' + SIGN, '\n\nPour réserver : {{LIEN_RESERVATION}}\n\n' + SIGN);
+    DEFAULT_MAIL[t].conflit.body = DEFAULT_MAIL[t].conflit.body.replace('\n\n' + SIGN, '\n\nPour réserver un nouveau créneau : {{LIEN_RESERVATION}}\n\n' + SIGN);
+  });
   function pjRow(label, value) { return '    <tr><th style="text-align: left; width: 35%; padding: 6px 10px; background: #f3f3fd; border: 1px solid #ddd;">' + label + '</th><td style="padding: 6px 10px; border: 1px solid #ddd;">' + value + '</td></tr>\n'; }
   function mergeOne(d, s) {
     s = s || {};
@@ -12221,11 +12362,40 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     });
     return out;
   }
-  // Modèles repris tels quels par la page Candidats (blocs Tests psychométriques → psy, VEMI → vemi).
+  // Lien de réservation d'un type (VMP, VEMI, Tests psy), réglé en back office : seule source du lien dans les courriels ({{LIEN_RESERVATION}}).
+  var LINK_VAR_RE = /\{\{\s*LIEN_RESERVATION\s*\}\}/g, URL_RE = /https?:\/\/[^\s<>"'()]+[^\s<>"'().,;:!?]/g;
+  function linkOf(tab) { return String(((xo().links || {})[tab]) || '').trim(); }
+  function withLink(text, tab) { // lien vide : la ligne qui porte la variable est retirée
+    var l = linkOf(tab), t = String(text || '');
+    if (!l) t = t.replace(/^[^\n]*\{\{\s*LIEN_RESERVATION\s*\}\}[^\n]*(\r?\n)?/gm, '').replace(/\n{3,}/g, '\n\n');
+    return t.replace(LINK_VAR_RE, l);
+  }
+  // Liens écrits en dur dans les modèles (avant ce réglage) : repris dans le champ du type, et remplacés par la variable.
+  function migrateLinks(dr) {
+    var moved = [];
+    TAB_ORDER.forEach(function (t) {
+      var tpl = dr.mail[t]; if (!tpl) return;
+      var cur = String(dr.links[t] || '').trim();
+      if (!cur) {
+        var found = null;
+        ['reservation', 'conflit', 'convocation', 'suppression'].some(function (k) { var m = tpl[k] && (String(tpl[k].body || '') + ' ' + String(tpl[k].subject || '')).match(URL_RE); if (m) found = m[0]; return !!m; });
+        if (!found) return;
+        dr.links[t] = cur = found; moved.push(SPECS[t].title);
+      }
+      Object.keys(tpl).forEach(function (k) { ['subject', 'body'].forEach(function (f) { if (typeof tpl[k][f] === 'string' && tpl[k][f].indexOf(cur) !== -1) tpl[k][f] = tpl[k][f].split(cur).join('{{LIEN_RESERVATION}}'); }); });
+    });
+    return moved;
+  }
+  function adminDraft() {
+    var dr = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail), links: JSON.parse(JSON.stringify(xo().links || {})) };
+    dr.moved = migrateLinks(dr); return dr;
+  }
+  // Modèles repris tels quels par la page Candidats (blocs Tests psychométriques → psy, VEMI → vemi), lien de réservation inséré.
   function sharedMail(type, kind) {
     var m = mergeMail(xo().mail);
     if (m.common[kind]) return m.common[kind]; // service, fichePoste, fichePresentation : modèles communs
-    return (m[type] && m[type][kind]) || { subject: '', body: '' };
+    var t = m[type] && m[type][kind];
+    return t ? { subject: withLink(t.subject, type), body: withLink(t.body, type) } : { subject: '', body: '' };
   }
 
   var state = {
@@ -12530,7 +12700,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // extra : variables fournies par l'appelant (ex. {{TYPE}} pour un modèle commun à plusieurs pages), prioritaires sur le contexte.
   function fill(text, tab, row, asHtml, extra) {
     var ctx = ctxOf(tab, row), out = function (v) { return asHtml ? esc(v) : v; };
-    var res = String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
+    var res = withLink(text, tab).replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
       var key = name.toUpperCase().replace(/\s+/g, '_');
       if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return out(extra[key]);
       if (Object.prototype.hasOwnProperty.call(ctx, key)) return out(ctx[key]);
@@ -13001,7 +13171,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     ['vmp', 'vemi', 'psy', 'admin'].forEach(function (t) { $('tab-' + t).setAttribute('aria-selected', String(t === k)); });
     $('view-list').hidden = k === 'admin'; $('view-admin').hidden = k !== 'admin';
     if (k !== 'admin') $('btn-emarge').hidden = k !== 'psy'; // feuille d'émargement : onglet Tests psy uniquement
-    if (k === 'admin') { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); $('saved').hidden = true; }
+    if (k === 'admin') { state.draft = adminDraft(); renderAdminForm(); setDirty(state.draft.moved.length > 0); $('saved').hidden = true; }
     else { state.sort = { col: '', dir: 1 }; state.confirmDelete = null; showMsg('', ''); renderList(); }
   }
   $('tabs').addEventListener('click', function (e) {
@@ -13310,6 +13480,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       return Math.floor((r[ddc.id] || 0) / 86400) === dayKey && (!heure || (hc ? String(r[hc.id] || '').trim() : '') === heure);
     });
   }
+  // N° de candidature : celui de la réservation, à défaut celui de la fiche du candidat (retrouvée par NID).
+  function candNumOf(r) {
+    var own = String(txt('psy', r, 'N° candidature') || '').trim(); if (own) return own;
+    var cand = candidateRow('psy', r); return cand ? candField(cand, 'N° candidature').trim() : '';
+  }
   // Génère et télécharge la feuille d'émargement d'un jour (toutes les heures, ou une seule) ; renvoie le nombre de candidats.
   function makeEmargement(dayKey, heure) {
     var rows = emargementRowsFor(dayKey, heure), dateTxt = fmtDate(dayKey * 86400);
@@ -13325,10 +13500,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       return '<table style="border-collapse: collapse; width: 100%; margin: 8px 0 24px;"><thead><tr>' +
         '<th style="text-align:left; padding: 8px 10px; background: #f3f3fd; border: 1px solid #ddd; width: 40px;">N°</th>' +
         '<th style="text-align:left; padding: 8px 10px; background: #f3f3fd; border: 1px solid #ddd;">Candidat</th>' +
-        '<th style="text-align:left; padding: 8px 10px; background: #f3f3fd; border: 1px solid #ddd; width: 45%;">Signature</th>' +
+        '<th style="text-align:left; padding: 8px 10px; background: #f3f3fd; border: 1px solid #ddd; width: 22%;">N° de candidature</th>' +
+        '<th style="text-align:left; padding: 8px 10px; background: #f3f3fd; border: 1px solid #ddd; width: 38%;">Signature</th>' +
         '</tr></thead><tbody>' + list.map(function (r, i) {
           return '<tr><td style="padding: 10px; border: 1px solid #ddd;">' + (i + 1) + '</td>' +
             '<td style="padding: 10px; border: 1px solid #ddd;">' + esc(txt('psy', r, SPECS.psy.person)) + '</td>' +
+            '<td style="padding: 10px; border: 1px solid #ddd;">' + esc(candNumOf(r)) + '</td>' +
             '<td style="padding: 10px; border: 1px solid #ddd;">&nbsp;</td></tr>';
         }).join('') + '</tbody></table>';
     }
@@ -13669,7 +13846,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function personRowEmail(tab, person) { var src = personSourceFor(tab); return src ? String(personGet(src, person, ['Adresse email', 'Email', 'Mail'])).trim() : ''; }
   // Variables {{…}} résolues sur la fiche de la personne (réserviste ou candidat), pas sur une réservation.
   function fillPerson(text, tab, person) {
-    var src = personSourceFor(tab), today = new Date();
+    var src = personSourceFor(tab), today = new Date(); text = withLink(text, tab);
     function g() { return personGet(src, person, Array.prototype.slice.call(arguments)); }
     var nom = g('NOM').toLocaleUpperCase('fr-FR'), pre = g('Prénom');
     var ctx = { IDENTITE: [nom, pre].filter(Boolean).join(' '), CIVILITE: g('Civilité'), NOM: nom, PRENOM: pre, NID: g('NID'), NIGEND: g('Nigend'), N_CANDIDATURE: g('N° candidature', 'N_Cand'),
@@ -14051,7 +14228,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
           tplBlock('fichePresentation', 'Pièce jointe 2 · Fiche de présentation (cadre VEMI uniquement)', 'Téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VEMI uniquement : l’utilisateur la glisse dans le message avant envoi.') +
         group('Information de suppression d’une réservation (doublon)', 'suppression', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est supprimée.'; }) +
         group('Annulation d’une réservation (conflit de créneau)', 'conflit', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est annulée parce que le créneau a été réservé par plusieurs personnes.'; });
-      $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
+      $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR', 'LIEN_RESERVATION'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
     }
     Array.prototype.forEach.call(host.querySelectorAll('[data-t]'), function (el) {
       var v = dr.mail[el.getAttribute('data-t')][el.getAttribute('data-k')][el.getAttribute('data-f')];
@@ -14060,6 +14237,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var opts = state.tables.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
     var det = detectTables(state.tables), ph = function (k) { return '<option value="">— Détection automatique' + (det[k] ? ' (' + esc(det[k]) + ')' : '') + ' —</option>'; };
     [['vmp', 'f-t-vmp'], ['vemi', 'f-t-vemi'], ['psy', 'f-t-psy'], ['cand', 'f-t-cand'], ['res', 'f-t-res'], ['svmp', 'f-t-svmp'], ['svemi', 'f-t-svemi'], ['spsy', 'f-t-spsy']].forEach(function (p) { var el = $(p[1]); el.innerHTML = ph(p[0]) + opts; el.value = dr.tables[p[0]] || ''; });
+    dr.links = dr.links || {};
+    TAB_ORDER.forEach(function (t) { var el = $('f-link-' + t); if (el && el.value !== (dr.links[t] || '')) el.value = dr.links[t] || ''; });
+    var note = $('links-note'), mv = dr.moved || [];
+    note.hidden = !mv.length; note.textContent = mv.length ? 'Lien repris des modèles de courriels (' + mv.join(', ') + ') et remplacé par {{LIEN_RESERVATION}} : vérifiez-le, puis enregistrez.' : '';
     renderRecap();
   }
   function renderRecap() {
@@ -14096,6 +14277,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     host.addEventListener('input', function (e) {
       var el = e.target, t = el.getAttribute && el.getAttribute('data-t');
       if (t) state.draft.mail[t][el.getAttribute('data-k')][el.getAttribute('data-f')] = el.value;
+      var lk = /^x-f-link-(vmp|vemi|psy)$/.exec(el.id || ''); if (lk) { state.draft.links = state.draft.links || {}; state.draft.links[lk[1]] = el.value.trim(); }
       setDirty(true);
     });
     host.addEventListener('change', function (e) {
@@ -14119,12 +14301,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     f.value = f.value.slice(0, s) + v + f.value.slice(en); f.selectionStart = f.selectionEnd = s + v.length;
     f.dispatchEvent(new Event('input', { bubbles: true })); f.focus();
   });
-  $('btn-reset').addEventListener('click', function () { state.draft = { tables: {}, mail: mergeMail(null) }; renderAdminForm(); setDirty(true); });
-  function cancelAdmin() { state.draft = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail) }; renderAdminForm(); setDirty(false); }
+  $('btn-reset').addEventListener('click', function () { state.draft = { tables: {}, mail: mergeMail(null), links: state.draft.links || {}, moved: [] }; renderAdminForm(); setDirty(true); }); // les liens de réservation sont conservés
+  function cancelAdmin() { state.draft = adminDraft(); renderAdminForm(); setDirty(state.draft.moved.length > 0); }
   function saveAdmin() { // tables et modèles de courriels de cette page (les modèles s'éditent dans la section commune du back office)
     var tables = {}; Object.keys(state.draft.tables).forEach(function (k) { if (state.draft.tables[k]) tables[k] = state.draft.tables[k]; });
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; });
-    o.x = { tables: tables, mail: mergeMail(state.draft.mail) };
+    var links = {}; TAB_ORDER.forEach(function (t) { var l = String((state.draft.links || {})[t] || '').trim(); if (l) links[t] = l; });
+    var bad = TAB_ORDER.filter(function (t) { return links[t] && !/^https?:\/\/\S+$/i.test(links[t]); });
+    if (bad.length) { var n = $('links-note'); n.hidden = false; n.textContent = 'Lien de réservation invalide (' + bad.map(function (t) { return SPECS[t].title; }).join(', ') + ') : il doit commencer par https:// et ne pas contenir d’espace.'; return Promise.reject(new Error('Lien de réservation invalide (' + bad.map(function (t) { return SPECS[t].title; }).join(', ') + ').')); }
+    var dr = { mail: mergeMail(state.draft.mail), links: links }; migrateLinks(dr); // un lien recopié dans un modèle est remplacé par la variable
+    o.x = { tables: tables, mail: dr.mail, links: links };
     return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
   $('btn-cancel').addEventListener('click', cancelAdmin);
@@ -14238,7 +14424,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     sharedMail: sharedMail,                                    // modèles de réservation/convocation par type, repris par la page Candidats
     // Modèles de courriel et de document (éditeur unique du back office).
     templates: function () {
-      var out = [], vars = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'AFFECTATION', 'EMAIL', 'DDN', 'TELEPHONE', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'DATE_DU_JOUR'];
+      var out = [], vars = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'AFFECTATION', 'EMAIL', 'DDN', 'TELEPHONE', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'DATE_DU_JOUR', 'LIEN_RESERVATION'];
       function row(tab) { var d = state.data[tab]; return d && d.rows[0] || null; }
       function none() { return { empty: 'Aucune réservation dans la table : aperçu indisponible.' }; }
       function mail(t, k, group, title, hint) {
@@ -14360,6 +14546,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       }
       function on(vals) { var cur = checked(); return !D.statusDefault && vals.length > 0 && vals.every(function (v) { return cur.indexOf(v) !== -1; }); }
       var out = [];
+      // Affichages rapides : candidats déjà ESR, doublons (mêmes filtres que « Filtre avancé »).
+      [['Déjà ESR', 'esr'], ['Doublons', 'dup']].forEach(function (x) { out.push({ sec: 'Affichages rapides', l: x[0], keep: true, run: function () { P.toggleAdv(x[1], 'oui'); }, on: function () { return P.suggestData().advOn[x[1]].indexOf('oui') !== -1; } }); });
+      [['Accès tests psychométriques à demander', 'psy'], ['Accès EAD à demander', 'ead']].forEach(function (x) { out.push({ sec: 'Accès', l: x[0], keep: true, run: function () { P.toggleAdv('acc', x[1]); }, on: function () { return P.suggestData().advOn.acc.indexOf(x[1]) !== -1; } }); });
       [['Dossiers finalisés', fin], ['Dossiers en cours', cours], ['Dossiers sans suite (rejets, abandons)', sans]].forEach(function (g) { if (g[1].length) out.push({ sec: 'Par état de dossier', l: g[0], keep: true, run: function () { toggle(g[1]); }, on: function () { return on(g[1]); } }); });
       var coursOpen = !D.statusDefault && cours.some(function (v) { return checked().indexOf(v) !== -1; }); // le détail n'apparaît que si « Dossiers en cours » est choisi
       if (coursOpen) cours.forEach(function (v) { out.push({ sec: 'Dossiers en cours : détail des états', l: v, keep: true, run: function () { toggle([v]); }, on: function () { return on([v]); } }); });
@@ -16926,6 +17115,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (/^(xlsx|xlsm|xlsb|xls|ods|fods)$/.test(e)) return Promise.all([loadLib(), readBuf(file)]).then(function (r) { return sheetText(r[1]); });
     if (e && !/^(csv|txt|tsv)$/.test(e)) return Promise.reject(new Error('format .' + e + ' non pris en charge (formats acceptés : .csv, .xlsx, .xls, .ods)'));
     return readBuf(file).then(decode);
+  };
+  // Tableur .xlsx téléchargé : en-tête puis lignes (texte), largeurs de colonnes ajustées. window.__writeXlsx(nom, entete, lignes, feuille) → Promise.
+  window.__writeXlsx = function (name, header, rows, sheet) {
+    return loadLib().then(function () {
+      var X = window.XLSX, ws = X.utils.aoa_to_sheet([header].concat(rows)), wb = X.utils.book_new();
+      ws['!cols'] = header.map(function (h, i) { return { wch: Math.max(String(h).length, rows.reduce(function (m, r) { return Math.max(m, String(r[i] == null ? '' : r[i]).length); }, 0)) + 4 }; });
+      X.utils.book_append_sheet(wb, ws, sheet || 'Feuille1');
+      X.writeFile(wb, name, { bookType: 'xlsx', compression: true });
+    });
   };
   window.__TABLE_ACCEPT = '.csv,.txt,.xlsx,.xlsm,.xlsb,.xls,.ods,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet';
 })();
