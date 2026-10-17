@@ -20414,3 +20414,286 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 </script>
 </body>
 </html>
+filter(function (p) { return /pdf/.test(p.type); });
+          check('Deux fiches PDF jointes', pdfs.length === 2, pdfs.length);
+          check('Fiches PDF légères (< 200 Ko)', pdfs.every(function (p) { return p.data.length < 200000; }), pdfs.map(function (p) { return Math.round(p.data.length / 1024) + ' Ko'; }).join(', '));
+          check('Tableau du rendez-vous joint', e.parts.some(function (p) { return /\.xlsx$/.test(p.name); }));
+          check('Consigne Ctrl + E affichée', /Ctrl \+ E/.test($('x-msg-zone').innerText));
+        });
+      });
+    }],
+    ['VEMI : suivi et saisie du résultat', function () {
+      var b = document.querySelector('#x-rows [data-resedit]'); check('Badge « Résultat attendu » cliquable', b, b && b.innerText); if (!b) return;
+      b.click(); return wait(300).then(function () {
+        var se = document.querySelector('#x-rows [data-res]'); check('Liste des résultats ouverte au clic', se); if (!se) return;
+        se.value = 'Apte'; se.dispatchEvent(new Event('change', { bubbles: true })); return wait(1500);
+      }).then(function () { var bb = document.querySelector('#x-rows [data-resedit]'); check('Badge « Apte » en vert', bb && /APTE/i.test(bb.innerText) && /success/.test(bb.className), bb && bb.innerText); });
+    }],
+    'reload',
+    ['VEMI : confirmation groupée (tableau + zip)', function () {
+      return rsv('vemi').then(function () {
+      var all = $('x-sel-all'); all.checked = true; all.dispatchEvent(new Event('change', { bubbles: true }));
+      $('x-sel-person').click();
+      return until(function () { return cap.length; }, 30000).then(files).then(function (f) {
+        var d = f.filter(function (x) { return /\.eml$/.test(x.name); })[0]; check('Brouillon groupé téléchargé', d); if (!d) return;
+        var e = eml(d.data);
+        check('Un seul tableau joint', e.parts.filter(function (p) { return /\.xlsx$/.test(p.name); }).length === 1);
+        check('Fiches dans un .zip', e.parts.some(function (p) { return /\.zip$/.test(p.name); }));
+        check('Corps détaillé par antenne', / :\r?\n- /.test(e.body || ''));
+        check('Liste « Écrire » par personne', document.querySelector('#x-pmodal-body [data-pconf]'));
+        $('x-pmodal-close').click();
+      });
+      });
+    }],
+    ['VMP : suivi (échéance)', function () {
+      return rsv('vmp').then(function () {
+        var badges = rows('#x-rows .fr-badge').map(function (b) { return b.innerText; }).join(' | ');
+        check('Badges de suivi VMP affichés', /ÉCHÉANCE|CONFIRMÉ|À CONFIRMER|REPROGRAMMÉ/i.test(badges), badges.slice(0, 120));
+      });
+    }],
+    ['Instruction : page masquée et stagiaires de la PMG', function () {
+      var a = document.querySelector('#header-navigation .nav-soon');
+      for (var i = 0; i < 4; i++) a.click();
+      check('4 clics : la page reste masquée', $('page-ins').hidden);
+      a.click();
+      check('5 clics rapides : la page Instruction s’ouvre', !$('page-ins').hidden);
+      window.INS.openAdmin(); window.__showPage('bo');
+      return wait(600).then(function () {
+        window.__showBoTab('instruction'); return wait(300);
+      }).then(function () {
+        var sel = $('ins-f-bopmg'); check('Réglage « PMG suivie » dans le back office', sel && sel.offsetParent !== null && sel.options.length > 1, sel && sel.options.length - 1 + ' PMG');
+        var pm = window.PMG.trainees('PMG 74').length ? 'PMG 74' : sel.options[1].value;
+        sel.value = pm; sel.dispatchEvent(new Event('change', { bubbles: true }));
+        return window.INS.save().then(function () {
+          for (var j = 0; j < 5; j++) a.click(); return wait(500);
+        }).then(function () {
+          var n = $('ins-rows').querySelectorAll('tr').length, exp = window.PMG.trainees(pm).length;
+          check('Stagiaires « Admis PMG » de la ' + pm + ' listés (et saisies manuelles)', exp > 0 && n >= exp && /Saisie manuelle/.test($('ins-rows').textContent), n + ' lignes, ' + exp + ' candidats');
+          check('Page masquée non retenue à la réouverture', localStorage.getItem('widgetPage') !== 'ins');
+          window.INS.tab('cad'); return wait(300);
+        }).then(function () {
+          var n0 = $('ins-crows').querySelectorAll('tr').length;
+          check('Onglet Cadres : cadres de la PMG listés', n0 >= 1 && !/Aucun cadre/.test($('ins-crows').innerText), n0 + ' cadre(s)');
+          $('ins-cadd').click(); return wait(400).then(function () {
+            var q = $('ins-f-q'); q.value = 'perr'; q.dispatchEvent(new Event('input', { bubbles: true })); return wait(200);
+          }).then(function () {
+            var pk = document.querySelector('#ins-cmodal-body [data-pick]'); check('Recherche d’un réserviste dans la table des réservistes', pk); if (!pk) return;
+            pk.click(); return wait(200).then(function () {
+              check('Fiche préremplie depuis la table des réservistes', $('ins-f-nom').value && $('ins-f-pmg').value === pm, $('ins-f-nom').value + ' · ' + $('ins-f-pmg').value);
+              $('ins-f-email').value = $('ins-f-email').value || 'cadre.test@gendarmerie.interieur.gouv.fr'; $('ins-f-fonction').value = 'Instructeur';
+              document.querySelector('#ins-cmodal-body [data-fact="save"]').click(); return wait(500);
+            }).then(function () { check('Cadre réserviste RGIF ajouté avec sa PMG', $('ins-crows').querySelectorAll('tr').length === n0 + 1 && /Réserviste RGIF/.test($('ins-crows').textContent), $('ins-crows').querySelectorAll('tr').length + ' cadres'); })
+            .then(function () { $('ins-cadd').click(); return wait(300); }).then(function () {
+              var man = document.querySelector('#ins-cmodal-body input[name="ins-kind"][value="man"]'); man.checked = true; man.dispatchEvent(new Event('change', { bubbles: true })); return wait(200);
+            }).then(function () {
+              var st = $('ins-f-statut'); check('Saisie manuelle : statut Active ou Réserviste hors RGIF', st && st.options.length === 2, st && [].map.call(st.options, function (o) { return o.value; }).join(' / '));
+              st.value = 'Réserviste hors RGIF'; $('ins-f-nom').value = 'Test'; $('ins-f-prenom').value = 'Hors'; $('ins-f-email').value = 'hors.rgif@example.fr';
+              document.querySelector('#ins-cmodal-body [data-fact="save"]').click(); return wait(500);
+            }).then(function () { check('Cadre réserviste hors RGIF ajouté', /Réserviste hors RGIF/.test($('ins-crows').textContent)); });
+          });
+        });
+      });
+    }],
+    ['Instruction : ajout manuel d’un stagiaire', function () {
+      window.__showPage('ins'); window.INS.tab('stg');
+      return wait(1000).then(function () {
+        var n0 = $('ins-rows').querySelectorAll('tr[data-stg]').length; $('ins-sadd').click();
+        return wait(300).then(function () {
+          $('ins-t-NOM').value = 'Essai'; $('ins-t-Prenom').value = 'Manuel';
+          document.querySelector('#ins-tmodal-body [data-tact="save"]').click(); return wait(200);
+        }).then(function () {
+          check('Identifiant obligatoire pour un stagiaire manuel', /au moins un identifiant/.test($('ins-tmodal-body').textContent));
+          $('ins-t-Nigend').value = '2025-9999'; $('ins-t-Profession').value = 'Menuisier';
+          document.querySelector('#ins-tmodal-body [data-tact="save"]').click(); return wait(600);
+        }).then(function () {
+          var tr = [].filter.call($('ins-rows').querySelectorAll('tr[data-stg]'), function (x) { return /ESSAI/.test(x.textContent); })[0];
+          check('Stagiaire manuel ajouté à la liste', tr && $('ins-rows').querySelectorAll('tr[data-stg]').length === n0 + 1); if (!tr) return;
+          tr.click(); return wait(300).then(function () {
+            check('Fiche du stagiaire manuel (profession)', /Menuisier/.test($('ins-smodal-body').textContent));
+            $('ins-sdel').click(); $('ins-sdel').click(); return wait(500);
+          }).then(function () { check('Stagiaire manuel supprimé', !/ESSAI/.test($('ins-rows').textContent)); });
+        });
+      });
+    }],
+    ['Modèles HTML : styles <style> et bloc marque en 1re page', function () {
+      var html = window.SERVIR_UTIL.sanitizeHtml('<html><head><title>T</title><style>body{font-size:11pt} p.titre{color:red;font-weight:bold} #x{color:blue} @media screen{p{color:green}}</style></head><body><p class="titre">Titre</p><p class="titre" id="x">Bleu</p><p class="titre" style="color:black">Noir</p></body></html>');
+      var d = document.createElement('div'); d.innerHTML = html; var ps = d.querySelectorAll('p');
+      check('Règles <style> converties en styles en ligne', ps[0] && /color: red/.test(ps[0].getAttribute('style')) && /bold/.test(ps[0].getAttribute('style')), ps[0] && ps[0].getAttribute('style'));
+      check('Spécificité et style en ligne respectés ; body appliqué au document ; @media screen ignoré', /color: blue/.test(ps[1].getAttribute('style')) && /color:\s*black\s*;?$/.test(ps[2].getAttribute('style')) && /11pt/.test(d.firstElementChild.getAttribute('style') || '') && !/green/.test(html) && !/>T</.test(html), html.slice(0, 160));
+      var A = window.__applyBloc; check('Réglage du bloc marque disponible', typeof A === 'function'); if (!A) return;
+      var a = A('test:doc', '<p>Sans en-tête</p>'), b = A('test:doc', '<div><!--bloc-marque-->x<!--/bloc-marque--></div><p>Corps</p>');
+      check('Coché par défaut : bloc ajouté en tête, ou gardé à la place du repère', a.indexOf('<!--bloc-marque-->') !== -1 && a.indexOf('<!--bloc-marque-->') < a.indexOf('Sans') && (b.match(/<!--bloc-marque-->/g) || []).length === 1);
+      window.RSV.blocs.set('test:doc', false);
+      check('Décoché : bloc retiré (brouillon du back office)', A('test:doc', b, true).indexOf('bloc-marque') === -1);
+      window.RSV.blocs.set('test:doc', true);
+      var cb = document.getElementById('bo-tpl-doc-bloc'); check('Case « Bloc marque en haut de la première page » dans l’éditeur des documents', !!cb);
+      return window.__withBloc(a).then(function (h) { check('Bloc remplacé par l’en-tête du ministère (comme l’émargement)', /<img alt="Ministère de l’Intérieur – Gendarmerie nationale"/.test(h) || !/<!--bloc-marque-->/.test(h)); });
+    }],
+    ['Instruction : import d’un fichier de stagiaires et de cadres', function () {
+      window.__showPage('ins'); window.INS.tab('stg');
+      return wait(1000).then(function () {
+        var n0 = $('ins-rows').querySelectorAll('tr[data-stg]').length;
+        window.INS.importText('stg', 'test.csv', 'Nom;Prénom;Date de naissance;N° candidature;Courriel;Peloton;Colonne inconnue\nImport;Alpha;03/05/2005;IMP001;A@X.FR;P1;zz\nImport;Beta;;IMP002;;P2;zz\nSansId;Gamma;;;;;\nImport;Alpha bis;;IMP001;;;');
+        return wait(200).then(function () {
+          var sel = function (i) { return $('ins-imap-' + i).value; };
+          check('Colonnes reconnues (nom, prénom, DDN, N° candidature, courriel, peloton)', sel(0) === 'NOM' && sel(1) === 'Prenom' && sel(2) === 'DDN' && sel(3) === 'N_candidature' && sel(4) === 'Email' && sel(5) === 'PON' && sel(6) === '', [0, 1, 2, 3, 4, 5, 6].map(sel).join(','));
+          var t = $('ins-imodal-body').textContent;
+          check('Aperçu : 2 à importer, 1 erreur, 1 doublon', /2 stagiaires à importer/.test(t) && /1 ligne en erreur/.test(t) && /en double dans le fichier/.test(t), t.slice(0, 200));
+          document.querySelector('#ins-imodal-body [data-iact="go"]').click(); return wait(900);
+        }).then(function () {
+          check('Import des stagiaires réalisé', /2 stagiaires importés/.test($('ins-imodal-body').textContent) && $('ins-rows').querySelectorAll('tr[data-stg]').length === n0 + 2);
+          document.querySelector('#ins-imodal-body [data-iact="close"]').click(); return wait(300);
+        }).then(function () {
+          window.INS.tab('cad'); var c0 = $('ins-crows').querySelectorAll('tr').length;
+          window.INS.importText('cad', 'cadres.xlsx', 'Grade,Nom,Prénom,Mail,Fonction\nADJ,Import,Cadre,import.cadre@example.fr,Chef de section\n,SansPrenom,,,');
+          return wait(300).then(function () {
+            var t = $('ins-imodal-body').textContent;
+            check('Cadres : séparateur virgule et colonne Mail reconnus', $('ins-imap-3').value === 'email' && /1 cadre à importer/.test(t), t.slice(0, 160));
+            document.querySelector('#ins-imodal-body [data-iact="go"]').click(); return wait(900);
+          }).then(function () {
+            check('Cadre importé (statut Active par défaut)', $('ins-crows').querySelectorAll('tr').length === c0 + 1 && /IMPORT/.test($('ins-crows').textContent));
+            document.querySelector('#ins-imodal-body [data-iact="close"]').click(); return wait(300);
+          });
+        });
+      });
+    }],
+    ['Instruction : fiche du stagiaire (informations, notation, départ)', function () {
+      window.__showPage('ins'); window.INS.tab('stg');
+      return wait(1200).then(function () {
+        var tr = $('ins-rows').querySelector('tr[data-stg^="c"]'); check('Ligne de stagiaire cliquable', tr); if (!tr) return;
+        var rid = Number(tr.getAttribute('data-stg')); tr.click();
+        return wait(300).then(function () {
+          check('Fiche ouverte (onglet Informations)', !$('ins-smodal').hidden && /Identité/.test($('ins-smodal-body').textContent), $('ins-smodal-title').innerText);
+          var g = document.querySelector('#ins-smodal-body [data-ins-ed="grade"]'); check('Grade modifiable au clic', g); if (!g) return;
+          g.click(); return wait(200).then(function () {
+            var inp = document.querySelector('#ins-smodal-body [data-ins-edv]'); inp.value = 'BRI'; document.querySelector('#ins-smodal-body [data-ins-eds]').click(); return wait(900);
+          }).then(function () { check('Grade enregistré dans la table des candidats', /BRI/.test(document.querySelector('#ins-smodal-body [data-ins-ed="grade"]').innerText)); });
+        }).then(function () {
+          document.querySelector('[data-ins-ftab="notation"]').click(); return wait(300);
+        }).then(function () {
+          var body = $('ins-smodal-body').innerText;
+          check('Notation : moyenne et classement', /Moyenne générale/.test(body) && /Classement dans la PMG/.test(body));
+          var r = document.querySelector('#ins-smodal-body [data-appr="1"]'); check('Curseurs d’appréciation par matière', r); if (!r) return;
+          r.value = '0'; r.dispatchEvent(new Event('change', { bubbles: true })); return wait(300).then(function () {
+            var ta = $('ins-apprc-1'); check('« Insuffisant » : précisions demandées avant enregistrement', ta && /précisions obligatoires/i.test($('ins-appr-st-1').innerText)); if (!ta) return;
+            ta.value = 'Manque de rigueur'; ta.dispatchEvent(new Event('change', { bubbles: true })); return wait(500);
+          }).then(function () { check('Appréciation enregistrée avec ses précisions', /Insuffisant/.test(document.querySelector('#ins-smodal-body [data-dom="1"] .ins-appr-val').innerText) && !/obligatoires/.test($('ins-appr-st-1').innerText)); });
+        }).then(function () {
+          $('ins-sdep').click(); return wait(400);
+        }).then(function () {
+          document.querySelector('#ins-dmodal-body [data-dact="save"]').click(); return wait(200);
+        }).then(function () {
+          check('Départ : date obligatoire', /date de départ est obligatoire/.test($('ins-dmodal-body').innerText));
+          var d = document.querySelector('#ins-dmodal-body input[type=date]'); d.value = '2026-10-15';
+          var m = document.querySelector('#ins-dmodal-body select'); if (m && m.options.length > 1) m.value = m.options[1].value;
+          document.querySelector('#ins-dmodal-body [data-dact="save"]').click(); return wait(800);
+        }).then(function () {
+          check('Départ enregistré : signalé dans la fiche', $('ins-sdep').classList.contains('is-set') && /Parti le 15\/10\/2026/.test($('ins-smodal-title').textContent));
+          $('ins-smodal-close').click(); return wait(400);
+        }).then(function () { check('Stagiaire parti signalé dans la liste', /Parti le 15\/10\/2026/.test($('ins-rows').textContent)); });
+      });
+    }],
+    ['Back office : réglages et modèles de courriels', function () {
+      window.RSV.openAdmin(); window.__showPage('bo');
+      return wait(900).then(function () {
+        window.__showBoTab && window.__showBoTab('reglages'); return wait(400);
+      }).then(function () {
+        var sec = $('x-params'); check('Bloc « Rendez-vous : délais et horaires » visible (Réglages avancés)', sec && sec.offsetParent !== null);
+        check('Délai de retard prérempli (7)', $('x-p-lateDays') && $('x-p-lateDays').value === '7', $('x-p-lateDays') && $('x-p-lateDays').value);
+        check('Heures des tests psy préremplies', $('x-p-psyHeures') && /10:00/.test($('x-p-psyHeures').value));
+        window.INS.openAdmin(); window.__showBoTab('instruction'); return wait(500).then(function () {
+          var b = $('ins-bo-cols'); check('Bouton d’ajout des colonnes manquantes', b); if (!b) return;
+          b.click(); return wait(100).then(function () { $('ins-bo-cols-ok').click(); return wait(800); }).then(function () { check('Colonnes de la fiche ajoutées à la table des candidats', !$('ins-bo-cols') && /toutes présentes/.test($('ins-bo-schema').textContent)); });
+        });
+      }).then(function () {
+        window.__showBoTab && window.__showBoTab('courriels'); return wait(400);
+      }).then(function () {
+        var items = rows('#bo-tpl-mail-items [data-tid]').map(function (b) { return b.getAttribute('data-tid'); });
+        check('Tous les modèles de courriels dans l’éditeur', ['rsv:x:bpro', 'rsv:x:bio', 'rsv:x:group', 'rsv:x:relance', 'jdc:dispo', 'pos:appel', 'rsv:vemi:convocation'].every(function (id) { return items.indexOf(id) !== -1; }), items.length + ' modèles');
+        var b = document.querySelector('#bo-tpl-mail-items [data-tid="rsv:x:bpro"]'); b.click();
+        check('BPRO : destinataire et copie réglables', $('bo-tpl-mail-to').value && !$('bo-tpl-mail-ccf').hidden, $('bo-tpl-mail-to').value);
+        document.querySelector('#bo-tpl-mail-items [data-tid="rsv:psy:convocation"]').click();
+        check('Champ « Destinataires (optionnel) » sur les autres modèles', $('bo-tpl-mail-to').value === '' && /optionnel/.test($('bo-tpl-mail-tolab').textContent));
+        window.RSV.cancelAdmin && window.RSV.cancelAdmin();
+      });
+    }]
+  ];
+
+  function report() {
+    var ok = results.filter(function (r) { return r.ok; }).length, el = document.createElement('div');
+    el.id = 'servir-tests';
+    el.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:100000;max-width:440px;max-height:70vh;overflow:auto;background:#fff;color:#161616;border:2px solid ' + (ok === results.length ? '#18753c' : '#ce0500') + ';padding:12px 14px;font:13px/1.45 Marianne,Arial,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+    el.innerHTML = '<strong>Tests SERVIR : ' + ok + ' / ' + results.length + ' réussis</strong><ul style="margin:8px 0 0;padding-left:18px">' + results.map(function (r) {
+      return '<li style="color:' + (r.ok ? '#18753c' : '#ce0500') + '">' + (r.ok ? '✓ ' : '✗ ') + SERVIR_UTIL.sanitizeHtml(r.name.replace(/</g, '&lt;')) + (r.detail !== '' ? ' <span style="color:#666">(' + String(r.detail).replace(/</g, '&lt;') + ')</span>' : '') + '</li>';
+    }).join('') + '</ul>';
+    document.body.appendChild(el);
+    window.SERVIR_TEST_RESULTS = results;
+  }
+  // Exécution par phases : 'reload' recharge la page (données de démo remises à zéro) et reprend à la phase suivante.
+  var KEY = 'servir-tests', saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
+  var start = saved ? saved.next : 0; if (saved) results = saved.results;
+  window.addEventListener('load', function () {
+    wait(2500).then(function () {
+      var i = start;
+      return (function step() {
+        if (i >= S.length) return Promise.resolve(true);
+        var sc = S[i++];
+        if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
+        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
+        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
+      })();
+    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
+  });
+})();
+</script>
+</body>
+</html>
+tart;
+      return (function step() {
+        if (i >= S.length) return Promise.resolve(true);
+        var sc = S[i++];
+        if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
+        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
+        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
+      })();
+    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
+  });
+})();
+</script>
+</body>
+</html>
+e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
+  });
+})();
+</script>
+</body>
+</html>
+n; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
+  });
+})();
+</script>
+</body>
+</html>
+olve(true);
+        var sc = S[i++];
+        if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
+        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
+        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
+      })();
+    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
+  });
+})();
+</script>
+</body>
+</html>
+mise.resolve(false); }
+        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
+        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
+      })();
+    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
+  });
+})();
+</script>
+</body>
+</html>
