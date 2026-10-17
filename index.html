@@ -100,7 +100,7 @@
   window.__withBloc = function (html) {
     var re = /<!--bloc-marque-->[\s\S]*?<!--\/bloc-marque-->/;
     if (!re.test(html)) return Promise.resolve(html);
-    return window.__docHeader(698).then(function (h) { return h ? html.replace(re, function () { return h.html; }) : html; });
+    return window.__docHeader(698).then(function (h) { return html.replace(re, function () { return h ? h.html : window.__BLOC_IMG.replace(re, function (m) { return m.replace(/^<!--bloc-marque-->|<!--\/bloc-marque-->$/g, ''); }); }); });
   };
   window.__DOC_LOGO = { src: LOGO, w: 130, h: Math.round(130 * LH / LW) };
   // Conversion HTML → PDF A4, commune à toutes les pages : le modèle (déjà nettoyé par l'appelant) est rendu hors écran puis paginé par
@@ -116,11 +116,21 @@
       var wrap = document.createElement('div'), holder = document.createElement('div');
       wrap.setAttribute('aria-hidden', 'true');
       wrap.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;z-index:-1;pointer-events:none;';
-      holder.style.cssText = 'position:absolute;left:0;top:0;width:' + widthPx + 'px;background:#fff;color:#161616;';
+      // Le document est rendu dans la page : la feuille de style de SERVIR (tableaux, paragraphes, titres du DSFR) ne doit pas s'y appliquer.
+      // Les propriétés de mise en forme reviennent aux valeurs par défaut du navigateur (« revert ») ; seuls comptent les styles du modèle (en ligne).
+      if (!document.getElementById('pdf-holder-reset')) { var rs = document.createElement('style'); rs.id = 'pdf-holder-reset'; rs.textContent = '.pdf-holder * { margin: revert; padding: revert; border: revert; border-collapse: revert; border-spacing: revert; font-size: revert; font-weight: revert; font-family: revert; line-height: revert; color: revert; background: revert; text-align: revert; vertical-align: revert; text-decoration: revert; list-style: revert; position: revert; top: revert; z-index: revert; box-shadow: revert; letter-spacing: revert; text-transform: revert; } .pdf-holder table { width: revert; } .pdf-holder a::after, .pdf-holder a::before { content: none; }'; document.head.appendChild(rs); }
+      holder.className = 'pdf-holder';
+      holder.style.cssText = 'position:absolute;left:0;top:0;width:' + widthPx + 'px;background:#fff;color:#161616;font-family:Marianne,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;text-align:left;';
       holder.innerHTML = html;
       wrap.appendChild(holder); document.body.appendChild(wrap);
-      var brk = opts.breakBefore && holder.querySelector('[data-pdf-break]');
-      if (brk) { var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72, top = brk.getBoundingClientRect().top - holder.getBoundingClientRect().top, rest = top % pageH; if (rest > 1) brk.style.marginTop = Math.ceil(pageH - rest) + 'px'; }
+      // Pagination : un élément [data-pdf-break] commence une nouvelle page ; un bloc [data-pdf-keep] (cadre) qui serait coupé passe à la page suivante.
+      var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72;
+      Array.prototype.forEach.call(holder.querySelectorAll('[data-pdf-break], [data-pdf-keep]'), function (el) {
+        var hr = holder.getBoundingClientRect(), r = el.getBoundingClientRect(), top = r.top - hr.top, rest = top % pageH, push = 0;
+        if (el.hasAttribute('data-pdf-break')) { if (rest > 1) push = pageH - rest; }
+        else if (r.height < pageH * 0.9 && Math.floor(top / pageH) !== Math.floor((r.bottom - hr.top - 1) / pageH)) push = pageH - rest;
+        if (push > 0) el.style.marginTop = (parseFloat(getComputedStyle(el).marginTop) || 0) + Math.ceil(push) + 'px';
+      });
       var finished = false, timer = setTimeout(function () { end(new Error('délai dépassé')); }, 40000);
       function end(err, ab) {
         if (finished) return; finished = true; clearTimeout(timer);
@@ -141,7 +151,9 @@
     if (!(document.fonts && document.fonts.load)) return Promise.resolve();
     return Promise.all(['400 14px Marianne', '700 14px Marianne', 'italic 400 14px Marianne'].map(function (f) { return document.fonts.load(f).catch(function () {}); })).then(function () {});
   };
-  window.__BLOC_FALLBACK = '<!--bloc-marque--><div style="display:flex;justify-content:space-between;align-items:flex-start;"><img alt="Ministère de l’Intérieur" src="' + LOGO + '" width="130" height="' + Math.round(130 * LH / LW) + '" style="display:block"><div style="font-weight:bold;font-size:12pt;">Gendarmerie nationale</div></div><!--/bloc-marque-->';
+  // Repère du bloc marque dans les modèles (texte court, lisible dans l'éditeur) ; __BLOC_IMG : même bloc avec le logo, pour les aperçus.
+  window.__BLOC_IMG = '<!--bloc-marque--><div style="display:flex;justify-content:space-between;align-items:flex-start;"><img alt="Ministère de l’Intérieur" src="' + LOGO + '" width="130" height="' + Math.round(130 * LH / LW) + '" style="display:block"><div style="font-weight:bold;font-size:12pt;">Gendarmerie nationale</div></div><!--/bloc-marque-->';
+  window.__BLOC_FALLBACK = '<!--bloc-marque--><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="font-weight:bold;text-transform:uppercase;line-height:1.1;">Ministère<br>de l’intérieur</div><div style="font-weight:bold;font-size:12pt;">Gendarmerie nationale</div></div><!--/bloc-marque-->';
 })();
 </script>
 <script>
@@ -153,32 +165,87 @@ window.SERVIR_UTIL = (function () {
   function typeBase(t) { return String(t || '').split(':')[0]; }
   function validEmail(s) { return /^[^\s@]+@[^\s@]+$/.test(s); }
   // Feuilles de style d'un modèle (<style> d'un document collé depuis Word ou un éditeur HTML) : chaque règle est recopiée en style en ligne
-  // sur les éléments qu'elle cible (ordre de spécificité, le style en ligne existant l'emporte) ; html / body s'appliquent au document entier.
+  // sur les éléments qu'elle cible (ordre de spécificité, le style en ligne existant l'emporte) ; html / body / :root s'appliquent au document entier.
+  // Seules les règles valables à l'impression sont gardées (@media print ou sans condition : ni mode sombre, ni largeur d'écran) ;
+  // les variables var(--x) sont remplacées par leur valeur ; ::before / ::after avec un texte (content) deviennent du texte réel.
   function inlineStyles(root) {
     var css = Array.prototype.map.call(root.querySelectorAll('style'), function (n) { return n.textContent; }).join('\n'), rules;
     if (!css.trim()) return '';
     try { var sh = new CSSStyleSheet(); sh.replaceSync(css); rules = sh.cssRules; } catch (e) { return ''; }
-    var acc = [], els = [], n = 0, top = [];
+    var acc = [], els = [], n = 0, top = [], vars = {}, pseudo = [];
     function spec(sel) { var t = sel.replace(/::?[\w-]+(\([^)]*\))?/g, function (m) { return m.charAt(1) === ':' ? '' : ' .x'; }); return (t.match(/#[\w-]+/g) || []).length * 100 + (t.match(/\.[\w-]+|\[[^\]]*\]/g) || []).length * 10 + (t.replace(/#[\w-]+|\.[\w-]+|\[[^\]]*\]/g, ' ').match(/(^|[\s>+~])[a-z][\w-]*/gi) || []).length; }
+    function printable(m) { m = String(m || '').trim().toLowerCase(); return !m || m === 'all' || m === 'print' || /^(only\s+)?print\b/.test(m) || /^all\s*$/.test(m); }
+    function collectVars(list) { // variables CSS déclarées sur :root / html / body
+      Array.prototype.forEach.call(list, function (r) {
+        if (r.type === 4) { if (printable(r.media.mediaText)) collectVars(r.cssRules); return; }
+        if (r.type !== 1 || !/(^|,)\s*(:root|html|body)\s*(,|$)/i.test(r.selectorText)) return;
+        for (var k = 0; k < r.style.length; k++) { var nm = r.style[k]; if (nm.indexOf('--') === 0) vars[nm] = r.style.getPropertyValue(nm).trim(); }
+      });
+    }
+    function resolve(t) { for (var g = 0; g < 5 && /var\(/.test(t); g++) t = t.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*(?:\([^()]*\))?[^()]*))?\)/g, function (m, v, fb) { return vars[v] != null ? vars[v] : (fb != null ? fb.trim() : 'initial'); }); return t; }
+    function clean(st) { // déclarations d'une règle, variables résolues et propriétés personnalisées retirées
+      var out = []; for (var k = 0; k < st.length; k++) { var nm = st[k]; if (nm.indexOf('--') === 0 || nm === 'content') continue; out.push(nm + ': ' + resolve(st.getPropertyValue(nm)) + (st.getPropertyPriority(nm) ? ' !important' : '') + ';'); }
+      return out.join(' ');
+    }
     function walk(list) {
       Array.prototype.forEach.call(list, function (r) {
-        if (r.type === 4) { if (!/screen\b/i.test(r.media.mediaText) || /print|all/i.test(r.media.mediaText)) walk(r.cssRules); return; } // @media print / all
-        if (r.type !== 1 || !r.style.cssText) return;
+        if (r.type === 4) { if (printable(r.media.mediaText)) walk(r.cssRules); return; } // @media : impression uniquement
+        if (r.type !== 1) return;
+        var txt = clean(r.style), content = r.style.getPropertyValue('content');
         r.selectorText.split(',').forEach(function (sel) {
-          sel = sel.trim(); if (!sel) return; var o = n++;
-          if (/^(html|body|:root)$/i.test(sel)) { top.push(r.style.cssText); return; }
+          sel = sel.trim(); if (!sel) return; var o = n++, pm = /::?(before|after)\s*$/i.exec(sel);
+          if (pm) { // pseudo-élément : texte inséré (content: "…")
+            var lit = /^\s*(["'])([\s\S]*)\1\s*$/.exec(content || ''); if (!lit) return;
+            var base = sel.slice(0, pm.index).trim() || '*', f0; try { f0 = root.querySelectorAll(base); } catch (e) { return; }
+            Array.prototype.forEach.call(f0, function (el) { pseudo.push({ el: el, pos: pm[1].toLowerCase(), text: lit[2].replace(/\\([0-9a-f]{1,6})\s?/gi, function (m, h) { return String.fromCodePoint(parseInt(h, 16)); }).replace(/\\(.)/g, '$1'), style: txt, s: spec(sel), o: o }); });
+            return;
+          }
+          if (!txt) return;
+          if (/^(html|body|:root)$/i.test(sel)) { top.push(txt); return; }
           var found; try { found = root.querySelectorAll(sel); } catch (e) { return; }
-          Array.prototype.forEach.call(found, function (el) { var i = els.indexOf(el); if (i === -1) { i = els.push(el) - 1; acc[i] = []; } acc[i].push({ s: spec(sel), o: o, t: r.style.cssText }); });
+          Array.prototype.forEach.call(found, function (el) { var i = els.indexOf(el); if (i === -1) { i = els.push(el) - 1; acc[i] = []; } acc[i].push({ s: spec(sel), o: o, t: txt }); });
         });
       });
     }
-    walk(rules);
-    els.forEach(function (el, i) { var l = acc[i].sort(function (a, b) { return a.s - b.s || a.o - b.o; }).map(function (x) { return x.t; }).join(' '); el.setAttribute('style', l + (el.getAttribute('style') ? ' ' + el.getAttribute('style') : '')); });
-    return top.join(' ');
+    collectVars(rules); walk(rules);
+    els.forEach(function (el, i) { var l = acc[i].sort(function (a, b) { return a.s - b.s || a.o - b.o; }).map(function (x) { return x.t; }).join(' '); var own = el.getAttribute('style'); el.setAttribute('style', l + (own ? ' ' + resolve(own) : '')); });
+    var last = {}; pseudo.sort(function (a, b) { return a.s - b.s || a.o - b.o; }).forEach(function (x) { var k = els.indexOf(x.el) + ':' + x.pos + ':' + (x.el.__pid || (x.el.__pid = Math.random())); last[k] = x; });
+    Object.keys(last).forEach(function (k) { var x = last[k], sp = x.el.ownerDocument.createElement('span'); sp.textContent = x.text; if (x.style) sp.setAttribute('style', x.style); if (x.pos === 'before') x.el.insertBefore(sp, x.el.firstChild); else x.el.appendChild(sp); });
+    return resolve(top.join(' ')).replace(/--[\w-]+\s*:[^;]*;?/g, '');
+  }
+  // Mise en page compatible avec le convertisseur PDF (html2canvas ne gère ni la grille CSS ni les pages A4 dessinées en HTML) :
+  // grille → tableau ; « feuille A4 » (largeur ≥ 190 mm) → bloc pleine largeur, sans marge ni hauteur imposée (les marges du PDF s'appliquent) ;
+  // sauts de page (break-before / break-after : page) et blocs à ne pas couper (break-inside: avoid, cadres bordés) repérés pour la pagination.
+  function pdfLayout(root) {
+    var doc = root.ownerDocument;
+    // Les tableaux et leurs cellules héritent explicitement de la police du modèle (sinon la feuille de style de la page s'applique).
+    // Idem pour les cellules : la feuille de style de la page (rendu du PDF dans la page) ne doit pas leur imposer sa propre taille.
+    Array.prototype.forEach.call(root.querySelectorAll('table, th, td, caption'), function (t) { ['fontSize', 'lineHeight', 'fontFamily', 'color', 'letterSpacing'].forEach(function (k) { if (!t.style[k]) t.style[k] = 'inherit'; }); });
+    function mm(v) { var m = /^([\d.]+)(mm|cm|px|pt|in)$/.exec(String(v || '').trim()); if (!m) return 0; var x = +m[1]; return m[2] === 'mm' ? x : m[2] === 'cm' ? x * 10 : m[2] === 'in' ? x * 25.4 : m[2] === 'pt' ? x * 25.4 / 72 : x * 25.4 / 96; }
+    Array.prototype.forEach.call(root.querySelectorAll('[style]'), function (el) {
+      var st = el.style;
+      if (mm(st.width) >= 190 || mm(st.minWidth) >= 190) { // feuille A4 dessinée en HTML
+        ['width', 'min-width', 'min-height', 'height', 'padding', 'margin', 'box-shadow', 'background', 'background-color'].forEach(function (k) { st.removeProperty(k); });
+        Array.prototype.forEach.call(el.querySelectorAll('[style]'), function (c) { if (c.style.position === 'absolute' || c.style.position === 'fixed') { c.style.position = 'static'; ['top', 'bottom', 'left', 'right'].forEach(function (k) { c.style.removeProperty(k); }); c.style.marginTop = '4mm'; } });
+      }
+      if (st.boxShadow) st.removeProperty('box-shadow');
+      if (/^(page|always|left|right)$/.test(st.breakBefore || st.pageBreakBefore || '')) el.setAttribute('data-pdf-break', '');
+      if (/^(page|always|left|right)$/.test(st.breakAfter || st.pageBreakAfter || '')) { var nx = el.nextElementSibling; if (nx) nx.setAttribute('data-pdf-break', ''); }
+      if (/avoid/.test(st.breakInside || st.pageBreakInside || '') || (/^(DIV|TABLE|SECTION|ASIDE|FIGURE|BLOCKQUOTE)$/.test(el.tagName) && st.borderTopStyle && st.borderTopStyle !== 'none' && st.borderBottomStyle && st.borderBottomStyle !== 'none')) el.setAttribute('data-pdf-keep', '');
+      if (st.display === 'grid' || st.display === 'inline-grid') { // grille → tableau (colonnes de grid-template-columns)
+        var cols = String(st.gridTemplateColumns || '').replace(/repeat\(\s*(\d+)\s*,\s*([^)]+)\)/g, function (m, k, v) { return Array(+k + 1).join(v.trim() + ' '); }).trim().split(/\s+(?![^(]*\))/).filter(Boolean);
+        var nc = Math.max(1, cols.length), kids = Array.prototype.slice.call(el.children), gap = st.columnGap || (String(st.gap || '').split(/\s+/)[1] || st.gap) || '';
+        var tb = doc.createElement('table'); tb.setAttribute('style', 'width:100%;border-collapse:collapse;font-size:inherit;line-height:inherit;'); var tr = null;
+        kids.forEach(function (k, i) { if (i % nc === 0) { tr = doc.createElement('tr'); tb.appendChild(tr); } var td = doc.createElement('td'); td.setAttribute('style', 'vertical-align:top;padding:0;' + (i % nc && gap && gap !== '0' && gap !== '0px' ? 'padding-left:' + gap + ';' : '') + (/fr$/.test(cols[i % nc] || '') ? 'width:' + Math.round(100 / nc) + '%;' : '')); td.appendChild(k); tr.appendChild(td); });
+        ['display', 'grid-template-columns', 'gap', 'column-gap', 'row-gap', 'grid-gap'].forEach(function (k) { st.removeProperty(k); });
+        el.appendChild(tb);
+      }
+    });
   }
   function sanitizeHtml(html) {
     var doc = new DOMParser().parseFromString('<div id="root">' + html + '</div>', 'text/html'), root = doc.getElementById('root'), page = inlineStyles(root);
     Array.prototype.forEach.call(root.querySelectorAll('script,style,iframe,object,embed,link,meta,base,title,form,input,button,textarea,select,audio,video'), function (n) { n.parentNode.removeChild(n); });
+    pdfLayout(root);
     Array.prototype.forEach.call(root.querySelectorAll('*'), function (el) {
       Array.prototype.slice.call(el.attributes).forEach(function (a) {
         var n = a.name.toLowerCase(), v = String(a.value).trim().toLowerCase();
@@ -3062,7 +3129,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.67.4</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.68.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -3190,16 +3257,59 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '  <p>Nous vous prions d’agréer, {{CIVILITE}} {{NOM}}, l’expression de nos salutations distinguées.</p>\n' +
       '  <p style="margin-top: 40px;">Division réserves jeunesse</p>')
   };
+  // ESR : annexe XI (engagement à servir dans la réserve opérationnelle de la gendarmerie nationale), en tableaux et styles en ligne pour le PDF.
+  var ESR_HTML = (function () {
+    var B = 'border: 1px solid #000;', CADRE = 'style="' + B + ' padding: 7px 10px; margin-bottom: 11px; text-align: justify;"', P = 'style="margin: 0 0 5px;"', R = 'style="margin: 0 0 5px; font-weight: bold;"';
+    function cadre(title, inner, num) { return '  <div ' + CADRE + '>\n    <p ' + R + '>' + (num ? num + ' - <u>' + title + '</u>' : title) + '</p>\n' + inner + '  </div>\n'; }
+    function li(items, pad) { return items.map(function (t) { return '    <p style="margin: 0 0 3px; padding-left: ' + ((pad || 0) + 12) + 'px; text-indent: -12px;">- ' + t + '</p>\n'; }).join(''); }
+    function p(t) { return '    <p ' + P + '>' + t + '</p>\n'; }
+    return '<div style="font-family: \'Times New Roman\', Times, serif; font-size: 14px; line-height: 1.35; color: #000;">\n' +
+      '  <div style="margin-bottom: 14px;">' + window.__BLOC_FALLBACK + '</div>\n' +
+      '  <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;"><tr>\n' +
+      '    <td style="vertical-align: top; width: 56%; padding: 0; font-weight: bold; font-style: italic; font-size: 13px;">Le général de corps d’armée,<br>commandant la région de gendarmerie d’Île-de-France<br>et la gendarmerie pour la zone de défense et de sécurité de Paris</td>\n' +
+      '    <td style="vertical-align: top; padding: 0 0 0 24px; text-align: center;"><div style="border-bottom: 1px solid #000; padding-bottom: 2px;">n° {{N_ESR}} du {{DATE_CONTRAT}}</div><div style="font-style: italic; padding-top: 3px;">GEND/RGIF/EM/DRJ/SGR</div></td>\n' +
+      '  </tr></table>\n' +
+      '  <div style="' + B + ' text-align: center; font-weight: bold; padding: 7px; margin-bottom: -1px;">ENGAGEMENT À SERVIR DANS LA RÉSERVE<br>OPÉRATIONNELLE DE LA GENDARMERIE NATIONALE</div>\n' +
+      cadre('Renseignements d’identité',
+        '    <p style="margin: 0 0 5px; text-align: right;">Matricule : {{MATRICULE}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nigend : {{NIGEND}}</p>\n' +
+        p('{{CIVILITE_LONGUE}} <strong>{{IDENTITE}}</strong>') + p('né{{ACCORD}} le {{DDN}} à {{LIEU_NAISSANCE}}') +
+        '    <table style="width: 100%; border-collapse: collapse; margin: 8px 0;"><tr><td style="vertical-align: top; width: 50%; padding: 0 20px 0 0;">domicilié{{ACCORD}} : {{ADRESSE}}<br>{{CP}} {{VILLE}}</td><td style="vertical-align: top; padding: 0;">Courriel (adresse personnelle) : {{EMAIL}}<br>Tél : {{TELEPHONE}}</td></tr></table>\n' +
+        p('exerçant la profession de {{PROFESSION}}'), 1) +
+      cadre('Corps de rattachement et affectation', li(['Corps : {{CORPS}}', 'Grade : {{GRADE}}', 'Formation administrative d’affectation : RGIF', 'Unité d’affectation : {{AFFECTATION}}', 'Lieu d’affectation : {{CRT}}']), 2) +
+      cadre('Conditions d’exécution',
+        p('Le présent contrat est exécuté dans les conditions suivantes :') +
+        li(['Durée de l’engagement : {{DUREE_CONTRAT}} an(s)', 'Date d’entrée en vigueur<sup>(1)</sup> : du {{DEBUT_CONTRAT}} au {{FIN_CONTRAT}}', 'Âge limite d’emploi dans la réserve opérationnelle<sup>(2)</sup> : 72 ans'], 40) +
+        li(['Le présent contrat sera exécuté en application des dispositions des articles L 4221-6 et R4221-5 du code de la défense.'], 48) +
+        '    <p style="margin: 8px 0 5px;">Nous avons reçu l’engagement du<br><strong>{{GRADE}} {{IDENTITE}}</strong><br>lequel a promis de servir avec honneur, probité, dévouement et d’avoir un comportement compatible avec l’état de militaire de la gendarmerie.</p>\n' +
+        p('Le présent contrat entraîne, le cas échéant, dès son entrée en vigueur, la résiliation automatique du précédent contrat souscrit par l’intéressé(e).'), 3) +
+      cadre('Sujétions relatives à l’obligation légale de disponibilité (articles L. 4231-1 à L. 4231-4 du code de la défense et L. 421-3 du code de la sécurité intérieure) :',
+        p('Les volontaires de la réserve opérationnelle sont soumis à l’obligation de disponibilité. La mise en œuvre de cette obligation a pour effet de rendre possible :') +
+        li(['en cas de mobilisation générale ou de mise en garde, l’appel ou le maintien en activité des réservistes par décret en conseil des ministres (art. L. 4231-4 du code de la défense) ;',
+          'en cas de troubles graves ou de menaces de troubles graves à l’ordre public, l’appel par voie réglementaire aux réservistes de la gendarmerie nationale, par le ministre de la défense ou le ministre de l’intérieur, pour les missions qui relèvent de leur autorité (art. L. 421-3 du code de la sécurité intérieure).'])) +
+      '  <div style="font-size: 9.5px; font-style: italic; margin: -4px 0 11px;">\n' +
+      '    <p style="margin: 0;">(1) La date d’entrée en vigueur est nécessairement égale ou postérieure à la date de signature du contrat par les parties.</p>\n' +
+      '    <p style="margin: 0;">(2) En application de l’article L.4221-2 du code de la défense, lorsque le militaire de réserve est atteint par la limite d’âge alors que le contrat n’est pas arrivé au terme de sa période de validité, le contrat devient caduc la veille du jour anniversaire.</p>\n  </div>\n' +
+      cadre('Dispositions légales relatives aux droits et obligations vis-à-vis de l’employeur civil (articles L. 4221-4 et L. 4221-5 du code de la défense) :',
+        p('Le réserviste qui accomplit son ESR pendant son temps de travail doit prévenir l’employeur de son absence un mois au moins avant le début de celle-ci. Lorsque les activités accomplies pendant le temps de travail dépassent la durée de son autorisation d’absence annuelle fixée aux articles L.3142-94-2 et L.3142-94-3 du code du travail, le réserviste doit en outre obtenir l’accord de son employeur, sauf si son absence est due à l’accomplissement d’une période de formation accomplie dans le cadre fixé à l’article L. 4221-5.')) +
+      cadre('Reprise de service des militaires retraités (articles L. 79 et L. 80 du code des pensions civiles et militaires de retraite) :',
+        li(['Art. L.79 : les militaires autres que ceux de l’armée d’active cumulent en temps de paix, pendant les exercices ou manœuvres auxquels ils sont convoqués, la pension militaire dont ils jouissent avec la solde et les prestations militaires afférentes à leur grade, mais le temps passé sous les drapeaux dans ces conditions n’entre pas dans la supputation des services militaires donnant droit à pension ou à révision d’une telle pension. Les militaires autorisés à contracter un engagement voient suspendre, pendant la durée de ce dernier, la pension dont ils pourraient être titulaires. Elle est éventuellement révisée au moment de la radiation définitive des contrôles, compte tenu des nouveaux services accomplis.',
+          'Art. L.80 : sous réserve des dispositions de l’article L. 79, le versement de la pension des retraités militaires présents sous les drapeaux, en temps de paix, pour une durée continue, égale ou supérieure à un mois, est suspendu pendant toute la durée de cette présence.'])) +
+      cadre('Circonstances dans lesquelles le contrat d’ESR peut être résilié (article R. 4221-19 du code de la défense) :',
+        p('Outre les cas de résiliation fixés aux 1° et 2° de l’article R.4221-19 du code de la défense, la résiliation du contrat peut-être prononcée sur demande justifiée de l’intéressé, en cas d’absence de réponse à trois convocations successives sans justification, en cas d’inaptitude à l’emploi, de retrait ou de non-renouvellement d’une habilitation requise pour l’exercice de la fonction, d’échec à une formation nécessaire à la bonne exécution de la fonction, de changement de résidence affectant les conditions d’exécution de la fonction, de fermeture, de transfert ou de réorganisation de l’unité d’affectation.')) +
+      cadre('Protection sociale :', p('Pendant la période d’activité dans la réserve opérationnelle, l’intéressé bénéficie pour lui et ses ayants droits, des prestations des assurances maladie, maternité, invalidité et décès, dans les conditions visées à l’article L. 161-8 du code de sécurité sociale, du régime de sécurité sociale dont il relève en dehors de son service dans la réserve. Il reçoit un exemplaire de la fiche relative à la conduite à tenir en cas d’accident en service.')) +
+      cadre('Suivi du paquetage et carte d’identité professionnelle de réserviste :', p('En cas de résiliation de contrat, de son non-renouvellement ou de la radiation de la réserve, le réserviste s’engage à reverser tous les effets de paquetage ou d’équipement perçus suite à la signature de son contrat d’ESR.') + p('Sauf disposition contraire, il doit également restituer sa carte d’identité professionnelle de réserviste.')) +
+      cadre('Clause de confidentialité :', p('Le réserviste qui exerce une activité pour laquelle il est convoqué en vertu de son ESR ou au titre de la disponibilité ou qui participe bénévolement à des activités définies ou agréées par l’autorité militaire est soumis à l’obligation d’obéissance hiérarchique et de discrétion pour tout ce qui concerne les faits et informations dont il a connaissance au titre de ces activités.')) +
+      cadre('Données personnelles :', p('Conformément à la loi n° 78-17 du 6 janvier 1978 relative à l’informatique, aux fichiers et aux libertés, les données du réserviste font l’objet d’un traitement nommé « AGORHA » ayant pour finalité de gérer administrativement, financièrement et opérationnellement les personnels militaires d’active et de réserve de la gendarmerie nationale. Le réserviste est informé qu’il dispose du droit d’accès à ses données ainsi que du droit de les rectifier, modifier ou effacer dans les conditions fixées aux articles 48 à 56 de la loi précitée. Pour disposer de l’ensemble des informations relatives au traitement de ses données, le réserviste peut consulter le décret n° 2012-895 du 19 juillet 2012 portant autorisation d’un traitement automatisé et non automatisé de données à caractère personnel dénommé AGORHA.')) +
+      cadre('Repos physiologique :', p('Le réserviste s’engage à respecter les obligations découlant des normes légales et réglementaires en vigueur relatives au repos physiologique, telles qu’elles s’appliquent à son emploi civil. A cette fin, il s’assure qu’il dispose bien du nombre d’heures requis de repos physiologique avant l’exécution d’une période de réserve opérationnelle ainsi qu’avant la reprise d’activité auprès de son employeur qui suit l’exécution d’une période de réserve opérationnelle.')) +
+      cadre('Voies et délais de recours :', p('Le présent acte peut faire l’objet d’un recours auprès de la commission des recours des militaires conformément aux articles R. 4125-1 et suivants du code de la défense, dans un délai de deux mois à compter de sa date de signature.') + p('La saisine de la commission est un préalable obligatoire à l’exercice d’un recours contentieux devant la juridiction administrative compétente.')) +
+      '  <div data-pdf-keep>\n  <p style="margin: 18px 0 0;">Fait le {{DATE_CONTRAT}}</p>\n' +
+      '  <table style="width: 100%; border-collapse: collapse; margin-top: 18px;"><tr>\n' +
+      '    <td style="vertical-align: top; width: 55%; padding: 0;">Pour le ministre et par délégation :<div style="height: 70px;"></div>{{SIGNATAIRE_BLOC}}</td>\n' +
+      '    <td style="vertical-align: top; padding: 0;">Signature du réserviste :</td>\n' +
+      '  </tr></table>\n  </div>\n</div>';
+  })();
   DEFAULT_MAIL.contrat = {
-    esr: {
-      template: pageHtml('Engagement à servir dans la réserve (ESR)',
-        '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' +
-        rowHtml('Réserviste', '<strong>{{IDENTITE}}</strong>') + rowHtml('Date de naissance', '{{DDN}}') + rowHtml('NID', '{{NID}}') + rowHtml('Nigend', '{{NIGEND}}') +
-        rowHtml('Grade', '{{GRADE}}') + rowHtml('Corps', '{{CORPS}}') + rowHtml('Groupement', '{{AFFECTATION}}') + rowHtml('CRT', '{{CRT}}') +
-        rowHtml('Nature du contrat', '{{TYPE_CONTRAT}}') + rowHtml('N° ESR', '{{N_ESR}}') + rowHtml('Date du contrat', '{{DATE_CONTRAT}}') + rowHtml('Entrée en vigueur du contrat', '<strong>{{DEBUT_CONTRAT}}</strong>') +
-        '  </table>\n' +
-        '  <p>{{CIVILITE}} {{NOM}} s’engage à servir dans la réserve à compter du {{DEBUT_CONTRAT}}.</p>\n' +
-        '  <table style="width: 100%; margin-top: 48px;">\n    <tr><td style="width: 50%;">Le réserviste<br><br><br></td><td>Pour le commandement<br><br><br><br>{{SIGNATAIRE_BLOC}}</td></tr>\n  </table>\n' + SIGN_HTML)
+    esr: { template: ESR_HTML
     }
   };
   // Variables {{…}} : alias → libellé de colonne (toute autre colonne reste utilisable par son libellé ou son identifiant).
@@ -3913,6 +4023,28 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   // Remplace {{VARIABLE}} (alias, libellé ou identifiant de colonne) ; une variable inconnue est laissée telle quelle.
   // asHtml : modèle HTML (les valeurs insérées sont échappées, pour qu'une donnée ne puisse pas casser la mise en page).
+  // Variables calculées (contrat ESR) : {{CIVILITE_LONGUE}} (Monsieur / Madame), {{ACCORD}} (« e » au féminin : né{{ACCORD}}), {{LIEU_NAISSANCE}} (avec le
+  // département s'il est renseigné), {{MATRICULE}}, {{DUREE_CONTRAT}} (colonne « Durée contrat », 3 ans à défaut), {{FIN_CONTRAT}} (colonne « Date de fin
+  // contrat », sinon début + durée − 1 jour) ; {{N_CHRONO}} hors lettre de rejet = N° ESR.
+  function esrVar(key, item, c) {
+    function col() { for (var i = 0; i < arguments.length; i++) { var x = findCol(c.table, arguments[i]); if (x) return x; } return null; }
+    function val(x) { return x ? textOfValue(x, item.raw[x.id]) : ''; }
+    if (key === 'CIVILITE_LONGUE' || key === 'ACCORD') {
+      var cv = String(val(col('Civilité', 'Civilite'))).trim(), fem = /^(mme|madame|mlle|mademoiselle|f\b)/i.test(cv);
+      return key === 'ACCORD' ? (fem ? 'e' : '') : (fem ? 'Madame' : cv ? 'Monsieur' : 'Monsieur, Madame');
+    }
+    if (key === 'LIEU_NAISSANCE') { var l = val(col('Lieu de naissance', 'Lieu_de_naissance')), d = val(col('Dpt', 'Département de naissance', 'Departement')); return l + (l && d ? ' (' + d + ')' : ''); }
+    if (key === 'MATRICULE') return val(col('Matricule'));
+    if (key === 'N_CHRONO') return val(col('N° ESR', 'N_ESR')) || null;
+    if (key === 'DUREE_CONTRAT') return val(col('Durée contrat', 'Duree contrat', 'Durée')) || '3';
+    if (key === 'FIN_CONTRAT') {
+      var fc = col('Date de fin contrat', 'Fin contrat', 'Date fin contrat'); if (fc && item.raw[fc.id]) return val(fc);
+      var dc = col('Date de début contrat', 'Date début contrat', 'Debut contrat'), v = dc && item.raw[dc.id]; if (!v || typeof v !== 'number') return '';
+      var n = parseInt(val(col('Durée contrat', 'Duree contrat', 'Durée')), 10) || 3, dt = new Date(v * 1000);
+      dt.setUTCFullYear(dt.getUTCFullYear() + n); dt.setUTCDate(dt.getUTCDate() - 1); return textOfValue(dc, Math.round(dt.getTime() / 1000));
+    }
+    return null;
+  }
   function fillTemplate(text, item, c, asHtml, extra) {
     var out = function (v) { return asHtml ? esc(v) : v; };
     var res = String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
@@ -3925,6 +4057,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       if (key === 'INITIAL') return out('X');
       if (key === 'RENOUVELLEMENT') return '';
       if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return out(extra[key]); // ex. {{N_CHRONO}}
+      var calc = esrVar(key, item, c); if (calc != null) return out(calc); // ESR : civilité en toutes lettres, accord, durée et fin du contrat…
       var alias = MAIL_ALIASES[key];
       var col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
       if (alias) return col ? out(textOfValue(col, item.raw[col.id])) : '';
@@ -6767,7 +6900,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function cancelPmg() { state.draft = JSON.parse(JSON.stringify(cfg())); renderAdminForm(); setDirty(false); }
   $('btn-cancel').addEventListener('click', cancelPmg);
   // Variables : un clic insère la variable dans le champ de modèle actif.
-  var BO_VARS = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO', 'TYPE_CONTRAT', 'INITIAL', 'RENOUVELLEMENT', 'SIGNATAIRE_BLOC', 'SIGNATAIRE', 'SIGNATAIRE_QUALITE'];
+  var BO_VARS = ['IDENTITE', 'CIVILITE', 'CIVILITE_LONGUE', 'ACCORD', 'NOM', 'PRENOM', 'NID', 'N_CANDIDATURE', 'N_CAND', 'MATRICULE', 'NIGEND', 'DDN', 'LIEU_NAISSANCE', 'ADRESSE', 'CP', 'VILLE', 'EMAIL', 'TELEPHONE', 'PROFESSION', 'CORPS', 'GRADE', 'AFFECTATION', 'CRT', 'DATE_TESTS', 'DATE_VEMI', 'ANTENNE', 'DATE_DU_JOUR', 'N_CHRONO', 'N_ESR', 'DATE_CONTRAT', 'DEBUT_CONTRAT', 'DUREE_CONTRAT', 'FIN_CONTRAT', 'TYPE_CONTRAT', 'INITIAL', 'RENOUVELLEMENT', 'SIGNATAIRE_BLOC', 'SIGNATAIRE', 'SIGNATAIRE_QUALITE'];
   $('bo-vars').innerHTML = BO_VARS.map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
   var boLastField = null;
   $('mail-forms').addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) boLastField = e.target; });
@@ -18813,6 +18946,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       AFFECTATION: 'Affectation', EMAIL: 'Adresse mail', DDN: 'Date de naissance', TELEPHONE: 'Téléphone', DATE: 'Date du rendez-vous', HEURE: 'Heure du rendez-vous', TYPE: 'VMP, VEMI ou Tests psy',
       AFFECTATION_DEMANDEE: 'Groupement demandé', DATE_DEBUT: 'Début du nouveau contrat ou de la période', DATE_FIN: 'Fin du nouveau contrat ou de la période', DATE_EFFET: 'Date d’effet de l’avenant',
       JUSQUAU: 'Suspension jusqu’au', TYPE_DEMANDE: 'Type de demande', SIGNATURE_AUTORITE: 'Signature de l’autorité d’emploi (si déposée)',
+      CIVILITE_LONGUE: 'Monsieur ou Madame', ACCORD: '« e » au féminin (né{{ACCORD}}, domicilié{{ACCORD}})', MATRICULE: 'Matricule', LIEU_NAISSANCE: 'Lieu de naissance (et département)', ADRESSE: 'Adresse', CP: 'Code postal', VILLE: 'Ville',
+      PROFESSION: 'Profession', CORPS: 'Corps', CRT: 'CRT (lieu d’affectation)', N_ESR: 'N° ESR', DATE_CONTRAT: 'Date du contrat', DEBUT_CONTRAT: 'Entrée en vigueur du contrat', DUREE_CONTRAT: 'Durée de l’engagement (ans)', FIN_CONTRAT: 'Fin du contrat',
       DEMANDEUR: 'Nom du demandeur', MODULE: 'Module concerné', DEMANDE: 'Texte de la demande', DATE_DEMANDE: 'Date de la demande', DATE_TRAITEMENT: 'Date de traitement', FONCTION: 'Fonction demandée'
     };
     function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -18918,6 +19053,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       if (r.empty) { e.pv.innerHTML = '<div class="doc-alert warning" role="status" style="margin:0"><p>' + esc(r.empty) + '</p></div>'; return; }
       if (e.type === 'mail') { e.pv.innerHTML = '<h3 class="bo-h3">Aperçu</h3><div class="bo-mailprev"><p class="bo-mailprev__subj">Objet : ' + esc(r.subject) + '</p><pre>' + esc(r.text) + '</pre></div>' + note; return; }
       if (window.__applyBloc) r.html = window.__applyBloc(d.id, r.html, true); // bloc marque selon la case cochée
+      if (window.__BLOC_IMG) r.html = r.html.replace(/<!--bloc-marque-->[\s\S]*?<!--\/bloc-marque-->/g, function () { return window.__BLOC_IMG; }); // aperçu : vrai logo
       var fr = e.pv.querySelector('iframe');
       if (!fr) { e.pv.innerHTML = '<h3 class="bo-h3">Aperçu</h3><iframe class="tpl-preview" sandbox title="Aperçu du document"></iframe>' + note; fr = e.pv.querySelector('iframe'); }
       fr.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="width:698px;margin:12px auto;padding:36px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);box-sizing:content-box;min-height:800px;color:#161616;">' + r.html + '</div></body></html>';
@@ -20405,289 +20541,6 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         if (i >= S.length) return Promise.resolve(true);
         var sc = S[i++];
         if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
-        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
-        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
-      })();
-    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
-  });
-})();
-</script>
-</body>
-</html>
-filter(function (p) { return /pdf/.test(p.type); });
-          check('Deux fiches PDF jointes', pdfs.length === 2, pdfs.length);
-          check('Fiches PDF légères (< 200 Ko)', pdfs.every(function (p) { return p.data.length < 200000; }), pdfs.map(function (p) { return Math.round(p.data.length / 1024) + ' Ko'; }).join(', '));
-          check('Tableau du rendez-vous joint', e.parts.some(function (p) { return /\.xlsx$/.test(p.name); }));
-          check('Consigne Ctrl + E affichée', /Ctrl \+ E/.test($('x-msg-zone').innerText));
-        });
-      });
-    }],
-    ['VEMI : suivi et saisie du résultat', function () {
-      var b = document.querySelector('#x-rows [data-resedit]'); check('Badge « Résultat attendu » cliquable', b, b && b.innerText); if (!b) return;
-      b.click(); return wait(300).then(function () {
-        var se = document.querySelector('#x-rows [data-res]'); check('Liste des résultats ouverte au clic', se); if (!se) return;
-        se.value = 'Apte'; se.dispatchEvent(new Event('change', { bubbles: true })); return wait(1500);
-      }).then(function () { var bb = document.querySelector('#x-rows [data-resedit]'); check('Badge « Apte » en vert', bb && /APTE/i.test(bb.innerText) && /success/.test(bb.className), bb && bb.innerText); });
-    }],
-    'reload',
-    ['VEMI : confirmation groupée (tableau + zip)', function () {
-      return rsv('vemi').then(function () {
-      var all = $('x-sel-all'); all.checked = true; all.dispatchEvent(new Event('change', { bubbles: true }));
-      $('x-sel-person').click();
-      return until(function () { return cap.length; }, 30000).then(files).then(function (f) {
-        var d = f.filter(function (x) { return /\.eml$/.test(x.name); })[0]; check('Brouillon groupé téléchargé', d); if (!d) return;
-        var e = eml(d.data);
-        check('Un seul tableau joint', e.parts.filter(function (p) { return /\.xlsx$/.test(p.name); }).length === 1);
-        check('Fiches dans un .zip', e.parts.some(function (p) { return /\.zip$/.test(p.name); }));
-        check('Corps détaillé par antenne', / :\r?\n- /.test(e.body || ''));
-        check('Liste « Écrire » par personne', document.querySelector('#x-pmodal-body [data-pconf]'));
-        $('x-pmodal-close').click();
-      });
-      });
-    }],
-    ['VMP : suivi (échéance)', function () {
-      return rsv('vmp').then(function () {
-        var badges = rows('#x-rows .fr-badge').map(function (b) { return b.innerText; }).join(' | ');
-        check('Badges de suivi VMP affichés', /ÉCHÉANCE|CONFIRMÉ|À CONFIRMER|REPROGRAMMÉ/i.test(badges), badges.slice(0, 120));
-      });
-    }],
-    ['Instruction : page masquée et stagiaires de la PMG', function () {
-      var a = document.querySelector('#header-navigation .nav-soon');
-      for (var i = 0; i < 4; i++) a.click();
-      check('4 clics : la page reste masquée', $('page-ins').hidden);
-      a.click();
-      check('5 clics rapides : la page Instruction s’ouvre', !$('page-ins').hidden);
-      window.INS.openAdmin(); window.__showPage('bo');
-      return wait(600).then(function () {
-        window.__showBoTab('instruction'); return wait(300);
-      }).then(function () {
-        var sel = $('ins-f-bopmg'); check('Réglage « PMG suivie » dans le back office', sel && sel.offsetParent !== null && sel.options.length > 1, sel && sel.options.length - 1 + ' PMG');
-        var pm = window.PMG.trainees('PMG 74').length ? 'PMG 74' : sel.options[1].value;
-        sel.value = pm; sel.dispatchEvent(new Event('change', { bubbles: true }));
-        return window.INS.save().then(function () {
-          for (var j = 0; j < 5; j++) a.click(); return wait(500);
-        }).then(function () {
-          var n = $('ins-rows').querySelectorAll('tr').length, exp = window.PMG.trainees(pm).length;
-          check('Stagiaires « Admis PMG » de la ' + pm + ' listés (et saisies manuelles)', exp > 0 && n >= exp && /Saisie manuelle/.test($('ins-rows').textContent), n + ' lignes, ' + exp + ' candidats');
-          check('Page masquée non retenue à la réouverture', localStorage.getItem('widgetPage') !== 'ins');
-          window.INS.tab('cad'); return wait(300);
-        }).then(function () {
-          var n0 = $('ins-crows').querySelectorAll('tr').length;
-          check('Onglet Cadres : cadres de la PMG listés', n0 >= 1 && !/Aucun cadre/.test($('ins-crows').innerText), n0 + ' cadre(s)');
-          $('ins-cadd').click(); return wait(400).then(function () {
-            var q = $('ins-f-q'); q.value = 'perr'; q.dispatchEvent(new Event('input', { bubbles: true })); return wait(200);
-          }).then(function () {
-            var pk = document.querySelector('#ins-cmodal-body [data-pick]'); check('Recherche d’un réserviste dans la table des réservistes', pk); if (!pk) return;
-            pk.click(); return wait(200).then(function () {
-              check('Fiche préremplie depuis la table des réservistes', $('ins-f-nom').value && $('ins-f-pmg').value === pm, $('ins-f-nom').value + ' · ' + $('ins-f-pmg').value);
-              $('ins-f-email').value = $('ins-f-email').value || 'cadre.test@gendarmerie.interieur.gouv.fr'; $('ins-f-fonction').value = 'Instructeur';
-              document.querySelector('#ins-cmodal-body [data-fact="save"]').click(); return wait(500);
-            }).then(function () { check('Cadre réserviste RGIF ajouté avec sa PMG', $('ins-crows').querySelectorAll('tr').length === n0 + 1 && /Réserviste RGIF/.test($('ins-crows').textContent), $('ins-crows').querySelectorAll('tr').length + ' cadres'); })
-            .then(function () { $('ins-cadd').click(); return wait(300); }).then(function () {
-              var man = document.querySelector('#ins-cmodal-body input[name="ins-kind"][value="man"]'); man.checked = true; man.dispatchEvent(new Event('change', { bubbles: true })); return wait(200);
-            }).then(function () {
-              var st = $('ins-f-statut'); check('Saisie manuelle : statut Active ou Réserviste hors RGIF', st && st.options.length === 2, st && [].map.call(st.options, function (o) { return o.value; }).join(' / '));
-              st.value = 'Réserviste hors RGIF'; $('ins-f-nom').value = 'Test'; $('ins-f-prenom').value = 'Hors'; $('ins-f-email').value = 'hors.rgif@example.fr';
-              document.querySelector('#ins-cmodal-body [data-fact="save"]').click(); return wait(500);
-            }).then(function () { check('Cadre réserviste hors RGIF ajouté', /Réserviste hors RGIF/.test($('ins-crows').textContent)); });
-          });
-        });
-      });
-    }],
-    ['Instruction : ajout manuel d’un stagiaire', function () {
-      window.__showPage('ins'); window.INS.tab('stg');
-      return wait(1000).then(function () {
-        var n0 = $('ins-rows').querySelectorAll('tr[data-stg]').length; $('ins-sadd').click();
-        return wait(300).then(function () {
-          $('ins-t-NOM').value = 'Essai'; $('ins-t-Prenom').value = 'Manuel';
-          document.querySelector('#ins-tmodal-body [data-tact="save"]').click(); return wait(200);
-        }).then(function () {
-          check('Identifiant obligatoire pour un stagiaire manuel', /au moins un identifiant/.test($('ins-tmodal-body').textContent));
-          $('ins-t-Nigend').value = '2025-9999'; $('ins-t-Profession').value = 'Menuisier';
-          document.querySelector('#ins-tmodal-body [data-tact="save"]').click(); return wait(600);
-        }).then(function () {
-          var tr = [].filter.call($('ins-rows').querySelectorAll('tr[data-stg]'), function (x) { return /ESSAI/.test(x.textContent); })[0];
-          check('Stagiaire manuel ajouté à la liste', tr && $('ins-rows').querySelectorAll('tr[data-stg]').length === n0 + 1); if (!tr) return;
-          tr.click(); return wait(300).then(function () {
-            check('Fiche du stagiaire manuel (profession)', /Menuisier/.test($('ins-smodal-body').textContent));
-            $('ins-sdel').click(); $('ins-sdel').click(); return wait(500);
-          }).then(function () { check('Stagiaire manuel supprimé', !/ESSAI/.test($('ins-rows').textContent)); });
-        });
-      });
-    }],
-    ['Modèles HTML : styles <style> et bloc marque en 1re page', function () {
-      var html = window.SERVIR_UTIL.sanitizeHtml('<html><head><title>T</title><style>body{font-size:11pt} p.titre{color:red;font-weight:bold} #x{color:blue} @media screen{p{color:green}}</style></head><body><p class="titre">Titre</p><p class="titre" id="x">Bleu</p><p class="titre" style="color:black">Noir</p></body></html>');
-      var d = document.createElement('div'); d.innerHTML = html; var ps = d.querySelectorAll('p');
-      check('Règles <style> converties en styles en ligne', ps[0] && /color: red/.test(ps[0].getAttribute('style')) && /bold/.test(ps[0].getAttribute('style')), ps[0] && ps[0].getAttribute('style'));
-      check('Spécificité et style en ligne respectés ; body appliqué au document ; @media screen ignoré', /color: blue/.test(ps[1].getAttribute('style')) && /color:\s*black\s*;?$/.test(ps[2].getAttribute('style')) && /11pt/.test(d.firstElementChild.getAttribute('style') || '') && !/green/.test(html) && !/>T</.test(html), html.slice(0, 160));
-      var A = window.__applyBloc; check('Réglage du bloc marque disponible', typeof A === 'function'); if (!A) return;
-      var a = A('test:doc', '<p>Sans en-tête</p>'), b = A('test:doc', '<div><!--bloc-marque-->x<!--/bloc-marque--></div><p>Corps</p>');
-      check('Coché par défaut : bloc ajouté en tête, ou gardé à la place du repère', a.indexOf('<!--bloc-marque-->') !== -1 && a.indexOf('<!--bloc-marque-->') < a.indexOf('Sans') && (b.match(/<!--bloc-marque-->/g) || []).length === 1);
-      window.RSV.blocs.set('test:doc', false);
-      check('Décoché : bloc retiré (brouillon du back office)', A('test:doc', b, true).indexOf('bloc-marque') === -1);
-      window.RSV.blocs.set('test:doc', true);
-      var cb = document.getElementById('bo-tpl-doc-bloc'); check('Case « Bloc marque en haut de la première page » dans l’éditeur des documents', !!cb);
-      return window.__withBloc(a).then(function (h) { check('Bloc remplacé par l’en-tête du ministère (comme l’émargement)', /<img alt="Ministère de l’Intérieur – Gendarmerie nationale"/.test(h) || !/<!--bloc-marque-->/.test(h)); });
-    }],
-    ['Instruction : import d’un fichier de stagiaires et de cadres', function () {
-      window.__showPage('ins'); window.INS.tab('stg');
-      return wait(1000).then(function () {
-        var n0 = $('ins-rows').querySelectorAll('tr[data-stg]').length;
-        window.INS.importText('stg', 'test.csv', 'Nom;Prénom;Date de naissance;N° candidature;Courriel;Peloton;Colonne inconnue\nImport;Alpha;03/05/2005;IMP001;A@X.FR;P1;zz\nImport;Beta;;IMP002;;P2;zz\nSansId;Gamma;;;;;\nImport;Alpha bis;;IMP001;;;');
-        return wait(200).then(function () {
-          var sel = function (i) { return $('ins-imap-' + i).value; };
-          check('Colonnes reconnues (nom, prénom, DDN, N° candidature, courriel, peloton)', sel(0) === 'NOM' && sel(1) === 'Prenom' && sel(2) === 'DDN' && sel(3) === 'N_candidature' && sel(4) === 'Email' && sel(5) === 'PON' && sel(6) === '', [0, 1, 2, 3, 4, 5, 6].map(sel).join(','));
-          var t = $('ins-imodal-body').textContent;
-          check('Aperçu : 2 à importer, 1 erreur, 1 doublon', /2 stagiaires à importer/.test(t) && /1 ligne en erreur/.test(t) && /en double dans le fichier/.test(t), t.slice(0, 200));
-          document.querySelector('#ins-imodal-body [data-iact="go"]').click(); return wait(900);
-        }).then(function () {
-          check('Import des stagiaires réalisé', /2 stagiaires importés/.test($('ins-imodal-body').textContent) && $('ins-rows').querySelectorAll('tr[data-stg]').length === n0 + 2);
-          document.querySelector('#ins-imodal-body [data-iact="close"]').click(); return wait(300);
-        }).then(function () {
-          window.INS.tab('cad'); var c0 = $('ins-crows').querySelectorAll('tr').length;
-          window.INS.importText('cad', 'cadres.xlsx', 'Grade,Nom,Prénom,Mail,Fonction\nADJ,Import,Cadre,import.cadre@example.fr,Chef de section\n,SansPrenom,,,');
-          return wait(300).then(function () {
-            var t = $('ins-imodal-body').textContent;
-            check('Cadres : séparateur virgule et colonne Mail reconnus', $('ins-imap-3').value === 'email' && /1 cadre à importer/.test(t), t.slice(0, 160));
-            document.querySelector('#ins-imodal-body [data-iact="go"]').click(); return wait(900);
-          }).then(function () {
-            check('Cadre importé (statut Active par défaut)', $('ins-crows').querySelectorAll('tr').length === c0 + 1 && /IMPORT/.test($('ins-crows').textContent));
-            document.querySelector('#ins-imodal-body [data-iact="close"]').click(); return wait(300);
-          });
-        });
-      });
-    }],
-    ['Instruction : fiche du stagiaire (informations, notation, départ)', function () {
-      window.__showPage('ins'); window.INS.tab('stg');
-      return wait(1200).then(function () {
-        var tr = $('ins-rows').querySelector('tr[data-stg^="c"]'); check('Ligne de stagiaire cliquable', tr); if (!tr) return;
-        var rid = Number(tr.getAttribute('data-stg')); tr.click();
-        return wait(300).then(function () {
-          check('Fiche ouverte (onglet Informations)', !$('ins-smodal').hidden && /Identité/.test($('ins-smodal-body').textContent), $('ins-smodal-title').innerText);
-          var g = document.querySelector('#ins-smodal-body [data-ins-ed="grade"]'); check('Grade modifiable au clic', g); if (!g) return;
-          g.click(); return wait(200).then(function () {
-            var inp = document.querySelector('#ins-smodal-body [data-ins-edv]'); inp.value = 'BRI'; document.querySelector('#ins-smodal-body [data-ins-eds]').click(); return wait(900);
-          }).then(function () { check('Grade enregistré dans la table des candidats', /BRI/.test(document.querySelector('#ins-smodal-body [data-ins-ed="grade"]').innerText)); });
-        }).then(function () {
-          document.querySelector('[data-ins-ftab="notation"]').click(); return wait(300);
-        }).then(function () {
-          var body = $('ins-smodal-body').innerText;
-          check('Notation : moyenne et classement', /Moyenne générale/.test(body) && /Classement dans la PMG/.test(body));
-          var r = document.querySelector('#ins-smodal-body [data-appr="1"]'); check('Curseurs d’appréciation par matière', r); if (!r) return;
-          r.value = '0'; r.dispatchEvent(new Event('change', { bubbles: true })); return wait(300).then(function () {
-            var ta = $('ins-apprc-1'); check('« Insuffisant » : précisions demandées avant enregistrement', ta && /précisions obligatoires/i.test($('ins-appr-st-1').innerText)); if (!ta) return;
-            ta.value = 'Manque de rigueur'; ta.dispatchEvent(new Event('change', { bubbles: true })); return wait(500);
-          }).then(function () { check('Appréciation enregistrée avec ses précisions', /Insuffisant/.test(document.querySelector('#ins-smodal-body [data-dom="1"] .ins-appr-val').innerText) && !/obligatoires/.test($('ins-appr-st-1').innerText)); });
-        }).then(function () {
-          $('ins-sdep').click(); return wait(400);
-        }).then(function () {
-          document.querySelector('#ins-dmodal-body [data-dact="save"]').click(); return wait(200);
-        }).then(function () {
-          check('Départ : date obligatoire', /date de départ est obligatoire/.test($('ins-dmodal-body').innerText));
-          var d = document.querySelector('#ins-dmodal-body input[type=date]'); d.value = '2026-10-15';
-          var m = document.querySelector('#ins-dmodal-body select'); if (m && m.options.length > 1) m.value = m.options[1].value;
-          document.querySelector('#ins-dmodal-body [data-dact="save"]').click(); return wait(800);
-        }).then(function () {
-          check('Départ enregistré : signalé dans la fiche', $('ins-sdep').classList.contains('is-set') && /Parti le 15\/10\/2026/.test($('ins-smodal-title').textContent));
-          $('ins-smodal-close').click(); return wait(400);
-        }).then(function () { check('Stagiaire parti signalé dans la liste', /Parti le 15\/10\/2026/.test($('ins-rows').textContent)); });
-      });
-    }],
-    ['Back office : réglages et modèles de courriels', function () {
-      window.RSV.openAdmin(); window.__showPage('bo');
-      return wait(900).then(function () {
-        window.__showBoTab && window.__showBoTab('reglages'); return wait(400);
-      }).then(function () {
-        var sec = $('x-params'); check('Bloc « Rendez-vous : délais et horaires » visible (Réglages avancés)', sec && sec.offsetParent !== null);
-        check('Délai de retard prérempli (7)', $('x-p-lateDays') && $('x-p-lateDays').value === '7', $('x-p-lateDays') && $('x-p-lateDays').value);
-        check('Heures des tests psy préremplies', $('x-p-psyHeures') && /10:00/.test($('x-p-psyHeures').value));
-        window.INS.openAdmin(); window.__showBoTab('instruction'); return wait(500).then(function () {
-          var b = $('ins-bo-cols'); check('Bouton d’ajout des colonnes manquantes', b); if (!b) return;
-          b.click(); return wait(100).then(function () { $('ins-bo-cols-ok').click(); return wait(800); }).then(function () { check('Colonnes de la fiche ajoutées à la table des candidats', !$('ins-bo-cols') && /toutes présentes/.test($('ins-bo-schema').textContent)); });
-        });
-      }).then(function () {
-        window.__showBoTab && window.__showBoTab('courriels'); return wait(400);
-      }).then(function () {
-        var items = rows('#bo-tpl-mail-items [data-tid]').map(function (b) { return b.getAttribute('data-tid'); });
-        check('Tous les modèles de courriels dans l’éditeur', ['rsv:x:bpro', 'rsv:x:bio', 'rsv:x:group', 'rsv:x:relance', 'jdc:dispo', 'pos:appel', 'rsv:vemi:convocation'].every(function (id) { return items.indexOf(id) !== -1; }), items.length + ' modèles');
-        var b = document.querySelector('#bo-tpl-mail-items [data-tid="rsv:x:bpro"]'); b.click();
-        check('BPRO : destinataire et copie réglables', $('bo-tpl-mail-to').value && !$('bo-tpl-mail-ccf').hidden, $('bo-tpl-mail-to').value);
-        document.querySelector('#bo-tpl-mail-items [data-tid="rsv:psy:convocation"]').click();
-        check('Champ « Destinataires (optionnel) » sur les autres modèles', $('bo-tpl-mail-to').value === '' && /optionnel/.test($('bo-tpl-mail-tolab').textContent));
-        window.RSV.cancelAdmin && window.RSV.cancelAdmin();
-      });
-    }]
-  ];
-
-  function report() {
-    var ok = results.filter(function (r) { return r.ok; }).length, el = document.createElement('div');
-    el.id = 'servir-tests';
-    el.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:100000;max-width:440px;max-height:70vh;overflow:auto;background:#fff;color:#161616;border:2px solid ' + (ok === results.length ? '#18753c' : '#ce0500') + ';padding:12px 14px;font:13px/1.45 Marianne,Arial,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2)';
-    el.innerHTML = '<strong>Tests SERVIR : ' + ok + ' / ' + results.length + ' réussis</strong><ul style="margin:8px 0 0;padding-left:18px">' + results.map(function (r) {
-      return '<li style="color:' + (r.ok ? '#18753c' : '#ce0500') + '">' + (r.ok ? '✓ ' : '✗ ') + SERVIR_UTIL.sanitizeHtml(r.name.replace(/</g, '&lt;')) + (r.detail !== '' ? ' <span style="color:#666">(' + String(r.detail).replace(/</g, '&lt;') + ')</span>' : '') + '</li>';
-    }).join('') + '</ul>';
-    document.body.appendChild(el);
-    window.SERVIR_TEST_RESULTS = results;
-  }
-  // Exécution par phases : 'reload' recharge la page (données de démo remises à zéro) et reprend à la phase suivante.
-  var KEY = 'servir-tests', saved = null;
-  try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
-  var start = saved ? saved.next : 0; if (saved) results = saved.results;
-  window.addEventListener('load', function () {
-    wait(2500).then(function () {
-      var i = start;
-      return (function step() {
-        if (i >= S.length) return Promise.resolve(true);
-        var sc = S[i++];
-        if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
-        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
-        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
-      })();
-    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
-  });
-})();
-</script>
-</body>
-</html>
-tart;
-      return (function step() {
-        if (i >= S.length) return Promise.resolve(true);
-        var sc = S[i++];
-        if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
-        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
-        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
-      })();
-    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
-  });
-})();
-</script>
-</body>
-</html>
-e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
-  });
-})();
-</script>
-</body>
-</html>
-n; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
-  });
-})();
-</script>
-</body>
-</html>
-olve(true);
-        var sc = S[i++];
-        if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
-        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
-        return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
-      })();
-    }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
-  });
-})();
-</script>
-</body>
-</html>
-mise.resolve(false); }
         results.push({ name: '— ' + sc[0], ok: true, detail: '' });
         return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
       })();
