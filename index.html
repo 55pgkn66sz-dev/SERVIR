@@ -2554,7 +2554,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
     <details class="bo-advanced">
       <summary>Réservistes · modèles des contrats et courriels (renouvellements, avenants)</summary>
-      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« X » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, <code>{{SIGNATAIRE_BLOC}}</code> (signature : nom en gras, puis fonction), <code>{{SIGNATAIRE}}</code> et <code>{{SIGNATAIRE_QUALITE}}</code> (signataire en vigueur, voir « Signataires des contrats »), ou toute colonne de la demande ou du réserviste par son libellé.</p>
+      <p class="hint">Utilisés par la fenêtre de signature d’une demande (état « À la signature RO1 ») : « Générer le contrat » (modèle HTML converti en PDF A4 ; styles en ligne ; images en base64) et « Générer le contrat et l’envoyer par courriel » (courriel en texte brut, ouvert dans la messagerie : le PDF téléchargé est à joindre). Variables : <code>{{IDENTITE}}</code>, <code>{{CIVILITE}}</code>, <code>{{NOM}}</code>, <code>{{PRENOM}}</code>, <code>{{GRADE}}</code>, <code>{{NIGEND}}</code>, <code>{{AFFECTATION}}</code> (actuelle), <code>{{AFFECTATION_DEMANDEE}}</code>, <code>{{DATE_DEBUT}}</code> et <code>{{DATE_FIN}}</code> (nouveau contrat), <code>{{DATE_EFFET}}</code>, <code>{{JUSQUAU}}</code>, <code>{{TYPE_DEMANDE}}</code>, <code>{{TYPE_CONTRAT}}</code> (« RENOUVELLEMENT » ou « AVENANT »), <code>{{RENOUVELLEMENT}}</code> (« RENOUVELLEMENT » pour un renouvellement, vide sinon), <code>{{INITIAL}}</code> (toujours vide ici), <code>{{DATE_DU_JOUR}}</code>, <code>{{SIGNATAIRE_BLOC}}</code> (signature : nom en gras, puis fonction), <code>{{SIGNATAIRE}}</code> et <code>{{SIGNATAIRE_QUALITE}}</code> (signataire en vigueur, voir « Signataires des contrats »), ou toute colonne de la demande ou du réserviste par son libellé.</p>
       <h3>Renouvellement de contrat</h3>
       <details class="mail-block" style="margin-left:0"><summary>Renouvellement de contrat · Document PDF</summary><div class="mail-body">
         <p class="hint">Modèle HTML converti en PDF A4 ; styles en ligne ; images en base64. Téléchargé par « Générer le contrat », puis rangé dans le document à signer.</p>
@@ -3237,7 +3237,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.3</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4168,7 +4168,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       if (key === 'SIGNATAIRE' || key === 'SIGNATAIRE_QUALITE' || key === 'SIGNATAIRE_BLOC') return signerText(key, asHtml);
       // Nature du contrat : généré depuis la page Candidats, c'est un contrat initial.
       if (key === 'TYPE_CONTRAT') return out('INITIAL');
-      if (key === 'INITIAL') return out('X');
+      if (key === 'INITIAL') return out('INITIAL');
       if (key === 'RENOUVELLEMENT') return '';
       if (extra && Object.prototype.hasOwnProperty.call(extra, key)) return out(extra[key]); // ex. {{N_CHRONO}}
       var calc = esrVar(key, item, c); if (calc != null) return out(calc); // ESR : civilité en toutes lettres, accord, durée et fin du contrat…
@@ -5726,7 +5726,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       mailHint: 'Courriel adressé au candidat (texte brut) quand la lettre de rejet est générée : le PDF est téléchargé à part, à glisser dans le message avant l’envoi.',
       docHint: 'Remplace la lettre d’incorporation uniquement si l’état de la candidature est « Rejet DRJ ». La lettre est téléchargée en PDF et une copie est rangée dans Documents. ' + TPL_HINT,
       fields: [['subject', 'Objet du courriel', 'input'], ['body', 'Message du courriel', 'textarea'], ['template', 'Modèle de la lettre de rejet (HTML)', 'textarea tall']] },
-    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{SIGNATAIRE_BLOC}} : signature du signataire en vigueur (nom en gras, puis sa fonction ; rubrique « Signataires des contrats »), ou séparément {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}. Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « X » ici et {{RENOUVELLEMENT}} reste vide.',
+    esr: { title: 'ESR (engagement à servir dans la réserve)', hint: 'Pas de courriel : le PDF est téléchargé et une copie est rangée dans Documents. ' + TPL_HINT + ' Nature du contrat : {{SIGNATAIRE_BLOC}} : signature du signataire en vigueur (nom en gras, puis sa fonction ; rubrique « Signataires des contrats »), ou séparément {{SIGNATAIRE}} et {{SIGNATAIRE_QUALITE}}. Nature du contrat : {{TYPE_CONTRAT}} donne « INITIAL » (généré depuis la page Candidats ; « RENOUVELLEMENT » pour les contrats générés depuis la page des demandes de renouvellement) ; {{INITIAL}} donne « INITIAL » ici et {{RENOUVELLEMENT}} reste vide.',
       fields: [['template', 'Modèle de l’ESR (HTML)', 'textarea tall']] }
   };
   // Un bloc replié par partie : le courriel (objet, message) et le document PDF (modèle HTML) se rédigent séparément.
@@ -10826,7 +10826,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       Object.keys(al).forEach(function (k) { var col = findCol(R.table, al[k]); out[k] = col ? val(col) : (out[k] || ''); });
       if (!out.TYPE_DEMANDE && K.id === 'ren') out.TYPE_DEMANDE = 'Renouvellement';
       // Nature du contrat : renouvellement (page « Renouvellements ») ou avenant ; jamais initial ici.
-      out.TYPE_CONTRAT = K.id === 'ren' ? 'RENOUVELLEMENT' : 'AVENANT'; out.INITIAL = ''; out.RENOUVELLEMENT = K.id === 'ren' ? 'X' : '';
+      out.TYPE_CONTRAT = K.id === 'ren' ? 'RENOUVELLEMENT' : 'AVENANT'; out.INITIAL = ''; out.RENOUVELLEMENT = K.id === 'ren' ? 'RENOUVELLEMENT' : '';
       return out;
     }
     function sideAlert(m) { return m ? '<div class="doc-alert ' + m.type + '" role="' + (m.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(m.text) + '</p></div>' : ''; }
@@ -12782,7 +12782,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     templates: function () {
       var out = [], rec = state.records[0], c = cfg(), none = 'Aucun réserviste dans la table : aperçu indisponible.';
       var ctrVars = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'GRADE', 'NIGEND', 'AFFECTATION', 'AFFECTATION_DEMANDEE', 'DATE_DEBUT', 'DATE_FIN', 'DATE_EFFET', 'JUSQUAU', 'TYPE_DEMANDE', 'TYPE_CONTRAT', 'RENOUVELLEMENT', 'INITIAL', 'DATE_DU_JOUR', 'SIGNATAIRE_BLOC', 'SIGNATAIRE', 'SIGNATAIRE_QUALITE'];
-      function extra(kind) { var s = todaySec(), e = fmtDate(ppeEndSec(s)); return { DATE_DEBUT: fmtDate(s), DATE_FIN: e, DATE_EFFET: fmtDate(s), JUSQUAU: e, TYPE_DEMANDE: kind === 'ren' ? 'Renouvellement' : 'Mutation', AFFECTATION_DEMANDEE: 'GD 74', TYPE_CONTRAT: kind === 'ren' ? 'RENOUVELLEMENT' : 'AVENANT', INITIAL: '', RENOUVELLEMENT: kind === 'ren' ? 'X' : '' }; }
+      function extra(kind) { var s = todaySec(), e = fmtDate(ppeEndSec(s)); return { DATE_DEBUT: fmtDate(s), DATE_FIN: e, DATE_EFFET: fmtDate(s), JUSQUAU: e, TYPE_DEMANDE: kind === 'ren' ? 'Renouvellement' : 'Mutation', AFFECTATION_DEMANDEE: 'GD 74', TYPE_CONTRAT: kind === 'ren' ? 'RENOUVELLEMENT' : 'AVENANT', INITIAL: '', RENOUVELLEMENT: kind === 'ren' ? 'RENOUVELLEMENT' : '' }; }
       function item() { return { raw: rec.raw, id: rec.identity == null ? '' : String(rec.identity) }; }
       [['ren', 'Renouvellement de contrat', 'Renouvellements'], ['ave', 'Avenant', 'Avenants']].forEach(function (k) {
         function field(f) { return tplCtl($('f-ctr-' + k[0] + '-' + f)); }
@@ -19116,8 +19116,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var VAR_DESC = {
       IDENTITE: 'Nom complet (NOM Prénom)', CIVILITE: 'M. ou Mme', NOM: 'Nom de famille', PRENOM: 'Prénom', GRADE: 'Grade', NIGEND: 'Numéro Nigend', NID: 'N° d’identification du candidat',
       N_CANDIDATURE: 'N° de candidature', N_CAND: 'N° CAND (GendForm)', DATE_TESTS: 'Date des tests psychométriques', DATE_VEMI: 'Date de la VEMI', ANTENNE: 'Antenne médicale',
-      DATE_DU_JOUR: 'Date du jour (jj/mm/aaaa)', N_CHRONO: 'N° Chrono, saisi à la génération de la lettre de rejet', TYPE_CONTRAT: 'ESR, RENOUVELLEMENT ou AVENANT', INITIAL: 'X pour un contrat initial',
-      RENOUVELLEMENT: 'X pour un renouvellement', SIGNATAIRE_BLOC: 'Bloc de signature : nom en gras, fonction, délégation ou suppléance', SIGNATAIRE: 'Nom du signataire en vigueur', SIGNATAIRE_QUALITE: 'Fonction du signataire',
+      DATE_DU_JOUR: 'Date du jour (jj/mm/aaaa)', N_CHRONO: 'N° Chrono, saisi à la génération de la lettre de rejet', TYPE_CONTRAT: 'ESR, RENOUVELLEMENT ou AVENANT', INITIAL: '« INITIAL » pour un contrat initial (vide sinon)',
+      RENOUVELLEMENT: '« RENOUVELLEMENT » pour un renouvellement (vide sinon)', SIGNATAIRE_BLOC: 'Bloc de signature : nom en gras, fonction, délégation ou suppléance', SIGNATAIRE: 'Nom du signataire en vigueur', SIGNATAIRE_QUALITE: 'Fonction du signataire',
       AFFECTATION: 'Affectation', EMAIL: 'Adresse mail', DDN: 'Date de naissance', TELEPHONE: 'Téléphone', DATE: 'Date du rendez-vous', HEURE: 'Heure du rendez-vous', TYPE: 'VMP, VEMI ou Tests psy',
       AFFECTATION_DEMANDEE: 'Groupement demandé', DATE_DEBUT: 'Début du nouveau contrat ou de la période', DATE_FIN: 'Fin du nouveau contrat ou de la période', DATE_EFFET: 'Date d’effet de l’avenant',
       JUSQUAU: 'Suspension jusqu’au', TYPE_DEMANDE: 'Type de demande', SIGNATURE_AUTORITE: 'Signature de l’autorité d’emploi (si déposée)',
