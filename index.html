@@ -110,6 +110,8 @@
   window.__htmlToPdf = function (html, opts) {
     opts = opts || {};
     var mg = opts.margin || [36, 36, 36, 36], widthPt = 595.28 - mg[1] - mg[3], widthPx = Math.round(widthPt * 96 / 72);
+    // opts.fit : largeur de mise en page (px) ; le rendu est ensuite réduit à la largeur utile de la page, comme l'impression du navigateur
+    var layoutPx = opts.fit && !opts.vector ? Math.max(widthPx, opts.fit) : widthPx, K = widthPx / layoutPx;
     return new Promise(function (resolve, reject) {
       if (!(window.jspdf && window.jspdf.jsPDF)) return reject(new Error('la bibliothèque de génération de PDF n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
       if (!window.html2canvas) return reject(new Error('la bibliothèque de conversion HTML n’a pas pu être chargée (vérifiez la connexion, puis rechargez la page)'));
@@ -121,7 +123,7 @@
       // Les propriétés de mise en forme reviennent aux valeurs par défaut du navigateur (« revert ») ; seuls comptent les styles du modèle (en ligne).
       if (!document.getElementById('pdf-holder-reset')) { var rs = document.createElement('style'); rs.id = 'pdf-holder-reset'; rs.textContent = '.pdf-holder * { margin: revert; padding: revert; border: revert; border-collapse: revert; border-spacing: revert; font-size: revert; font-weight: revert; font-family: revert; line-height: revert; color: revert; background: revert; text-align: revert; vertical-align: revert; text-decoration: revert; list-style: revert; position: revert; top: revert; z-index: revert; box-shadow: revert; letter-spacing: revert; text-transform: revert; } .pdf-holder table { width: auto; } .pdf-holder a::after, .pdf-holder a::before { content: none; }'; document.head.appendChild(rs); }
       holder.className = 'pdf-holder';
-      holder.style.cssText = 'position:absolute;left:0;top:0;width:' + widthPx + 'px;background:#fff;color:#161616;font-family:Marianne,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;text-align:left;';
+      holder.style.cssText = 'position:absolute;left:0;top:0;width:' + layoutPx + 'px;background:#fff;color:#161616;font-family:Marianne,Arial,Helvetica,sans-serif;font-size:16px;line-height:' + (opts.fit ? '1.35' : '1.5') + ';text-align:left;'; // documents sur largeur A4 : interligne plus serré, comme l'affichage Markdown
       holder.innerHTML = html;
       wrap.appendChild(holder); document.body.appendChild(wrap);
       // Polices : jsPDF écrit le texte du PDF avec ses polices standard (Helvetica, Times, Courier), pas avec Marianne. Le texte est donc mis en page
@@ -131,7 +133,7 @@
         el.style.fontFamily = /courier|mono|consolas/.test(f) ? '"Courier New", Courier, monospace' : (/times|georgia|spectral|cambria|garamond|book|^serif$/.test(f) ? '"Times New Roman", Times, serif' : 'Arial, Helvetica, sans-serif');
       });
       // Pagination : un élément [data-pdf-break] commence une nouvelle page ; un bloc [data-pdf-keep] (cadre) qui serait coupé passe à la page suivante.
-      var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72;
+      var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72 / K; // hauteur utile d'une page, en px de mise en page
       Array.prototype.forEach.call(holder.querySelectorAll('[data-pdf-break], [data-pdf-keep]'), function (el) {
         var hr = holder.getBoundingClientRect(), r = el.getBoundingClientRect(), top = r.top - hr.top, rest = top % pageH, push = 0;
         if (el.hasAttribute('data-pdf-break')) { if (rest > 1) push = pageH - rest; }
@@ -161,16 +163,19 @@
           }
           cuts.push(H);
           var SC = 1.75; // résolution (≈ 170 ppp à l'impression) : lisible sans alourdir le fichier
-          window.html2canvas(holder, { scale: SC, backgroundColor: '#ffffff', logging: false, useCORS: false, width: widthPx, height: H, windowWidth: widthPx, scrollX: 0, scrollY: 0, x: 0, y: 0 }).then(function (cv) {
+          SC = SC * K < 1.5 ? 1.5 / K : SC; // résolution suffisante après réduction
+          window.html2canvas(holder, { scale: SC, backgroundColor: '#ffffff', logging: false, useCORS: false, width: layoutPx, height: H, windowWidth: layoutPx, scrollX: 0, scrollY: 0, x: 0, y: 0 }).then(function (cv) {
             try {
-              var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true });
+              var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true }), imgs = [];
               for (var i = 0; i + 1 < cuts.length; i++) {
                 var h = cuts[i + 1] - cuts[i]; if (h <= 0) continue;
                 var pc = document.createElement('canvas'); pc.width = cv.width; pc.height = Math.ceil(h * SC);
                 var g = pc.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, pc.width, pc.height); g.drawImage(cv, 0, Math.floor(cuts[i] * SC), cv.width, pc.height, 0, 0, cv.width, pc.height);
                 if (i) doc.addPage();
-                doc.addImage(pc.toDataURL('image/jpeg', 0.82), 'JPEG', mg[3], mg[0], widthPt, h * 72 / 96, undefined, 'FAST');
+                var url = pc.toDataURL('image/jpeg', 0.82); imgs.push({ src: url, w: widthPt, h: h * K * 72 / 96 });
+                doc.addImage(url, 'JPEG', mg[3], mg[0], widthPt, h * K * 72 / 96, undefined, 'FAST');
               }
+              if (opts.onPages) opts.onPages(imgs, mg);
               if (opts.decorate) opts.decorate(doc, doc.getNumberOfPages());
               end(null, doc.output('arraybuffer'));
             } catch (e) { end(e); }
@@ -1650,7 +1655,17 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .modal-stack .modal-dialog[hidden] { display: none; }
   .modal-stack .modal-dialog { flex: 1 1 0; min-width: min(30rem, 100%); }
   .doc-prev__bar { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 .75rem; }
-  .doc-prev__frame { display: block; width: 100%; height: min(78vh, 60rem); border: 1px solid var(--border-default-grey, #ddd); border-radius: 4px; background: #e9e9ee; }
+  .doc-prev__pages { max-height: min(78vh, 60rem); overflow: auto; padding: .75rem; border: 1px solid var(--border-default-grey, #ddd); border-radius: 4px; background: #e9e9ee; }
+  .doc-prev__page { position: relative; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); margin: 0 auto .75rem; max-width: 46rem; aspect-ratio: 210 / 297; }
+  .doc-prev__page img { position: absolute; display: block; }
+  .doc-prev__pages .doc-prev__wait { color: #666; text-align: center; padding: 3rem 1rem; margin: 0; }
+  @media print {
+    body.doc-printing * { visibility: hidden !important; }
+    body.doc-printing #modal-doc-pages, body.doc-printing #modal-doc-pages * { visibility: visible !important; }
+    body.doc-printing #modal-doc-pages { position: absolute; left: 0; top: 0; width: 100%; max-height: none; overflow: visible; border: 0; padding: 0; background: #fff; }
+    body.doc-printing .doc-prev__page { box-shadow: none; margin: 0; max-width: none; width: 100%; break-after: page; }
+    @page { size: A4; margin: 0; }
+  }
   #modal-doc-msg .doc-alert { margin: 0 0 .75rem; }
   .modal-column.is-compare .modal-dialog { padding: 1.4rem 1.25rem 1.5rem; }
   .modal-column.is-compare .modal-title { font-size: 1.25em; }
@@ -3107,7 +3122,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         </div>
         <div class="doc-prev__bar" id="modal-doc-bar"></div>
         <div id="modal-doc-msg" role="status" aria-live="polite"></div>
-        <iframe class="doc-prev__frame" id="modal-doc-frame" title="Aperçu du document"></iframe>
+        <div class="doc-prev__pages" id="modal-doc-pages" aria-label="Aperçu des pages du document"></div>
       </div>
     </div>
     <div class="cmp-bar" id="cmp-bar" hidden></div>
@@ -3222,7 +3237,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.2</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4509,17 +4524,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
   /* ----- Aperçu d'un document (ESR, lettres) à droite de la fiche : imprimer, ou envoyer par courriel avec le PDF en pièce jointe ----- */
   // Le PDF est préparé dès l'ouverture et une copie est rangée dans Documents ; « Envoyer » télécharge un brouillon .eml (PDF joint) à ouvrir dans la messagerie.
-  var DOC_FONTS = (function () { // police Marianne et Spectral dans l'aperçu (et à l'impression), depuis le DSFR
-    var u = 'https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/fonts/';
-    return [['Marianne', 'Marianne-Light', 300, 'normal'], ['Marianne', 'Marianne-Regular', 400, 'normal'], ['Marianne', 'Marianne-Regular_Italic', 400, 'italic'], ['Marianne', 'Marianne-Medium', 500, 'normal'],
-      ['Marianne', 'Marianne-Bold', 700, 'normal'], ['Marianne', 'Marianne-Bold_Italic', 700, 'italic'], ['Spectral', 'Spectral-Regular', 400, 'normal'], ['Spectral', 'Spectral-ExtraBold', 900, 'normal']]
-      .map(function (f) { return '@font-face{font-family:' + f[0] + ';src:url(' + u + f[1] + '.woff2) format("woff2");font-weight:' + f[2] + ';font-style:' + f[3] + ';font-display:swap}'; }).join('');
-  })();
   function openDocPanel(o) { // o : { item, c, kind, blockKey, title, name, html, mail: { to, cc, replyTo, subject, body } | null, markOnOpen }
-    var d = state.doc = { title: o.title, name: o.name, kind: o.kind, blockKey: o.blockKey, itemId: o.item.raw.id, mail: o.mail, view: null, shown: null, ab: null, msg: { type: 'info', text: 'Préparation de l’aperçu et du PDF…' }, sent: false };
+    var d = state.doc = { title: o.title, name: o.name, kind: o.kind, blockKey: o.blockKey, itemId: o.item.raw.id, mail: o.mail, pages: null, shown: null, ab: null, msg: { type: 'info', text: 'Préparation de l’aperçu et du PDF…' }, sent: false, scroll: true };
     renderModal();
-    window.__withBloc(o.html).then(function (h) { if (state.doc !== d) return; d.view = sanitizeHtml(h); renderModal(); });
-    buildPdfFromHtml(o.html).then(function (ab) {
+    // Le document est mis en page sur la largeur d'une feuille A4 (794 px) puis réduit dans les marges, comme à l'impression ; l'aperçu montre les pages du PDF.
+    buildPdfFromHtml(o.html, { fit: 794, onPages: function (imgs, mg) { if (state.doc === d) { d.pages = imgs; d.mg = mg; } } }).then(function (ab) {
       if (state.doc !== d) return;
       d.ab = ab; if (o.markOnOpen) markSent(o.item.raw.id, o.blockKey, o.kind);
       d.msg = { type: 'info', text: 'Enregistrement d’une copie dans Documents…' }; renderModal();
@@ -4534,33 +4543,30 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var d = state.doc, box = $('modal-doc');
     if (!d) { box.hidden = true; return; }
     $('modal-doc-title').textContent = d.title; $('modal-doc-sub').textContent = d.name;
-    var bar = '<button type="button" class="btn" data-docp="print"' + (d.view ? '' : ' disabled') + '>Imprimer</button>' +
+    var bar = '<button type="button" class="btn" data-docp="print"' + (d.pages ? '' : ' disabled') + '>Imprimer</button>' +
       '<button type="button" class="btn secondary" data-docp="mail"' + (d.ab && d.mail ? '' : ' disabled') + (d.mail ? '' : ' title="Aucune adresse e-mail valide pour ce candidat"') + '>' + (d.sent ? 'Envoyer à nouveau' : 'Envoyer par courriel (PDF joint)') + '</button>' +
       '<button type="button" class="btn secondary" data-docp="pdf"' + (d.ab ? '' : ' disabled') + '>Télécharger le PDF</button>';
     if ($('modal-doc-bar').getAttribute('data-sig') !== bar) { $('modal-doc-bar').innerHTML = bar; $('modal-doc-bar').setAttribute('data-sig', bar); }
     $('modal-doc-msg').innerHTML = d.msg ? '<div class="doc-alert ' + (d.msg.type === 'info' ? 'info' : d.msg.type) + '"><p>' + esc(d.msg.text).replace(/\n/g, '<br>') + '</p></div>' : '';
-    var fr = $('modal-doc-frame');
-    if (d.view && d.shown !== d.view) {
-      d.shown = d.view;
-      fr.onload = function () { fitDocFrame(); };
-      fr.srcdoc = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>' + esc(d.name.replace(/\.pdf$/, '')) + '</title><style>' + DOC_FONTS +
-        '@page{size:A4;margin:12.7mm}html,body{margin:0}body{background:#e9e9ee}.sheet{width:698px;min-height:1027px;margin:16px auto;padding:48px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);color:#161616;font-family:Marianne,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;box-sizing:content-box}' +
-        '@media print{body{background:#fff;zoom:1!important}.sheet{margin:0;padding:0;box-shadow:none;min-height:0;width:auto}tr,[data-pdf-keep]{break-inside:avoid}[data-pdf-break]{break-before:page}}</style></head><body><div class="sheet">' + d.view + '</div></body></html>';
-    } else if (!d.view && d.shown == null) fr.srcdoc = '<!doctype html><html><body style="margin:0;font:14px Arial;color:#666;display:flex;align-items:center;justify-content:center;height:90vh">Préparation de l’aperçu…</body></html>';
+    var pg = $('modal-doc-pages');
+    if (d.pages && d.shown !== d.pages) {
+      d.shown = d.pages; var mg = d.mg || [36, 36, 36, 36];
+      pg.innerHTML = d.pages.map(function (im, n) { // image placée dans la page A4 à l'emplacement des marges
+        return '<div class="doc-prev__page"><img alt="Page ' + (n + 1) + ' sur ' + d.pages.length + '" src="' + im.src + '" style="left:' + (mg[3] / 595.28 * 100) + '%;top:' + (mg[0] / 841.89 * 100) + '%;width:' + (im.w / 595.28 * 100) + '%;height:' + (im.h / 841.89 * 100) + '%"></div>';
+      }).join('');
+    } else if (!d.pages && d.shown !== 'wait') { d.shown = 'wait'; pg.innerHTML = '<p class="doc-prev__wait">Préparation de l’aperçu…</p>'; }
     box.hidden = false; $('modal-column').classList.add('is-compare');
+    if (d.scroll) { d.scroll = false; requestAnimationFrame(function () { var r = box.getBoundingClientRect(); if (r.top > window.innerHeight - 120 || r.top < 0) box.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); } // fenêtre étroite : l'aperçu est sous la fiche
   }
-  function fitDocFrame() { // la feuille A4 tient dans la largeur de la fenêtre
-    var fr = $('modal-doc-frame'), doc = fr.contentDocument; if (!doc || !doc.body) return;
-    var z = Math.min(1, (fr.clientWidth - 8) / 828); doc.body.style.zoom = z > 0.3 ? String(z) : '0.3';
-  }
-  window.addEventListener('resize', function () { if (state.doc) fitDocFrame(); });
   $('modal-doc-close').addEventListener('click', function () { var d = state.doc; state.doc = null; renderModal(); var b = d && document.querySelector('#modal-panels [data-mail="' + d.blockKey + ':' + d.kind + '"]'); if (b) b.focus(); });
   $('modal-doc-bar').addEventListener('click', function (e) {
     var b = e.target.closest('[data-docp]'), d = state.doc; if (!b || !d) return;
     var a = b.getAttribute('data-docp');
     if (a === 'print') {
-      try { var w = $('modal-doc-frame').contentWindow; w.focus(); w.print(); }
+      document.body.classList.add('doc-printing');
+      try { window.print(); }
       catch (err) { d.msg = { type: 'error', text: 'Impression impossible depuis Grist : ' + ((err && err.message) || err) + '. Utilisez « Télécharger le PDF », puis imprimez le fichier.' }; renderModal(); }
+      setTimeout(function () { document.body.classList.remove('doc-printing'); }, 1000);
       return;
     }
     if (a === 'pdf' && d.ab) { downloadBlob(new Blob([d.ab], { type: 'application/pdf' }), d.name); return; }
@@ -20592,9 +20598,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         tr.click(); return wait(500).then(function () {
           var b = document.querySelector('#modal [data-mail="contrat:esr"]'); check('Bouton ESR présent', b); if (!b) return;
           b.disabled = false; b.click(); return wait(5000).then(function () {
-            var box = $('modal-doc'), fd = $('modal-doc-frame').contentDocument;
+            var box = $('modal-doc'), imgs = document.querySelectorAll('#modal-doc-pages img');
             check('Fenêtre d’aperçu ouverte à droite de la fiche', !box.hidden && $('modal-column').classList.contains('is-compare'));
-            check('Aperçu du document affiché', fd && /ENGAGEMENT À SERVIR/i.test(fd.body.innerText));
+            check('Aperçu : pages du PDF affichées en images', imgs.length >= 1 && /^data:image\/jpeg/.test(imgs[0].src), imgs.length + ' page(s)');
             check('Boutons Imprimer et Envoyer par courriel', !!document.querySelector('#modal-doc-bar [data-docp="print"]') && !!document.querySelector('#modal-doc-bar [data-docp="mail"]'));
             check('Copie du PDF enregistrée dans Documents', /enregistrée dans Documents/.test($('modal-doc-msg').innerText), $('modal-doc-msg').innerText);
             $('modal-doc-close').click(); return wait(300).then(function () { check('Aperçu refermé', $('modal-doc').hidden); $('modal-close').click(); return wait(300); });
