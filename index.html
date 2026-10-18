@@ -3222,7 +3222,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.1</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4558,7 +4558,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   $('modal-doc-bar').addEventListener('click', function (e) {
     var b = e.target.closest('[data-docp]'), d = state.doc; if (!b || !d) return;
     var a = b.getAttribute('data-docp');
-    if (a === 'print') { var w = $('modal-doc-frame').contentWindow; if (w) { w.focus(); w.print(); } return; }
+    if (a === 'print') {
+      try { var w = $('modal-doc-frame').contentWindow; w.focus(); w.print(); }
+      catch (err) { d.msg = { type: 'error', text: 'Impression impossible depuis Grist : ' + ((err && err.message) || err) + '. Utilisez « Télécharger le PDF », puis imprimez le fichier.' }; renderModal(); }
+      return;
+    }
     if (a === 'pdf' && d.ab) { downloadBlob(new Blob([d.ab], { type: 'application/pdf' }), d.name); return; }
     if (a === 'mail' && d.ab && d.mail) {
       var m = d.mail, blob = window.__emlDraft({ to: m.to, cc: m.cc, replyTo: m.replyTo, subject: m.subject, body: m.body, files: [{ name: d.name, type: 'application/pdf', data: d.ab }] });
@@ -5027,8 +5031,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     fillDialog('modal', item, {});
     if (!renderEsr(item)) { $('modal2').hidden = true; $('cmp-bar').hidden = true; $('modal-column').classList.remove('is-compare'); }
     renderAdmit(item);
-    if (state.doc && state.doc.itemId !== item.raw.id) state.doc = null; // aperçu d'un autre candidat
-    renderDoc();
+    renderDoc(); // l'aperçu reste ouvert pendant les mises à jour de la liste (copie dans Documents) ; il se ferme en changeant de candidat
     $('modal-prev').hidden = false; $('modal-next').hidden = false;
     $('modal-prev').disabled = m.index <= 0;
     $('modal-next').disabled = m.index >= state.view.length - 1;
@@ -5344,6 +5347,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
   function openModal(index, opener) {
     if (!state.view[index]) return;
+    state.doc = null;
     state.modal.index = index; state.modal.opener = opener || null; state.modal.rowId = state.view[index].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null; state.convert = null;
     if (!state.modal.tab) state.modal.tab = 'info';
     // Doublon = oui : les deux fiches s'ouvrent côte à côte.
@@ -5376,7 +5380,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function stepModal(delta) {
     var i = state.modal.index + delta;
     if (i < 0 || i >= state.view.length) return;
-    state.convert = null; state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
+    state.doc = null; state.convert = null; state.modal.index = i; state.modal.opener = null; state.modal.rowId = state.view[i].raw.id; state.docs.msg = null; state.docs.confirm = null; state.docs.ask = null; state.mail.msg = null; state.notice = null; state.edit = null; state.ask = null;
     // Le candidat suivant peut lui aussi être un doublon : on rouvre proprement (comparaison ou fiche simple).
     var rec = recById(state.view[i].raw.id), c = cfg();
     exitCompare();
@@ -5818,7 +5822,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     renderList(); renderAdminForm(); renderRecap();
     if (!$('modal').hidden) {
       // Une modification peut changer l'ordre de la liste (ex. nom) : on retrouve la fiche ouverte par son numéro de ligne.
-      if (state.modal.rowId != null && !state.cmp.active) { state.view.forEach(function (v, i) { if (v.raw.id === state.modal.rowId) state.modal.index = i; }); }
+      if (state.modal.rowId != null && !state.cmp.active) {
+        var at = -1; state.view.forEach(function (v, i) { if (v.raw.id === state.modal.rowId) at = i; });
+        if (at !== -1) state.modal.index = at;
+        else if (state.doc && state.doc.itemId === state.modal.rowId) { renderDoc(); return; } // la fiche est sortie de la liste filtrée (ex. ESR généré) : l'aperçu reste affiché
+      }
       if (state.view[state.modal.index]) renderModal(); else closeModal();
     }
   }
