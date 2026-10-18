@@ -103,9 +103,10 @@
     return window.__docHeader(698).then(function (h) { return html.replace(re, function () { return h ? h.html : window.__BLOC_IMG.replace(re, function (m) { return m.replace(/^<!--bloc-marque-->|<!--\/bloc-marque-->$/g, ''); }); }); });
   };
   window.__DOC_LOGO = { src: LOGO, w: 130, h: Math.round(130 * LH / LW) };
-  // Conversion HTML → PDF A4, commune à toutes les pages : le modèle (déjà nettoyé par l'appelant) est rendu hors écran puis paginé par
-  // jsPDF (via html2canvas). opts : margin [haut, droite, bas, gauche] en pt (36 par défaut), breakBefore (élément data-pdf-break repoussé
-  // en début de page s'il n'y tient pas), decorate(doc, nbPages) appelé avant l'export. → Promise<ArrayBuffer>.
+  // Conversion HTML → PDF A4, commune à toutes les pages : le modèle (déjà nettoyé par l'appelant) est mis en page par le navigateur, hors écran,
+  // puis photographié (html2canvas) et découpé en pages A4 : le PDF est l'image exacte de ce qu'affiche le navigateur (polices, tableaux, cadres).
+  // Les coupures de page évitent de trancher une ligne de texte. opts : margin [haut, droite, bas, gauche] en pt (36 par défaut),
+  // decorate(doc, nbPages) appelé avant l'export (pied de page) ; vector: true pour l'ancien rendu en texte (polices standard du PDF). → Promise<ArrayBuffer>.
   window.__htmlToPdf = function (html, opts) {
     opts = opts || {};
     var mg = opts.margin || [36, 36, 36, 36], widthPt = 595.28 - mg[1] - mg[3], widthPx = Math.round(widthPt * 96 / 72);
@@ -118,24 +119,64 @@
       wrap.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;z-index:-1;pointer-events:none;';
       // Le document est rendu dans la page : la feuille de style de SERVIR (tableaux, paragraphes, titres du DSFR) ne doit pas s'y appliquer.
       // Les propriétés de mise en forme reviennent aux valeurs par défaut du navigateur (« revert ») ; seuls comptent les styles du modèle (en ligne).
-      if (!document.getElementById('pdf-holder-reset')) { var rs = document.createElement('style'); rs.id = 'pdf-holder-reset'; rs.textContent = '.pdf-holder * { margin: revert; padding: revert; border: revert; border-collapse: revert; border-spacing: revert; font-size: revert; font-weight: revert; font-family: revert; line-height: revert; color: revert; background: revert; text-align: revert; vertical-align: revert; text-decoration: revert; list-style: revert; position: revert; top: revert; z-index: revert; box-shadow: revert; letter-spacing: revert; text-transform: revert; } .pdf-holder table { width: revert; } .pdf-holder a::after, .pdf-holder a::before { content: none; }'; document.head.appendChild(rs); }
+      if (!document.getElementById('pdf-holder-reset')) { var rs = document.createElement('style'); rs.id = 'pdf-holder-reset'; rs.textContent = '.pdf-holder * { margin: revert; padding: revert; border: revert; border-collapse: revert; border-spacing: revert; font-size: revert; font-weight: revert; font-family: revert; line-height: revert; color: revert; background: revert; text-align: revert; vertical-align: revert; text-decoration: revert; list-style: revert; position: revert; top: revert; z-index: revert; box-shadow: revert; letter-spacing: revert; text-transform: revert; } .pdf-holder table { width: auto; } .pdf-holder a::after, .pdf-holder a::before { content: none; }'; document.head.appendChild(rs); }
       holder.className = 'pdf-holder';
       holder.style.cssText = 'position:absolute;left:0;top:0;width:' + widthPx + 'px;background:#fff;color:#161616;font-family:Marianne,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;text-align:left;';
       holder.innerHTML = html;
       wrap.appendChild(holder); document.body.appendChild(wrap);
+      // Polices : jsPDF écrit le texte du PDF avec ses polices standard (Helvetica, Times, Courier), pas avec Marianne. Le texte est donc mis en page
+      // dans une police aux mêmes largeurs (Arial, Times New Roman, Courier New) : sinon les mots se décalent (espaces en trop, « camille .martin »).
+      if (opts.vector) Array.prototype.forEach.call([holder].concat(Array.prototype.slice.call(holder.querySelectorAll('*'))), function (el) {
+        var f = String(getComputedStyle(el).fontFamily || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase();
+        el.style.fontFamily = /courier|mono|consolas/.test(f) ? '"Courier New", Courier, monospace' : (/times|georgia|spectral|cambria|garamond|book|^serif$/.test(f) ? '"Times New Roman", Times, serif' : 'Arial, Helvetica, sans-serif');
+      });
       // Pagination : un élément [data-pdf-break] commence une nouvelle page ; un bloc [data-pdf-keep] (cadre) qui serait coupé passe à la page suivante.
       var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72;
       Array.prototype.forEach.call(holder.querySelectorAll('[data-pdf-break], [data-pdf-keep]'), function (el) {
         var hr = holder.getBoundingClientRect(), r = el.getBoundingClientRect(), top = r.top - hr.top, rest = top % pageH, push = 0;
         if (el.hasAttribute('data-pdf-break')) { if (rest > 1) push = pageH - rest; }
         else if (r.height < pageH * 0.9 && Math.floor(top / pageH) !== Math.floor((r.bottom - hr.top - 1) / pageH)) push = pageH - rest;
-        if (push > 0) el.style.marginTop = (parseFloat(getComputedStyle(el).marginTop) || 0) + Math.ceil(push) + 'px';
+        if (push > 0 && el.tagName === 'TR') { var sp = document.createElement('tr'), td = document.createElement('td'); td.colSpan = 99; td.style.cssText = 'height:' + Math.ceil(push) + 'px;padding:0;border:0;'; sp.appendChild(td); el.parentNode.insertBefore(sp, el); }
+        else if (push > 0) el.style.marginTop = (parseFloat(getComputedStyle(el).marginTop) || 0) + Math.ceil(push) + 'px';
       });
       var finished = false, timer = setTimeout(function () { end(new Error('délai dépassé')); }, 40000);
       function end(err, ab) {
         if (finished) return; finished = true; clearTimeout(timer);
         if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
         return err ? reject(err) : resolve(ab);
+      }
+      if (!opts.vector) { // rendu image : page par page, coupures entre deux lignes de texte
+        try {
+          var hr0 = holder.getBoundingClientRect(), H = Math.ceil(holder.scrollHeight), lines = [];
+          (function walk(n) { // boîtes des lignes de texte et des images (zones à ne pas couper)
+            if (n.nodeType === 3) { if (!n.nodeValue.trim()) return; var rg = document.createRange(); rg.selectNodeContents(n); Array.prototype.forEach.call(rg.getClientRects(), function (r) { if (r.height) lines.push([r.top - hr0.top, r.bottom - hr0.top]); }); return; }
+            if (n.nodeType !== 1) return; if (n.tagName === 'IMG' || n.tagName === 'svg') { var b = n.getBoundingClientRect(); if (b.height && b.height < pageH) lines.push([b.top - hr0.top, b.bottom - hr0.top]); return; }
+            for (var c = n.firstChild; c; c = c.nextSibling) walk(c);
+          })(holder);
+          var cuts = [0], y = 0;
+          while (y + pageH < H - 1) {
+            var cut = y + pageH, moved = true, guard = 0;
+            while (moved && guard++ < 50) { moved = false; lines.forEach(function (l) { if (l[0] < cut - 0.5 && l[1] > cut + 0.5 && l[0] > y + 20) { cut = Math.floor(l[0]) - 1; moved = true; } }); }
+            cuts.push(cut); y = cut;
+          }
+          cuts.push(H);
+          var SC = 1.75; // résolution (≈ 170 ppp à l'impression) : lisible sans alourdir le fichier
+          window.html2canvas(holder, { scale: SC, backgroundColor: '#ffffff', logging: false, useCORS: false, width: widthPx, height: H, windowWidth: widthPx, scrollX: 0, scrollY: 0, x: 0, y: 0 }).then(function (cv) {
+            try {
+              var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true });
+              for (var i = 0; i + 1 < cuts.length; i++) {
+                var h = cuts[i + 1] - cuts[i]; if (h <= 0) continue;
+                var pc = document.createElement('canvas'); pc.width = cv.width; pc.height = Math.ceil(h * SC);
+                var g = pc.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, pc.width, pc.height); g.drawImage(cv, 0, Math.floor(cuts[i] * SC), cv.width, pc.height, 0, 0, cv.width, pc.height);
+                if (i) doc.addPage();
+                doc.addImage(pc.toDataURL('image/jpeg', 0.82), 'JPEG', mg[3], mg[0], widthPt, h * 72 / 96, undefined, 'FAST');
+              }
+              if (opts.decorate) opts.decorate(doc, doc.getNumberOfPages());
+              end(null, doc.output('arraybuffer'));
+            } catch (e) { end(e); }
+          }, end);
+        } catch (e) { end(e); }
+        return;
       }
       try {
         var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true }); // compress : flux du PDF compressés
@@ -231,6 +272,7 @@ window.SERVIR_UTIL = (function () {
       if (st.boxShadow) st.removeProperty('box-shadow');
       if (/^(page|always|left|right)$/.test(st.breakBefore || st.pageBreakBefore || '')) el.setAttribute('data-pdf-break', '');
       if (/^(page|always|left|right)$/.test(st.breakAfter || st.pageBreakAfter || '')) { var nx = el.nextElementSibling; if (nx) nx.setAttribute('data-pdf-break', ''); }
+      if ((el.tagName === 'TD' || el.tagName === 'TH') && st.borderTopStyle && st.borderTopStyle !== 'none' && el.parentNode && el.parentNode.tagName === 'TR') el.parentNode.setAttribute('data-pdf-keep', ''); // ligne de tableau encadrée
       if (/avoid/.test(st.breakInside || st.pageBreakInside || '') || (/^(DIV|TABLE|SECTION|ASIDE|FIGURE|BLOCKQUOTE)$/.test(el.tagName) && st.borderTopStyle && st.borderTopStyle !== 'none' && st.borderBottomStyle && st.borderBottomStyle !== 'none')) el.setAttribute('data-pdf-keep', '');
       if (st.display === 'grid' || st.display === 'inline-grid') { // grille → tableau (colonnes de grid-template-columns)
         var cols = String(st.gridTemplateColumns || '').replace(/repeat\(\s*(\d+)\s*,\s*([^)]+)\)/g, function (m, k, v) { return Array(+k + 1).join(v.trim() + ' '); }).trim().split(/\s+(?![^(]*\))/).filter(Boolean);
@@ -242,8 +284,44 @@ window.SERVIR_UTIL = (function () {
       }
     });
   }
+  // Erreurs fréquentes des modèles saisis à la main ou recopiés depuis un tableur, corrigées avant l'analyse :
+  // guillemets doublés (""98%"", copie d'une cellule de tableur, avec guillemets d'encadrement) ; guillemet fermant oublié (style="border: 1px solid #000;>).
+  function repairHtml(html) {
+    html = String(html || '');
+    if (/=""[^"\s>]/.test(html)) { html = html.replace(/""/g, '"').trim(); if (/^"\s*</.test(html)) html = html.replace(/^"\s*/, ''); if (/>\s*"$/.test(html)) html = html.replace(/\s*"$/, ''); }
+    return html.replace(/(<[a-z][\w-]*\b[^<>]*?\s[\w:-]+\s*=\s*")([^"<>]*)>/gi, '$1$2">');
+  }
+  // Attributs de mise en forme d'ancien HTML (align, valign, width, bgcolor, cellpadding, <font>, <center>) convertis en styles en ligne :
+  // le rendu PDF ne tient compte que des styles (la feuille de style de la page est neutralisée).
+  function legacyAttrs(root) {
+    var doc = root.ownerDocument;
+    function css(el, k, v) { if (v && !el.style.getPropertyValue(k)) el.style.setProperty(k, v); }
+    function len(v) { v = String(v || '').trim(); return /^\d+(\.\d+)?$/.test(v) ? v + 'px' : v; }
+    Array.prototype.forEach.call(root.querySelectorAll('table'), function (t) {
+      var pad = t.getAttribute('cellpadding'), sp = t.getAttribute('cellspacing'), b = t.getAttribute('border');
+      css(t, 'width', len(t.getAttribute('width')));
+      if (/center/i.test(t.getAttribute('align') || '')) { css(t, 'margin-left', 'auto'); css(t, 'margin-right', 'auto'); }
+      if (sp != null) css(t, 'border-spacing', len(sp)); if (sp === '0') css(t, 'border-collapse', 'collapse');
+      if (b && b !== '0') css(t, 'border', len(b) + ' solid #000');
+      Array.prototype.forEach.call(t.querySelectorAll(':scope > tbody > tr > td, :scope > tbody > tr > th, :scope > tr > td, :scope > thead > tr > th'), function (c) {
+        if (pad != null) css(c, 'padding', len(pad)); if (b && b !== '0') css(c, 'border', '1px solid #000');
+      });
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('[align]'), function (el) { var a = el.getAttribute('align').toLowerCase(); if (el.tagName !== 'TABLE' && el.tagName !== 'IMG') css(el, 'text-align', a === 'middle' ? 'center' : a); });
+    Array.prototype.forEach.call(root.querySelectorAll('[valign]'), function (el) { css(el, 'vertical-align', el.getAttribute('valign')); });
+    Array.prototype.forEach.call(root.querySelectorAll('td[width], th[width], col[width]'), function (el) { css(el, 'width', len(el.getAttribute('width'))); });
+    Array.prototype.forEach.call(root.querySelectorAll('[bgcolor]'), function (el) { css(el, 'background-color', el.getAttribute('bgcolor')); });
+    var SIZES = { 1: '10px', 2: '13px', 3: '16px', 4: '18px', 5: '24px', 6: '32px', 7: '48px' };
+    Array.prototype.forEach.call(root.querySelectorAll('font'), function (f) {
+      var sp = doc.createElement('span'); sp.setAttribute('style', f.getAttribute('style') || '');
+      css(sp, 'font-family', f.getAttribute('face')); css(sp, 'color', f.getAttribute('color')); css(sp, 'font-size', SIZES[parseInt(f.getAttribute('size'), 10)]);
+      while (f.firstChild) sp.appendChild(f.firstChild); f.parentNode.replaceChild(sp, f);
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('center'), function (c) { var d = doc.createElement('div'); d.setAttribute('style', 'text-align:center;'); while (c.firstChild) d.appendChild(c.firstChild); c.parentNode.replaceChild(d, c); });
+  }
   function sanitizeHtml(html) {
-    var doc = new DOMParser().parseFromString('<div id="root">' + html + '</div>', 'text/html'), root = doc.getElementById('root'), page = inlineStyles(root);
+    var doc = new DOMParser().parseFromString('<div id="root">' + repairHtml(html) + '</div>', 'text/html'), root = doc.getElementById('root'), page = inlineStyles(root);
+    legacyAttrs(root);
     Array.prototype.forEach.call(root.querySelectorAll('script,style,iframe,object,embed,link,meta,base,title,form,input,button,textarea,select,audio,video'), function (n) { n.parentNode.removeChild(n); });
     pdfLayout(root);
     Array.prototype.forEach.call(root.querySelectorAll('*'), function (el) {
@@ -1571,6 +1649,9 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .modal-stack { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
   .modal-stack .modal-dialog[hidden] { display: none; }
   .modal-stack .modal-dialog { flex: 1 1 0; min-width: min(30rem, 100%); }
+  .doc-prev__bar { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 .75rem; }
+  .doc-prev__frame { display: block; width: 100%; height: min(78vh, 60rem); border: 1px solid var(--border-default-grey, #ddd); border-radius: 4px; background: #e9e9ee; }
+  #modal-doc-msg .doc-alert { margin: 0 0 .75rem; }
   .modal-column.is-compare .modal-dialog { padding: 1.4rem 1.25rem 1.5rem; }
   .modal-column.is-compare .modal-title { font-size: 1.25em; }
   .cmp-bar { margin-top: 1rem; padding: 1.1rem 1.5rem 1.25rem; border-radius: 1rem; background: var(--bg); box-shadow: 0 1rem 2.5rem rgba(20, 10, 30, 0.25), 0 2px 8px rgba(20, 10, 30, 0.12); }
@@ -3016,6 +3097,18 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         </div>
         <div id="modal-adm-body"></div>
       </div>
+      <div class="modal-dialog doc-prev" id="modal-doc" role="dialog" aria-modal="true" aria-labelledby="modal-doc-title" hidden>
+        <div class="modal-header">
+          <div style="min-width:0">
+            <h2 class="modal-title" id="modal-doc-title">Aperçu du document</h2>
+            <p class="modal-sub" id="modal-doc-sub"></p>
+          </div>
+          <div class="modal-actions"><button class="round-btn" id="modal-doc-close" type="button" aria-label="Fermer l’aperçu" title="Fermer">✕</button></div>
+        </div>
+        <div class="doc-prev__bar" id="modal-doc-bar"></div>
+        <div id="modal-doc-msg" role="status" aria-live="polite"></div>
+        <iframe class="doc-prev__frame" id="modal-doc-frame" title="Aperçu du document"></iframe>
+      </div>
     </div>
     <div class="cmp-bar" id="cmp-bar" hidden></div>
   </div>
@@ -3129,7 +3222,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.68.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.69.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4029,6 +4122,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function esrVar(key, item, c) {
     function col() { for (var i = 0; i < arguments.length; i++) { var x = findCol(c.table, arguments[i]); if (x) return x; } return null; }
     function val(x) { return x ? textOfValue(x, item.raw[x.id]) : ''; }
+    if (key === 'E') key = 'ACCORD'; // {{e}} : variante courte de {{ACCORD}}
     if (key === 'CIVILITE_LONGUE' || key === 'ACCORD') {
       var cv = String(val(col('Civilité', 'Civilite'))).trim(), fem = /^(mme|madame|mlle|mademoiselle|f\b)/i.test(cv);
       return key === 'ACCORD' ? (fem ? 'e' : '') : (fem ? 'Madame' : cv ? 'Monsieur' : 'Monsieur, Madame');
@@ -4047,7 +4141,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function fillTemplate(text, item, c, asHtml, extra) {
     var out = function (v) { return asHtml ? esc(v) : v; };
-    var res = String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
+    // Variables {{NOM}} ; la forme courte {NOM} est aussi acceptée quand elle désigne une colonne ou une variable connue (sinon laissée telle quelle).
+    var res = String(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}|\{([A-Za-z_\u00C0-\u017F][\w\u00C0-\u017F]*)\}/g, function (whole, n2, n1) {
+      var name = n2 != null ? n2 : n1, v = one(whole, name);
+      return n1 != null && v === whole ? whole : v;
+    });
+    function one(whole, name) {
       var key = name.toUpperCase().replace(/\s+/g, '_');
       if (key === 'IDENTITE') return out(formatName(identityOf(item.raw, c)));
       if (key === 'DATE_DU_JOUR') return out(todayFr());
@@ -4062,7 +4161,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
       if (alias) return col ? out(textOfValue(col, item.raw[col.id])) : '';
       return col ? out(textOfValue(col, item.raw[col.id])) : whole;
-    });
+    }
     return asHtml ? res : res.replace(/[ \t]{2,}/g, ' '); // une variable vide ne laisse pas de double espace dans un courriel
   }
   // Nettoie le HTML d'un modèle : ni script, ni gestionnaire d'événement, ni ressource externe (seules les images data: sont admises).
@@ -4300,23 +4399,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     }
     function done(type, text) { state.mail.msg = { type: type, text: text }; renderModal(); }
 
-    // ESR : pas de courriel, le PDF est téléchargé puis copié dans Documents.
+    // ESR : aperçu à droite de la fiche (imprimer, ou envoyer au candidat avec le PDF joint) ; une copie du PDF est rangée dans Documents.
     if (act.noMail) {
-      var nameEsr = 'ESR_' + safeFileName(formatName(item.id || 'candidat')) + '.pdf', ticketEsr = nameEsr + Date.now(); state.mail.ticket = ticketEsr;
-      done('success', 'Génération de l’ESR en cours…');
-      return buildPdfFromHtml((window.__applyBloc ? window.__applyBloc('pmg:' + blockKey + ':' + kind + ':doc', fillTemplate(tpl.template, item, c, true)) : fillTemplate(tpl.template, item, c, true))).then(function (ab) {
-        downloadBlob(new Blob([ab], { type: 'application/pdf' }), nameEsr);
-        markSent(item.raw.id, blockKey, kind);
-        state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = nameEsr;
-        var okTxt = 'ESR généré et téléchargé.';
-        state.mail.msg = { type: 'success', text: okTxt + ' Enregistrement d’une copie dans Documents…' }; renderModal();
-        return storeCopy(item, c, 'esr', nameEsr, ab).then(function (r) {
-          if (state.mail.ticket !== ticketEsr) return;
-          state.mail.msg = r.stored ? { type: 'success', text: okTxt + ' Une copie a été enregistrée dans Documents (' + displayLabel(r.col) + ').' }
-                                    : { type: 'error', text: okTxt + ' La copie n’a pas été enregistrée dans Documents : ' + r.why + '.' };
-          return r.stored ? load() : renderModal();
-        });
-      }).catch(function (e) { if (state.mail.ticket === ticketEsr) done('error', 'Génération impossible : ' + ((e && e.message) || e) + '.'); });
+      var nameEsr = 'ESR_' + safeFileName(formatName(item.id || 'candidat')) + '.pdf', toEsr = emailOf(item.raw, c);
+      openDocPanel({ item: item, c: c, kind: kind, blockKey: blockKey, title: 'Engagement à servir dans la réserve (ESR)', name: nameEsr, markOnOpen: true,
+        html: window.__applyBloc ? window.__applyBloc('pmg:' + blockKey + ':' + kind + ':doc', fillTemplate(tpl.template, item, c, true)) : fillTemplate(tpl.template, item, c, true),
+        mail: validEmail(toEsr) ? { to: toEsr, cc: c.cc, replyTo: c.replyTo, subject: 'Votre engagement à servir dans la réserve (ESR)', body: fillTemplate('Bonjour {{CIVILITE}} {{NOM}},\n\nVeuillez trouver ci-joint votre engagement à servir dans la réserve opérationnelle de la gendarmerie nationale (ESR).\n\nCordialement,\nDivision réserves jeunesse', item, c, false) } : null });
+      return;
     }
 
     if (act.requireStatus && !hasStatus(item, act.requireStatus)) return done('error', 'Cette action n’est disponible que si l’état de la candidature est « ' + act.requireStatus + ' ».');
@@ -4388,7 +4477,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       }).catch(function (e) { if (state.mail.ticket === tkH) { state.mail.msg = { type: 'error', text: sentH + ' La copie PDF n’a pas pu être générée : ' + ((e && e.message) || e) + '.' }; renderModal(); } });
       return;
     }
-    // Lettre d'incorporation / de rejet : le PDF est téléchargé (à glisser dans le message ouvert) en plus d'être archivé dans Documents.
+    // Lettre d'incorporation / de rejet : aperçu à droite de la fiche ; « Envoyer » prépare le courriel du modèle avec le PDF en pièce jointe.
+    if (kind === 'lettre' || kind === 'rejet') {
+      openDocPanel({ item: item, c: c, kind: kind, blockKey: blockKey, title: kind === 'lettre' ? 'Lettre d’incorporation' : 'Lettre de rejet', name: (kind === 'lettre' ? 'Lettre_incorporation_' : 'Lettre_rejet_') + who + '.pdf',
+        html: window.__applyBloc ? window.__applyBloc('pmg:' + blockKey + ':' + kind + ':doc', fillTemplate(tpl.template, item, c, true, extra)) : fillTemplate(tpl.template, item, c, true, extra),
+        mail: { to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: body } });
+      return;
+    }
+    // Autres documents : le PDF est téléchargé (à glisser dans le message ouvert) en plus d'être archivé dans Documents.
     var base = kind === 'lettre' ? 'Lettre_incorporation_' + who : kind === 'rejet' ? 'Lettre_rejet_' + who : 'Convocation_' + (kind === 'service' ? 'service_' : '') + blockKey + '_' + who, name = base + '.pdf';
     var sent = kind === 'rejet' ? 'Lettre de rejet générée et message préparé dans votre messagerie : glissez-y le PDF téléchargé, vérifiez puis envoyez.'
       : kind === 'lettre' ? 'Lettre d’incorporation générée et message préparé dans votre messagerie : glissez-y le PDF téléchargé, vérifiez puis envoyez.'
@@ -4410,6 +4506,69 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       });
     }).catch(function (e) { if (state.mail.ticket === ticket) done('error', 'Génération impossible : ' + ((e && e.message) || e) + '.'); });
   }
+
+  /* ----- Aperçu d'un document (ESR, lettres) à droite de la fiche : imprimer, ou envoyer par courriel avec le PDF en pièce jointe ----- */
+  // Le PDF est préparé dès l'ouverture et une copie est rangée dans Documents ; « Envoyer » télécharge un brouillon .eml (PDF joint) à ouvrir dans la messagerie.
+  var DOC_FONTS = (function () { // police Marianne et Spectral dans l'aperçu (et à l'impression), depuis le DSFR
+    var u = 'https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/fonts/';
+    return [['Marianne', 'Marianne-Light', 300, 'normal'], ['Marianne', 'Marianne-Regular', 400, 'normal'], ['Marianne', 'Marianne-Regular_Italic', 400, 'italic'], ['Marianne', 'Marianne-Medium', 500, 'normal'],
+      ['Marianne', 'Marianne-Bold', 700, 'normal'], ['Marianne', 'Marianne-Bold_Italic', 700, 'italic'], ['Spectral', 'Spectral-Regular', 400, 'normal'], ['Spectral', 'Spectral-ExtraBold', 900, 'normal']]
+      .map(function (f) { return '@font-face{font-family:' + f[0] + ';src:url(' + u + f[1] + '.woff2) format("woff2");font-weight:' + f[2] + ';font-style:' + f[3] + ';font-display:swap}'; }).join('');
+  })();
+  function openDocPanel(o) { // o : { item, c, kind, blockKey, title, name, html, mail: { to, cc, replyTo, subject, body } | null, markOnOpen }
+    var d = state.doc = { title: o.title, name: o.name, kind: o.kind, blockKey: o.blockKey, itemId: o.item.raw.id, mail: o.mail, view: null, shown: null, ab: null, msg: { type: 'info', text: 'Préparation de l’aperçu et du PDF…' }, sent: false };
+    renderModal();
+    window.__withBloc(o.html).then(function (h) { if (state.doc !== d) return; d.view = sanitizeHtml(h); renderModal(); });
+    buildPdfFromHtml(o.html).then(function (ab) {
+      if (state.doc !== d) return;
+      d.ab = ab; if (o.markOnOpen) markSent(o.item.raw.id, o.blockKey, o.kind);
+      d.msg = { type: 'info', text: 'Enregistrement d’une copie dans Documents…' }; renderModal();
+      return storeCopy(o.item, o.c, o.kind, o.name, ab).then(function (r) {
+        if (state.doc !== d) return;
+        d.msg = r.stored ? { type: 'success', text: 'Une copie du PDF a été enregistrée dans Documents (' + displayLabel(r.col) + ').' } : { type: 'error', text: 'La copie du PDF n’a pas été enregistrée dans Documents : ' + r.why + '.' };
+        return r.stored ? load() : renderModal();
+      });
+    }).catch(function (e) { if (state.doc === d) { d.msg = { type: 'error', text: 'Génération du PDF impossible : ' + ((e && e.message) || e) + '.' }; renderModal(); } });
+  }
+  function renderDoc() {
+    var d = state.doc, box = $('modal-doc');
+    if (!d) { box.hidden = true; return; }
+    $('modal-doc-title').textContent = d.title; $('modal-doc-sub').textContent = d.name;
+    var bar = '<button type="button" class="btn" data-docp="print"' + (d.view ? '' : ' disabled') + '>Imprimer</button>' +
+      '<button type="button" class="btn secondary" data-docp="mail"' + (d.ab && d.mail ? '' : ' disabled') + (d.mail ? '' : ' title="Aucune adresse e-mail valide pour ce candidat"') + '>' + (d.sent ? 'Envoyer à nouveau' : 'Envoyer par courriel (PDF joint)') + '</button>' +
+      '<button type="button" class="btn secondary" data-docp="pdf"' + (d.ab ? '' : ' disabled') + '>Télécharger le PDF</button>';
+    if ($('modal-doc-bar').getAttribute('data-sig') !== bar) { $('modal-doc-bar').innerHTML = bar; $('modal-doc-bar').setAttribute('data-sig', bar); }
+    $('modal-doc-msg').innerHTML = d.msg ? '<div class="doc-alert ' + (d.msg.type === 'info' ? 'info' : d.msg.type) + '"><p>' + esc(d.msg.text).replace(/\n/g, '<br>') + '</p></div>' : '';
+    var fr = $('modal-doc-frame');
+    if (d.view && d.shown !== d.view) {
+      d.shown = d.view;
+      fr.onload = function () { fitDocFrame(); };
+      fr.srcdoc = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>' + esc(d.name.replace(/\.pdf$/, '')) + '</title><style>' + DOC_FONTS +
+        '@page{size:A4;margin:12.7mm}html,body{margin:0}body{background:#e9e9ee}.sheet{width:698px;min-height:1027px;margin:16px auto;padding:48px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);color:#161616;font-family:Marianne,Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;box-sizing:content-box}' +
+        '@media print{body{background:#fff;zoom:1!important}.sheet{margin:0;padding:0;box-shadow:none;min-height:0;width:auto}tr,[data-pdf-keep]{break-inside:avoid}[data-pdf-break]{break-before:page}}</style></head><body><div class="sheet">' + d.view + '</div></body></html>';
+    } else if (!d.view && d.shown == null) fr.srcdoc = '<!doctype html><html><body style="margin:0;font:14px Arial;color:#666;display:flex;align-items:center;justify-content:center;height:90vh">Préparation de l’aperçu…</body></html>';
+    box.hidden = false; $('modal-column').classList.add('is-compare');
+  }
+  function fitDocFrame() { // la feuille A4 tient dans la largeur de la fenêtre
+    var fr = $('modal-doc-frame'), doc = fr.contentDocument; if (!doc || !doc.body) return;
+    var z = Math.min(1, (fr.clientWidth - 8) / 828); doc.body.style.zoom = z > 0.3 ? String(z) : '0.3';
+  }
+  window.addEventListener('resize', function () { if (state.doc) fitDocFrame(); });
+  $('modal-doc-close').addEventListener('click', function () { var d = state.doc; state.doc = null; renderModal(); var b = d && document.querySelector('#modal-panels [data-mail="' + d.blockKey + ':' + d.kind + '"]'); if (b) b.focus(); });
+  $('modal-doc-bar').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-docp]'), d = state.doc; if (!b || !d) return;
+    var a = b.getAttribute('data-docp');
+    if (a === 'print') { var w = $('modal-doc-frame').contentWindow; if (w) { w.focus(); w.print(); } return; }
+    if (a === 'pdf' && d.ab) { downloadBlob(new Blob([d.ab], { type: 'application/pdf' }), d.name); return; }
+    if (a === 'mail' && d.ab && d.mail) {
+      var m = d.mail, blob = window.__emlDraft({ to: m.to, cc: m.cc, replyTo: m.replyTo, subject: m.subject, body: m.body, files: [{ name: d.name, type: 'application/pdf', data: d.ab }] });
+      downloadBlob(blob, d.name.replace(/\.pdf$/i, '') + '.eml');
+      if (!d.sent && d.markOnSend !== false && d.kind !== 'esr') markSent(d.itemId, d.blockKey, d.kind);
+      d.sent = true;
+      d.msg = { type: 'success', text: 'Brouillon de courriel téléchargé (destinataire : ' + m.to + ', PDF en pièce jointe). Ouvrez-le, faites Ctrl + E, vérifiez le message et envoyez-le.' };
+      renderModal();
+    }
+  });
 
   /* ----- Onglet Documents : liste des fichiers + zone de dépôt ----- */
   var ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
@@ -4868,6 +5027,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     fillDialog('modal', item, {});
     if (!renderEsr(item)) { $('modal2').hidden = true; $('cmp-bar').hidden = true; $('modal-column').classList.remove('is-compare'); }
     renderAdmit(item);
+    if (state.doc && state.doc.itemId !== item.raw.id) state.doc = null; // aperçu d'un autre candidat
+    renderDoc();
     $('modal-prev').hidden = false; $('modal-next').hidden = false;
     $('modal-prev').disabled = m.index <= 0;
     $('modal-next').disabled = m.index >= state.view.length - 1;
@@ -5205,7 +5366,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (ov.hidden) return;
     ov.classList.remove('is-open');
     document.body.style.overflow = '';
-    exitCompare(); state.notice = null; state.edit = null; state.ask = null;
+    exitCompare(); state.notice = null; state.edit = null; state.ask = null; state.doc = null;
     setTimeout(function () { ov.hidden = true; }, 200);
     load(); // actualise les données à la fermeture de la fiche
     var op = state.modal.opener;
@@ -20413,6 +20574,23 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
             check('Fiche du stagiaire manuel (profession)', /Menuisier/.test($('ins-smodal-body').textContent));
             $('ins-sdel').click(); $('ins-sdel').click(); return wait(500);
           }).then(function () { check('Stagiaire manuel supprimé', !/ESSAI/.test($('ins-rows').textContent)); });
+        });
+      });
+    }],
+    ['Aperçu du document (ESR) à droite de la fiche candidat', function () {
+      window.__showPage('pmg');
+      return wait(900).then(function () {
+        var tr = document.querySelector('#rows tr[data-i]'); check('Une candidature à ouvrir', tr); if (!tr) return;
+        tr.click(); return wait(500).then(function () {
+          var b = document.querySelector('#modal [data-mail="contrat:esr"]'); check('Bouton ESR présent', b); if (!b) return;
+          b.disabled = false; b.click(); return wait(5000).then(function () {
+            var box = $('modal-doc'), fd = $('modal-doc-frame').contentDocument;
+            check('Fenêtre d’aperçu ouverte à droite de la fiche', !box.hidden && $('modal-column').classList.contains('is-compare'));
+            check('Aperçu du document affiché', fd && /ENGAGEMENT À SERVIR/i.test(fd.body.innerText));
+            check('Boutons Imprimer et Envoyer par courriel', !!document.querySelector('#modal-doc-bar [data-docp="print"]') && !!document.querySelector('#modal-doc-bar [data-docp="mail"]'));
+            check('Copie du PDF enregistrée dans Documents', /enregistrée dans Documents/.test($('modal-doc-msg').innerText), $('modal-doc-msg').innerText);
+            $('modal-doc-close').click(); return wait(300).then(function () { check('Aperçu refermé', $('modal-doc').hidden); $('modal-close').click(); return wait(300); });
+          });
         });
       });
     }],
