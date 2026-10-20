@@ -3683,7 +3683,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.91.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.91.3</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -9549,6 +9549,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       }
       return { html: s.indexOf('<') === -1 ? esc(s) : s.replace(/^([^<]*)/, function (m) { return esc(m); }) };
     }
+    if (/missions deja occupees|langues parlees/.test(norm(col.label))) { var tl = toList(v).map(function (x) { x = String(x).trim(); return x.charAt(0).toLocaleUpperCase('fr-FR') + x.slice(1); }); return tl.length ? { html: '<div class="tagrow">' + tagsHtml(tl) + '</div>' } : { html: '—', empty: true }; } // listes (choix multiple ou texte séparé par des virgules) : en tags
     if (t === 'Bool') return { html: v ? '<span class="tag green">Oui</span>' : '<span class="tag grey">Non</span>' };
     if (t === 'Choice' || t === 'ChoiceList') return { html: '<div class="tagrow">' + tagsHtml(v) + '</div>' };
     if (t === 'Attachments') { var n = toList(v).length; return { html: n + (n > 1 ? ' fichiers joints' : ' fichier joint') }; }
@@ -13334,7 +13335,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var LANGUES = ['Anglais', 'Allemand', 'Espagnol', 'Italien', 'Portugais', 'Néerlandais', 'Arabe', 'Russe', 'Ukrainien', 'Chinois', 'Turc', 'Polonais', 'Roumain', 'Langue des signes française'];
   var FIELDS = [['Profession', 'Text', 'Profession'], ['Niveau_etudes', 'Choice', 'Niveau d’études', NIVEAUX], ['Domaine_etudes', 'Choice', 'Domaine d’études', DOMAINES], ['Missions', 'ChoiceList', 'Missions déjà occupées en gendarmerie', MISSIONS], ['Langues', 'ChoiceList', 'Langues parlées', LANGUES]];
   var TARGET = { Profession: 'Profession', Niveau_etudes: 'Niveau d’études', Domaine_etudes: 'Domaine d’études', Missions: 'Missions déjà occupées en gendarmerie', Langues: 'Langues parlées' }; // colonnes de la table des réservistes
-  var FT = 'Formulaire_reservistes', FCOLS = [['Nigend', 'Text']].concat(FIELDS).concat([['Commentaire', 'Text'], ['Etat_integration', 'Text', 'État de l’intégration'], ['Integre_le', 'DateTime:Europe/Paris', 'Intégré le'], ['Recu_le', 'DateTime:Europe/Paris', 'Reçu le', null, 'NOW()']]);
+  var FT = 'Formulaire_reservistes', FCOLS = [['Nigend', 'Text']].concat(FIELDS).concat([['Autres_langues', 'Text', 'Autres langues'], ['Commentaire', 'Text'], ['Etat_integration', 'Text', 'État de l’intégration'], ['Integre_le', 'DateTime:Europe/Paris', 'Intégré le'], ['Recu_le', 'DateTime:Europe/Paris', 'Reçu le', null, 'NOW()']]);
   var F = null, BUSY = false, OPEN = false, DEMO = { cols: FCOLS, rows: [] };
   function R() { return window.RES; }
   function rowsOf(t) { return t ? t.rows : []; }
@@ -13342,11 +13343,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function lst(v) { if (v == null || v === '') return []; if (Array.isArray(v)) return (v[0] === 'L' ? v.slice(1) : v).filter(function (x) { return x != null && x !== ''; }).map(String); return String(v).split(/\s*[,;\n]\s*/).filter(Boolean); }
   function isList(key) { return key === 'Missions' || key === 'Langues'; }
   function cap(t) { t = String(t).trim(); return t ? t.charAt(0).toLocaleUpperCase('fr-FR') + t.slice(1) : t; }
-  function fval(r, key) { var c = fcol(key); var v = c ? r[c.id] : ''; if (isList(key)) return lst(v).map(cap).join(', '); return v == null ? '' : String(v).trim(); }
+  function fval(r, key) { var c = fcol(key); var v = c ? r[c.id] : ''; if (isList(key)) return listOf(r, key, v).join(', '); return v == null ? '' : String(v).trim(); }
+  // Langues : choix de la liste + champ « Autres langues » (séparées par des virgules), sans doublon ni option « Autre »
+  function listOf(r, key, v) { var l = lst(v); if (key === 'Langues') { var o = fcol('Autres_langues'); if (o) l = l.concat(lst(r[o.id])); l = l.filter(function (x) { return !/^autres?( langues?)?$/.test(norm(x)); }); }
+    var seen = {}; return l.map(cap).filter(function (x) { var k = norm(x); if (seen[k]) return false; seen[k] = 1; return true; }); }
   function same(key, a, b) { if (!isList(key)) return norm(a) === norm(b); var x = lst(a).map(norm).sort().join('|'), y = lst(b).map(norm).sort().join('|'); return x === y; }
   function load() {
     if (!IN_GRIST) { if (!DEMO.seeded) { DEMO.seeded = true; DEMO.rows = [{ id: 1, Recu_le: Date.now() / 1000 - 3 * 86400, Nigend: '2019-1120', Profession: 'Infirmière', Missions: ['L', 'Secrétariat', 'Instruction'], Langues: ['L', 'Anglais', 'Espagnol'], Niveau_etudes: 'Bac +3 (licence / BUT)', Domaine_etudes: 'Santé / médical / paramédical' },
-      { id: 2, Recu_le: Date.now() / 1000 - 86400, Nigend: '2022 0555', Profession: 'Développeur', Missions: ['L', 'Ecoutes téléphoniques', 'Enquêtes judiciaires'], Langues: 'anglais, russe', Niveau_etudes: 'Bac +5 (master / ingénieur)', Domaine_etudes: 'Informatique / numérique / cyber' }, { id: 3, Recu_le: Date.now() / 1000 - 2 * 3600, Nigend: '2099-1234', Profession: 'Électricien', Niveau_etudes: 'CAP / BEP', Domaine_etudes: 'Bâtiment / travaux publics' }]; }
+      { id: 2, Recu_le: Date.now() / 1000 - 86400, Nigend: '2022 0555', Profession: 'Développeur', Missions: ['L', 'Ecoutes téléphoniques', 'Enquêtes judiciaires'], Langues: 'anglais, russe', Autres_langues: 'japonais, Anglais', Niveau_etudes: 'Bac +5 (master / ingénieur)', Domaine_etudes: 'Informatique / numérique / cyber' }, { id: 3, Recu_le: Date.now() / 1000 - 2 * 3600, Nigend: '2099-1234', Profession: 'Électricien', Niveau_etudes: 'CAP / BEP', Domaine_etudes: 'Bâtiment / travaux publics' }]; }
       F = { table: FT, cols: DEMO.cols.map(function (c) { return { id: c[0], label: c[2] || c[0], type: c[1] }; }), rows: DEMO.rows }; return Promise.resolve();
     }
     return window.grist.docApi.listTables().then(function (ts) {
@@ -24163,7 +24167,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         var F0 = window.RPF.follow(), st = function (re) { return (F0.filter(function (x) { return re.test(x.p.label); })[0] || {}).st; };
         check('Profilage : suivi des répondants (a répondu, déjà renseignée, invité, pas encore invité)', st(/GARNIER/) === 'rep' && st(/LEFÈVRE/) === 'ok' && st(/ROBIN/) === 'inv' && st(/BLANC/) === 'non' && /^Profilage · 2 répondants sur 5/.test(document.querySelector('#r-pf-box summary').textContent), F0.map(function (x) { return x.p.label + ':' + x.st; }).join(' '));
         window.RPF.set({ lang: ['Anglais'] }); var l1 = window.RPF.search().length; window.RPF.set({ lang: ['Anglais', 'Russe'] }); var l2 = window.RPF.search().map(function (x) { return x.label; }); window.RPF.set({ lang: [] });
-        check('Langues parlées : liste ou texte séparé par des virgules, recherche sur toutes les langues cochées', l1 === 4 && l2.join() === 'GARNIER Lucas' && window.RES.cell(g.raw, 'Langues parlées') === 'Anglais, Russe', l1 + ' | ' + l2.join() + ' | ' + window.RES.cell(g.raw, 'Langues parlées'));
+        check('Langues parlées : liste, texte séparé par des virgules et « Autres langues » fusionnés sans doublon, recherche sur toutes les langues cochées', l1 === 4 && l2.join() === 'GARNIER Lucas' && window.RES.cell(g.raw, 'Langues parlées') === 'Anglais, Russe, Japonais', l1 + ' | ' + l2.join() + ' | ' + window.RES.cell(g.raw, 'Langues parlées'));
         $('r-psmodal-close').click(); return wait(300);
       }).then(function () {
         var o0 = JSON.parse(JSON.stringify(window.__getOpts() || {})), o = JSON.parse(JSON.stringify(o0)); o.r = Object.assign({}, o.r || {}, { profForm: 'https://grist.example/forms/abc' }); window.__pushOpts(o);
