@@ -97,6 +97,24 @@
       return { src: src, w: W, h: H, html: '<img alt="Ministère de l’Intérieur – Gendarmerie nationale" src="' + src + '" width="' + W + '" height="' + H + '" style="display:block">' };
     }));
   };
+  // Signature depuis un fichier image : réduite (500 × 200 px au plus) et gardée en PNG (data URI) avec le modèle
+  window.__sigFromFile = function (file) {
+    return new Promise(function (res, rej) {
+      if (!file || !/^image\//.test(file.type || '')) return rej(new Error('choisissez une image (PNG, JPEG…)'));
+      var r = new FileReader(); r.onerror = function () { rej(new Error('lecture impossible')); };
+      r.onload = function () { var im = new Image(); im.onerror = function () { rej(new Error('image illisible')); }; im.onload = function () {
+        var k = Math.min(1, 500 / im.width, 200 / im.height), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/png'));
+      }; im.src = r.result; }; r.readAsDataURL(file);
+    });
+  };
+  // {{SIGNATURE_IMAGE}} remplacé par l'image (à défaut, ajoutée en fin de document) ; orientation paysage : repère lu par __htmlToPdf
+  window.__docFinish = function (html, o) {
+    html = String(html || ''); o = o || {};
+    var img = o.sig ? '<img alt="Signature" src="' + o.sig + '" style="max-width:220px;max-height:90px;display:inline-block">' : '', re = /\{\{\s*SIGNATURE_IMAGE\s*\}\}|\{SIGNATURE_IMAGE\}/gi;
+    html = re.test(html) ? html.replace(re, img) : (img ? html + '<div style="margin-top:24px;text-align:right">' + img + '</div>' : html);
+    return (o.landscape ? '<!--orientation:paysage-->' : '') + html;
+  };
   window.__withBloc = function (html) {
     var re = /<!--bloc-marque-->[\s\S]*?<!--\/bloc-marque-->/;
     if (!re.test(html)) return Promise.resolve(html);
@@ -109,7 +127,8 @@
   // decorate(doc, nbPages) appelé avant l'export (pied de page) ; vector: true pour l'ancien rendu en texte (polices standard du PDF). → Promise<ArrayBuffer>.
   window.__htmlToPdf = function (html, opts) {
     opts = opts || {};
-    var mg = opts.margin || [36, 36, 36, 36], widthPt = 595.28 - mg[1] - mg[3], widthPx = Math.round(widthPt * 96 / 72);
+    var land = !!opts.landscape || /<!--orientation:paysage-->/.test(String(html || '')), PW = land ? 841.89 : 595.28, PH = land ? 595.28 : 841.89; // A4 portrait ou paysage
+    var mg = opts.margin || [36, 36, 36, 36], widthPt = PW - mg[1] - mg[3], widthPx = Math.round(widthPt * 96 / 72);
     // opts.fit : largeur de mise en page (px) ; le rendu est ensuite réduit à la largeur utile de la page, comme l'impression du navigateur
     var layoutPx = opts.fit && !opts.vector ? Math.max(widthPx, opts.fit) : widthPx, K = widthPx / layoutPx;
     return new Promise(function (resolve, reject) {
@@ -133,7 +152,7 @@
         el.style.fontFamily = /courier|mono|consolas/.test(f) ? '"Courier New", Courier, monospace' : (/times|georgia|spectral|cambria|garamond|book|^serif$/.test(f) ? '"Times New Roman", Times, serif' : 'Arial, Helvetica, sans-serif');
       });
       // Pagination : un élément [data-pdf-break] commence une nouvelle page ; un bloc [data-pdf-keep] (cadre) qui serait coupé passe à la page suivante.
-      var pageH = (841.89 - mg[0] - mg[2]) * 96 / 72 / K; // hauteur utile d'une page, en px de mise en page
+      var pageH = (PH - mg[0] - mg[2]) * 96 / 72 / K; // hauteur utile d'une page, en px de mise en page
       Array.prototype.forEach.call(holder.querySelectorAll('[data-pdf-break], [data-pdf-keep]'), function (el) {
         var hr = holder.getBoundingClientRect(), r = el.getBoundingClientRect(), top = r.top - hr.top, rest = top % pageH, push = 0;
         if (el.hasAttribute('data-pdf-break')) { if (rest > 1) push = pageH - rest; }
@@ -166,7 +185,7 @@
           SC = SC * K < 1.5 ? 1.5 / K : SC; // résolution suffisante après réduction
           window.html2canvas(holder, { scale: SC, backgroundColor: '#ffffff', logging: false, useCORS: false, width: layoutPx, height: H, windowWidth: layoutPx, scrollX: 0, scrollY: 0, x: 0, y: 0 }).then(function (cv) {
             try {
-              var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true }), imgs = [];
+              var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', orientation: land ? 'landscape' : 'portrait', compress: true }), imgs = [];
               for (var i = 0; i + 1 < cuts.length; i++) {
                 var h = cuts[i + 1] - cuts[i]; if (h <= 0) continue;
                 var pc = document.createElement('canvas'); pc.width = cv.width; pc.height = Math.ceil(h * SC);
@@ -184,7 +203,7 @@
         return;
       }
       try {
-        var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true }); // compress : flux du PDF compressés
+        var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', orientation: land ? 'landscape' : 'portrait', compress: true }); // compress : flux du PDF compressés
         doc.html(holder, {
           margin: mg, autoPaging: 'text', width: widthPt, windowWidth: widthPx,
           html2canvas: { backgroundColor: '#ffffff', logging: false, useCORS: false },
@@ -487,6 +506,9 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ins-qr-tb { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; padding: 0 !important; color: var(--blue); } .ins-qr-tb svg { width: 1.25rem; height: 1.25rem; }
   .cso-n { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; } td.cso-n small { display: block; color: var(--muted); font-size: .72rem; } .cso-table tfoot th, .cso-table tfoot td { background: var(--bg-alt); }
   .cso-table tr.cso-row { cursor: pointer; } .cso-table tr.cso-row:hover > * { background: var(--row-hover); } .cso-table tr.cso-row:focus-visible { outline: 2px solid #0a76f6; outline-offset: -2px; }
+  .tp-vars .tag { border: 0; cursor: pointer; font-family: monospace; font-size: .72rem; } .tp-vars .tag:hover { filter: brightness(.95); } .tp-src { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .8rem; }
+  .tp-preview { margin: .25rem 0 0; } .gn-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .15rem 1rem; max-height: 34vh; overflow: auto; border: 1px solid var(--border-default-grey); border-radius: 4px; padding: .5rem .75rem; } .gn-list label { display: flex; gap: .4rem; align-items: center; font-size: .875rem; cursor: pointer; }
+  .tp-sig { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .25rem; } .tp-sig__img { max-width: 200px; max-height: 70px; background: #fff; border: 1px solid var(--border-default-grey); border-radius: 4px; padding: 2px; }
   .rs-prev { margin: 0 0 1rem; padding-left: 1.1rem; font-size: .875rem; line-height: 1.6; max-height: 40vh; overflow: auto; } mark.rs-new { background: #b8fec9; color: #18753c; border-radius: 3px; padding: 0 .2rem; }
   .rs-kpis { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; }
   .rs-kpi { border: 1px solid var(--border, #ddd); border-radius: .5rem; padding: .4rem .75rem; display: flex; align-items: baseline; gap: .35rem; background: var(--bg, #fff); }
@@ -535,6 +557,25 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .pg-ev.is-multi { display: flex; align-items: center; white-space: normal; line-height: 1.2; padding: 2px 6px; }
   .pg-empty { color: var(--muted, #777); font-size: .8rem; padding: .3rem .75rem; margin: 0; }
   .pg-chips { display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
+  .rpf-box { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: .5rem 1rem; margin: 0 0 1rem; background: var(--bg); }
+  .rpf-box > summary { cursor: pointer; font-weight: 700; padding: .25rem 0; }
+  .rpf-h { font-size: 1rem; margin: 1.25rem 0 .5rem; } .rpf-bar { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; justify-content: space-between; margin-bottom: .75rem; } .rpf-acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-left: auto; } .rpf-track { max-height: 360px; overflow: auto; } .rpf-track + .hint { margin-top: .75rem; }
+  .rpf-qf { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
+  .rpf-pill { --c: var(--muted); display: inline-flex; align-items: center; gap: .4rem; padding: .2rem .35rem .2rem .7rem; border: 1px solid var(--border-default-grey); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: .8125rem; line-height: 1.5; cursor: pointer; }
+  .rpf-pill::before { content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: var(--c); flex: none; }
+  .rpf-pill .rpf-n { min-width: 1.4rem; padding: 0 .4rem; border-radius: 999px; background: var(--bg-alt, #f0f0f0); font-size: .75rem; font-weight: 700; text-align: center; }
+  .rpf-pill:hover { border-color: var(--c); }
+  .rpf-pill:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .rpf-pill[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); font-weight: 700; }
+  .rpf-pill[aria-pressed="true"] .rpf-n { background: var(--c); color: #fff; }
+  .rpf-pill.c-all { --c: var(--blue); } .rpf-pill.c-wait { --c: #d64d00; } .rpf-pill.c-non { --c: #7b7b7b; } .rpf-pill.c-rep { --c: #18753c; } .rpf-pill.c-ok { --c: #6a6af4; }
+  :root[data-fr-theme="dark"] .rpf-pill.c-wait { --c: #fc5d00; } :root[data-fr-theme="dark"] .rpf-pill.c-rep { --c: #27a658; } :root[data-fr-theme="dark"] .rpf-pill.c-non { --c: #929292; } :root[data-fr-theme="dark"] .rpf-pill.c-ok { --c: #8585f6; } :root[data-fr-theme="dark"] .rpf-pill .rpf-n { background: rgba(255,255,255,.1); }
+  .rpf-body { padding: .5rem 0; } .rpf-link { display: flex; gap: 1rem; align-items: center; } .rpf-qr { width: 96px; height: 96px; flex: none; } .rpf-qr svg { width: 100%; height: 100%; }
+  .ps-dialog { max-width: 1100px; width: 100%; } .ps-grid { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 1.5rem; padding: 1rem 1.5rem 1.5rem; }
+  .ps-crit .cf-field { margin-bottom: .75rem; } .ps-crit .cf-field label { display: block; font-weight: 500; margin-bottom: .25rem; } .ps-crit .input, .ps-crit .select { width: 100%; }
+  .ps-fs { border: 0; padding: 0; margin: 0 0 .75rem; } .ps-fs legend { font-weight: 500; margin-bottom: .25rem; padding: 0; }
+  #r-psmodal tr.row-click { cursor: pointer; } #r-psmodal tr.row-click:hover, #r-psmodal tr.row-click:focus { background: var(--bg-alt, #f6f6f6); outline: none; }
+  @media (max-width: 760px) { .ps-grid { grid-template-columns: 1fr; padding: 1rem; } }
   .pg-chips label { display: inline-flex; align-items: center; gap: .25rem; font-size: .875rem; }
   .rp-today { background: #fff8e1; }
   .ins-name { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; }
@@ -1331,6 +1372,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ico-plus { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z%27/%3E%3C/svg%3E"); }
   .ico-key { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M12 17v4M10 20l4-2M10 18l4 2M5 17v4M3 20l4-2M3 18l4 2M19 17v4M17 20l4-2M17 18l4 2M9 6a3 3 0 1 0 6 0a3 3 0 0 0-6 0M7 14a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2%27/%3E%3C/svg%3E"); } /* identifiants (accès) */
   .ico-download { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M13 10h5l-6 6-6-6h5V3h2v7zM4 19h16v2H4z%27/%3E%3C/svg%3E"); }
+  .ico-search { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M9 4a4 4 0 110 8 4 4 0 010-8zm0 10c1.2 0 2.3.1 3.3.4A6 6 0 0011 18c0 1 .2 1.9.7 2.7L1 21v-2c0-2.7 5.3-5 8-5zm8-1a4 4 0 013.3 6.3l2.4 2.3-1.4 1.4-2.3-2.4A4 4 0 1117 13zm0 2a2 2 0 100 4 2 2 0 000-4z%27/%3E%3C/svg%3E"); }
   .ico-filter { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z%27/%3E%3C/svg%3E"); }
   .ico-edit { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z%27/%3E%3C/svg%3E"); }
   .ico-calendar { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M17 3V1h-2v2H9V1H7v2H4v18h16V3h-3zm1 16H6V9h12v10zM8 11h4v4H8z%27/%3E%3C/svg%3E"); }
@@ -2367,6 +2409,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     <button type="button" class="ins-tab" role="tab" id="ins-tab-prog" data-ins-tab="prog" aria-selected="false" aria-controls="ins-panel-prog">Progression</button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-rep" data-ins-tab="rep" aria-selected="false" aria-controls="ins-panel-rep">Repos des cadres <span class="qf-n" id="ins-n-rep"></span></button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-cer" data-ins-tab="cer" aria-selected="false" aria-controls="ins-panel-cer">Cérémonie <span class="qf-n" id="ins-n-cer"></span></button>
+    <button type="button" class="ins-tab" role="tab" id="ins-tab-doc" data-ins-tab="doc" aria-selected="false" aria-controls="ins-panel-doc">Documents</button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-res" data-ins-tab="res" aria-selected="false" aria-controls="ins-panel-res">Ressources <span class="qf-n" id="ins-n-res"></span></button>
   </div>
   <div id="ins-msg" aria-live="polite"></div>
@@ -2439,6 +2482,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <div class="tb-actions"><button type="button" class="btn sm ico-plus" data-rp="add">Ajouter une absence</button></div>
     </div>
     <div id="rep-body"></div>
+  </div>
+  <div id="ins-panel-doc" role="tabpanel" aria-labelledby="ins-tab-doc" hidden>
+    <div class="toolbar">
+      <div class="tb-field tb-search">
+        <label for="ins-dq">Rechercher un document ou un modèle</label>
+        <input id="ins-dq" class="input" type="search" placeholder="Titre, catégorie, description…" autocomplete="off">
+      </div>
+      <div class="count" id="ins-dcount" aria-live="polite"></div>
+      <div class="tb-actions"><button type="button" class="btn secondary sm ico-plus" data-dc="add">Ajouter un document</button><button type="button" class="btn sm ico-plus" data-dc="tnew">Nouveau modèle</button></div>
+    </div>
+    <div id="docs-body"></div>
   </div>
   <div id="ins-panel-res" role="tabpanel" aria-labelledby="ins-tab-res" hidden>
     <div class="ins-layers" id="rs-views" role="group" aria-label="Ressource"></div>
@@ -2837,6 +2891,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       <button type="button" class="btn secondary btn-iconly ico-refresh" id="r-flt-reset" disabled title="Réinitialiser les filtres">Réinitialiser les filtres</button>
       <div class="count" id="r-count" aria-live="polite"></div>
       <div class="tb-actions">
+        <button type="button" class="btn secondary btn-ghost btn-iconly ico-search" id="r-btn-profile" title="Rechercher un profil (profession, études, missions, langues, grade, affectation…)">Rechercher un profil</button>
         <button type="button" class="btn secondary btn-ghost btn-iconly ico-edit" id="r-btn-bulk" title="Mise à jour en bloc">Mise à jour en bloc</button>
         <button type="button" class="btn secondary btn-ghost btn-iconly ico-download" id="r-btn-export" title="Exporter les réservistes">Exporter les réservistes</button>
         <button type="button" class="btn sm ico-plus" id="r-btn-create" title="Créer un réserviste">Créer un réserviste</button>
@@ -2850,6 +2905,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         <button type="button" class="qf-btn qf-warn" id="r-qf-missing" aria-pressed="false">Données manquantes <span class="qf-n" id="r-qf-missing-n"></span></button>
       </div>
     </div>
+    <div id="r-pf-box"></div>
 
     <div class="table-wrap">
       <div class="toolbar selbar" id="r-selbar" hidden>
@@ -2897,6 +2953,11 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
           <label for="r-f-table">Table des réservistes<span class="req" aria-hidden="true">*</span></label>
           <select id="r-f-table" class="select" aria-describedby="r-h-table"></select>
           <span class="hint" id="r-h-table">Une ligne par réserviste.</span>
+        </div>
+        <div>
+          <label for="r-f-profform">Formulaire externe « Profilage » (lien de partage)</label>
+          <span class="hint" id="r-h-profform">Vue Formulaire Grist de la table <code>Formulaire_reservistes</code> : lien et QR code affichés dans le volet « Profilage » de la page Réservistes, insérés dans les courriels d’invitation et de relance ; les réponses complètent la fiche.</span>
+          <input id="r-f-profform" class="input" type="url" placeholder="https://…/forms/…" aria-describedby="r-h-profform">
         </div>
         <div>
           <label for="r-f-identity">Identité complète</label>
@@ -2973,6 +3034,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 </div><!-- /page-res -->
 
 <!-- ===== Modale fiche du réserviste ===== -->
+<div class="modal-overlay" id="r-psmodal" hidden>
+  <div class="modal-column">
+    <div class="modal-dialog ps-dialog" role="dialog" aria-modal="true" aria-labelledby="r-psmodal-title">
+      <div class="modal-header">
+        <div style="min-width:0"><h2 class="modal-title" id="r-psmodal-title">Rechercher un profil</h2><p class="modal-sub">Profession, études, missions, langues, grade, affectation, type, âge, lieu</p></div>
+        <div class="modal-actions"><button class="round-btn" id="r-psmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
+      </div>
+      <div class="modal-body" id="r-psmodal-body"></div>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="r-modal" hidden>
   <div class="modal-column" id="r-modal-column">
     <div class="modal-stack" id="r-modal-stack">
@@ -3611,7 +3683,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.86.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.91.1</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -9003,7 +9075,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     { key: 'hab', title: 'Médico-statutaire', cardTitle: 'Médico-statutaire',
       defaults: ['Exp. VMP'] },
     { key: 'qual', title: 'Qualifications', cardTitle: 'Qualifications',
-      defaults: ['Exp. tir PA', 'Exp. tir HK', 'Qualité jud'] },
+      defaults: ['Exp. tir PA', 'Exp. tir HK', 'Qualité jud', 'Profession', 'Niveau d’études', 'Domaine d’études', 'Missions déjà occupées en gendarmerie', 'Langues parlées'] },
     { key: 'comm', title: 'Commentaires', cardTitle: 'Commentaires',
       defaults: ['Commentaires'] }
   ];
@@ -9022,7 +9094,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     ],
     qual: [
       { title: 'Tir', rows: [['Exp. tir PA', 'Exp. tir HK']] },
-      { title: 'Qualité judiciaire', rows: [['Qualité jud']] }
+      { title: 'Qualité judiciaire', rows: [['Qualité jud']] },
+      { title: 'Profession et études', rows: [['Profession'], ['Niveau d’études', 'Domaine d’études'], ['Missions déjà occupées en gendarmerie'], ['Langues parlées']] }
     ],
     comm: [
       { title: 'Commentaires', rows: [['Commentaires']] }
@@ -9077,19 +9150,22 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   var DEMO_COLS = [
     ['Grade', 'Choice'], ['Corps', 'Text'], ['Civilité', 'Choice'], ['NOM', 'Text'], ['Prénom', 'Text'], ['Nigend', 'Text'], ['Type R', 'Choice'], ['Affectation', 'Choice'], ['NID', 'Text'], ['DDN', 'Date'], ['Age', 'Int'],
     ['Ville', 'Text'], ['Dpt', 'Text'], ['Affectation précise', 'Text'], ['Adresse email', 'Text'], ['Téléphone', 'Text'], ['Mouvement', 'Choice'], ['Exp. contrat', 'Date'], ['Exp. VMP', 'Date'],
-    ['Exp. tir PA', 'Date'], ['Exp. tir HK', 'Date'], ['Qualité jud', 'Choice'], ['N° ESR', 'Text'], ['Date contrat', 'Date'], ['Date de début contrat', 'Date'],
+    ['Exp. tir PA', 'Date'], ['Exp. tir HK', 'Date'], ['Qualité jud', 'Choice'], ['Profession', 'Text'], ['Niveau d’études', 'Choice'], ['Domaine d’études', 'Choice'], ['Missions déjà occupées en gendarmerie', 'ChoiceList'], ['Langues parlées', 'Text'], ['N° ESR', 'Text'], ['Date contrat', 'Date'], ['Date de début contrat', 'Date'],
     ['Etat CIAPT', 'Choice'], ['Etat CIAPT HK', 'Choice'], ['Etat VMP', 'Choice'], ['Etat contrat', 'Choice'], ['Adresse', 'Text'], ['Commentaires', 'Text'], ['PJ', 'Attachments'], ['Nom PJ', 'Text'],
     ['Créé le', 'DateTime:Europe/Paris'], ['Créé par', 'Text'], ['Dernière mise à jour', 'DateTime:Europe/Paris'], ['Dernière mise à jour par', 'Text']
   ];
   var DEMO_CHOICES = {
     'Civilité': ['M.', 'Mme'], 'Grade': ['GAV', 'MDL', 'BRI', 'MDC', 'ADJ'], 'Type R': ['RO1', 'RS', 'RC'], 'Affectation': ['GD 01', 'GD 38', 'GD 73', 'GD 74'],
-    'Mouvement': ['Arrivée', 'Mutation', 'Départ'], 'Qualité jud': ['OPJ', 'APJ', 'APJA']
+    'Mouvement': ['Arrivée', 'Mutation', 'Départ'], 'Qualité jud': ['OPJ', 'APJ', 'APJA'],
+    'Niveau d’études': ['Sans diplôme', 'CAP / BEP', 'Baccalauréat', 'Bac +2 (BTS / DUT)', 'Bac +3 (licence / BUT)', 'Bac +5 (master / ingénieur)', 'Bac +8 (doctorat)'],
+    'Domaine d’études': ['Droit / sciences politiques', 'Santé / médical / paramédical', 'Informatique / numérique / cyber', 'Sécurité / défense / secours', 'Commerce / gestion / finance', 'Bâtiment / travaux publics', 'Autre'],
+    'Missions déjà occupées en gendarmerie': ['Ecoutes téléphoniques', 'Traduction/interprétariat', 'Secrétariat', 'Enquêtes judiciaires', 'Poste de sécurité', 'Logistique', 'Instruction', 'Vaguemestre', 'Mécanique automobile', 'Casernement', 'Secourisme', 'Bourrelier', 'Examens (jury, surveillance)', 'Ressources humaines', 'Affaires immobilières', 'Santé sécurité au travail']
   };
   var DEMO_ROWS_BY_LABEL = [
-    { 'Grade': 'MDC', 'Corps': 'Gendarmerie départementale', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Etat CIAPT': 'CIAPT PA valide', 'Etat CIAPT HK': 'CIAPT HK valide', 'Etat VMP': 'Apte avec réserve', 'Etat contrat': 'En cours', 'Adresse': '12 rue des Alpes', 'PJ': ['L', 60, 61], 'Nom PJ': 'Fiche de poste, Attestation de formation', 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
-    { 'Grade': 'GAV', 'Civilité': 'Mme', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Nigend': '2019-1120', 'Type R': 'RS', 'Affectation': 'GD 38', 'NID': '1020871', 'DDN': d(1996, 11, 2), 'Age': 29, 'Ville': 'Grenoble', 'Dpt': '38', 'Adresse email': 'camille.perrin@example.fr', 'Téléphone': '755667788', 'Mouvement': 'Mutation', 'Exp. contrat': d(2026, 8, 31), 'Exp. VMP': d(2026, 5, 15), 'Exp. tir PA': d(2026, 10, 12), 'Exp. tir HK': d(2026, 10, 12), 'Qualité jud': 'APJ', 'N° ESR': 'ESR-2023-207', 'Date contrat': d(2023, 8, 20), 'Date de début contrat': d(2023, 9, 1) },
+    { 'Langues parlées': 'Anglais, Allemand', 'Missions déjà occupées en gendarmerie': ['L', 'Enquêtes judiciaires', 'Secrétariat'], 'Profession': 'Juriste', 'Niveau d’études': 'Bac +5 (master / ingénieur)', 'Domaine d’études': 'Droit / sciences politiques', 'Grade': 'MDC', 'Corps': 'Gendarmerie départementale', 'Civilité': 'M.', 'NOM': 'Lefèvre', 'Prénom': 'Antoine', 'Nigend': '2011-0384', 'Type R': 'RO1', 'Affectation': 'GD 74', 'NID': '1010234', 'DDN': d(1981, 4, 9), 'Age': 45, 'Ville': 'Annecy', 'Dpt': '74', 'Affectation précise': 'Brigade de recherches', 'Adresse email': 'antoine.lefevre@example.fr', 'Téléphone': '+33 6 11 22 33 44', 'Mouvement': 'Arrivée', 'Exp. contrat': d(2027, 3, 31), 'Exp. VMP': d(2026, 12, 1), 'Exp. tir PA': d(2026, 11, 10), 'Exp. tir HK': d(2027, 1, 20), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2021-044', 'Date contrat': d(2021, 3, 15), 'Date de début contrat': d(2021, 4, 1), 'Etat CIAPT': 'CIAPT PA valide', 'Etat CIAPT HK': 'CIAPT HK valide', 'Etat VMP': 'Apte avec réserve', 'Etat contrat': 'En cours', 'Adresse': '12 rue des Alpes', 'PJ': ['L', 60, 61], 'Nom PJ': 'Fiche de poste, Attestation de formation', 'Créé le': d(2021, 3, 20) + 36000, 'Créé par': 'DUPONT Jean', 'Dernière mise à jour': d(2026, 6, 12) + 50400, 'Dernière mise à jour par': 'MARTIN Paul' },
+    { 'Niveau d’études': 'Baccalauréat', 'Grade': 'GAV', 'Civilité': 'Mme', 'NOM': 'Perrin', 'Prénom': 'Camille', 'Nigend': '2019-1120', 'Type R': 'RS', 'Affectation': 'GD 38', 'NID': '1020871', 'DDN': d(1996, 11, 2), 'Age': 29, 'Ville': 'Grenoble', 'Dpt': '38', 'Adresse email': 'camille.perrin@example.fr', 'Téléphone': '755667788', 'Mouvement': 'Mutation', 'Exp. contrat': d(2026, 8, 31), 'Exp. VMP': d(2026, 5, 15), 'Exp. tir PA': d(2026, 10, 12), 'Exp. tir HK': d(2026, 10, 12), 'Qualité jud': 'APJ', 'N° ESR': 'ESR-2023-207', 'Date contrat': d(2023, 8, 20), 'Date de début contrat': d(2023, 9, 1) },
     { 'Grade': 'BRI', 'Civilité': 'M.', 'NOM': 'Garnier', 'Prénom': 'Lucas', 'Nigend': '2022-0555', 'Type R': 'RC', 'Affectation': 'GD 73', 'NID': '1031420', 'DDN': d(2000, 1, 25), 'Age': 26, 'Ville': 'Chambéry', 'Dpt': '73', 'Adresse email': 'lucas.garnier@example.fr', 'Téléphone': '06 98 76 54 32', 'Exp. contrat': d(2028, 2, 28), 'Exp. VMP': d(2027, 6, 30), 'Exp. tir PA': d(2027, 4, 5), 'Exp. tir HK': d(2027, 4, 5), 'N° ESR': 'ESR-2022-310', 'Date contrat': d(2022, 2, 10), 'Date de début contrat': d(2022, 3, 1) },
-    { 'Grade': 'ADJ', 'Civilité': 'Mme', 'NOM': 'Robin', 'Prénom': 'Sophie', 'Nigend': '2008-0210', 'Type R': 'RO1', 'Affectation': 'GD 01', 'NID': '1000456', 'DDN': d(1978, 7, 14), 'Age': 48, 'Ville': 'Bourg-en-Bresse', 'Dpt': '01', 'Adresse email': 'sophie.robin@example.fr', 'Téléphone': '06 44 55 66 77', 'Exp. contrat': d(2029, 12, 31), 'Exp. VMP': d(2027, 2, 1), 'Exp. tir PA': d(2027, 2, 1), 'Exp. tir HK': d(2027, 2, 1), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2019-012', 'Date contrat': d(2019, 12, 1), 'Date de début contrat': d(2020, 1, 1) },
+    { 'Langues parlées': 'Arabe; anglais', 'Missions déjà occupées en gendarmerie': ['L', 'Logistique'], 'Profession': 'Commerciale', 'Niveau d’études': 'Bac +2 (BTS / DUT)', 'Grade': 'ADJ', 'Civilité': 'Mme', 'NOM': 'Robin', 'Prénom': 'Sophie', 'Nigend': '2008-0210', 'Type R': 'RO1', 'Affectation': 'GD 01', 'NID': '1000456', 'DDN': d(1978, 7, 14), 'Age': 48, 'Ville': 'Bourg-en-Bresse', 'Dpt': '01', 'Adresse email': 'sophie.robin@example.fr', 'Téléphone': '06 44 55 66 77', 'Exp. contrat': d(2029, 12, 31), 'Exp. VMP': d(2027, 2, 1), 'Exp. tir PA': d(2027, 2, 1), 'Exp. tir HK': d(2027, 2, 1), 'Qualité jud': 'OPJ', 'N° ESR': 'ESR-2019-012', 'Date contrat': d(2019, 12, 1), 'Date de début contrat': d(2020, 1, 1) },
     { 'Grade': 'GAV', 'Civilité': 'M.', 'NOM': 'Blanc', 'Prénom': 'Théo', 'Type R': 'RS', 'Affectation': 'GD 74', 'NID': '1042990', 'DDN': d(2002, 9, 30), 'Age': 24, 'Ville': 'Thonon-les-Bains', 'Dpt': '74' }
   ];
   var DEMO = { cols: DEMO_COLS.map(function (c) { return { id: makeId(c[0]), label: c[0], type: c[1], formula: c[0] === 'Age', choices: window.__gradeChoices(c[0], DEMO_CHOICES[c[0]] || null) }; }) };
@@ -9308,7 +9384,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   // Colonnes de la fiche : une configuration enregistrée avant la version 2 des colonnes par défaut (ex. ajout de « Adresse ») ne les connaît pas :
   // celles qui existent dans la table et ne sont rattachées à aucun onglet sont ajoutées à leur onglet d'origine. Enregistrée en version 2, la configuration est respectée telle quelle.
-  var TABS_VERSION = 3; // 3 : onglet « Commentaires »
+  var TABS_VERSION = 6; // 3 : onglet « Commentaires » ; 4 : profession et études ; 5 : missions déjà occupées ; 6 : langues parlées
   function withNewDefaults(table, tabs, ver) {
     if (ver >= TABS_VERSION) return tabs;
     var used = {}; TAB_DEFS.forEach(function (t) { (tabs[t.key] || []).forEach(function (id) { used[id] = true; }); });
@@ -9341,9 +9417,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       ppeTpl: typeof o.ppeTpl === 'string' ? o.ppeTpl : '', // modèle HTML du PPE (vide : modèle par défaut)
       ctrTpl: normCtr(o.ctrTpl), // modèles des contrats et courriels (renouvellements, avenants)
       popTarget: Math.max(0, Math.round(Number(o.popTarget) || 0)), // population de réservistes à atteindre (jauge de la page Statistiques des réservistes)
-      pmgTargets: normTargets(o.pmgTargets) // objectif d'admis par PMG (jauge du focus des statistiques Candidats)
+      pmgTargets: normTargets(o.pmgTargets), // objectif d'admis par PMG (jauge du focus des statistiques Candidats)
+      profForm: typeof o.profForm === 'string' ? o.profForm : '', // lien de partage du formulaire « Profilage »
+      profMail: normProf(o.profMail) // courriels d'invitation et de relance du profilage (vides : modèles par défaut)
     };
   }
+  var DEFAULT_PROF = {
+    inv: { subject: 'Réserve : complétez votre profil (profession, études, langues)', body: 'Bonjour,\n\nAfin de mieux connaître les compétences des réservistes, merci de compléter ce court formulaire (2 minutes) : profession, niveau et domaine d’études, missions déjà occupées en gendarmerie et langues parlées.\n\n{{LIEN_FORMULAIRE}}\n\nIndiquez votre Nigend : il permet de rattacher vos réponses à votre fiche.\n\nCordialement,\nDivision réserves jeunesse' },
+    rel: { subject: 'Rappel : complétez votre profil de réserviste', body: 'Bonjour,\n\nSauf erreur de notre part, vous n’avez pas encore complété le formulaire de profil des réservistes. Il ne prend que 2 minutes :\n\n{{LIEN_FORMULAIRE}}\n\nIndiquez votre Nigend : il permet de rattacher vos réponses à votre fiche.\n\nMerci et cordialement,\nDivision réserves jeunesse' }
+  };
+  function normProf(v) { var out = {}; ['inv', 'rel'].forEach(function (k) { var x = v && v[k] || {}; out[k] = { subject: typeof x.subject === 'string' ? x.subject : '', body: typeof x.body === 'string' ? x.body : '' }; }); return out; }
+  function profMailOf(k) { var o = normProf(cfg().profMail)[k], d = DEFAULT_PROF[k]; return { subject: o.subject.trim() ? o.subject : d.subject, body: o.body.trim() ? o.body : d.body }; }
   // Objectifs d'admis : { PMG : { civ, vca } } (un ancien nombre seul est repris comme objectif CIV).
   var ORIGINS = [['civ', 'CIV'], ['vca', 'VCA']];
   function normTargets(v) {
@@ -9495,6 +9579,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       state.records = r[2].map(function (row) { return { raw: row, identity: identityOf(row, c), tag: tc ? row[tc.id] : null }; });
       state.read = { table: c.table, at: new Date(), total: r[2].length, error: null };
       renderAll();
+      document.dispatchEvent(new Event('servir:res-loaded')); // formulaire « Profession et études »
       loadRequestsData().then(function () { renderView('ren'); renderView('ave'); renderStats(); }); // demandes existantes (renouvellement, mutation) : icônes et tag de la fiche, pages de suivi
     }).catch(function (e) {
       if (seq !== loadSeq) return;
@@ -13007,6 +13092,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     $('f-ppe').value = dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : DEFAULT_PPE;
     if (!$('ppe-preview').hidden) refreshPpePreview();
     renderPmgTargets();
+    $('f-profform').value = dr.profForm || '';
     var ct = normCtr(dr.ctrTpl);
     Array.prototype.forEach.call($('view-admin').querySelectorAll('[data-ctr]'), function (el) { var k = el.getAttribute('data-ctr').split('.'); el.value = ct[k[0]][k[1]].trim() ? ct[k[0]][k[1]] : DEFAULT_CTR[k[0]][k[1]]; });
   }
@@ -13120,11 +13206,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function saveRes() {
     var dr = state.draft;
     if (!dr.table) return Promise.reject(new Error('Réservistes : sélectionnez la table des réservistes (options avancées).'));
-    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), tabsV: TABS_VERSION, ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '', ctrTpl: normCtr(dr.ctrTpl), pmgTargets: normTargets(dr.pmgTargets), popTarget: Math.max(0, Math.round(Number(dr.popTarget) || 0)) };
+    var mine = { table: dr.table, identity: dr.identity || '', tabs: normalizeTabs(dr.table, dr.tabs), tabsV: TABS_VERSION, ppeTpl: dr.ppeTpl && dr.ppeTpl.trim() ? dr.ppeTpl : '', ctrTpl: normCtr(dr.ctrTpl), pmgTargets: normTargets(dr.pmgTargets), popTarget: Math.max(0, Math.round(Number(dr.popTarget) || 0)), profForm: String(dr.profForm || '').trim(), profMail: normProf(dr.profMail) };
     var o = {}; Object.keys(state.opts).forEach(function (k) { o[k] = state.opts[k]; }); o.r = mine; // conserve la configuration de la première page
     return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
   $('btn-save').addEventListener('click', function () { saveRes().catch(function () {}); });
+  $('f-profform').addEventListener('input', function (e) { state.draft.profForm = e.target.value; });
   $('btn-reset').addEventListener('click', function () {
     var t = state.detected || '';
     state.draft = { table: t, identity: '', tabs: { info: [], mil: [], hab: [] } };
@@ -13166,6 +13253,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         out.push({ id: 'res:' + k[0] + ':doc', group: 'Réservistes · ' + k[2].toLowerCase(), type: 'doc', title: k[1], hint: 'Modèle HTML converti en PDF A4 par « Générer le contrat » (fenêtre de signature RO1) ; styles en ligne, images en base64 uniquement.', body: field('html'), vars: ctrVars,
           reset: reset(['html']), preview: function (sj, bd) { if (!rec) return { empty: none }; return { html: sanitizeHtml(fillTemplate(bd, item(), c, extra(k[0]))) }; } });
       });
+      [['inv', 'Invitation à répondre', 'Courriel ouvert par « Inviter à répondre » (volet Profilage de la page Réservistes) : un seul message, destinataires en copie cachée.'], ['rel', 'Relance', 'Courriel ouvert par « Relancer » (volet Profilage) : réservistes invités qui n’ont pas encore répondu, en copie cachée.']].forEach(function (k) {
+        function ctl(f) { return { read: function () { var v = normProf((state.draft || cfg()).profMail)[k[0]][f]; return v.trim() ? v : DEFAULT_PROF[k[0]][f]; },
+          write: function (v) { var dr = state.draft; if (!dr) return; dr.profMail = normProf(dr.profMail); var nv = v === DEFAULT_PROF[k[0]][f] ? '' : v; if (dr.profMail[k[0]][f] !== nv) { dr.profMail[k[0]][f] = nv; setDirty(true); } } }; }
+        function fillP(t) { return String(t || '').replace(/\{\{\s*LIEN_FORMULAIRE\s*\}\}/g, cfg().profForm || '(lien du formulaire à régler)').replace(/\{\{\s*DATE_DU_JOUR\s*\}\}/g, fmtDate(todaySec())); }
+        out.push({ id: 'res:prof:' + k[0], group: 'Réservistes · profilage', type: 'mail', title: k[1], hint: k[2], subject: ctl('subject'), body: ctl('body'), vars: ['LIEN_FORMULAIRE', 'DATE_DU_JOUR'],
+          reset: function () { if (!state.draft) return; state.draft.profMail = normProf(state.draft.profMail); state.draft.profMail[k[0]] = { subject: '', body: '' }; setDirty(true); },
+          preview: function (sj, bd) { return { subject: fillP(sj), text: fillP(bd) }; } });
+      });
       out.push({ id: 'res:ppe:doc', group: 'Réservistes · plan prévisionnel d’emploi', type: 'doc', title: 'Plan prévisionnel d’emploi (PPE)', hint: 'Modèle HTML converti en PDF A4 par l’icône « Générer un PPE » de la fiche du réserviste (groupe Contrat) ; styles en ligne, images en base64 uniquement.', body: tplCtl($('f-ppe')),
         vars: ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'GRADE', 'NIGEND', 'AFFECTATION', 'DATE_DEBUT', 'DATE_FIN', 'DATE_DU_JOUR', 'SIGNATURE_AUTORITE'],
         reset: function () { tplClick('#r-ppe-reset'); },
@@ -13201,6 +13296,18 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       return state.records.map(function (r) { return { nigend: v(r.raw, cN), grade: v(r.raw, cG), nom: v(r.raw, cNom).toUpperCase(), prenom: v(r.raw, cP), mail: v(r.raw, cM), tel: v(r.raw, cT), aff: v(r.raw, cA) }; }).filter(function (p) { return p.nigend && p.nom; });
     },
     match: matchRes,
+    // Formulaire « Profession et études » et recherche par profil
+    rows: function () { return state.records.map(function (r) { return { id: r.raw.id, raw: r.raw, label: r.identity == null ? '' : formatName(String(r.identity)) }; }); },
+    col: function (label) { return findCol(cfg().table, label); },
+    cell: function (raw, label) { var col = findCol(cfg().table, label); return col ? textOfValue(col, raw[col.id]) : ''; },
+    update: function (rowId, byLabel) { var c = cfg(), f = {}; Object.keys(byLabel).forEach(function (l) { var col = findCol(c.table, l); if (col) f[col.id] = byLabel[l]; }); return Object.keys(f).length ? Promise.resolve(api.updateFields(c.table, rowId, f)).then(function () { return load(); }) : Promise.resolve(); },
+    addColumns: function (list) { // [{ label, type, choices }]
+      var t = cfg().table; if (!t || !list.length) return Promise.resolve();
+      if (!IN_GRIST) { DEMO.cols = DEMO.cols.concat(list.map(function (x) { return { id: makeId(x.label), label: x.label, type: x.type, formula: false, choices: x.choices || null }; })); return load(); }
+      return grist.docApi.applyUserActions(list.map(function (x) { var o = { type: x.type, label: x.label, isFormula: false }; if (x.choices) o.widgetOptions = JSON.stringify({ choices: x.choices }); return ['AddColumn', t, makeId(x.label), o]; })).then(function () { return load(); });
+    },
+    profForm: function () { return cfg().profForm; },
+    profMail: profMailOf,
     count: function () { return state.records.length; }, // nombre de réservistes chargés (diagnostic du rapprochement « Déjà ESR »)
     fiche: ficheRes,
     openAdmin: function () { showView('admin'); },   // back office unifié (déclenché depuis la page Candidats)
@@ -13210,6 +13317,222 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     setOpts: function (o) { state.opts = o || {}; }
   };
   if (!IN_GRIST) { $('demo').hidden = false; load(); }
+})();
+</script>
+<script>
+// Réservistes : formulaire externe « Profession et études » (réponses intégrées dans la fiche) et recherche par profil.
+(function () {
+  var IN_GRIST = !!(window.grist && window.parent !== window);
+  function $(id) { return document.getElementById(id); }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function norm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function loose(t) { return norm(t).replace(/[^a-z0-9]/g, ''); }
+  var NIVEAUX = ['Sans diplôme', 'CAP / BEP', 'Baccalauréat', 'Bac +2 (BTS / DUT)', 'Bac +3 (licence / BUT)', 'Bac +5 (master / ingénieur)', 'Bac +8 (doctorat)'];
+  var DOMAINES = ['Droit / sciences politiques', 'Santé / médical / paramédical', 'Informatique / numérique / cyber', 'Sciences / mathématiques', 'Ingénierie / industrie / mécanique', 'Bâtiment / travaux publics', 'Commerce / gestion / finance', 'Lettres / langues / communication',
+    'Sciences humaines et sociales', 'Sport / animation', 'Sécurité / défense / secours', 'Transport / logistique', 'Agriculture / environnement', 'Arts / culture', 'Hôtellerie / restauration', 'Autre'];
+  var MISSIONS = ['Ecoutes téléphoniques', 'Traduction/interprétariat', 'Secrétariat', 'Enquêtes judiciaires', 'Poste de sécurité', 'Logistique', 'Instruction', 'Vaguemestre', 'Mécanique automobile', 'Casernement', 'Secourisme', 'Bourrelier', 'Examens (jury, surveillance)', 'Ressources humaines', 'Affaires immobilières', 'Santé sécurité au travail'];
+  var LANGUES = ['Anglais', 'Allemand', 'Espagnol', 'Italien', 'Portugais', 'Néerlandais', 'Arabe', 'Russe', 'Ukrainien', 'Chinois', 'Turc', 'Polonais', 'Roumain', 'Langue des signes française'];
+  var FIELDS = [['Profession', 'Text', 'Profession'], ['Niveau_etudes', 'Choice', 'Niveau d’études', NIVEAUX], ['Domaine_etudes', 'Choice', 'Domaine d’études', DOMAINES], ['Missions', 'ChoiceList', 'Missions déjà occupées en gendarmerie', MISSIONS], ['Langues', 'ChoiceList', 'Langues parlées', LANGUES]];
+  var TARGET = { Profession: 'Profession', Niveau_etudes: 'Niveau d’études', Domaine_etudes: 'Domaine d’études', Missions: 'Missions déjà occupées en gendarmerie', Langues: 'Langues parlées' }; // colonnes de la table des réservistes
+  var FT = 'Formulaire_reservistes', FCOLS = [['Nigend', 'Text']].concat(FIELDS).concat([['Commentaire', 'Text'], ['Etat_integration', 'Text', 'État de l’intégration'], ['Integre_le', 'DateTime:Europe/Paris', 'Intégré le'], ['Recu_le', 'DateTime:Europe/Paris', 'Reçu le', null, 'NOW()']]);
+  var F = null, BUSY = false, OPEN = false, DEMO = { cols: FCOLS, rows: [] };
+  function R() { return window.RES; }
+  function rowsOf(t) { return t ? t.rows : []; }
+  function fcol(key) { if (!F) return null; var d = FCOLS.filter(function (c) { return c[0] === key; })[0], names = [key].concat(d && d[2] ? [d[2]] : []).map(loose); return F.cols.filter(function (c) { return names.indexOf(loose(c.id)) !== -1 || names.indexOf(loose(c.label)) !== -1; })[0] || null; }
+  function lst(v) { if (v == null || v === '') return []; if (Array.isArray(v)) return (v[0] === 'L' ? v.slice(1) : v).filter(function (x) { return x != null && x !== ''; }).map(String); return String(v).split(/\s*[,;\n]\s*/).filter(Boolean); }
+  function isList(key) { return key === 'Missions' || key === 'Langues'; }
+  function cap(t) { t = String(t).trim(); return t ? t.charAt(0).toLocaleUpperCase('fr-FR') + t.slice(1) : t; }
+  function fval(r, key) { var c = fcol(key); var v = c ? r[c.id] : ''; if (isList(key)) return lst(v).map(cap).join(', '); return v == null ? '' : String(v).trim(); }
+  function same(key, a, b) { if (!isList(key)) return norm(a) === norm(b); var x = lst(a).map(norm).sort().join('|'), y = lst(b).map(norm).sort().join('|'); return x === y; }
+  function load() {
+    if (!IN_GRIST) { if (!DEMO.seeded) { DEMO.seeded = true; DEMO.rows = [{ id: 1, Recu_le: Date.now() / 1000 - 3 * 86400, Nigend: '2019-1120', Profession: 'Infirmière', Missions: ['L', 'Secrétariat', 'Instruction'], Langues: ['L', 'Anglais', 'Espagnol'], Niveau_etudes: 'Bac +3 (licence / BUT)', Domaine_etudes: 'Santé / médical / paramédical' },
+      { id: 2, Recu_le: Date.now() / 1000 - 86400, Nigend: '2022 0555', Profession: 'Développeur', Missions: ['L', 'Ecoutes téléphoniques', 'Enquêtes judiciaires'], Langues: 'anglais, russe', Niveau_etudes: 'Bac +5 (master / ingénieur)', Domaine_etudes: 'Informatique / numérique / cyber' }, { id: 3, Recu_le: Date.now() / 1000 - 2 * 3600, Nigend: '2099-1234', Profession: 'Électricien', Niveau_etudes: 'CAP / BEP', Domaine_etudes: 'Bâtiment / travaux publics' }]; }
+      F = { table: FT, cols: DEMO.cols.map(function (c) { return { id: c[0], label: c[2] || c[0], type: c[1] }; }), rows: DEMO.rows }; return Promise.resolve();
+    }
+    return window.grist.docApi.listTables().then(function (ts) {
+      var t = ts.filter(function (x) { return loose(x) === loose(FT); })[0]; if (!t) { F = null; return; }
+      return Promise.all([window.grist.docApi.fetchTable(t), window.grist.docApi.fetchTable('_grist_Tables_column'), window.grist.docApi.fetchTable('_grist_Tables')]).then(function (a) {
+        var data = a[0], meta = a[1], tabs = a[2], ref = tabs.id[tabs.tableId.indexOf(t)], cols = [];
+        meta.id.forEach(function (id, i) { if (meta.parentId[i] === ref && !/^gristHelper_/.test(meta.colId[i]) && meta.colId[i] !== 'manualSort') cols.push({ id: meta.colId[i], label: meta.label[i] || meta.colId[i], type: meta.type[i] }); });
+        var rows = (data.id || []).map(function (rid, i) { var o = { id: rid }; Object.keys(data).forEach(function (k) { o[k] = data[k][i]; }); return o; });
+        F = { table: t, cols: cols, rows: rows };
+      });
+    });
+  }
+  function createTable() {
+    var cols = FCOLS.map(function (c) { var o = { id: c[0], type: c[1], isFormula: false }; if (c[2]) o.label = c[2]; if (c[3]) o.widgetOptions = JSON.stringify({ choices: c[3] }); if (c[4]) { o.formula = c[4]; o.recalcWhen = 0; } return o; }); // « Reçu le » : formule déclenchée à la création de la réponse
+    return (IN_GRIST ? window.grist.docApi.applyUserActions([['AddTable', FT, cols]]) : Promise.resolve()).then(load);
+  }
+  function fupdate(rowId, o) { var f = {}; Object.keys(o).forEach(function (k) { var c = fcol(k); if (c) f[c.id] = o[k]; });
+    if (!IN_GRIST) { var r = DEMO.rows.filter(function (x) { return x.id === rowId; })[0]; Object.keys(f).forEach(function (k) { r[k] = f[k]; }); return Promise.resolve(); }
+    return window.grist.docApi.applyUserActions([['UpdateRecord', F.table, rowId, f]]);
+  }
+  // Rapprochement d'une réponse avec un réserviste : Nigend, NID, courriel, puis nom et prénom
+  function matchOf(r) {
+    var A = R(), forced = fval(r, 'Etat_integration').match(/#(\d+)/); var people = A.rows();
+    if (forced) return people.filter(function (p) { return p.id === Number(forced[1]); })[0] || null;
+    var v = loose(fval(r, 'Nigend')); if (!v) return null; // le réserviste s'identifie par son Nigend (tirets et espaces ignorés)
+    var m = people.filter(function (p) { return loose(A.cell(p.raw, 'Nigend')) === v; }); return m.length === 1 ? m[0] : null;
+  }
+  function done(r) { return /^(Intégrée|Ignorée)/.test(fval(r, 'Etat_integration')); }
+  function diffOf(r, p) { // { fill: [[clé, valeur]], diff: [[clé, actuelle, nouvelle]] }
+    var A = R(), o = { fill: [], diff: [] };
+    FIELDS.forEach(function (f) { var v = fval(r, f[0]); if (!v) return; var cur = String(A.cell(p.raw, TARGET[f[0]]) || '').trim(); if (!cur) o.fill.push([f[0], v]); else if (!same(f[0], cur, v)) o.diff.push([f[0], cur, v]); });
+    return o;
+  }
+  function ensureCols() { // colonnes Profession, Niveau d'études, Domaine d'études ajoutées à la table des réservistes si besoin
+    var A = R(), miss = FIELDS.filter(function (f) { return !A.col(TARGET[f[0]]); }).map(function (f) { return { label: TARGET[f[0]], type: f[1], choices: f[3] || null }; });
+    return miss.length ? A.addColumns(miss) : Promise.resolve();
+  }
+  function writeTo(p, pairs) { var A = R(), o = {}; pairs.forEach(function (x) { var c = A.col(TARGET[x[0]]); o[TARGET[x[0]]] = isList(x[0]) ? (c && /^ChoiceList/.test(c.type) ? ['L'].concat(lst(x[1])) : lst(x[1]).join(', ')) : x[1]; }); return A.update(p.id, o); }
+  function stamp(r, state) { return fupdate(r.id, { Etat_integration: state, Integre_le: Date.now() / 1000 }); }
+  function integrate() { // champs vides complétés automatiquement ; écarts « à valider » ; réponses non rapprochées signalées
+    if (BUSY || !F || !R() || !R().count()) return Promise.resolve(); BUSY = true;
+    var jobs = rowsOf(F).filter(function (r) { return !done(r); }).map(function (r) {
+      return function () {
+        var p = matchOf(r), st = fval(r, 'Etat_integration');
+        if (!p) return st === 'Non rapprochée' ? null : stamp(r, 'Non rapprochée');
+        var d = diffOf(r, p);
+        if (d.diff.length) return (d.fill.length ? writeTo(p, d.fill) : Promise.resolve()).then(function () { var s = 'À valider : ' + d.diff.map(function (x) { return TARGET[x[0]]; }).join(', ') + (st.match(/#\d+/) ? ' ' + st.match(/#\d+/)[0] : ''); return s === st ? null : stamp(r, s); });
+        return (d.fill.length ? writeTo(p, d.fill) : Promise.resolve()).then(function () { return stamp(r, 'Intégrée (' + d.fill.length + ' champ' + (d.fill.length > 1 ? 's' : '') + ')' + (st.match(/#\d+/) ? ' ' + st.match(/#\d+/)[0] : '')); });
+      };
+    });
+    return ensureCols().then(function () { return jobs.reduce(function (p, j) { return p.then(j); }, Promise.resolve()); }).then(function () { BUSY = false; return load(); }, function (e) { BUSY = false; MSG = 'Intégration impossible : ' + ((e && e.message) || e) + '.'; }).then(render);
+  }
+  var MSG = '', FLT = 'all', SEND = null;
+  function formUrl() { return R() && R().profForm ? R().profForm() : ''; }
+  // Suivi : invitations et relances (options du widget, clé rpf : { inv: { id: date }, rel: { id: [dates] } })
+  var DEMO_TRACK = null;
+  function track() { var o = window.__getOpts ? window.__getOpts() || {} : {}; if (o.rpf) return { inv: o.rpf.inv || {}, rel: o.rpf.rel || {} }; if (!IN_GRIST) { if (!DEMO_TRACK) { var rb = R().rows().filter(function (x) { return /ROBIN/.test(x.label); })[0]; DEMO_TRACK = { inv: {}, rel: {} }; if (rb) DEMO_TRACK.inv[rb.id] = Date.now() / 1000 - 12 * 86400; } return DEMO_TRACK; } return { inv: {}, rel: {} }; }
+  function saveTrack(t) { var o = JSON.parse(JSON.stringify(window.__getOpts ? window.__getOpts() || {} : {})); o.rpf = t; if (!IN_GRIST) DEMO_TRACK = t; return Promise.resolve(IN_GRIST ? window.grist.setOptions(o) : null).then(function () { if (window.__pushOpts) window.__pushOpts(o); }); }
+  function fd(sec) { if (!sec) return ''; var d = new Date(sec * 1000); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+  function respMap() { var m = {}; if (!F) return m; var rc = fcol('Recu_le'), ic = fcol('Integre_le'); rowsOf(F).forEach(function (r) { var p = matchOf(r); if (!p) return; var d = (rc && r[rc.id]) || (ic && r[ic.id]) || true; if (!m[p.id] || (typeof d === 'number' && (m[p.id] === true || d > m[p.id]))) m[p.id] = d; }); return m; }
+  function filled(p) { var A = R(); return FIELDS.filter(function (f) { return String(A.cell(p.raw, TARGET[f[0]]) || '').trim(); }).length; }
+  function mailOf(p) { var v = String(R().cell(p.raw, 'Adresse email') || '').trim(); return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : ''; }
+  function follow() { // statut de chaque réserviste : rep (a répondu), ok (fiche déjà renseignée), rel (relancé), inv (invité), non (jamais invité)
+    var t = track(), rm = respMap();
+    return R().rows().map(function (p) { var n = filled(p), rl = t.rel[p.id] || [], st = rm[p.id] ? 'rep' : n >= 3 && filled3(p) ? 'ok' : rl.length ? 'rel' : t.inv[p.id] ? 'inv' : 'non';
+      return { p: p, st: st, resp: rm[p.id], inv: t.inv[p.id], rel: rl, n: n, mail: mailOf(p) }; });
+  }
+  function filled3(p) { var A = R(); return ['Profession', 'Niveau_etudes', 'Domaine_etudes'].every(function (k) { return String(A.cell(p.raw, TARGET[k]) || '').trim(); }); }
+  var ST = { rep: ['A répondu', 'green'], ok: ['Fiche déjà renseignée', 'blue'], rel: ['Relancé', 'orange'], inv: ['Invité, sans réponse', 'yellow'], non: ['Pas encore invité', 'grey'] };
+  function targets(kind, L) { return (L || follow()).filter(function (x) { return kind === 'inv' ? x.st === 'non' : x.st === 'inv' || x.st === 'rel'; }); }
+  function sendMail(kind) { // un message en Cci, réparti en lots si la liste est trop longue pour un lien « mailto »
+    var url = formUrl(); if (!url) { MSG = 'Réglez d’abord le lien du formulaire dans le back office (Réservistes, options avancées).'; render(); return Promise.resolve(); }
+    var T = targets(kind), withMail = T.filter(function (x) { return x.mail; }), m = R().profMail(kind), fill = function (t) { return t.replace(/\{\{\s*LIEN_FORMULAIRE\s*\}\}/g, url).replace(/\{\{\s*DATE_DU_JOUR\s*\}\}/g, fd(Date.now() / 1000)); };
+    if (!withMail.length) { MSG = 'Aucune adresse mail valide parmi les ' + T.length + ' réserviste' + (T.length > 1 ? 's' : '') + ' concerné' + (T.length > 1 ? 's' : '') + '.'; render(); return Promise.resolve(); }
+    if (!SEND || SEND.kind !== kind) { var lots = [[]], base = ('mailto:?subject=' + encodeURIComponent(fill(m.subject)) + '&body=' + encodeURIComponent(fill(m.body).replace(/\r?\n/g, '\r\n')) + '&bcc=').length, len = base;
+      withMail.forEach(function (x) { var l = encodeURIComponent(x.mail).length + 3; if (len + l > 1900 && lots[lots.length - 1].length) { lots.push([]); len = base; } lots[lots.length - 1].push(x); len += l; });
+      SEND = { kind: kind, lots: lots, i: 0, skip: T.length - withMail.length }; }
+    var lot = SEND.lots[SEND.i], mails = lot.map(function (x) { return x.mail; }), now = Date.now() / 1000;
+    (window.RPF_MAIL || (window.RSV && window.RSV.openGroup) || function () {})(mails, fill(m.subject), fill(m.body), '', '', '');
+    var t = JSON.parse(JSON.stringify(track())); lot.forEach(function (x) { if (kind === 'inv') t.inv[x.p.id] = now; else (t.rel[x.p.id] = t.rel[x.p.id] || []).push(now); });
+    var info = (kind === 'inv' ? 'Invitation' : 'Relance') + ' préparée dans votre messagerie : ' + lot.length + ' destinataire' + (lot.length > 1 ? 's' : '') + ' en Cci' + (SEND.lots.length > 1 ? ' (lot ' + (SEND.i + 1) + '/' + SEND.lots.length + ')' : '') + (SEND.skip ? ' · ' + SEND.skip + ' sans adresse mail valide' : '') + '.';
+    SEND.i++; if (SEND.i >= SEND.lots.length) SEND = null;
+    return saveTrack(t).then(function () { MSG = ''; OK = info; render(); }, function (er) { MSG = 'Suivi non enregistré : ' + ((er && er.message) || er) + '.'; render(); });
+  }
+  var OK = '';
+  function render() {
+    var host = $('r-pf-box'); if (!host || !R()) return;
+    var pend = F ? rowsOf(F).filter(function (r) { return !done(r); }) : [], url = formUrl(), A = R(), people = A.rows();
+    if (!F) { host.innerHTML = '<details class="rpf-box"' + (OPEN ? ' open' : '') + '><summary>Profilage</summary><div class="rpf-body"><p class="hint">La table <code>' + FT + '</code> recevra les réponses du formulaire externe (Grist : vue Formulaire sur cette table). Les réponses complètent la profession, les études, les missions déjà occupées et les langues de la fiche du réserviste.</p><p><button type="button" class="btn sm" data-rpf="create">Créer la table du formulaire</button></p></div></details>'; return; }
+    var L = follow(), cnt = {}; L.forEach(function (x) { cnt[x.st] = (cnt[x.st] || 0) + 1; }); var nInv = targets('inv', L).length, nRel = targets('rel', L).length, rep = cnt.rep || 0;
+    var rows = pend.map(function (r) {
+      var p = matchOf(r), d = p ? diffOf(r, p) : null, who = fval(r, 'Nigend') ? 'Nigend ' + fval(r, 'Nigend') : '(Nigend non renseigné)';
+      var vals = FIELDS.map(function (f) { var v = fval(r, f[0]); return (isList(f[0]) ? lst(v) : v ? [v] : []).map(function (x) { return '<span class="tag ' + (isList(f[0]) ? 'blue' : 'grey') + '" title="' + esc(f[2]) + '">' + esc(x) + '</span>'; }).join(' '); }).join(' ');
+      return '<tr><th scope="row">' + esc(who) + (p ? '' : '<br><span class="hint" style="display:inline">Nigend inconnu dans la table des réservistes</span>') + '</th><td>' + vals + '</td>' +
+        '<td>' + (p ? esc(p.label) + (d && d.diff.length ? '<br>' + d.diff.map(function (x) { return '<span class="hint" style="display:inline">' + esc(TARGET[x[0]]) + ' : « ' + esc(x[1]) + ' » → « ' + esc(x[2]) + ' »</span>'; }).join('<br>') : '') :
+          '<label class="fr-sr-only" for="rpf-m' + r.id + '">Réserviste</label><select class="select" id="rpf-m' + r.id + '" data-rpfm="' + r.id + '"><option value="">Non rapprochée : choisir…</option>' + people.map(function (q) { return '<option value="' + q.id + '">' + esc(q.label) + '</option>'; }).join('') + '</select>') + '</td>' +
+        '<td style="white-space:nowrap">' + (p ? '<button type="button" class="btn sm" data-rpf="apply" data-id="' + r.id + '">Appliquer</button> ' : '') + '<button type="button" class="btn secondary sm" data-rpf="skip" data-id="' + r.id + '">Ignorer</button></td></tr>';
+    }).join('');
+    var FL = [['all', 'Tous', L.length], ['wait', 'Invités sans réponse', (cnt.inv || 0) + (cnt.rel || 0)], ['non', 'Pas encore invités', cnt.non || 0], ['rep', 'Ont répondu', rep], ['ok', 'Fiche déjà renseignée', cnt.ok || 0]];
+    var shown = L.filter(function (x) { return FLT === 'all' || (FLT === 'wait' ? x.st === 'inv' || x.st === 'rel' : x.st === FLT); });
+    var trk = shown.map(function (x) { var s = ST[x.st], det = x.st === 'rep' ? (typeof x.resp === 'number' ? 'le ' + fd(x.resp) : '') : x.st === 'rel' ? x.rel.length + ' fois, dernière le ' + fd(x.rel[x.rel.length - 1]) + (x.inv ? ' · invité le ' + fd(x.inv) : '') : x.st === 'inv' ? 'le ' + fd(x.inv) : '';
+      return '<tr><th scope="row">' + esc(x.p.label) + '<br><span class="hint" style="display:inline">' + (x.mail ? esc(x.mail) : '<span style="color:var(--error, #ce0500)">sans adresse mail valide</span>') + '</span></th><td><span class="tag ' + s[1] + '">' + s[0] + '</span>' + (det ? ' <span class="hint" style="display:inline">' + esc(det) + '</span>' : '') + '</td><td>' + x.n + ' / ' + FIELDS.length + '</td></tr>'; }).join('');
+    host.innerHTML = '<details class="rpf-box"' + (OPEN ? ' open' : '') + '><summary>Profilage · ' + rep + ' répondant' + (rep > 1 ? 's' : '') + ' sur ' + L.length + (pend.length ? ' · <span class="tag orange">' + pend.length + ' réponse' + (pend.length > 1 ? 's' : '') + ' à traiter</span>' : '') + '</summary><div class="rpf-body">' +
+      (MSG ? '<div class="doc-alert error" role="alert"><p>' + esc(MSG) + '</p></div>' : '') + (OK ? '<div class="doc-alert success" role="status"><p>' + esc(OK) + '</p></div>' : '') +
+      '<div class="rpf-link">' + (url ? '<span id="rpf-qr" class="rpf-qr" aria-hidden="true"></span><p><a href="' + esc(url) + '" target="_blank" rel="noopener">Lien du formulaire</a> <button type="button" class="btn secondary sm" data-rpf="copy">Copier le lien</button></p>' : '<p class="hint">Lien du formulaire : réglez-le dans le back office (Réservistes, « Formulaire externe »).</p>') + '</div>' +
+      '<h3 class="rpf-h">Suivi des répondants</h3>' +
+      '<div class="rpf-bar"><div class="rpf-qf" role="group" aria-label="Filtrer le suivi">' + FL.map(function (f) { return '<button type="button" class="rpf-pill c-' + f[0] + '" data-rpff="' + f[0] + '" aria-pressed="' + (FLT === f[0]) + '">' + f[1] + ' <span class="rpf-n">' + f[2] + '</span></button>'; }).join('') + '</div>' +
+      '<div class="rpf-acts"><button type="button" class="btn sm ico-mail" data-rpf="inv"' + (nInv ? '' : ' disabled') + ' title="Réservistes jamais invités, sans réponse et dont la fiche est incomplète">' + (SEND && SEND.kind === 'inv' ? 'Lot suivant (' + (SEND.i + 1) + '/' + SEND.lots.length + ')' : 'Inviter à répondre (' + nInv + ')') + '</button>' +
+      '<button type="button" class="btn secondary sm ico-mail" data-rpf="rel"' + (nRel ? '' : ' disabled') + ' title="Réservistes déjà invités qui n’ont pas répondu">' + (SEND && SEND.kind === 'rel' ? 'Lot suivant (' + (SEND.i + 1) + '/' + SEND.lots.length + ')' : 'Relancer (' + nRel + ')') + '</button></div></div>' +
+      '<div class="table-wrap rpf-track"><table class="doc-table"><caption class="fr-sr-only">Suivi des répondants</caption><thead><tr><th scope="col">Réserviste</th><th scope="col">Suivi</th><th scope="col">Champs renseignés</th></tr></thead><tbody>' + (trk || '<tr><td colspan="3" style="text-align:center">Aucun réserviste.</td></tr>') + '</tbody></table></div>' +
+      '<p class="hint">Un seul message par envoi, destinataires en copie cachée ; modèles modifiables dans le back office (Modèles · Réservistes · profilage). Les invitations et relances sont datées pour le suivi.</p>' +
+      '<h3 class="rpf-h">Réponses à traiter</h3>' +
+      '<p class="hint">Les champs vides de la fiche sont complétés automatiquement ; une valeur différente de celle de la fiche est « à valider » ; une réponse dont le Nigend ne correspond à aucun réserviste se rapproche à la main.</p>' +
+      (pend.length ? '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Réponses à traiter</caption><thead><tr><th scope="col">Réponse</th><th scope="col">Valeurs</th><th scope="col">Réserviste</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">Aucune réponse à traiter.</p>') +
+      '</div></details>';
+    if (url) qr(url);
+  }
+  var QRL = null;
+  function qr(url) { var el = $('rpf-qr'); if (!el) return; (window.qrcode ? Promise.resolve() : (QRL = QRL || new Promise(function (res, rej) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); }))).then(function () { var q = window.qrcode(0, 'M'); q.addData(url); q.make(); el.innerHTML = q.createSvgTag({ cellSize: 3, margin: 2, scalable: true }); }, function () {}); }
+  document.addEventListener('click', function (e) { var f = e.target.closest && e.target.closest('[data-rpff]'); if (f) { FLT = f.getAttribute('data-rpff'); render(); } });
+  document.addEventListener('toggle', function (e) { if (e.target && e.target.closest && e.target.closest('#r-pf-box') && e.target.tagName === 'DETAILS') OPEN = e.target.open; }, true);
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-rpf]'); if (!b) return; var a = b.getAttribute('data-rpf'), id = Number(b.getAttribute('data-id')), r = F && rowsOf(F).filter(function (x) { return x.id === id; })[0];
+    if (a === 'create') { b.disabled = true; return createTable().then(render, function (er) { MSG = 'Création impossible : ' + ((er && er.message) || er) + '.'; render(); }); }
+    if (a === 'inv' || a === 'rel') { OK = ''; MSG = ''; return sendMail(a); }
+    if (a === 'copy') { var u = formUrl(); if (navigator.clipboard) navigator.clipboard.writeText(u).then(function () { b.textContent = 'Lien copié'; }, function () {}); return; }
+    if (!r) return; b.disabled = true;
+    if (a === 'skip') return stamp(r, 'Ignorée').then(load).then(render);
+    if (a === 'apply') { var p = matchOf(r); if (!p) return; var pairs = FIELDS.map(function (f) { return [f[0], fval(r, f[0])]; }).filter(function (x) { return x[1]; });
+      return ensureCols().then(function () { return writeTo(p, pairs); }).then(function () { return stamp(r, 'Intégrée (validée, ' + pairs.length + ' champ' + (pairs.length > 1 ? 's' : '') + ') #' + p.id); }).then(load).then(render, function (er) { MSG = 'Enregistrement impossible : ' + ((er && er.message) || er) + '.'; render(); }); }
+  });
+  document.addEventListener('change', function (e) { var m = e.target.getAttribute && e.target.getAttribute('data-rpfm'); if (!m || !e.target.value) return; var r = rowsOf(F).filter(function (x) { return x.id === Number(m); })[0]; if (!r) return; fupdate(r.id, { Etat_integration: 'À intégrer #' + e.target.value }).then(load).then(integrate); });
+
+  /* ----- Recherche par profil ----- */
+  var PS = { q: '', niv: '', mis: [], lang: [], dom: [], grade: [], corps: [], aff: [], type: [], qual: [], ageMin: '', ageMax: '', lieu: '' };
+  function lvl(v) { var n = norm(v); for (var i = NIVEAUX.length - 1; i >= 0; i--) { if (n && n.indexOf(norm(NIVEAUX[i]).split(' (')[0]) === 0) return i; } var m = /bac\s*\+\s*(\d)/.exec(n); if (m) return { 2: 3, 3: 4, 4: 4, 5: 5, 8: 6 }[m[1]] || 3; if (/bac/.test(n)) return 2; if (/cap|bep/.test(n)) return 1; return -1; }
+  function profiles() { var A = R(); return A.rows().map(function (p) { var g = function (l) { return String(A.cell(p.raw, l) || '').trim(); }; return { id: p.id, label: p.label, prof: g('Profession'), niv: g('Niveau d’études'), dom: g('Domaine d’études'), mis: lst(g('Missions déjà occupées en gendarmerie')), lang: lst(g('Langues parlées')).map(cap), grade: g('Grade'), corps: g('Corps'), aff: g('Affectation'), type: g('Type R'), qual: g('Qualité jud'), age: Number(g('Age')) || null, lieu: [g('Ville'), g('Dpt')].filter(Boolean).join(' '), mail: g('Adresse email'), tel: g('Téléphone') }; }); }
+  function pass(x) {
+    var words = norm(PS.q).split(/[,;]+|\s+/).filter(function (w) { return w.length > 1; });
+    if (words.length && !words.every(function (w) { return norm(x.prof + ' ' + x.dom + ' ' + x.mis.join(' ') + ' ' + x.lang.join(' ')).indexOf(w) !== -1; })) return false;
+    if (PS.niv !== '' && lvl(x.niv) < Number(PS.niv)) return false;
+    if (PS.lang.length && !PS.lang.every(function (l) { return x.lang.some(function (y) { return norm(y) === norm(l); }); })) return false;
+    if (PS.mis.length && !PS.mis.some(function (m) { return x.mis.indexOf(m) !== -1; })) return false;
+    var inL = function (l, v) { return !l.length || l.indexOf(v) !== -1; };
+    if (!inL(PS.dom, x.dom) || !inL(PS.grade, x.grade) || !inL(PS.corps, x.corps) || !inL(PS.aff, x.aff) || !inL(PS.type, x.type) || !inL(PS.qual, x.qual)) return false;
+    if (PS.ageMin !== '' && !(x.age >= Number(PS.ageMin))) return false; if (PS.ageMax !== '' && !(x.age <= Number(PS.ageMax))) return false;
+    if (PS.lieu && norm(x.lieu).indexOf(norm(PS.lieu)) === -1) return false;
+    return true;
+  }
+  function openSearch() { var ov = $('r-psmodal'); ov.hidden = false; document.body.style.overflow = 'hidden'; renderSearch(); requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('ps-q'); if (f) f.focus(); }); }); }
+  function closeSearch() { var ov = $('r-psmodal'); if (ov.hidden) return; ov.classList.remove('is-open'); if (!document.querySelector('.modal-overlay.is-open')) document.body.style.overflow = ''; setTimeout(function () { ov.hidden = true; }, 200); }
+  function chips(key, vals, lab) { var s = PS[key]; return '<fieldset class="ps-fs"><legend>' + lab + '</legend><div class="pg-chips pg-tags">' + (vals.length ? vals.map(function (v, i) { var id = 'ps-' + key + i; return '<label for="' + id + '"><input type="checkbox" id="' + id + '" data-psk="' + key + '" value="' + esc(v) + '"' + (s.indexOf(v) !== -1 ? ' checked' : '') + '> ' + esc(v) + '</label>'; }).join('') : '<span class="hint">Aucune valeur</span>') + '</div></fieldset>'; }
+  function valsOf(all, k, base) { var m = {}; (base || []).forEach(function (v) { m[v] = 1; }); all.forEach(function (x) { if (x[k]) m[x[k]] = 1; }); return Object.keys(m).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); }); }
+  function valsOfL(all, k) { var m = {}; all.forEach(function (x) { x[k].forEach(function (v) { m[v] = 1; }); }); return Object.keys(m).sort(); }
+  function renderSearch() {
+    var all = profiles(), res = all.filter(pass), body = $('r-psmodal-body');
+    var keep = document.activeElement && body.contains(document.activeElement) ? document.activeElement.id : null, pos = keep && document.activeElement.selectionStart;
+    body.innerHTML = '<div class="ps-grid"><div class="ps-crit">' +
+      '<div class="cf-field"><label for="ps-q">Profession, domaine, mission ou langue (mots-clés)</label><input class="input" type="search" id="ps-q" value="' + esc(PS.q) + '" placeholder="ex. infirmier, informatique, électricien…" autocomplete="off"></div>' +
+      '<div class="cf-field"><label for="ps-niv">Niveau d’études minimum</label><select class="select" id="ps-niv"><option value="">Indifférent</option>' + NIVEAUX.map(function (n, i) { return '<option value="' + i + '"' + (String(PS.niv) === String(i) ? ' selected' : '') + '>' + esc(n) + ' ou plus</option>'; }).join('') + '</select></div>' +
+      chips('mis', MISSIONS.concat(valsOfL(all, 'mis').filter(function (v) { return MISSIONS.indexOf(v) === -1; })), 'Missions déjà occupées en gendarmerie (au moins une)') + chips('lang', LANGUES.concat(valsOfL(all, 'lang').filter(function (v) { return LANGUES.map(norm).indexOf(norm(v)) === -1; })), 'Langues parlées (toutes celles cochées)') + chips('dom', valsOf(all, 'dom', DOMAINES), 'Domaine d’études') + chips('grade', valsOf(all, 'grade'), 'Grade') + chips('type', valsOf(all, 'type'), 'Type de réserviste') + chips('aff', valsOf(all, 'aff'), 'Affectation') + chips('corps', valsOf(all, 'corps'), 'Corps') + chips('qual', valsOf(all, 'qual'), 'Qualité judiciaire') +
+      '<div class="ins-dform"><div class="cf-field"><label for="ps-amin">Âge minimum</label><input class="input" type="number" min="16" id="ps-amin" value="' + esc(PS.ageMin) + '"></div><div class="cf-field"><label for="ps-amax">Âge maximum</label><input class="input" type="number" min="16" id="ps-amax" value="' + esc(PS.ageMax) + '"></div></div>' +
+      '<div class="cf-field"><label for="ps-lieu">Ville ou département</label><input class="input" id="ps-lieu" value="' + esc(PS.lieu) + '" placeholder="ex. Annecy, 74"></div>' +
+      '<p><button type="button" class="btn secondary sm ico-refresh" data-ps="reset">Réinitialiser les critères</button></p></div>' +
+      '<div class="ps-res"><div class="pg-bar" style="align-items:center"><h3 style="margin:0;flex:1" aria-live="polite">' + res.length + ' réserviste' + (res.length > 1 ? 's' : '') + ' sur ' + all.length + '</h3><button type="button" class="btn secondary sm ico-download" data-ps="csv"' + (res.length ? '' : ' disabled') + '>Exporter (.csv)</button></div>' +
+      '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Réservistes correspondant au profil</caption><thead><tr><th scope="col">Réserviste</th><th scope="col">Profession, missions, langues</th><th scope="col">Études</th><th scope="col">Affectation</th></tr></thead><tbody>' +
+      (res.map(function (x) { return '<tr class="row-click" data-psid="' + x.id + '" tabindex="0" title="Ouvrir la fiche"><th scope="row">' + esc(x.label) + '<br><span class="hint" style="display:inline">' + esc([x.grade, x.type, x.age ? x.age + ' ans' : ''].filter(Boolean).join(' · ')) + '</span></th><td>' + esc(x.prof || '—') + (x.mis.length ? '<br>' + x.mis.map(function (m) { return '<span class="tag blue">' + esc(m) + '</span>'; }).join(' ') : '') + (x.lang.length ? '<br>' + x.lang.map(function (m) { return '<span class="tag purple">' + esc(m) + '</span>'; }).join(' ') : '') + '</td><td>' + esc(x.niv || '—') + (x.dom ? '<br><span class="hint" style="display:inline">' + esc(x.dom) + '</span>' : '') + '</td><td>' + esc(x.aff || '—') + '</td></tr>'; }).join('') || '<tr><td colspan="4" style="text-align:center">Aucun réserviste ne correspond à ce profil.</td></tr>') +
+      '</tbody></table></div><p class="hint">Profession, études, missions déjà occupées et langues : complétées par le formulaire « Profilage » « Profession et études » ou dans la fiche.</p></div></div>';
+    if (keep && $(keep)) { $(keep).focus(); try { if (pos != null) $(keep).setSelectionRange(pos, pos); } catch (er) {} }
+  }
+  function csv(rows) { var head = ['Réserviste', 'Grade', 'Type R', 'Âge', 'Profession', 'Niveau d’études', 'Domaine d’études', 'Missions déjà occupées', 'Langues parlées', 'Affectation', 'Corps', 'Qualité judiciaire', 'Courriel', 'Téléphone'], cell = function (v) { v = String(v == null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var t = [head].concat(rows.map(function (x) { return [x.label, x.grade, x.type, x.age || '', x.prof, x.niv, x.dom, x.mis.join(', '), x.lang.join(', '), x.aff, x.corps, x.qual, x.mail, x.tel]; })).map(function (r) { return r.map(cell).join(';'); }).join('\r\n') + '\r\n';
+    window.SERVIR_UTIL.downloadBlob(new Blob(['﻿' + t], { type: 'text/csv;charset=utf-8' }), 'Recherche_profil_reservistes.csv'); }
+  document.addEventListener('input', function (e) { var id = e.target.id; if (!/^ps-(q|amin|amax|lieu)$/.test(id)) return; PS[{ 'ps-q': 'q', 'ps-amin': 'ageMin', 'ps-amax': 'ageMax', 'ps-lieu': 'lieu' }[id]] = e.target.value; renderSearch(); });
+  document.addEventListener('change', function (e) { if (e.target.id === 'ps-niv') { PS.niv = e.target.value; renderSearch(); $('ps-niv').focus(); return; } var k = e.target.getAttribute && e.target.getAttribute('data-psk'); if (!k) return; var l = PS[k], v = e.target.value, i = l.indexOf(v); if (e.target.checked && i === -1) l.push(v); if (!e.target.checked && i !== -1) l.splice(i, 1); var id = e.target.id; renderSearch(); if ($(id)) $(id).focus(); });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('#r-btn-profile')) return openSearch();
+    if (e.target.id === 'r-psmodal-close' || e.target.id === 'r-psmodal') return closeSearch();
+    var b = e.target.closest && e.target.closest('[data-ps]'); if (b) { if (b.getAttribute('data-ps') === 'reset') { PS = { q: '', niv: '', mis: [], lang: [], dom: [], grade: [], corps: [], aff: [], type: [], qual: [], ageMin: '', ageMax: '', lieu: '' }; renderSearch(); } else csv(profiles().filter(pass)); return; }
+    var tr = e.target.closest && e.target.closest('#r-psmodal [data-psid]'); if (tr) { closeSearch(); setTimeout(function () { R().fiche(Number(tr.getAttribute('data-psid'))); }, 220); }
+  });
+  document.addEventListener('keydown', function (e) { var ov = $('r-psmodal'); if (!ov || ov.hidden) return; if (e.key === 'Escape') { e.preventDefault(); closeSearch(); } else if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-psid]')) { e.preventDefault(); e.target.click(); } });
+  function boot() { if (!R() || !R().rows) return; load().then(render).then(function () { return integrate(); }, function () {}); }
+  window.RPF = { refresh: boot, render: render, follow: follow, send: sendMail, integrate: function () { return load().then(integrate); }, levels: NIVEAUX, domains: DOMAINES, search: function () { return profiles().filter(pass); }, set: function (o) { Object.keys(o).forEach(function (k) { PS[k] = o[k]; }); }, open: openSearch }; // (tests)
+  setTimeout(boot, 1500);
+  document.addEventListener('servir:res-loaded', function () { if (F) render(); else boot(); });
 })();
 </script>
 <script>
@@ -13259,10 +13582,16 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // Bloc marque (en-tête du ministère, comme la feuille d'émargement) en haut de la 1re page : réglage par modèle de document, coché par défaut.
   // Coché : le repère <!--bloc-marque--> du modèle est gardé à sa place, ou l'en-tête est ajouté en tête du document ; décoché : il est retiré.
   function blocOn(id, draft) { var B = (draft && state.draft && state.draft.blocs) || xo().blocs || {}; return B[id] !== false; }
+  // Format du modèle de document : HTML (par défaut) ou Markdown, converti en HTML avant le bloc marque et le PDF
+  function orientOf(id, draft) { var F = (draft && state.draft && state.draft.orients) || xo().orients || {}; return F[id] === 'paysage' ? 'paysage' : 'portrait'; }
+  function sigOf(id, draft) { var F = (draft && state.draft && state.draft.sigs) || xo().sigs || {}; return F[id] || ''; }
+  function fmtOf(id, draft) { var F = (draft && state.draft && state.draft.formats) || xo().formats || {}; return F[id] === 'md' ? 'md' : 'html'; }
   window.__applyBloc = function (id, html, draft) {
     var re = /<!--bloc-marque-->[\s\S]*?<!--\/bloc-marque-->/g; html = String(html || '');
+    if (fmtOf(id, draft) === 'md' && window.marked) { try { html = window.marked.parse(html); } catch (e) {} }
+    html = window.__docFinish(html, { sig: sigOf(id, draft), landscape: orientOf(id, draft) === 'paysage' });
     if (!blocOn(id, draft)) return html.replace(re, '');
-    return /<!--bloc-marque-->/.test(html) ? html : '<div style="margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' + html;
+    return /<!--bloc-marque-->/.test(html) ? html : (/^<!--orientation:paysage-->/.test(html) ? '<!--orientation:paysage-->' : '') + '<div style="margin-bottom: 32px;">' + window.__BLOC_FALLBACK + '</div>\n' + html;
   };
   window.__tplTo = function (id) { return String(((xo().recipients) || {})[id] || '').split(/[,;\s]+/).filter(validEmail); };
   function addTo(to, id) { var l = String(to || '').split(/\s*,\s*/).filter(Boolean); window.__tplTo(id).forEach(function (a) { if (l.map(function (x) { return x.toLowerCase(); }).indexOf(a.toLowerCase()) === -1) l.push(a); }); return l.join(','); }
@@ -13394,7 +13723,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return moved;
   }
   function adminDraft() {
-    var dr = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail), links: JSON.parse(JSON.stringify(xo().links || {})), params: JSON.parse(JSON.stringify(xo().params || {})), recipients: JSON.parse(JSON.stringify(xo().recipients || {})), blocs: JSON.parse(JSON.stringify(xo().blocs || {})) };
+    var dr = { tables: JSON.parse(JSON.stringify(xo().tables || {})), mail: mergeMail(xo().mail), links: JSON.parse(JSON.stringify(xo().links || {})), params: JSON.parse(JSON.stringify(xo().params || {})), recipients: JSON.parse(JSON.stringify(xo().recipients || {})), blocs: JSON.parse(JSON.stringify(xo().blocs || {})), formats: JSON.parse(JSON.stringify(xo().formats || {})), orients: JSON.parse(JSON.stringify(xo().orients || {})), sigs: JSON.parse(JSON.stringify(xo().sigs || {})) };
     dr.moved = migrateLinks(dr); return dr;
   }
   // Modèles repris tels quels par la page Candidats (blocs Tests psychométriques → psy, VEMI → vemi), lien de réservation inséré.
@@ -15789,7 +16118,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     f.value = f.value.slice(0, s) + v + f.value.slice(en); f.selectionStart = f.selectionEnd = s + v.length;
     f.dispatchEvent(new Event('input', { bubbles: true })); f.focus();
   });
-  $('btn-reset').addEventListener('click', function () { state.draft = { tables: {}, mail: mergeMail(null), links: state.draft.links || {}, params: state.draft.params || {}, recipients: state.draft.recipients || {}, blocs: state.draft.blocs || {}, moved: [] }; renderAdminForm(); setDirty(true); }); // liens et paramètres conservés
+  $('btn-reset').addEventListener('click', function () { state.draft = { tables: {}, mail: mergeMail(null), links: state.draft.links || {}, params: state.draft.params || {}, recipients: state.draft.recipients || {}, blocs: state.draft.blocs || {}, formats: state.draft.formats || {}, orients: state.draft.orients || {}, sigs: state.draft.sigs || {}, moved: [] }; renderAdminForm(); setDirty(true); }); // liens et paramètres conservés
   $('p-reset').addEventListener('click', function () { ['lateDays', 'vmpRenewDays', 'psyHeures'].forEach(function (k) { delete state.draft.params[k]; }); renderAdminForm(); setDirty(true); });
   function cancelAdmin() { state.draft = adminDraft(); renderAdminForm(); setDirty(state.draft.moved.length > 0); }
   function saveAdmin() { // tables et modèles de courriels de cette page (les modèles s'éditent dans la section commune du back office)
@@ -15802,7 +16131,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var params = {}; Object.keys(state.draft.params || {}).forEach(function (k) { var v = state.draft.params[k]; if (v != null && String(v).trim() !== '' && String(v) !== String(PARAM_DEFAULTS[k])) params[k] = /Days$/.test(k) ? parseInt(v, 10) || PARAM_DEFAULTS[k] : String(v); });
     var recipients = {}; Object.keys(state.draft.recipients || {}).forEach(function (k) { var v = String(state.draft.recipients[k] || '').trim(); if (v) recipients[k] = v; });
     var blocs = {}; Object.keys(state.draft.blocs || {}).forEach(function (k) { if (state.draft.blocs[k] === false) blocs[k] = false; });
-    o.x = { tables: tables, mail: dr.mail, links: links, params: params, recipients: recipients, blocs: blocs };
+    var formats = {}; Object.keys(state.draft.formats || {}).forEach(function (k) { if (state.draft.formats[k] === 'md') formats[k] = 'md'; });
+    var orients = {}, sigs = {}; Object.keys(state.draft.orients || {}).forEach(function (k) { if (state.draft.orients[k] === 'paysage') orients[k] = 'paysage'; }); Object.keys(state.draft.sigs || {}).forEach(function (k) { if (state.draft.sigs[k]) sigs[k] = state.draft.sigs[k]; });
+    o.x = { tables: tables, mail: dr.mail, links: links, params: params, recipients: recipients, blocs: blocs, formats: formats, orients: orients, sigs: sigs };
     return Promise.resolve(api.saveOptions(o)).then(function () { if (window.__pushOpts) window.__pushOpts(o); else state.opts = o; return load(); }).then(function () { setDirty(false); $('saved').hidden = false; });
   }
   $('btn-cancel').addEventListener('click', cancelAdmin);
@@ -15960,6 +16291,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       get: function (id) { var R = (state.draft && state.draft.recipients) || xo().recipients || {}; return R[id] || ''; },
       set: function (id, v) { if (!state.draft) state.draft = adminDraft(); state.draft.recipients = state.draft.recipients || {}; state.draft.recipients[id] = v; setDirty(true); }
     },
+    orients: { get: function (id) { return orientOf(id, true); }, set: function (id, v) { if (!state.draft) state.draft = adminDraft(); state.draft.orients = state.draft.orients || {}; state.draft.orients[id] = v === 'paysage' ? 'paysage' : 'portrait'; setDirty(true); } },
+    sigs: { get: function (id) { return sigOf(id, true); }, set: function (id, v) { if (!state.draft) state.draft = adminDraft(); state.draft.sigs = state.draft.sigs || {}; state.draft.sigs[id] = v || ''; setDirty(true); } },
+    formats: { // format du modèle de document (éditeur des modèles du back office) : 'html' ou 'md'
+      get: function (id) { return fmtOf(id, true); },
+      set: function (id, v) { if (!state.draft) state.draft = adminDraft(); state.draft.formats = state.draft.formats || {}; state.draft.formats[id] = v === 'md' ? 'md' : 'html'; setDirty(true); }
+    },
     blocs: { // bloc marque en 1re page, par modèle de document (éditeur des modèles du back office)
       get: function (id) { return blocOn(id, true); },
       set: function (id, v) { if (!state.draft) state.draft = adminDraft(); state.draft.blocs = state.draft.blocs || {}; state.draft.blocs[id] = !!v; setDirty(true); }
@@ -16048,7 +16385,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   function sel(id, v) { return function () { var e = document.getElementById(id); if (e) { e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); } }; }
   function selOn(id, v) { return function () { var e = document.getElementById(id); return !!e && e.value === v; }; }
   var ACTIVE = []; // fonctions de mise à jour des lignes de filtres actifs (une par champ de recherche)
-  var RESETS = { 'q': click('flt-reset'), 'r-q': click('r-flt-reset'), 'r-v-ren-q': click('r-v-ren-freset'), 'r-v-ave-q': click('r-v-ave-freset'), 'x-q': sel('x-flt-action', 'action'), 'ins-q': function () { if (window.INS) window.INS.fltReset('stg'); }, 'ins-cq': function () { if (window.INS) window.INS.fltReset('cad'); }, 'ins-pq': function () { if (window.INS) window.INS.fltReset('prog'); }, 'ins-cer-q': function () { if (window.INS) window.INS.fltReset('cer'); }, 'ins-rq': function () { if (window.INS) window.INS.fltReset('res'); }, 'ins-rpq': function () { if (window.INS) window.INS.fltReset('rep'); } };
+  var RESETS = { 'q': click('flt-reset'), 'r-q': click('r-flt-reset'), 'r-v-ren-q': click('r-v-ren-freset'), 'r-v-ave-q': click('r-v-ave-freset'), 'x-q': sel('x-flt-action', 'action'), 'ins-q': function () { if (window.INS) window.INS.fltReset('stg'); }, 'ins-cq': function () { if (window.INS) window.INS.fltReset('cad'); }, 'ins-pq': function () { if (window.INS) window.INS.fltReset('prog'); }, 'ins-cer-q': function () { if (window.INS) window.INS.fltReset('cer'); }, 'ins-rq': function () { if (window.INS) window.INS.fltReset('res'); }, 'ins-rpq': function () { if (window.INS) window.INS.fltReset('rep'); }, 'ins-dq': function () { if (window.INS) window.INS.fltReset('doc'); } };
   var SUGG = {
     'q': function () { // cumulatif : états (groupes puis détail des dossiers en cours), affectations, PMG
       var P = window.PMG; if (!P || !P.suggestData) return [];
@@ -16109,6 +16446,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     'ins-cer-q': function () { return window.INS && window.INS.suggest ? window.INS.suggest('cer') : []; },
     'ins-rq': function () { return window.INS && window.INS.suggest ? window.INS.suggest('res') : []; },
     'ins-rpq': function () { return window.INS && window.INS.suggest ? window.INS.suggest('rep') : []; },
+    'ins-dq': function () { return window.INS && window.INS.suggest ? window.INS.suggest('doc') : []; },
     'w-faq-q': function () { return ['contrat', 'créneau', 'doublon', 'objectif'].map(function (t) { return { l: t, run: function () { var i = document.getElementById('w-faq-q'); i.value = t; i.dispatchEvent(new Event('input', { bubbles: true })); } }; }); }
   };
   Array.prototype.forEach.call(document.querySelectorAll('.tb-search .fr-search-bar'), function (bar) {
@@ -19526,6 +19864,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
           '<input type="file" id="' + p + '-file" accept=".docx,.docm,.odt,.pdf,.html,.htm,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text" hidden>' +
           '<div id="' + p + '-imp" class="bo-imp" role="status" aria-live="polite" hidden></div>' : '') +
         (type === 'doc' ? '<div class="fr-checkbox-group" style="margin-top:.75rem"><input type="checkbox" id="' + p + '-bloc"><label class="fr-label" for="' + p + '-bloc">Bloc marque en haut de la première page<span class="fr-hint-text">En-tête du ministère de l’Intérieur et « Gendarmerie nationale », comme sur la feuille d’émargement. Placé à l’endroit du repère <code>&lt;!--bloc-marque--&gt;&lt;!--/bloc-marque--&gt;</code> s’il figure dans le modèle, sinon en tête du document.</span></label></div>' : '') +
+        (type === 'doc' ? '<div class="cf-field" style="max-width:18rem;margin-top:.75rem"><label for="' + p + '-fmt">Format du modèle</label><select class="select" id="' + p + '-fmt"><option value="html">HTML</option><option value="md">Markdown</option></select></div>' : '') +
+        (type === 'doc' ? '<div class="cf-field" style="max-width:18rem;margin-top:.75rem"><label for="' + p + '-ori">Orientation de la page</label><select class="select" id="' + p + '-ori"><option value="portrait">Portrait</option><option value="paysage">Paysage</option></select></div>' +
+          '<div class="cf-field" style="margin-top:.75rem"><span class="fr-label" id="' + p + '-sig-l">Signature (image)</span><div class="tp-sig" id="' + p + '-sig"></div><p class="hint" style="margin:.25rem 0 0">Insérée à la place de <code>{{SIGNATURE_IMAGE}}</code>, sinon en fin de document. PNG ou JPEG (fond transparent conseillé).</p></div>' : '') +
         '<div class="cf-field" style="margin-top:.75rem"><label for="' + p + '-area">' + K.label + '</label><textarea class="textarea tall' + (type === 'doc' ? ' mono' : '') + '" id="' + p + '-area" rows="' + K.rows + '" spellcheck="' + (type === 'mail') + '"></textarea></div>' +
         '<h3 class="bo-h3">Variables disponibles</h3><p class="hint">Cliquez sur une variable pour l’insérer dans le champ en cours de saisie (survolez-la pour voir sa signification). Toute colonne de la table peut aussi servir de variable, par son libellé : <code>{{Libellé de la colonne}}</code>.</p>' +
         '<div class="bo-tpl-vars" id="' + p + '-vars" role="group" aria-label="Variables disponibles"></div>' +
@@ -19590,7 +19931,9 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         ccF.hidden = !d.cc; if (d.cc && document.activeElement !== ccI) ccI.value = d.cc.read();
       }
       if (e.subj) e.subj.value = d.subject ? d.subject.read() : '';
-      if (e.type === 'doc') { var bl = document.getElementById('bo-tpl-doc-bloc'), B = window.RSV && window.RSV.blocs; bl.disabled = !B; bl.checked = B ? B.get(d.id) : true; }
+      if (e.type === 'doc') { var bl = document.getElementById('bo-tpl-doc-bloc'), B = window.RSV && window.RSV.blocs; bl.disabled = !B; bl.checked = B ? B.get(d.id) : true;
+        var oi = document.getElementById('bo-tpl-doc-ori'), OI = window.RSV && window.RSV.orients; oi.disabled = !OI; oi.value = OI ? OI.get(d.id) : 'portrait'; boSigRender(d.id);
+        var fm = document.getElementById('bo-tpl-doc-fmt'), FM = window.RSV && window.RSV.formats; fm.disabled = !FM; fm.value = FM ? FM.get(d.id) : 'html'; var lb = document.querySelector('label[for="bo-tpl-doc-area"]'); if (lb) lb.textContent = 'Modèle du document (' + (fm.value === 'md' ? 'Markdown' : 'HTML') + ')'; }
       if (document.activeElement !== e.area) e.area.value = d.body.read();
       e.vars.innerHTML = (d.vars || []).map(function (v) { var t = VAR_DESC[v] ? esc(v + ' : ' + VAR_DESC[v]) : esc(v); return '<button type="button" class="fr-tag fr-tag--sm bo-vartag" data-v="{{' + v + '}}" title="' + t + '" aria-label="Insérer {{' + v + '}} (' + (VAR_DESC[v] ? esc(VAR_DESC[v]) : 'variable') + ')">{{' + v + '}}</button>'; }).join('');
       preview(e);
@@ -19600,6 +19943,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       if (!e.list.some(function (d) { return d.id === e.cur; })) e.cur = e.list.length ? e.list[0].id : '';
       fillSelect(e); load(e); renderList(e);
     }
+    function boSigRender(id) { var h = document.getElementById('bo-tpl-doc-sig'), SG = window.RSV && window.RSV.sigs, u = SG ? SG.get(id) : ''; if (!h) return; h.innerHTML = (u ? '<img src="' + u + '" alt="Signature du modèle" class="tp-sig__img"> ' : '') + '<button type="button" class="btn secondary sm" data-sig="add"' + (SG ? '' : ' disabled') + '>' + (u ? 'Remplacer la signature' : 'Ajouter une signature depuis un fichier') + '</button>' + (u ? ' <button type="button" class="btn secondary sm" data-sig="del">Retirer</button>' : ''); }
     function preview(e) {
       if (!e.open) { e.pv.hidden = true; return; }
       var d = cur(e); if (!d) return; e.pv.hidden = false;
@@ -19611,7 +19955,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       if (window.__BLOC_IMG) r.html = r.html.replace(/<!--bloc-marque-->[\s\S]*?<!--\/bloc-marque-->/g, function () { return window.__BLOC_IMG; }); // aperçu : vrai logo
       var fr = e.pv.querySelector('iframe');
       if (!fr) { e.pv.innerHTML = '<h3 class="bo-h3">Aperçu</h3><iframe class="tpl-preview" sandbox title="Aperçu du document"></iframe>' + note; fr = e.pv.querySelector('iframe'); }
-      fr.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="width:698px;margin:12px auto;padding:36px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);box-sizing:content-box;min-height:800px;color:#161616;">' + r.html + '</div></body></html>';
+      var land = /<!--orientation:paysage-->/.test(r.html);
+      fr.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#e9e9ee;"><div style="width:' + (land ? 1027 : 698) + 'px;margin:12px auto;padding:36px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);box-sizing:content-box;min-height:' + (land ? 540 : 800) + 'px;color:#161616;">' + r.html + '</div></body></html>';
     }
     Object.keys(E).forEach(function (type) {
       var e = E[type];
@@ -19633,6 +19978,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       e.area.addEventListener('input', function () { var d = cur(e); if (d) d.body.write(e.area.value); clearTimeout(e.timer); e.timer = setTimeout(function () { preview(e); }, 250); });
       e.area.addEventListener('focus', function () { e.last = 'area'; });
       if (type === 'doc') document.getElementById('bo-tpl-doc-bloc').addEventListener('change', function (ev) { var d = cur(e), B = window.RSV && window.RSV.blocs; if (!d || !B) return; B.set(d.id, ev.target.checked); preview(e); });
+      if (type === 'doc') document.getElementById('bo-tpl-doc-ori').addEventListener('change', function (ev) { var d = cur(e), OI = window.RSV && window.RSV.orients; if (!d || !OI) return; OI.set(d.id, ev.target.value); preview(e); });
+      if (type === 'doc') document.getElementById('bo-tpl-doc-sig').addEventListener('click', function (ev) { var d = cur(e), SG = window.RSV && window.RSV.sigs, b = ev.target.closest('[data-sig]'); if (!d || !SG || !b) return;
+        if (b.getAttribute('data-sig') === 'del') { SG.set(d.id, ''); boSigRender(d.id); preview(e); return; }
+        var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.addEventListener('change', function () { var f = i.files && i.files[0]; if (!f) return; window.__sigFromFile(f).then(function (u) { SG.set(d.id, u); boSigRender(d.id); preview(e); }, function (err) { var h = document.getElementById('bo-tpl-doc-sig'); h.insertAdjacentHTML('beforeend', '<p class="ed-error" role="alert">Signature non ajoutée : ' + esc(err.message || err) + '.</p>'); }); }); i.click(); });
+      if (type === 'doc') document.getElementById('bo-tpl-doc-fmt').addEventListener('change', function (ev) { var d = cur(e), FM = window.RSV && window.RSV.formats; if (!d || !FM) return; FM.set(d.id, ev.target.value); var lb = document.querySelector('label[for="bo-tpl-doc-area"]'); if (lb) lb.textContent = 'Modèle du document (' + (ev.target.value === 'md' ? 'Markdown' : 'HTML') + ')'; preview(e); });
       if (e.type === 'mail') {
         document.getElementById('bo-tpl-mail-to').addEventListener('input', function (ev) { var d = cur(e); if (d) { toCtl(d).write(ev.target.value); clearTimeout(e.lt); e.lt = setTimeout(function () { renderList(e); }, 300); } });
         document.getElementById('bo-tpl-mail-cc').addEventListener('input', function (ev) { var d = cur(e); if (d && d.cc) d.cc.write(ev.target.value); });
@@ -19662,7 +20012,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         if (!d) { status('error', '<p>Aucun modèle de document n’est sélectionné.</p>'); return; }
         if (typeof window.__docImport !== 'function') { status('error', '<p>Le convertisseur n’est pas disponible.</p>'); return; }
         e.drop.classList.add('is-busy'); status('', '<p>Conversion de « ' + esc(file.name) + ' » en cours…</p>');
-        window.__docImport(file).then(function (r) {
+        var isMd = /\.(md|markdown)$/i.test(file.name), FM = window.RSV && window.RSV.formats, setFmt = function (v) { if (!FM) return; FM.set(d.id, v); var fm = document.getElementById('bo-tpl-doc-fmt'); if (fm) { fm.value = v; fm.dispatchEvent(new Event('change', { bubbles: true })); } };
+        (isMd ? file.text().then(function (t) { return { html: t, notes: ['Fichier Markdown : le modèle passe au format Markdown.'], stats: {} }; }) : window.__docImport(file)).then(function (r) { setFmt(isMd ? 'md' : 'html');
           if (!/\S/.test(r.html.replace(/<[^>]+>|&nbsp;/g, ''))) throw new Error('aucun contenu n’a pu être extrait de ce fichier');
           var prev = e.area.value, id = d.id; undo = { id: id, value: prev };
           setBody(r.html);
@@ -20606,13 +20957,18 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (!delb) { delb = document.createElement('button'); delb.type = 'button'; delb.id = 'ins-sdel'; act.insertBefore(delb, db); delb.addEventListener('click', function () { delManual(); }); }
     delb.hidden = t.src !== 'm'; delb.className = 'btn sm ' + (S.del ? 'danger' : 'secondary'); delb.textContent = S.del ? 'Confirmer la suppression' : 'Supprimer';
     delb.title = 'Supprimer ce stagiaire saisi à la main (ses notes, appréciations et départ restent dans leurs tables)';
+    var ub = $('ins-sunr');
+    if (!ub) { ub = document.createElement('button'); ub.type = 'button'; ub.id = 'ins-sunr'; act.insertBefore(ub, delb); ub.addEventListener('click', function () { unenroll(); }); }
+    ub.hidden = !(S.from === 'etu'); // uniquement depuis le calque eTuteur
+    ub.className = 'btn sm ' + (S.unr ? 'danger' : 'secondary'); ub.innerHTML = '<span class="fr-icon-user-unfollow-line" aria-hidden="true"></span> ' + (S.unr ? 'Confirmer la désinscription' : 'Désinscrire de ce stage');
+    ub.title = 'Retire la ' + pmg() + ' de la fiche du stagiaire (colonne PMG) : il disparaît des stagiaires mais reste dans les candidats.';
     db.title = dp ? 'Départ enregistré le ' + (dp.date || '?') + (dp.motif ? ' (' + dp.motif + ')' : '') + ' : cliquer pour gérer' : 'Gérer le départ du stagiaire';
     Array.prototype.forEach.call(document.querySelectorAll('[data-ins-ftab]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-ins-ftab') === S.tab)); });
     $('ins-smodal-body').innerHTML = S.tab === 'notation' ? notationTab(t) : infosTab(t);
     var ed = $('ins-smodal-body').querySelector('[data-ins-edv]'); if (ed) { ed.focus(); if (ed.select) try { ed.select(); } catch (e) {} }
   }
   function openFiche(rid) {
-    S = { rid: rid, tab: 'infos', edit: null, del: false }; renderFiche();
+    S = { rid: rid, tab: 'infos', edit: null, del: false, unr: false, from: tab === 'stg' ? LAY : tab }; renderFiche();
     var ov = $('ins-smodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); $('ins-smodal-close').focus(); }); });
   }
@@ -20638,6 +20994,18 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   $('ins-rows').addEventListener('click', function (e) { if (e.target.closest('[data-lay]')) return layerClick(e); var tr = e.target.closest('tr[data-stg]'); if (tr && !e.target.closest('a')) openFiche(tr.getAttribute('data-stg')); });
   $('ins-rows').addEventListener('keydown', function (e) { var tr = e.target.closest('tr[data-stg]'); if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFiche(tr.getAttribute('data-stg')); } });
   function loadMan() { return tload(MT, MT).then(function (t) { M = t; }, function () { M = null; }); }
+  // Désinscription du stage (bouton de la fiche ouverte depuis le calque eTuteur) : la PMG suivie est retirée de la colonne PMG de la fiche du stagiaire
+  // (liste de choix : seule cette PMG est retirée) ; il disparaît des stagiaires mais reste dans les candidats.
+  function unenroll() {
+    if (!S) return; var t = trainee(S.rid); if (!t) return;
+    if (!S.unr) { S.unr = true; renderFiche(); return; }
+    var col = t.src === 'c' ? (window.PMG && window.PMG.col ? window.PMG.col('PMG') : null) : colBy(M, ['PMG']);
+    if (!col) { msg('error', 'Désinscription impossible : colonne « PMG » introuvable.'); return; }
+    var v = t.raw[col.id], f = {}, p0 = norm(pmg());
+    f[col.id] = Array.isArray(v) ? ['L'].concat(v.slice(v[0] === 'L' ? 1 : 0).filter(function (x) { return norm(x) !== p0; })) : '';
+    var job = t.src === 'c' ? Promise.resolve(window.PMG.update(t.raw.id, f)) : twrite(M, [['UpdateRecord', M.tableId, t.raw.id, f]]).then(loadMan), n = t.id;
+    job.then(function () { closeFiche(); msg('success', n + ' a été désinscrit(e) de la ' + pmg() + ' : il n’apparaît plus dans les stagiaires (sa fiche candidat est conservée).'); renderStg(); }, function (e) { S && (S.unr = false); msg('error', 'Désinscription impossible : ' + ((e && e.message) || e) + '.'); });
+  }
   function delManual() {
     if (!S) return; var t = trainee(S.rid); if (!t || t.src !== 'm') return;
     if (!S.del) { S.del = true; renderFiche(); return; }
@@ -21993,7 +22361,12 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         FA_ORDER.forEach(function (g) { if (fa[g]) { aoa.push([g].concat(fa[g])); fa[g].forEach(function (n, i) { tf[i] += n; }); } }); aoa.push(['Total'].concat(tf), [], ['Par régime'], ['Régime', 'Petit-déjeuner', 'Déjeuner', 'Dîner']);
         Object.keys(reg).sort().forEach(function (k) { aoa.push([k].concat(reg[k])); reg[k].forEach(function (n, i) { tr[i] += n; }); }); aoa.push(['Total'].concat(tr));
         sheet(aoa, 'Récapitulatif', 4);
-        FA_ORDER.forEach(function (g) { var l = all.filter(function (r) { return faOf(r.aff) === g; }); if (!l.length) return; sheet([[title + ' — ' + g], [], ['Nom', 'Prénom', 'Affectation', 'Cadre ou stagiaire', 'Petit-déjeuner', 'Déjeuner', 'Dîner', 'Régime', 'Nombre']].concat(l.map(function (r) { return [r.nom, r.prenom, r.aff, r.cat].concat(MEALS.map(function (m) { return r.m[m[0]] ? 'X' : ''; })).concat([r.regime, r.n || 1]); })), g, 9); });
+        // une feuille par FA et par catégorie : cadres, stagiaires (et extérieurs s'il y en a)
+        FA_ORDER.forEach(function (g) { [['Cadre', 'Cadres'], ['Stagiaire', 'Stagiaires'], ['Extérieur', 'Extérieurs']].forEach(function (k) {
+          var l = all.filter(function (r) { return faOf(r.aff) === g && (r.cat || 'Extérieur') === k[0]; }); if (!l.length) return;
+          var tot = MEALS.map(function (m) { return l.reduce(function (s2, r) { return s2 + (r.m[m[0]] ? (r.n || 1) : 0); }, 0); });
+          sheet([[title + ' — ' + g + ' — ' + k[1].toLowerCase()], [], ['Nom', 'Prénom', 'Affectation', 'Petit-déjeuner', 'Déjeuner', 'Dîner', 'Régime', 'Nombre']].concat(l.map(function (r) { return [r.nom, r.prenom, r.aff].concat(MEALS.map(function (m) { return r.m[m[0]] ? 'X' : ''; })).concat([r.regime, r.n || 1]); })).concat([[], ['Total', '', ''].concat(tot)]), g + ' - ' + k[1], 8);
+        }); });
         return { wb: wb, name: 'ETAT-RATIONNAIRE-' + String(pmg()).replace(/\s+/g, '-') + '_' + dmy(secOf(day)).replace(/\//g, '-') + '.xlsx' };
       }
       title = 'ÉTAT RATIONNAIRE ' + pmg() + ' — SEMAINE DU ' + dmy(secOf(days[0])) + ' AU ' + dmy(secOf(days[days.length - 1]));
@@ -22128,6 +22501,250 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (!rc('cso', 'Peloton')) acts.push(['AddColumn', RS.cso.tableId, 'Peloton', { type: 'Text', isFormula: false }]); if (RS.reg && !rc('reg', 'Peloton')) acts.push(['AddColumn', RS.reg.tableId, 'Peloton', { type: 'Text', isFormula: false }]);
     if (!acts.length) return Promise.resolve();
     return window.grist.docApi.applyUserActions(acts).then(function () { return tload(RDEF.reg.name, RDEF.reg.name); }).then(function (t) { RS.reg = t; }).then(function () { return tload(RDEF.cso.name, RDEF.cso.name); }).then(function (t) { RS.cso = t; });
+  }
+  /* ---------- Documents de l'instruction : documents stockés (pièces jointes) et modèles (HTML ou Markdown) ----------
+     Un modèle contient des variables {{NOM}} (ou {NOM}) remplacées par les données de chaque stagiaire ou cadre ; la génération en lot produit
+     un seul PDF (une partie par personne, bloc marque facultatif en tête de chaque partie), avec une copie facultative dans les documents stockés. */
+  var DOC_CATS = ['Note de service', 'Consignes', 'Planning', 'Formulaire', 'Autre'];
+  var DDEF = {
+    doc: { name: 'Instruction_Documents', usage: 'Documents stockés de l’instruction (onglet Documents)', cols: [['PMG', 'Text'], ['Titre', 'Text'], ['Categorie', 'Choice', 'Catégorie', DOC_CATS], ['Fichier', 'Attachments'], ['Nom_fichier', 'Text', 'Nom du fichier'], ['Ajoute_le', 'DateTime:Europe/Paris', 'Ajouté le'], ['Observations', 'Text']] },
+    tpl: { name: 'Instruction_Modeles', usage: 'Modèles de documents à variables (stagiaires, cadres) pour la génération en lot', cols: [['PMG', 'Text'], ['Titre', 'Text'], ['Cible', 'Choice', 'Cible', ['Stagiaires', 'Cadres']], ['Format', 'Choice', 'Format', ['HTML', 'Markdown']], ['Contenu', 'Text'], ['Bloc_marque', 'Bool', 'Bloc marque'], ['Description', 'Text'], ['Orientation', 'Choice', 'Orientation', ['Portrait', 'Paysage']], ['Signature', 'Text']] }
+  };
+  Object.keys(DDEF).forEach(function (k) { DT[DDEF[k].name] = { cols: DDEF[k].cols, rows: [] }; });
+  var DS = { doc: null, tpl: null }, DU = { q: '', qf: '' }, DEMO_FILES = {};
+  function loadDocs() { demoDocs(); return Promise.all(Object.keys(DDEF).map(function (k) { return tload(DDEF[k].name, DDEF[k].name).then(function (t) { DS[k] = t; }, function () { DS[k] = null; }); })); }
+  function createDocs() {
+    var acts = Object.keys(DDEF).filter(function (k) { return !DS[k]; }).map(function (k) { return ['AddTable', DDEF[k].name, DDEF[k].cols.map(function (c) { var o = { id: c[0], type: c[1], isFormula: false }; if (c[2]) o.label = c[2]; if (c[3]) o.widgetOptions = JSON.stringify({ choices: c[3] }); return o; })]; });
+    return acts.length ? (IN_GRIST ? window.grist.docApi.applyUserActions(acts) : Promise.resolve()).then(loadDocs) : Promise.resolve();
+  }
+  function dc(k, key) { var d = DDEF[k].cols.filter(function (c) { return c[0] === key; })[0]; return colBy(DS[k], [key].concat(d && d[2] ? [d[2]] : [])); }
+  function dv(k, r, key) { var c = dc(k, key); return c ? r[c.id] : null; }
+  function df(k, o) { var f = {}; Object.keys(o).forEach(function (key) { var c = dc(k, key); if (c) f[c.id] = o[key]; }); return f; }
+  function dRows(k) { var c = DS[k] && dc(k, 'PMG'); return DS[k] ? DS[k].rows.filter(function (r) { return !c || !pmg() || norm(r[c.id]) === norm(pmg()) || !String(r[c.id] || '').trim(); }) : []; }
+  function dWrite(k, acts) { return twrite(DS[k], acts).then(function () { return tload(DDEF[k].name, DDEF[k].name); }).then(function (t) { DS[k] = t; renderDocs(); }); }
+  function docList() { return dRows('doc').map(function (r) { var f = lst(dv('doc', r, 'Fichier')).map(Number).filter(Boolean); return { id: r.id, titre: tx(dv('doc', r, 'Titre')), cat: tx(dv('doc', r, 'Categorie')), att: f[0] || 0, nom: tx(dv('doc', r, 'Nom_fichier')), at: Number(dv('doc', r, 'Ajoute_le')) || 0, obs: tx(dv('doc', r, 'Observations')) }; }); }
+  function tplList() { return dRows('tpl').map(function (r) { return { id: r.id, titre: tx(dv('tpl', r, 'Titre')), cible: tx(dv('tpl', r, 'Cible')) || 'Stagiaires', format: tx(dv('tpl', r, 'Format')) || 'HTML', contenu: tx(dv('tpl', r, 'Contenu')), bloc: dv('tpl', r, 'Bloc_marque') === true, desc: tx(dv('tpl', r, 'Description')), ori: tx(dv('tpl', r, 'Orientation')) || 'Portrait', sig: tx(dv('tpl', r, 'Signature')) }; }); }
+
+  /* ----- Variables : données de la fiche du stagiaire ou du cadre ----- */
+  var VAR_STG = [['NOM', 'nom'], ['PRENOM', 'prenom'], ['CIVILITE', 'civ'], ['GRADE', 'grade'], ['DDN', 'ddn'], ['LIEU_NAISSANCE', 'lieu'], ['DPT', 'dpt'], ['NID', 'nid'], ['NIGEND', 'nigend'], ['AFFECTATION', 'aff'], ['PELOTON', 'pon'], ['FONCTION', 'fonction'],
+    ['TELEPHONE', 'tel'], ['EMAIL', 'email'], ['PROFESSION', 'profession'], ['NIVEAU_SCOLAIRE', 'niveau'], ['BATIMENT', 'bat'], ['CHAMBRE', 'ch'], ['REGIME', 'regime'], ['ALLERGIES', 'allergies'], ['IMMATRICULATION', 'plaque'], ['URGENCE_NOM', 'urgNom'], ['URGENCE_PRENOM', 'urgPrenom'], ['URGENCE_TEL', 'urgTel']];
+  var VAR_CAD = [['NOM', 'nom'], ['PRENOM', 'prenom'], ['GRADE', 'grade'], ['NIGEND', 'nigend'], ['AFFECTATION', 'aff'], ['FONCTION', 'fonction'], ['GROUPE', 'grp'], ['STATUT', 'statut'], ['TELEPHONE', 'tel'], ['EMAIL', 'email'], ['REGIME', 'regime'], ['BATIMENT', 'bat'], ['CHAMBRE', 'ch']];
+  var VAR_COMMON = ['IDENTITE', 'PMG', 'DATE_DU_JOUR', 'STAGE_DEBUT', 'STAGE_FIN'];
+  function varsOf(kind, x) { // { NOM: 'DURAND', … } pour un stagiaire (x : élément de stgItems) ou un cadre (x : cad())
+    var o = {}, P = stagePeriod();
+    if (kind === 'Stagiaires') { VAR_STG.forEach(function (v) { o[v[0]] = String(cval(x, v[1]) || ''); }); o.NOM = o.NOM.toUpperCase(); o.PELOTON = pelOf(x) || o.PELOTON; o.IDENTITE = [o.GRADE, o.NOM, o.PRENOM].filter(Boolean).join(' ') || x.id; }
+    else { VAR_CAD.forEach(function (v) { o[v[0]] = String(x[v[1]] == null ? '' : x[v[1]]); }); o.IDENTITE = cadName(x); }
+    o.PMG = pmg(); o.DATE_DU_JOUR = dmy(Date.now() / 1000); o.STAGE_DEBUT = P ? dmy(secOf(P.d0)) : ''; o.STAGE_FIN = P ? dmy(secOf(P.d1)) : '';
+    return o;
+  }
+  function rawVar(kind, x, name) { // autre colonne de la fiche, par son libellé ou son identifiant (ex. {{N° candidature}})
+    if (kind === 'Stagiaires') { var c = x.src === 'c' ? (window.PMG && window.PMG.col ? window.PMG.col(name) : null) : colBy(M, [name]); if (!c) return null; return x.src === 'c' ? String(window.PMG.cell(x.raw, c.label) || '') : tx(x.raw[c.id]); }
+    var r = C.rows.filter(function (y) { return y.id === x.id; })[0]; if (!r) return null; var k = Object.keys(r).filter(function (key) { return norm(key) === norm(name); })[0]; return k ? tx(r[k]) : null;
+  }
+  function fillVars(text, kind, x, plain) { // {{VAR}} ou {VAR} ; une variable inconnue est laissée telle quelle
+    var V = varsOf(kind, x), E = plain ? function (s) { return s; } : esc;
+    return String(text || '').replace(/\{\{\s*([^{}]+?)\s*\}\}|\{([A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_ °'’.-]{0,48})\}/g, function (whole, a, b) {
+      var name = (a || b).trim(), key = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[\s'’.-]+/g, '_');
+      if (Object.prototype.hasOwnProperty.call(V, key)) return E(V[key]);
+      var rv2 = rawVar(kind, x, name); return rv2 == null ? whole : E(rv2);
+    });
+  }
+  function tplHtml(t, kind, x) { // HTML final d'une personne (signature insérée, sans repère d'orientation)
+    var h; if (t.format === 'Markdown') { var md = fillVars(t.contenu, kind, x, true); h = window.marked ? window.marked.parse(md) : '<pre>' + esc(md) + '</pre>'; } else h = fillVars(t.contenu, kind, x, false);
+    return window.__docFinish(h, { sig: t.sig });
+  }
+  function peopleOf(kind) { return kind === 'Cadres' ? cadres().map(function (c) { return { key: 'c' + c.id, label: cadName(c), grp: cadGrpLab(c), x: c }; }) : stgItems().filter(function (t) { return !depOf(t.key); }).map(function (t) { return { key: t.key, label: t.id, grp: pelOf(t) || 'Sans peloton', x: t }; }).sort(function (a, b) { return natCmp(a.label, b.label); }); }
+
+  /* ----- Onglet ----- */
+  function renderDocs() {
+    var host = $('docs-body'); if (!host) return; $('ins-tab-doc').hidden = !layerOn('doc');
+    if (!DS.doc || !DS.tpl) { host.innerHTML = '<div class="doc-alert info"><p>Tables absentes : ' + Object.keys(DDEF).filter(function (k) { return !DS[k]; }).map(function (k) { return '<code>' + DDEF[k].name + '</code>'; }).join(', ') + '. Créez-les dans le back office, rubrique Instruction (« Créer les tables manquantes »).</p></div>'; return; }
+    var q = norm(DU.q || ''), T = tplList().filter(function (t) { return (!q || norm(t.titre + ' ' + t.desc + ' ' + t.cible).indexOf(q) !== -1) && (!DU.qf || DU.qf === 't:' + t.cible); }),
+      D = docList().filter(function (d) { return (!q || norm(d.titre + ' ' + d.cat + ' ' + d.nom + ' ' + d.obs).indexOf(q) !== -1) && (!DU.qf || DU.qf === 'd:' + d.cat); }).sort(function (a, b) { return b.at - a.at; });
+    $('ins-dcount').textContent = T.length + ' modèle' + (T.length > 1 ? 's' : '') + ', ' + D.length + ' document' + (D.length > 1 ? 's' : '');
+    var showT = !DU.qf || DU.qf.indexOf('t:') === 0, showD = !DU.qf || DU.qf.indexOf('d:') === 0;
+    host.innerHTML = (showT ? '<h2 class="fr-h6" style="margin:0 0 .5rem">Modèles de documents</h2><div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Modèles</caption><thead><tr><th scope="col">Modèle</th><th scope="col">Pour</th><th scope="col">Format</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
+      (T.map(function (t) { return '<tr><th scope="row">' + esc(t.titre || '(sans titre)') + (t.desc ? '<br><span class="hint" style="display:inline">' + esc(t.desc) + '</span>' : '') + '</th><td><span class="tag ' + (t.cible === 'Cadres' ? 'purple' : 'blue') + '">' + esc(t.cible) + '</span></td><td>' + esc(t.format) + (t.bloc ? ' <span class="tag grey" title="Bloc marque en tête du document" aria-label="Bloc marque">🇫🇷</span>' : '') + (t.ori === 'Paysage' ? ' <span class="tag grey">Paysage</span>' : '') + (t.sig ? ' <span class="tag grey">Signature</span>' : '') + '</td>' +
+        '<td style="white-space:nowrap"><button type="button" class="btn sm" data-dc="gen" data-id="' + t.id + '">Générer en lot</button> <button type="button" class="btn secondary sm" data-dc="tedit" data-id="' + t.id + '">Modifier</button> <button type="button" class="btn secondary sm" data-dc="tdup" data-id="' + t.id + '">Dupliquer</button></td></tr>'; }).join('') || '<tr><td colspan="4" style="text-align:center">Aucun modèle.</td></tr>') + '</tbody></table></div>' : '') +
+      (showD ? '<h2 class="fr-h6" style="margin:1.5rem 0 .5rem">Documents stockés</h2><div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Documents</caption><thead><tr><th scope="col">Document</th><th scope="col">Catégorie</th><th scope="col">Ajouté le</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' +
+      (D.map(function (d) { return '<tr><th scope="row">' + esc(d.titre || d.nom || '(sans titre)') + (d.nom && d.titre ? '<br><span class="hint" style="display:inline">' + esc(d.nom) + '</span>' : '') + (d.obs ? '<br><span class="hint" style="display:inline">' + esc(d.obs) + '</span>' : '') + '</th><td>' + esc(d.cat || '—') + '</td><td>' + (d.at ? dmy(d.at) : '—') + '</td>' +
+        '<td style="white-space:nowrap"><button type="button" class="btn secondary sm ico-download" data-dc="dl" data-id="' + d.id + '"' + (d.att ? '' : ' disabled') + '>Télécharger</button> <button type="button" class="btn secondary sm" data-dc="dedit" data-id="' + d.id + '">Modifier</button></td></tr>'; }).join('') || '<tr><td colspan="4" style="text-align:center">Aucun document.</td></tr>') + '</tbody></table></div>' : '');
+  }
+  function docSuggest() {
+    var out = [], one = function (sec, v, lab) { out.push({ sec: sec, l: lab, keep: true, run: function () { DU.qf = DU.qf === v ? '' : v; renderDocs(); }, on: function () { return DU.qf === v; } }); };
+    ['Stagiaires', 'Cadres'].forEach(function (c) { var n = tplList().filter(function (t) { return t.cible === c; }).length; one('Modèles', 't:' + c, 'Modèles pour les ' + c.toLowerCase() + ' (' + n + ')'); });
+    DOC_CATS.forEach(function (c) { var n = docList().filter(function (d) { return d.cat === c; }).length; if (n || DU.qf === 'd:' + c) one('Documents par catégorie', 'd:' + c, c + ' (' + n + ')'); });
+    return out;
+  }
+
+  /* ----- Document stocké : dépôt, modification, téléchargement ----- */
+  function openDocForm(id) { var d = id ? docList().filter(function (x) { return x.id === id; })[0] : null; PM = { kind: 'dcf', d: d, file: null, err: '', del: false }; renderDocForm(); openP(d ? 'Modifier le document' : 'Ajouter un document', 'Documents de la ' + pmg()); }
+  function renderDocForm() {
+    var d = PM.d || { titre: '', cat: 'Autre', obs: '', nom: '' };
+    $('ins-pmodal-body').innerHTML = (PM.err ? '<div class="doc-alert error" role="alert"><p>' + esc(PM.err) + '</p></div>' : '') +
+      '<div class="doc-drop doc-drop--sm" id="dc-drop" role="button" tabindex="0" aria-label="Choisir le fichier : glisser-déposer ou cliquer"><p><strong>' + (PM.file ? esc(PM.file.name) : PM.d ? 'Remplacer le fichier (' + esc(d.nom || 'fichier') + ')' : 'Déposer le fichier') + '</strong> (glisser-déposer ou cliquer)</p></div>' +
+      '<div class="ins-dform" style="margin-top:.75rem">' + fld('dc-titre', 'Titre', '<input class="input" id="dc-titre" value="' + esc(d.titre) + '">', true) + fld('dc-cat', 'Catégorie', '<select class="select" id="dc-cat">' + opt(DOC_CATS, d.cat || 'Autre') + '</select>') +
+      '<div class="cf-field ins-full"><label for="dc-obs">Observations</label><input class="input" id="dc-obs" value="' + esc(d.obs) + '"></div></div>' +
+      '<div class="cf-actions"><button type="button" class="btn" data-pm="dcf-save">Enregistrer</button>' + (PM.d ? '<button type="button" class="btn ' + (PM.del ? 'danger' : 'secondary') + '" data-pm="dcf-del">' + (PM.del ? 'Confirmer la suppression' : 'Supprimer') + '</button>' : '') + '<button type="button" class="btn secondary" data-pm="close">Annuler</button></div>';
+  }
+  function pickDocFile(accept, cb) { var i = document.createElement('input'); i.type = 'file'; if (accept) i.accept = accept; i.addEventListener('change', function () { if (i.files && i.files[0]) cb(i.files[0]); }); i.click(); }
+  function saveDocForm() {
+    var titre = $('dc-titre').value.trim() || (PM.file ? PM.file.name.replace(/\.[^.]+$/, '') : ''), d = PM.d;
+    PM.err = !PM.file && !d ? 'Choisissez le fichier à déposer.' : !titre ? 'Indiquez le titre.' : ''; if (PM.err) return renderDocForm();
+    var up = PM.file ? upPhoto(PM.file).then(function (aid) { if (!IN_GRIST) DEMO_FILES[aid] = PM.file; return aid; }) : Promise.resolve(null), file = PM.file;
+    up.then(function (aid) {
+      var o = { PMG: pmg(), Titre: titre, Categorie: $('dc-cat').value, Observations: $('dc-obs').value.trim() }; if (aid) { o.Fichier = ['L', aid]; o.Nom_fichier = file.name; o.Ajoute_le = Date.now() / 1000; }
+      return dWrite('doc', [d ? ['UpdateRecord', DS.doc.tableId, d.id, df('doc', o)] : ['AddRecord', DS.doc.tableId, null, df('doc', o)]]);
+    }).then(closeP, function (e) { PM.err = 'Enregistrement impossible : ' + ((e && e.message) || e) + '.'; renderDocForm(); });
+  }
+  function downloadDoc(id) {
+    var d = docList().filter(function (x) { return x.id === id; })[0]; if (!d || !d.att) return;
+    if (!IN_GRIST && DEMO_FILES[d.att]) { window.SERVIR_UTIL.downloadBlob(DEMO_FILES[d.att], d.nom || 'document'); return; }
+    attUrl(d.att).then(function (u) { if (!u) return msg('error', 'Fichier introuvable.'); var a = document.createElement('a'); a.href = u; a.download = d.nom || ''; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); });
+  }
+
+  /* ----- Modèle : édition, variables, aperçu ----- */
+  function openTpl(id, dup) {
+    var t = id ? tplList().filter(function (x) { return x.id === id; })[0] : null; if (dup && t) t = Object.assign({}, t, { id: 0, titre: t.titre + ' (copie)' });
+    PM = { kind: 'tpl', t: t || { id: 0, titre: '', cible: 'Stagiaires', format: 'HTML', contenu: '', bloc: true, desc: '', ori: 'Portrait', sig: '' }, err: '', del: false, prev: false };
+    renderTplForm(); openP(t && t.id ? 'Modifier le modèle' : 'Nouveau modèle', 'Variables : {{NOM}}, {{PRENOM}}… ou tout libellé de colonne de la fiche');
+  }
+  function tplRead() { var t = PM.t; if (!$('tp-titre')) return t; t.titre = $('tp-titre').value.trim(); t.cible = $('tp-cible').value; t.format = $('tp-format').value; t.contenu = $('tp-contenu').value; t.bloc = $('tp-bloc').checked; t.desc = $('tp-desc').value.trim(); t.ori = $('tp-ori').value; return t; }
+  var TPL_VDESC = { NOM: 'Nom (en majuscules)', PRENOM: 'Prénom', CIVILITE: 'Civilité (M., Mme)', GRADE: 'Grade', DDN: 'Date de naissance', LIEU_NAISSANCE: 'Lieu de naissance', DPT: 'Département de naissance', NID: 'NID', NIGEND: 'Nigend', AFFECTATION: 'Affectation',
+    PELOTON: 'Peloton (P1, P2…)', FONCTION: 'Fonction', TELEPHONE: 'Téléphone', EMAIL: 'Courriel', PROFESSION: 'Profession', NIVEAU_SCOLAIRE: 'Niveau scolaire', BATIMENT: 'Bâtiment (hébergement)', CHAMBRE: 'Chambre (hébergement)', REGIME: 'Régime alimentaire', ALLERGIES: 'Allergies',
+    IMMATRICULATION: 'Immatriculation du véhicule', URGENCE_NOM: 'Personne à prévenir : nom', URGENCE_PRENOM: 'Personne à prévenir : prénom', URGENCE_TEL: 'Personne à prévenir : téléphone', GROUPE: 'Groupe du cadre (CDT, P1, Pôle IP…)', STATUT: 'Statut du cadre',
+    IDENTITE: 'Grade, nom et prénom', PMG: 'PMG suivie', DATE_DU_JOUR: 'Date de génération', STAGE_DEBUT: 'Premier jour du stage (progression)', STAGE_FIN: 'Dernier jour du stage (progression)' };
+  // Éditeur de modèle : même fonctionnement que l'éditeur de documents du back office (import d'un document, variables cliquables, aperçu en page A4 avec le bloc marque)
+  function renderTplForm() {
+    var t = PM.t, vars = (t.cible === 'Cadres' ? VAR_CAD : VAR_STG).map(function (v) { return v[0]; }).concat(VAR_COMMON), sel = PM.who || '', ppl = peopleOf(t.cible);
+    $('ins-pmodal-body').innerHTML = (PM.err ? '<div class="doc-alert error" role="alert"><p>' + esc(PM.err) + '</p></div>' : '') + '<div class="ins-dform">' +
+      fld('tp-titre', 'Titre', '<input class="input" id="tp-titre" value="' + esc(t.titre) + '">', true) + fld('tp-cible', 'Pour', '<select class="select" id="tp-cible">' + opt(['Stagiaires', 'Cadres'], t.cible) + '</select>') +
+      fld('tp-format', 'Format', '<select class="select" id="tp-format">' + opt([['HTML', 'HTML'], ['Markdown', 'Markdown']], t.format) + '</select>') + fld('tp-ori', 'Orientation de la page', '<select class="select" id="tp-ori">' + opt(['Portrait', 'Paysage'], t.ori || 'Portrait') + '</select>') +
+      '<div class="cf-field ins-full"><span class="fr-label">Signature (image)</span><div class="tp-sig">' + (t.sig ? '<img src="' + t.sig + '" alt="Signature du modèle" class="tp-sig__img"> ' : '') + '<button type="button" class="btn secondary sm" data-pm="tpl-sig">' + (t.sig ? 'Remplacer la signature' : 'Ajouter une signature depuis un fichier') + '</button>' + (t.sig ? ' <button type="button" class="btn secondary sm" data-pm="tpl-sigdel">Retirer</button>' : '') + '</div><p class="hint" style="margin:.25rem 0 0">Insérée à la place de <code>{{SIGNATURE_IMAGE}}</code>, sinon en fin de document.</p></div>' +
+      '<div class="cf-field ins-full"><label for="tp-desc">Description</label><input class="input" id="tp-desc" value="' + esc(t.desc) + '"></div></div>' +
+      '<div class="doc-drop doc-drop--sm" id="tp-drop" role="button" tabindex="0" aria-label="Importer un document pour pré-rédiger le modèle : glisser-déposer ou cliquer" style="margin-top:.75rem"><p><strong>Importer un document</strong> (Word .docx, LibreOffice .odt, PDF, HTML, texte ou Markdown) : glisser-déposer ou cliquer. Il pré-rédige le modèle.</p></div>' +
+      (PM.imp ? '<div class="bo-imp doc-alert ' + PM.imp.kind + '" role="status">' + PM.imp.html + '</div>' : '') +
+      '<label class="ed-check" style="margin-top:.75rem"><input type="checkbox" id="tp-bloc"' + (t.bloc ? ' checked' : '') + '> Bloc marque en tête de chaque document <span class="hint" style="display:inline">(en-tête du ministère ; le repère &lt;!--bloc-marque--&gt;&lt;!--/bloc-marque--&gt; du modèle en fixe la place)</span></label>' +
+      '<div class="cf-field" style="margin-top:.5rem"><label for="tp-contenu">Modèle du document (' + esc(t.format) + ')</label><textarea class="textarea mono tp-src" id="tp-contenu" rows="18" spellcheck="false">' + esc(t.contenu) + '</textarea>' +
+      '<p class="hint" style="margin:.25rem 0 0">Saut de page : <code>&lt;div data-pdf-break&gt;&lt;/div&gt;</code>.</p></div>' +
+      '<div class="bo-tpl-actions" style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:flex-end;margin:.5rem 0"><button type="button" class="btn secondary sm" data-pm="tpl-prev" aria-expanded="' + !!PM.prev + '" aria-controls="tp-preview">' + (PM.prev ? 'Masquer l’aperçu' : 'Afficher l’aperçu') + '</button>' +
+      '<div class="tb-field"><label for="tp-who">Aperçu avec</label><select class="select" id="tp-who">' + opt(ppl.map(function (p) { return [p.key, p.label]; }), sel || (ppl[0] && ppl[0].key)) + '</select></div></div>' +
+      (PM.prev ? '<div class="tp-preview" id="tp-preview"></div>' : '') +
+      '<h3 class="fr-h6" style="margin:1rem 0 .25rem">Variables disponibles</h3><p class="hint" style="margin:0 0 .5rem">Cliquez sur une variable pour l’insérer à la place du curseur ; survolez-la pour sa signification. Toute colonne de la fiche s’utilise aussi par son libellé : <code>{{Libellé de la colonne}}</code>.</p>' +
+      '<div class="bo-tpl-vars tp-vars">' + vars.map(function (v) { return '<button type="button" class="fr-tag fr-tag--sm bo-vartag" data-tpv="' + v + '" title="' + esc(TPL_VDESC[v] || v) + '" aria-label="Insérer {{' + v + '}} : ' + esc(TPL_VDESC[v] || v) + '">{{' + v + '}}</button>'; }).join('') + '</div>' +
+      '<div class="cf-actions"><button type="button" class="btn" data-pm="tpl-save">Enregistrer le modèle</button>' + (t.id ? '<button type="button" class="btn ' + (PM.del ? 'danger' : 'secondary') + '" data-pm="tpl-del">' + (PM.del ? 'Confirmer la suppression' : 'Supprimer') + '</button>' : '') + '<button type="button" class="btn secondary" data-pm="close">Annuler</button></div>';
+    if (PM.prev) tplPreview();
+  }
+  var tpTimer = null;
+  function tplPreview() { // page A4 (698 px) sur fond gris, comme l'aperçu du back office ; rendu isolé (Shadow DOM), bloc marque réel
+    var host = $('tp-preview'); if (!host) return; var t = PM.t, who = ($('tp-who') || {}).value, p = peopleOf(t.cible).filter(function (x) { return x.key === who; })[0] || peopleOf(t.cible)[0];
+    var root = host.shadowRoot || host.attachShadow({ mode: 'open' }), html = p ? tplHtml(t, t.cible, p.x) : '<p>Aucune personne.</p>';
+    var css = '<style>:host{display:block;background:#e9e9ee;border:1px solid #ccc;border-radius:.5rem;height:34rem;overflow:auto;padding:16px}.pg{background:#fff;color:#161616;width:' + (t.ori === 'Paysage' ? 1123 : 794) + 'px;max-width:none;margin:0 auto;padding:40px 48px;box-shadow:0 2px 10px rgba(0,0,0,.18);font-family:Marianne,Arial,sans-serif;font-size:11pt;line-height:1.4;box-sizing:border-box}[data-pdf-break]{border-top:2px dashed #bbb;margin:16px -48px}</style>';
+    var go = t.bloc && window.__withBloc && window.__BLOC_FALLBACK ? window.__withBloc('<div style="margin-bottom:32px">' + window.__BLOC_FALLBACK + '</div>' + html) : Promise.resolve(html);
+    go.then(function (h) { if (host.isConnected) root.innerHTML = css + '<div class="pg">' + h + '</div>'; });
+  }
+  function tplImport(file) { // même convertisseur que l'éditeur du back office (window.__docImport) ; Markdown et texte lus tels quels
+    tplRead(); var prev = PM.t.contenu, isMd = /\.(md|markdown)$/i.test(file.name);
+    PM.imp = { kind: '', html: '<p>Conversion de « ' + esc(file.name) + ' » en cours…</p>' }; renderTplForm();
+    var job = isMd || /\.txt$/i.test(file.name) ? file.text().then(function (txt) { return { html: txt, notes: [], stats: {}, md: isMd }; }) : typeof window.__docImport === 'function' ? window.__docImport(file) : Promise.reject(new Error('le convertisseur n’est pas disponible'));
+    job.then(function (r) {
+      if (!/\S/.test(String(r.html).replace(/<[^>]+>|&nbsp;/g, ''))) throw new Error('aucun contenu n’a pu être extrait de ce fichier');
+      PM.undo = prev; PM.t.contenu = r.html; PM.t.format = r.md ? 'Markdown' : 'HTML'; if (!PM.t.titre) PM.t.titre = file.name.replace(/\.[^.]+$/, ''); PM.prev = true;
+      var st = r.stats || {}, bits = []; if (st.par) bits.push(st.par + ' paragraphe' + (st.par > 1 ? 's' : '')); if (st.tbl) bits.push(st.tbl + ' tableau' + (st.tbl > 1 ? 'x' : '')); if (st.img) bits.push(st.img + ' image' + (st.img > 1 ? 's' : ''));
+      PM.imp = { kind: 'success', html: '<p><strong>« ' + esc(file.name) + ' » a pré-rédigé le modèle</strong>' + (bits.length ? ' (' + bits.join(', ') + ')' : '') + '. Relisez l’aperçu, puis remplacez les données propres à la personne par des variables (voir ci-dessous) avant d’enregistrer.</p>' +
+        ((r.notes || []).length ? '<ul>' + r.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') + (prev.trim() ? '<p><button type="button" class="btn secondary sm" data-pm="tpl-undo">Annuler l’import (revenir au texte précédent)</button></p>' : '') };
+      renderTplForm();
+    }).catch(function (err) { PM.imp = { kind: 'error', html: '<p><strong>Import impossible</strong> : ' + esc((err && err.message) || err) + '.</p>' }; renderTplForm(); });
+  }
+  function insertVar(v) { var ta = $('tp-contenu'); if (!ta) return; var a = ta.selectionStart, b = ta.selectionEnd, s = '{{' + v + '}}'; ta.value = ta.value.slice(0, a) + s + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + s.length; }
+  function saveTpl() {
+    var t = tplRead(); PM.err = !t.titre ? 'Indiquez le titre du modèle.' : !t.contenu.trim() ? 'Le contenu du modèle est vide.' : ''; if (PM.err) return renderTplForm();
+    var o = { PMG: pmg(), Titre: t.titre, Cible: t.cible, Format: t.format, Contenu: t.contenu, Bloc_marque: !!t.bloc, Description: t.desc, Orientation: t.ori || 'Portrait', Signature: t.sig || '' };
+    var addC = [['Orientation', { type: 'Choice', label: 'Orientation', widgetOptions: JSON.stringify({ choices: ['Portrait', 'Paysage'] }) }], ['Signature', { type: 'Text' }]].filter(function (c) { return !dc('tpl', c[0]); });
+    (addC.length && IN_GRIST ? window.grist.docApi.applyUserActions(addC.map(function (c) { return ['AddColumn', DS.tpl.tableId, c[0], Object.assign({ isFormula: false }, c[1])]; })).then(function () { return tload(DDEF.tpl.name, DDEF.tpl.name); }).then(function (tb) { DS.tpl = tb; }) : Promise.resolve()).then(function () { return dWrite('tpl', [t.id ? ['UpdateRecord', DS.tpl.tableId, t.id, df('tpl', o)] : ['AddRecord', DS.tpl.tableId, null, df('tpl', o)]]); }).then(closeP, function (e) { PM.err = 'Enregistrement impossible : ' + ((e && e.message) || e) + '.'; renderTplForm(); });
+  }
+
+  /* ----- Génération en lot ----- */
+  function openGen(id) { var t = tplList().filter(function (x) { return x.id === id; })[0]; if (!t) return; var ppl = peopleOf(t.cible); PM = { kind: 'gen', t: t, sel: ppl.map(function (p) { return p.key; }), q: '', err: '', busy: false, save: true, done: '' }; renderGen(); openP('Générer en lot : ' + (t.titre || 'modèle'), t.cible + ' de la ' + pmg()); }
+  function renderGen() {
+    var t = PM.t, ppl = peopleOf(t.cible), q = norm(PM.q || ''), grps = ppl.map(function (p) { return p.grp; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort(natCmp);
+    var list = ppl.filter(function (p) { return !q || norm(p.label + ' ' + p.grp).indexOf(q) !== -1; });
+    $('ins-pmodal-body').innerHTML = (PM.err ? '<div class="doc-alert error" role="alert"><p>' + esc(PM.err) + '</p></div>' : '') + (PM.done ? '<div class="doc-alert success" role="status"><p>' + esc(PM.done) + '</p></div>' : '') +
+      '<div class="pg-bar" style="margin:0 0 .5rem"><div class="tb-field tb-search"><label for="gn-q">Filtrer</label><input class="input" type="search" id="gn-q" value="' + esc(PM.q) + '" placeholder="Nom, ' + (t.cible === 'Cadres' ? 'groupe' : 'peloton') + '…" autocomplete="off"></div>' +
+      '<button type="button" class="btn secondary sm" data-pm="gen-all">Tout cocher</button><button type="button" class="btn secondary sm" data-pm="gen-none">Tout décocher</button></div>' +
+      '<div class="pg-chips" style="margin:0 0 .5rem">' + grps.map(function (g) { var m = ppl.filter(function (p) { return p.grp === g; }), on = m.every(function (p) { return PM.sel.indexOf(p.key) !== -1; }); return '<button type="button" class="tag ' + (on ? 'blue' : 'grey') + '" data-gng="' + esc(g) + '" aria-pressed="' + on + '">' + esc(g) + ' (' + m.length + ')</button>'; }).join('') + '</div>' +
+      '<div class="gn-list">' + list.map(function (p, i) { var id = 'gn-p' + i; return '<label for="' + id + '"><input type="checkbox" id="' + id + '" data-gnp="' + esc(p.key) + '"' + (PM.sel.indexOf(p.key) !== -1 ? ' checked' : '') + '> ' + esc(p.label) + ' <span class="hint" style="display:inline">' + esc(p.grp) + '</span></label>'; }).join('') + '</div>' +
+      '<label class="ed-check" style="margin-top:.75rem"><input type="checkbox" id="gn-save"' + (PM.save ? ' checked' : '') + '> Enregistrer une copie dans les documents stockés</label>' +
+      '<div class="cf-actions"><button type="button" class="btn" data-pm="gen-go"' + (PM.sel.length && !PM.busy ? '' : ' disabled') + '>' + (PM.busy ? 'Génération en cours…' : 'Générer le PDF (' + PM.sel.length + ' document' + (PM.sel.length > 1 ? 's' : '') + ')') + '</button><button type="button" class="btn secondary" data-pm="close">Fermer</button></div>';
+  }
+  function genBatchPdf(t, keys) { // un seul PDF : une partie par personne, chacune commence sur une nouvelle page
+    var ppl = peopleOf(t.cible).filter(function (p) { return keys.indexOf(p.key) !== -1; });
+    return (window.__fontsReady ? window.__fontsReady() : Promise.resolve()).then(function () {
+      return Promise.all(ppl.map(function (p) { var h = tplHtml(t, t.cible, p.x); return t.bloc && window.__BLOC_FALLBACK ? window.__withBloc('<div style="margin-bottom:32px">' + window.__BLOC_FALLBACK + '</div>' + h) : Promise.resolve(h); }));
+    }).then(function (parts) { var html = parts.map(function (h, i) { return (i ? '<div data-pdf-break></div>' : '') + '<div>' + h + '</div>'; }).join(''); return window.__htmlToPdf(window.SERVIR_UTIL.sanitizeHtml(html), { landscape: t.ori === 'Paysage' }); })
+      .then(function (ab) { return { ab: ab, n: ppl.length }; });
+  }
+  function runGen() {
+    PM.save = $('gn-save').checked; PM.busy = true; PM.err = ''; PM.done = ''; renderGen(); var t = PM.t, name = String(t.titre || 'Documents').replace(/[\\/:*?"<>|]+/g, '-') + ' - ' + pmg() + ' - ' + isoD(Date.now() / 1000) + '.pdf';
+    genBatchPdf(t, PM.sel.slice()).then(function (r) {
+      var blob = new Blob([r.ab], { type: 'application/pdf' }); window.SERVIR_UTIL.downloadBlob(blob, name);
+      if (!PM.save || !DS.doc) return r;
+      var file = new File([blob], name, { type: 'application/pdf' });
+      return upPhoto(file).then(function (aid) { if (!IN_GRIST) DEMO_FILES[aid] = file; return dWrite('doc', [['AddRecord', DS.doc.tableId, null, df('doc', { PMG: pmg(), Titre: t.titre + ' (' + r.n + ' document' + (r.n > 1 ? 's' : '') + ')', Categorie: 'Autre', Fichier: ['L', aid], Nom_fichier: name, Ajoute_le: Date.now() / 1000, Observations: 'Généré en lot depuis le modèle « ' + t.titre + ' »' })]]); }).then(function () { return r; });
+    }).then(function (r) { if (PM && PM.kind === 'gen') { PM.busy = false; PM.done = r.n + ' document' + (r.n > 1 ? 's' : '') + ' dans « ' + name + ' »' + (PM.save ? ' (copie enregistrée dans les documents stockés).' : '.'); renderGen(); } },
+      function (e) { if (PM && PM.kind === 'gen') { PM.busy = false; PM.err = 'Génération impossible : ' + ((e && e.message) || e) + '.'; renderGen(); } });
+  }
+  function docModalClick(a, b) {
+    if (a === 'dcf-save') return saveDocForm();
+    if (a === 'dcf-del') { if (!PM.del) { PM.del = true; return renderDocForm(); } return dWrite('doc', [['RemoveRecord', DS.doc.tableId, PM.d.id]]).then(closeP); }
+    if (a === 'tpl-save') return saveTpl();
+    if (a === 'tpl-prev') { tplRead(); PM.who = $('tp-who').value; PM.prev = !PM.prev; renderTplForm(); return; }
+    if (a === 'tpl-sig') { tplRead(); return pickDocFile('image/*', function (f) { window.__sigFromFile(f).then(function (u) { PM.t.sig = u; renderTplForm(); }, function (err) { PM.err = 'Signature non ajoutée : ' + ((err && err.message) || err) + '.'; renderTplForm(); }); }); }
+    if (a === 'tpl-sigdel') { tplRead(); PM.t.sig = ''; return renderTplForm(); }
+    if (a === 'tpl-undo') { tplRead(); if (PM.undo != null) { PM.t.contenu = PM.undo; PM.undo = null; } PM.imp = { kind: '', html: '<p>Import annulé : le texte précédent a été rétabli.</p>' }; renderTplForm(); return; }
+    if (a === 'tpl-del') { if (!PM.del) { tplRead(); PM.del = true; return renderTplForm(); } return dWrite('tpl', [['RemoveRecord', DS.tpl.tableId, PM.t.id]]).then(closeP); }
+    if (a === 'gen-all' || a === 'gen-none') { PM.sel = a === 'gen-all' ? peopleOf(PM.t.cible).map(function (p) { return p.key; }) : []; return renderGen(); }
+    if (a === 'gen-go') return runGen();
+    return false;
+  }
+  $('ins-pmodal-body').addEventListener('click', function (e) {
+    if (!PM) return;
+    if (PM.kind === 'dcf' && e.target.closest('#dc-drop')) return pickDocFile('', function (f) { PM.file = f; renderDocFormKeep(); var ti = $('dc-titre'); if (ti && !ti.value) ti.value = f.name.replace(/\.[^.]+$/, ''); });
+    var v = e.target.closest('[data-tpv]'); if (v && PM.kind === 'tpl') return insertVar(v.getAttribute('data-tpv'));
+    if (PM.kind === 'tpl' && e.target.closest('#tp-drop')) return pickDocFile('.docx,.docm,.odt,.pdf,.html,.htm,.txt,.md,.markdown', tplImport);
+    var g = e.target.closest('[data-gng]'); if (g && PM.kind === 'gen') { var grp = g.getAttribute('data-gng'), m = peopleOf(PM.t.cible).filter(function (p) { return p.grp === grp; }).map(function (p) { return p.key; }), on = m.every(function (k) { return PM.sel.indexOf(k) !== -1; }); PM.sel = on ? PM.sel.filter(function (k) { return m.indexOf(k) === -1; }) : PM.sel.concat(m.filter(function (k) { return PM.sel.indexOf(k) === -1; })); return renderGen(); }
+  });
+  function renderDocFormKeep() { var o = { titre: $('dc-titre').value, cat: $('dc-cat').value, obs: $('dc-obs').value }; var d0 = PM.d; PM.d = d0 ? Object.assign({}, d0, o) : null; renderDocForm(); if (!d0) { $('dc-titre').value = o.titre; $('dc-cat').value = o.cat; $('dc-obs').value = o.obs; } }
+  $('ins-pmodal-body').addEventListener('change', function (e) {
+    if (!PM) return;
+    if (PM.kind === 'tpl' && (e.target.id === 'tp-cible' || e.target.id === 'tp-format')) { tplRead(); PM.who = ''; renderTplForm(); return; }
+    if (PM.kind === 'tpl' && e.target.id === 'tp-bloc' && PM.prev) { tplRead(); tplPreview(); return; }
+    if (PM.kind === 'tpl' && e.target.id === 'tp-who' && PM.prev) { PM.who = e.target.value; tplRead(); tplPreview(); return; }
+    var k = e.target.getAttribute && e.target.getAttribute('data-gnp'); if (k && PM.kind === 'gen') { var i = PM.sel.indexOf(k); if (e.target.checked && i === -1) PM.sel.push(k); if (!e.target.checked && i !== -1) PM.sel.splice(i, 1); var id = e.target.id; renderGen(); var el = $(id); if (el) el.focus(); }
+  });
+  $('ins-pmodal-body').addEventListener('mousedown', function (e) { if (PM && PM.kind === 'tpl' && e.target.closest('[data-tpv]')) e.preventDefault(); }); // le curseur reste dans le modèle
+  $('ins-pmodal-body').addEventListener('keydown', function (e) { if (PM && PM.kind === 'tpl' && e.target.id === 'tp-drop' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pickDocFile('.docx,.docm,.odt,.pdf,.html,.htm,.txt,.md,.markdown', tplImport); } });
+  ['dragenter', 'dragover'].forEach(function (ty) { $('ins-pmodal-body').addEventListener(ty, function (e) { var z = e.target.closest && e.target.closest('#tp-drop'); if (z) { e.preventDefault(); z.classList.add('is-over'); } }); });
+  $('ins-pmodal-body').addEventListener('dragleave', function (e) { var z = e.target.closest && e.target.closest('#tp-drop'); if (z) z.classList.remove('is-over'); });
+  $('ins-pmodal-body').addEventListener('drop', function (e) { var z = e.target.closest && e.target.closest('#tp-drop'); if (!z) return; e.preventDefault(); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) tplImport(f); });
+  $('ins-pmodal-body').addEventListener('input', function (e) { if (PM && PM.kind === 'tpl' && PM.prev && (e.target.id === 'tp-contenu')) { clearTimeout(tpTimer); tpTimer = setTimeout(function () { tplRead(); tplPreview(); }, 250); } });
+  $('ins-pmodal-body').addEventListener('input', function (e) { if (PM && PM.kind === 'gen' && e.target.id === 'gn-q') { PM.q = e.target.value; var pos = e.target.selectionStart; renderGen(); var q = $('gn-q'); q.focus(); try { q.setSelectionRange(pos, pos); } catch (er) {} } });
+  $('ins-panel-doc').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-dc]'); if (!b) return; var a = b.getAttribute('data-dc'), id = Number(b.getAttribute('data-id'));
+    if (a === 'add') return openDocForm(0); if (a === 'dedit') return openDocForm(id); if (a === 'dl') return downloadDoc(id);
+    if (a === 'tnew') return openTpl(0); if (a === 'tedit') return openTpl(id); if (a === 'tdup') return openTpl(id, true); if (a === 'gen') return openGen(id);
+  });
+  $('ins-dq').addEventListener('input', function (e) { DU.q = e.target.value; renderDocs(); });
+  var docsSeeded = false;
+  function demoDocs() {
+    if (IN_GRIST || docsSeeded || !pmg()) return; docsSeeded = true; var p0 = pmg();
+    DT.Instruction_Modeles.rows.push({ id: 1, PMG: p0, Titre: 'Attestation de présence', Cible: 'Stagiaires', Format: 'HTML', Bloc_marque: true, Description: 'Une page par stagiaire',
+      Contenu: '<h1 style="text-align:center;font-size:16pt;margin:24px 0">ATTESTATION DE PRÉSENCE</h1>\n<p>Je soussigné, commandant de la {{PMG}}, atteste que <strong>{{CIVILITE}} {{NOM}} {{PRENOM}}</strong>, né(e) le {{DDN}}, affecté(e) au {{AFFECTATION}} ({{PELOTON}}), a suivi la préparation militaire gendarmerie du {{STAGE_DEBUT}} au {{STAGE_FIN}}.</p>\n<p style="margin-top:48px;text-align:right">Fait le {{DATE_DU_JOUR}}</p>' },
+      { id: 2, PMG: p0, Titre: 'Fiche de chambre', Cible: 'Stagiaires', Format: 'Markdown', Bloc_marque: false, Description: 'Affectation de l’hébergement',
+      Contenu: '# {{NOM}} {{PRENOM}}\n\n- **Peloton** : {{PELOTON}}\n- **Bâtiment** : {{BATIMENT}} — **chambre** : {{CHAMBRE}}\n- **Régime alimentaire** : {{REGIME}}\n\nÀ conserver pendant toute la durée du stage ({{STAGE_DEBUT}} – {{STAGE_FIN}}).' },
+      { id: 3, PMG: p0, Titre: 'Ordre de mission', Cible: 'Cadres', Format: 'HTML', Bloc_marque: true, Description: '',
+      Contenu: '<h1 style="text-align:center;font-size:16pt">ORDRE DE MISSION</h1><p>Le {{GRADE}} <strong>{{NOM}} {{PRENOM}}</strong> ({{AFFECTATION}}) est désigné(e) en qualité de <em>{{FONCTION}}</em> pour l’encadrement de la {{PMG}}, du {{STAGE_DEBUT}} au {{STAGE_FIN}}.</p>' });
+    DT.Instruction_Documents.rows.push({ id: 1, PMG: p0, Titre: 'Note de service : organisation du stage', Categorie: 'Note de service', Fichier: ['L'], Nom_fichier: 'note_organisation.pdf', Ajoute_le: Date.now() / 1000 - 86400 * 3, Observations: 'Exemple (sans fichier en démonstration)' });
   }
   var resSeeded = false;
   function demoRes() { // démonstration : deux bâtiments, véhicules, matériels et réservations
@@ -22634,6 +23251,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (/^fsj-/.test(a)) return fsjAction(a, b);
     if (a === 'save-abs') return saveAbs();
     if (resModalClick(a, b) !== false) return;
+    if (/^(dcf|tpl|gen)-/.test(a) && docModalClick(a, b) !== false) return;
     if (/^qr-/.test(a)) return qrAction(a);
     if (a === 'inc-save') return incSave(false);
     if (a === 'inc-clear') return incSave(true);
@@ -22672,7 +23290,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   DT.Ceremonie_Poste = { cols: CPDEF[1], rows: [] };
   function loadCP() { return tload(CPDEF[0], CPDEF[0]).then(function (t) { CP = t; }, function () { CP = null; }); }
   var LAYERS = [['list', 'Liste'], ['inc', 'Incorporation'], ['etu', 'eTuteur']]; // la cérémonie a son propre onglet
-  var BO_PARTS = [['inc', 'Calque Incorporation', 'présence, habillement, contrat signé'], ['etu', 'Calque eTuteur', 'pièces du dossier et validations'], ['cer', 'Onglet Cérémonie', 'invités, quota, doublons, présence'], ['res', 'Onglet Ressources', 'hébergement, véhicules, matériels']];
+  var BO_PARTS = [['inc', 'Calque Incorporation', 'présence, habillement, contrat signé'], ['etu', 'Calque eTuteur', 'pièces du dossier et validations'], ['cer', 'Onglet Cérémonie', 'invités, quota, doublons, présence'], ['res', 'Onglet Ressources', 'hébergement, véhicules, matériels'], ['doc', 'Onglet Documents', 'documents stockés et modèles à variables']];
   function layerCfg() { var o = (opts().ins || {}).layers; return o && typeof o === 'object' ? o : {}; }
   function layerOn(k) { return k === 'list' || layerCfg()[k] !== false; }
   function layerKeys() { var o = []; if (layerOn('inc')) o.push('incP', 'incH', 'incC'); if (layerOn('cer')) o.push('cer'); if (layerOn('etu')) o.push('etu'); return o; }
@@ -23029,13 +23647,13 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     tab = all.indexOf(t) !== -1 ? t : 'stg';
     Array.prototype.forEach.call(document.querySelectorAll('[data-ins-tab]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-ins-tab') === tab)); });
     all.forEach(function (k) { var pn = $('ins-panel-' + k); if (pn) pn.hidden = tab !== k; });
-    if (tab === 'prog') renderProg(); if (tab === 'rep') renderRep(); if (tab === 'cer') renderCerPage(); if (tab === 'res') renderRes();
+    if (tab === 'prog') renderProg(); if (tab === 'rep') renderRep(); if (tab === 'cer') renderCerPage(); if (tab === 'res') renderRes(); if (tab === 'doc') renderDocs();
   }
   document.querySelector('.ins-tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-ins-tab]'); if (b) { showTab(b.getAttribute('data-ins-tab')); msg('', ''); } });
   function render() {
     var p = pmg();
     $('ins-lead').textContent = p ? 'PMG suivie : ' + p + '. Stagiaires : candidats à l’état « Admis PMG » pour cette PMG.' : 'Aucune PMG n’est réglée : choisissez-la dans le back office, rubrique Instruction.';
-    renderStg(); renderCad(); renderFrm(); renderProg(); renderRep(); renderCerPage(); renderRes(); if (tab === 'cer' && !layerOn('cer') || tab === 'res' && !layerOn('res')) showTab('stg');
+    renderStg(); renderCad(); renderFrm(); renderProg(); renderRep(); renderCerPage(); renderRes(); renderDocs(); if (tab === 'cer' && !layerOn('cer') || tab === 'res' && !layerOn('res') || tab === 'doc' && !layerOn('doc')) showTab('stg');
     if (!window.PMG) msg('error', 'La page Candidats n’est pas disponible.');
   }
 
@@ -23086,7 +23704,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       var mv = e.target.closest && e.target.closest('[data-borulemv]'); if (mv) { var q = mv.getAttribute('data-borulemv').split(':'), L2 = boDl().rules[q[0]], ix = L2.map(function (x) { return x[0]; }).indexOf(q[1]), to = ix + (q[2] === 'up' ? -1 : 1); if (ix !== -1 && to >= 0 && to < L2.length) { var tmp = L2[ix]; L2[ix] = L2[to]; L2[to] = tmp; boRules(); if (window.RSV && window.RSV.markDirty) window.RSV.markDirty(); var nb = document.querySelector('[data-borulemv="' + q[0] + ':' + q[1] + ':' + q[2] + '"]'); if (nb && !nb.disabled) nb.focus(); else { nb = document.querySelector('[data-borulemv^="' + q[0] + ':' + q[1] + ':"]:not([disabled])'); if (nb) nb.focus(); } } return; }
       if (e.target.id !== 'ins-bo-create') return; e.target.disabled = true;
       (C.table ? Promise.resolve() : createTable()).then(ensureMan).then(function () { return createLinked(['appr', 'notes', 'dep'].concat(layerKeys())); })
-        .then(function () { if (CP || !layerOn('cer')) return; var a = ['AddTable', CPDEF[0], CPDEF[1].map(function (c) { return { id: c[0], type: L.cer ? c[1] : (c[1].indexOf('Ref') === 0 ? 'Int' : c[1]), label: c[2], isFormula: false }; })]; return (IN_GRIST ? window.grist.docApi.applyUserActions([a]) : Promise.resolve()).then(loadCP); }).then(createForms).then(createPlan).then(function () { return layerOn('res') ? createRes() : null; }).then(boSchema, function (err) { boSchema(); var h = $('ins-bo-schema'); h.insertAdjacentHTML('afterbegin', '<div class="doc-alert error" role="alert"><p>Création impossible : ' + esc((err && err.message) || err) + '.</p></div>'); });
+        .then(function () { if (CP || !layerOn('cer')) return; var a = ['AddTable', CPDEF[0], CPDEF[1].map(function (c) { return { id: c[0], type: L.cer ? c[1] : (c[1].indexOf('Ref') === 0 ? 'Int' : c[1]), label: c[2], isFormula: false }; })]; return (IN_GRIST ? window.grist.docApi.applyUserActions([a]) : Promise.resolve()).then(loadCP); }).then(createForms).then(createPlan).then(function () { return layerOn('res') ? createRes() : null; }).then(function () { return layerOn('doc') ? createDocs() : null; }).then(boSchema, function (err) { boSchema(); var h = $('ins-bo-schema'); h.insertAdjacentHTML('afterbegin', '<div class="doc-alert error" role="alert"><p>Création impossible : ' + esc((err && err.message) || err) + '.</p></div>'); });
     });
     return host;
   }
@@ -23094,7 +23712,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   var colConfirm = false; // ajout des colonnes manquantes : confirmation demandée (table principale)
   function boSchema() {
     var h = $('ins-bo-schema'); if (!h) return;
-    var tables = [[CT, 'Cadres de la PMG (colonne PMG pour les règles d’accès)', !!C.table], [MT, 'Stagiaires ajoutés à la main (hors table des candidats)', !!M]].concat(['appr', 'notes', 'dep'].map(function (k) { return [LINKDEF[k].name, { appr: 'Appréciation par matière (onglet Notation)', notes: 'Notes, moyenne et classement', dep: 'Départs des stagiaires' }[k], !!L[k]]; })).concat(layerKeys().map(function (k) { return [LINKDEF[k].name, (k === 'cer' ? 'Onglet ' : 'Calque ') + LINKDEF[k].title, !!L[k]]; })).concat(layerOn('cer') ? [[CPDEF[0], 'Cérémonie : présence des invités (formulaire du QR code)', !!CP]] : []).concat(['cad', 'stg'].map(function (k) { return [FORMDEF[k].name, FORMDEF[k].usage, !!FR[k]]; })).concat(Object.keys(PDEF).map(function (k) { return [PDEF[k].name, PDEF[k].usage, !!PL[k]]; })).concat(layerOn('res') ? Object.keys(RDEF).map(function (k) { return [RDEF[k].name, RDEF[k].usage, !!RS[k]]; }) : []);
+    var tables = [[CT, 'Cadres de la PMG (colonne PMG pour les règles d’accès)', !!C.table], [MT, 'Stagiaires ajoutés à la main (hors table des candidats)', !!M]].concat(['appr', 'notes', 'dep'].map(function (k) { return [LINKDEF[k].name, { appr: 'Appréciation par matière (onglet Notation)', notes: 'Notes, moyenne et classement', dep: 'Départs des stagiaires' }[k], !!L[k]]; })).concat(layerKeys().map(function (k) { return [LINKDEF[k].name, (k === 'cer' ? 'Onglet ' : 'Calque ') + LINKDEF[k].title, !!L[k]]; })).concat(layerOn('cer') ? [[CPDEF[0], 'Cérémonie : présence des invités (formulaire du QR code)', !!CP]] : []).concat(['cad', 'stg'].map(function (k) { return [FORMDEF[k].name, FORMDEF[k].usage, !!FR[k]]; })).concat(Object.keys(PDEF).map(function (k) { return [PDEF[k].name, PDEF[k].usage, !!PL[k]]; })).concat(layerOn('res') ? Object.keys(RDEF).map(function (k) { return [RDEF[k].name, RDEF[k].usage, !!RS[k]]; }) : []).concat(layerOn('doc') ? Object.keys(DDEF).map(function (k) { return [DDEF[k].name, DDEF[k].usage, !!DS[k]]; }) : []);
     var P = window.PMG, cand = [['PON', 'pon'], ['FONCTION', 'fonction'], ['Profession', 'profession'], ['Niveau scolaire', 'niveau'], ['BAT.', 'bat'], ['CH.', 'ch'], ['REGIME ALIMENTAIRE', 'regime'], ['Allergies', 'allergies'], ['Traitements / Maladies', 'traitements'], ['Précisions médicales', 'precis'], ['Latéralité', 'lateralite'],
       ['Nom urgence', 'urgNom'], ['Prénom urgence', 'urgPrenom'], ['Tél. urgence', 'urgTel'], ['QUALIF. SECOURISME', 'secour'], ['Transport', 'transport'], ['Immatriculation', 'plaque'], ['Infos', 'infos']].map(function (c) { return [c[0], P && P.col ? !!ccol(c[1]) : false]; });
     var missT = tables.filter(function (t) { return !t[2]; }).length, missC = cand.filter(function (c) { return !c[1]; });
@@ -23186,10 +23804,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   window.INS = {
     show: function (reload) {
       render();
-      var jobs = [loadCadres(), loadLinked(), loadMan(), loadForms(), loadPlan(), loadRes()]; if (reload && window.PMG && window.PMG.refresh) jobs.push(Promise.resolve(window.PMG.refresh()));
+      var jobs = [loadCadres(), loadLinked(), loadMan(), loadForms(), loadPlan(), loadRes(), loadDocs()]; if (reload && window.PMG && window.PMG.refresh) jobs.push(Promise.resolve(window.PMG.refresh()));
       Promise.all(jobs).then(function () { render(); return integrateForms(); }, render);
     },
-    openAdmin: function () { draft = null; boRender(); Promise.all([loadCadres(), loadLinked(), loadMan(), loadForms(), loadPlan(), loadRes()]).then(boSchema, boSchema); },
+    openAdmin: function () { draft = null; boRender(); Promise.all([loadCadres(), loadLinked(), loadMan(), loadForms(), loadPlan(), loadRes(), loadDocs()]).then(boSchema, boSchema); },
     save: function () {
       if ((draft == null || draft === pmg()) && !draftL) { draft = null; return Promise.resolve(); }
       var cur = opts(), o = {}; Object.keys(cur).forEach(function (k) { o[k] = cur[k]; }); var ins = {}; Object.keys(cur.ins || {}).forEach(function (k) { ins[k] = cur.ins[k]; });
@@ -23198,7 +23816,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     },
     cancel: function () { draft = null; draftL = null; AXF = null; boRender(); },
     progPdf: function () { return progPdf(); }, // (tests)
-    suggest: function (k) { return k === 'prog' ? progSuggest() : k === 'cer' ? cerSuggest() : k === 'res' ? resSuggest() : k === 'rep' ? repSuggest() : suggestItems(k); }, fltReset: function (k) { if (k === 'rep') { RP.dec = ''; RP.cad = ''; RP.per = 'cur'; RP.q = ''; RP.qf = ''; RP.type = ''; $('ins-rpq').value = ''; renderRep(); return; } if (k === 'res') { RU.q = ''; RU.hq = ''; RU.dec = ''; RU.per = 'cur'; RU.bat = RU.who = RU.pel = RU.sex = ''; renderRes(); return; } if (k === 'cer') { LF.cer = ''; $('ins-cer-q').value = ''; renderCerPage(); return; } if (k === 'prog') { PG.f = { pel: [], cad: [], type: [], qf: '' }; PG.q = ''; $('ins-pq').value = ''; renderProg(); return; } FLT[k] = k === 'stg' ? { pel: [], aff: [], qf: '' } : { grp: [], st: [], qf: '' }; if (k === 'stg' && SHOW_LEFT) { $('ins-left').click(); return; } fltRefresh(k); },
+    genBatch: function (id, keys) { var t = tplList().filter(function (x) { return x.id === id; })[0]; return genBatchPdf(t, keys || peopleOf(t.cible).map(function (p) { return p.key; })); }, fill: function (id, key) { var t = tplList().filter(function (x) { return x.id === id; })[0], p = peopleOf(t.cible).filter(function (x) { return x.key === key; })[0] || peopleOf(t.cible)[0]; return tplHtml(t, t.cible, p.x); }, // (tests)
+    suggest: function (k) { return k === 'prog' ? progSuggest() : k === 'cer' ? cerSuggest() : k === 'res' ? resSuggest() : k === 'rep' ? repSuggest() : k === 'doc' ? docSuggest() : suggestItems(k); }, fltReset: function (k) { if (k === 'doc') { DU.q = ''; DU.qf = ''; $('ins-dq').value = ''; renderDocs(); return; } if (k === 'rep') { RP.dec = ''; RP.cad = ''; RP.per = 'cur'; RP.q = ''; RP.qf = ''; RP.type = ''; $('ins-rpq').value = ''; renderRep(); return; } if (k === 'res') { RU.q = ''; RU.hq = ''; RU.dec = ''; RU.per = 'cur'; RU.bat = RU.who = RU.pel = RU.sex = ''; renderRes(); return; } if (k === 'cer') { LF.cer = ''; $('ins-cer-q').value = ''; renderCerPage(); return; } if (k === 'prog') { PG.f = { pel: [], cad: [], type: [], qf: '' }; PG.q = ''; $('ins-pq').value = ''; renderProg(); return; } FLT[k] = k === 'stg' ? { pel: [], aff: [], qf: '' } : { grp: [], st: [], qf: '' }; if (k === 'stg' && SHOW_LEFT) { $('ins-left').click(); return; } fltRefresh(k); },
     photo: function (key, file) { var t = trainee(key); return t ? setStgPhoto(t, file) : Promise.resolve(); }, cadPhoto: function (id, file) { return setCadPhoto(id, file); }, // (tests)
     fsjPdf: function (day, mode) { return fsjPdf(day, mode); }, // (tests)
     tab: showTab, openFiche: openFiche, integrateForms: function () { return loadForms().then(integrateForms); }, importText: function (kind, name, text) { openImport(kind); var rows = parseRows(text); IS.file = name; IS.head = rows[0]; IS.rows = rows.slice(1); IS.map = guessMap(kind, IS.head); renderImport(); } // (tests)
@@ -23504,6 +24123,59 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         document.querySelector('#ins-pq-suggest [data-sp="reset"]').click(); document.querySelector('#ins-pq-suggest [data-sp="close"]').click(); return wait(300);
       }).then(function () { check('Progression : filtres réinitialisés', document.querySelectorAll('#ins-prog-body .pg-ev').length === n0); });
     }],
+    ['Instruction : documents et modèles, génération en lot', function () {
+      window.__showPage('ins'); window.INS.show();
+      return wait(2500).then(function () { window.INS.tab('doc'); return wait(300); }).then(function () {
+        var t = $('docs-body').textContent; check('Onglet Documents : modèles et documents stockés', /Attestation de présence/.test(t) && /Ordre de mission/.test(t) && /Documents stockés/.test(t));
+        var h = window.INS.fill(1); check('Modèle : variables remplacées par la fiche du stagiaire', !/\{\{NOM\}\}/.test(h) && /PMG 74/.test(h) && /<strong>/.test(h), h.replace(/<[^>]+>/g, ' ').slice(0, 140));
+        var h2 = window.INS.fill(2); check('Modèle Markdown converti en HTML', /<h1/.test(h2) && /<li>/.test(h2));
+        document.querySelector('#docs-body [data-dc="tedit"][data-id="1"]').click(); return wait(300);
+      }).then(function () {
+        check('Éditeur de modèle (comme le back office) : import, variables cliquables avec description', document.querySelectorAll('#ins-pmodal-body .bo-vartag[data-tpv][title]').length > 10 && !!$('tp-drop')); document.querySelector('[data-pm="tpl-prev"]').click(); return wait(600);
+      }).then(function () {
+        var pv = $('tp-preview'); check('Aperçu du modèle avec une personne', !!pv && pv.shadowRoot && /ATTESTATION/.test(pv.shadowRoot.textContent)); $('ins-pmodal-close').click();
+        var tf = window.__docFinish('<p>A</p>{{SIGNATURE_IMAGE}}', { sig: 'data:image/png;base64,AAAA', landscape: true }); check('Signature insérée et repère paysage', /^<!--orientation:paysage-->/.test(tf) && /<img alt="Signature"/.test(tf));
+        return window.__htmlToPdf('<!--orientation:paysage--><p>Paysage</p>').then(function (ab) { var head = new TextDecoder('latin1').decode(new Uint8Array(ab).slice(0, 4000)); check('PDF au format paysage', /MediaBox \[0 0 841\.8\d* 595\.2\d*\]/.test(head) || /841\.89/.test(head), ''); }).then(function () { return window.INS.genBatch(1); }).then(function (r) { check('Génération en lot : un PDF pour tous les stagiaires', r.ab && r.ab.byteLength > 2000 && r.n > 3, r.n + ' personnes, ' + r.ab.byteLength + ' octets'); });
+      });
+    }],
+    ['Réservistes : formulaire « Profession et études » et recherche par profil', function () {
+      window.__showPage('res');
+      return wait(2500).then(function () { return window.RPF.integrate(); }).then(function () {
+        var b = $('r-pf-box').textContent, L = window.RES.rows(), g = L.filter(function (x) { return /GARNIER/.test(x.label); })[0], pe = L.filter(function (x) { return /PERRIN/.test(x.label); })[0];
+        check('Réponse rapprochée par le Nigend (tirets et espaces ignorés) : champs vides de la fiche complétés', window.RES.cell(g.raw, 'Profession') === 'Développeur' && /Bac \+5/.test(window.RES.cell(g.raw, 'Niveau d’études')));
+        check('Valeur différente de la fiche : « à valider », champs vides complétés', /Baccalauréat » → « Bac \+3/.test(b) && window.RES.cell(pe.raw, 'Profession') === 'Infirmière', b.slice(0, 160));
+        check('Nigend inconnu : rapprochement manuel proposé', !!document.querySelector('#r-pf-box [data-rpfm]'));
+        document.querySelector('#r-pf-box [data-rpf="apply"]').click(); return wait(600);
+      }).then(function () {
+        var pe = window.RES.rows().filter(function (x) { return /PERRIN/.test(x.label); })[0]; check('« Appliquer » : la fiche prend la valeur du formulaire', /Bac \+3/.test(window.RES.cell(pe.raw, 'Niveau d’études')));
+        $('r-btn-profile').click(); return wait(400);
+      }).then(function () {
+        check('Recherche par profil : modale et critères', !$('r-psmodal').hidden && !!$('ps-q') && !!$('ps-niv') && document.querySelectorAll('#r-psmodal [data-psk="grade"]').length > 2);
+        window.RPF.set({ q: 'informatique' }); var a = window.RPF.search().map(function (x) { return x.label; });
+        window.RPF.set({ q: '', niv: '5' }); var n = window.RPF.search().length;
+        window.RPF.set({ niv: '', grade: ['ADJ'] }); var gr = window.RPF.search().map(function (x) { return x.label; });
+        window.RPF.set({ grade: [], aff: ['GD 74'], ageMax: '30' }); var af = window.RPF.search().map(function (x) { return x.label; });
+        window.RPF.set({ aff: [], ageMax: '' });
+        check('Mots-clés (domaine), niveau minimum, grade, affectation et âge', a.join() === 'GARNIER Lucas' && n === 2 && gr.join() === 'ROBIN Sophie' && af.join() === 'BLANC Théo', [a, n, gr, af].join(' | '));
+        window.RPF.set({ mis: ['Ecoutes téléphoniques', 'Logistique'] }); var mi = window.RPF.search().map(function (x) { return x.label; }).sort(); window.RPF.set({ mis: [] });
+        var g = window.RES.rows().filter(function (x) { return /GARNIER/.test(x.label); })[0];
+        check('Missions déjà occupées : intégrées depuis le formulaire et cherchables (au moins une)', /Ecoutes téléphoniques/.test(window.RES.cell(g.raw, 'Missions déjà occupées en gendarmerie')) && mi.join() === 'GARNIER Lucas,ROBIN Sophie' && document.querySelectorAll('#r-psmodal [data-psk="mis"]').length === 16, mi.join());
+        var F0 = window.RPF.follow(), st = function (re) { return (F0.filter(function (x) { return re.test(x.p.label); })[0] || {}).st; };
+        check('Profilage : suivi des répondants (a répondu, déjà renseignée, invité, pas encore invité)', st(/GARNIER/) === 'rep' && st(/LEFÈVRE/) === 'ok' && st(/ROBIN/) === 'inv' && st(/BLANC/) === 'non' && /^Profilage · 2 répondants sur 5/.test(document.querySelector('#r-pf-box summary').textContent), F0.map(function (x) { return x.p.label + ':' + x.st; }).join(' '));
+        window.RPF.set({ lang: ['Anglais'] }); var l1 = window.RPF.search().length; window.RPF.set({ lang: ['Anglais', 'Russe'] }); var l2 = window.RPF.search().map(function (x) { return x.label; }); window.RPF.set({ lang: [] });
+        check('Langues parlées : liste ou texte séparé par des virgules, recherche sur toutes les langues cochées', l1 === 4 && l2.join() === 'GARNIER Lucas' && window.RES.cell(g.raw, 'Langues parlées') === 'Anglais, Russe', l1 + ' | ' + l2.join() + ' | ' + window.RES.cell(g.raw, 'Langues parlées'));
+        $('r-psmodal-close').click(); return wait(300);
+      }).then(function () {
+        var o0 = JSON.parse(JSON.stringify(window.__getOpts() || {})), o = JSON.parse(JSON.stringify(o0)); o.r = Object.assign({}, o.r || {}, { profForm: 'https://grist.example/forms/abc' }); window.__pushOpts(o);
+        var sent = []; window.RPF_MAIL = function (m, sj, bd) { sent.push({ m: m, sj: sj, bd: bd }); };
+        return window.RPF.send('inv').then(function () { return window.RPF.send('rel'); }).then(function () {
+          var F1 = window.RPF.follow(), bl = F1.filter(function (x) { return /BLANC/.test(x.p.label); })[0], rb = F1.filter(function (x) { return /ROBIN/.test(x.p.label); })[0];
+          check('Inviter sans adresse valide : signalé, rien d’envoyé ; relancer : un message en Cci avec le lien, date enregistrée', sent.length === 1 && sent[0].m.join() === 'sophie.robin@example.fr' && /grist\.example\/forms\/abc/.test(sent[0].bd) && bl.st === 'non' && rb.st === 'rel' && rb.rel.length === 1, JSON.stringify(sent.map(function (x) { return x.m; })) + ' ' + bl.st + ' ' + rb.st);
+          check('Volet « Profilage » : filtres et boutons Inviter / Relancer', !!document.querySelector('#r-pf-box [data-rpf="inv"]') && !!document.querySelector('#r-pf-box [data-rpf="rel"]') && document.querySelectorAll('#r-pf-box [data-rpff]').length === 5);
+          window.RPF_MAIL = null; var o2 = JSON.parse(JSON.stringify(window.__getOpts() || {})); o2.r = o0.r; window.__pushOpts(o2);
+        });
+      });
+    }],
     ['Instruction : cérémonie, règles de décompte des invités', function () {
       window.__showPage('ins'); window.INS.show(); var o0 = JSON.parse(JSON.stringify(window.__getOpts() || {}));
       function setO(x) { var o = JSON.parse(JSON.stringify(window.__getOpts() || {})); o.ins = Object.assign({}, o.ins || {}, x); window.__pushOpts(o); }
@@ -23602,7 +24274,13 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         }).then(function () { check('Correction enregistrée (ligne « corrigé »)', /corrigé/.test($('ins-pmodal-body').innerText)); });
       }).then(function () {
         $('rx-nom').value = 'Invités'; $('rx-aff').value = 'Mairie'; document.querySelector('[data-pm="rat-xadd"]').click(); return wait(600);
-      }).then(function () { check('Repas supplémentaire ajouté', /Invités/i.test($('ins-pmodal-body').innerText)); $('ins-pmodal-close').click(); return wait(300); });
+      }).then(function () {
+        check('Repas supplémentaire ajouté', /Invités/i.test($('ins-pmodal-body').innerText)); var names = null;
+        return (window.__xlsxReady ? window.__xlsxReady() : Promise.resolve()).then(function () {
+          var X = window.XLSX, wf = X && X.writeFile; if (!X) return; X.writeFile = function (wb) { names = wb.SheetNames.slice(); }; document.querySelector('[data-pm="rat-xlsx"]').click();
+          return wait(1500).then(function () { X.writeFile = wf; check('État rationnaire (.xlsx) : cadres et stagiaires dans des feuilles séparées par FA', !!names && names.indexOf('RGIF - Cadres') !== -1 && names.indexOf('RGIF - Stagiaires') !== -1, (names || []).join(', ')); });
+        }).then(function () { $('ins-pmodal-close').click(); return wait(300); });
+      });
     }],
     ['Instruction : règles paramétrables (hébergement et repos)', function () {
       window.__showPage('ins'); window.INS.show(); var o0 = JSON.parse(JSON.stringify(window.__getOpts() || {}));
@@ -23714,6 +24392,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       check('Décoché : bloc retiré (brouillon du back office)', A('test:doc', b, true).indexOf('bloc-marque') === -1);
       window.RSV.blocs.set('test:doc', true);
       var cb = document.getElementById('bo-tpl-doc-bloc'); check('Case « Bloc marque en haut de la première page » dans l’éditeur des documents', !!cb);
+      var fm = document.getElementById('bo-tpl-doc-fmt'); check('Éditeur des documents : choix du format (HTML ou Markdown)', !!fm && fm.options.length === 2);
+      if (window.RSV && window.RSV.formats) { window.RSV.formats.set('test:md', 'md'); var hm2 = window.__applyBloc('test:md', '# Titre\n\n**gras**', true); check('Modèle Markdown converti en HTML à la génération', /<h1/.test(hm2) && /<strong>gras<\/strong>/.test(hm2), hm2.slice(0, 120)); window.RSV.formats.set('test:md', 'html'); }
       return window.__withBloc(a).then(function (h) { check('Bloc remplacé par l’en-tête du ministère (comme l’émargement)', /<img alt="Ministère de l’Intérieur – Gendarmerie nationale"/.test(h) || !/<!--bloc-marque-->/.test(h)); });
     }],
     ['Instruction : import d’un fichier de stagiaires et de cadres', function () {
@@ -23803,6 +24483,19 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         check('Champ « Destinataires (optionnel) » sur les autres modèles', $('bo-tpl-mail-to').value === '' && /optionnel/.test($('bo-tpl-mail-tolab').textContent));
         window.RSV.cancelAdmin && window.RSV.cancelAdmin();
       });
+    }],
+    ['Instruction : désinscrire un stagiaire de ce stage (calque eTuteur)', function () {
+      window.__showPage('ins'); window.INS.show(); var n0, name;
+      return wait(2500).then(function () { window.INS.tab('stg'); document.querySelector('[data-layer="list"]').click(); n0 = document.querySelectorAll('#ins-rows tr[data-stg]').length; document.querySelector('#ins-rows tr[data-stg]').click(); return wait(400); }).then(function () {
+        check('Bouton « Désinscrire » absent hors du calque eTuteur', $('ins-sunr').hidden); $('ins-smodal-close').click(); document.querySelector('[data-layer="etu"]').click(); return wait(300);
+      }).then(function () {
+        var b0 = document.querySelector('#ins-rows [data-lay="fiche"]'); name = b0.textContent; b0.click(); return wait(400);
+      }).then(function () {
+        var b = $('ins-sunr'); check('Calque eTuteur : bouton « Désinscrire de ce stage » dans la fiche', !!b && !b.hidden); b.click(); return wait(100).then(function () { $('ins-sunr').click(); return wait(900); });
+      }).then(function () {
+        document.querySelector('[data-layer="list"]').click();
+        check('Désinscrit : retiré des stagiaires (fiche candidat conservée)', document.querySelectorAll('#ins-rows tr[data-stg]').length === n0 - 1 && /désinscrit/.test($('ins-msg').innerText), $('ins-msg').innerText);
+      });
     }]
   ];
 
@@ -23827,7 +24520,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         if (i >= S.length) return Promise.resolve(true);
         var sc = S[i++];
         if (sc === 'reload') { try { sessionStorage.setItem(KEY, JSON.stringify({ next: i, results: results })); } catch (e) {} location.reload(); return Promise.resolve(false); }
-        results.push({ name: '— ' + sc[0], ok: true, detail: '' });
+        results.push({ name: '— ' + sc[0], ok: true, detail: '' }); window.__curTest = sc[0];
         return Promise.resolve().then(sc[1]).catch(function (e) { check(sc[0] + ' : erreur', false, (e && e.message) || e); }).then(step);
       })();
     }).then(function (finished) { if (!finished) return; try { sessionStorage.removeItem(KEY); } catch (e) {} results = results.filter(function (r) { return !/^— /.test(r.name); }); report(); });
