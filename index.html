@@ -558,8 +558,11 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .pg-empty { color: var(--muted, #777); font-size: .8rem; padding: .3rem .75rem; margin: 0; }
   .pg-chips { display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
   .rpf-box { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: .5rem 1rem; margin: 0 0 1rem; background: var(--bg); }
-  .rpf-box > summary { cursor: pointer; font-weight: 700; padding: .25rem 0; }
+  .rpf-head { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: flex-start; justify-content: space-between; margin: 0 0 1rem; }
+  .rpf-box { padding: 1rem 1.25rem; } .rpf-sum { margin: 0 0 .5rem; }
   .rpf-h { font-size: 1rem; margin: 1.25rem 0 .5rem; } .rpf-bar { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; justify-content: space-between; margin-bottom: .75rem; } .rpf-acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-left: auto; } .rpf-track { max-height: 360px; overflow: auto; } .rpf-track + .hint { margin-top: .75rem; }
+  .rpf-name { padding: 0; border: 0; background: none; color: var(--blue); font: inherit; font-weight: 700; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; }
+  .rpf-name:hover, .rpf-name:focus-visible { text-decoration-color: currentColor; }
   .rpf-qf { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
   .rpf-pill { --c: var(--muted); display: inline-flex; align-items: center; gap: .4rem; padding: .2rem .35rem .2rem .7rem; border: 1px solid var(--border-default-grey); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: .8125rem; line-height: 1.5; cursor: pointer; }
   .rpf-pill::before { content: ''; width: .5rem; height: .5rem; border-radius: 50%; background: var(--c); flex: none; }
@@ -574,7 +577,8 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ps-dialog { max-width: 1100px; width: 100%; } .ps-grid { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 1.5rem; padding: 1rem 1.5rem 1.5rem; }
   .ps-crit .cf-field { margin-bottom: .75rem; } .ps-crit .cf-field label { display: block; font-weight: 500; margin-bottom: .25rem; } .ps-crit .input, .ps-crit .select { width: 100%; }
   .ps-fs { border: 0; padding: 0; margin: 0 0 .75rem; } .ps-fs legend { font-weight: 500; margin-bottom: .25rem; padding: 0; }
-  #r-psmodal tr.row-click { cursor: pointer; } #r-psmodal tr.row-click:hover, #r-psmodal tr.row-click:focus { background: var(--bg-alt, #f6f6f6); outline: none; }
+  #prof-search tr.row-click { cursor: pointer; } #prof-search tr.row-click:hover, #prof-search tr.row-click:focus { background: var(--row-hover, #f6f6f6); outline: none; }
+  #prof-search, #r-pf-box { margin-top: 1rem; } #prof-search .ps-grid { padding: 0; } #pft-n:empty { display: none; } #pft-n { margin-left: .25rem; }
   @media (max-width: 760px) { .ps-grid { grid-template-columns: 1fr; padding: 1rem; } }
   .pg-chips label { display: inline-flex; align-items: center; gap: .25rem; font-size: .875rem; }
   .rp-today { background: #fff8e1; }
@@ -2244,13 +2248,14 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
                 <div class="fr-grid-row fr-grid-row-lg--gutters">
                   <div class="fr-col-12 fr-col-lg-5">
                     <div class="nav-lead">
-                      <p class="nav-lead__title">Journée défense et citoyenneté</p>
-                      <p class="nav-lead__text">Gestion des animateurs et du planning des JDC</p>
-                      <div class="nav-lead__actions"><a class="fr-btn" href="#" target="_self" data-page="jdc">Accéder</a></div>
+                      <p class="nav-lead__title">Profilage</p>
+                      <p class="nav-lead__text">Rechercher parmi les réservistes le profil le plus adapté pour remplir la mission</p>
+                      <div class="nav-lead__actions"><a class="fr-btn" href="#" target="_self" data-page="prof">Accéder</a></div>
                     </div>
                   </div>
                   <div class="fr-col-12 fr-col-lg-7">
                     <ul class="nav-rows">
+                      <li><a class="nav-row" href="#" target="_self" data-page="jdc">Journée défense et citoyenneté (JDC)<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                       <li><a class="nav-row" href="#" target="_self" data-page="pos">Mission Poséidon<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                       <li><a class="nav-row" href="#" target="_self" data-page="emp-stat">Statistiques<span class="fr-icon-arrow-right-line" aria-hidden="true"></span></a></li>
                     </ul>
@@ -2905,7 +2910,6 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         <button type="button" class="qf-btn qf-warn" id="r-qf-missing" aria-pressed="false">Données manquantes <span class="qf-n" id="r-qf-missing-n"></span></button>
       </div>
     </div>
-    <div id="r-pf-box"></div>
 
     <div class="table-wrap">
       <div class="toolbar selbar" id="r-selbar" hidden>
@@ -2956,7 +2960,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         </div>
         <div>
           <label for="r-f-profform">Formulaire externe « Profilage » (lien de partage)</label>
-          <span class="hint" id="r-h-profform">Vue Formulaire Grist de la table <code>Formulaire_reservistes</code> : lien et QR code affichés dans le volet « Profilage » de la page Réservistes, insérés dans les courriels d’invitation et de relance ; les réponses complètent la fiche.</span>
+          <span class="hint" id="r-h-profform">Vue Formulaire Grist de la table <code>Formulaire_reservistes</code> : lien et QR code affichés sur la page Profilage (menu Emploi), insérés dans les courriels d’invitation et de relance ; les réponses complètent la fiche.</span>
           <input id="r-f-profform" class="input" type="url" placeholder="https://…/forms/…" aria-describedby="r-h-profform">
         </div>
         <div>
@@ -3032,19 +3036,21 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   <div id="r-demo" class="demo" hidden>Aperçu avec des données de démonstration (widget ouvert hors de Grist).</div>
 </div>
 </div><!-- /page-res -->
+<div id="page-prof" hidden>
+  <div class="wrap fr-container">
+    <div class="rpf-head">
+      <div><h1 class="fr-h4" style="margin:0">Profilage</h1><p class="hint" style="margin:.25rem 0 0">Rechercher parmi les réservistes le profil le plus adapté pour remplir la mission.</p></div>
+    </div>
+    <div class="jdc-tabs" role="tablist" aria-label="Profilage">
+      <button type="button" class="jdc-tab" role="tab" id="pft-search" data-pft="search" aria-selected="true" aria-controls="prof-search">Rechercher un profil</button>
+      <button type="button" class="jdc-tab" role="tab" id="pft-form" data-pft="form" aria-selected="false" aria-controls="r-pf-box">Répondants et intégration <span id="pft-n"></span></button>
+    </div>
+    <div id="prof-search" role="tabpanel" aria-labelledby="pft-search"></div>
+    <div id="r-pf-box" role="tabpanel" aria-labelledby="pft-form" hidden></div>
+  </div>
+</div><!-- /page-prof -->
 
 <!-- ===== Modale fiche du réserviste ===== -->
-<div class="modal-overlay" id="r-psmodal" hidden>
-  <div class="modal-column">
-    <div class="modal-dialog ps-dialog" role="dialog" aria-modal="true" aria-labelledby="r-psmodal-title">
-      <div class="modal-header">
-        <div style="min-width:0"><h2 class="modal-title" id="r-psmodal-title">Rechercher un profil</h2><p class="modal-sub">Profession, études, missions, langues, grade, affectation, type, âge, lieu</p></div>
-        <div class="modal-actions"><button class="round-btn" id="r-psmodal-close" type="button" aria-label="Fermer" title="Fermer">✕</button></div>
-      </div>
-      <div class="modal-body" id="r-psmodal-body"></div>
-    </div>
-  </div>
-</div>
 <div class="modal-overlay" id="r-modal" hidden>
   <div class="modal-column" id="r-modal-column">
     <div class="modal-stack" id="r-modal-stack">
@@ -3683,7 +3689,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.91.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 1.92.3</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -13254,7 +13260,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         out.push({ id: 'res:' + k[0] + ':doc', group: 'Réservistes · ' + k[2].toLowerCase(), type: 'doc', title: k[1], hint: 'Modèle HTML converti en PDF A4 par « Générer le contrat » (fenêtre de signature RO1) ; styles en ligne, images en base64 uniquement.', body: field('html'), vars: ctrVars,
           reset: reset(['html']), preview: function (sj, bd) { if (!rec) return { empty: none }; return { html: sanitizeHtml(fillTemplate(bd, item(), c, extra(k[0]))) }; } });
       });
-      [['inv', 'Invitation à répondre', 'Courriel ouvert par « Inviter à répondre » (volet Profilage de la page Réservistes) : un seul message, destinataires en copie cachée.'], ['rel', 'Relance', 'Courriel ouvert par « Relancer » (volet Profilage) : réservistes invités qui n’ont pas encore répondu, en copie cachée.']].forEach(function (k) {
+      [['inv', 'Invitation à répondre', 'Courriel ouvert par « Inviter à répondre » (page Profilage, menu Emploi) : un seul message, destinataires en copie cachée.'], ['rel', 'Relance', 'Courriel ouvert par « Relancer » (page Profilage) : réservistes invités qui n’ont pas encore répondu, en copie cachée.']].forEach(function (k) {
         function ctl(f) { return { read: function () { var v = normProf((state.draft || cfg()).profMail)[k[0]][f]; return v.trim() ? v : DEFAULT_PROF[k[0]][f]; },
           write: function (v) { var dr = state.draft; if (!dr) return; dr.profMail = normProf(dr.profMail); var nv = v === DEFAULT_PROF[k[0]][f] ? '' : v; if (dr.profMail[k[0]][f] !== nv) { dr.profMail[k[0]][f] = nv; setDirty(true); } } }; }
         function fillP(t) { return String(t || '').replace(/\{\{\s*LIEN_FORMULAIRE\s*\}\}/g, cfg().profForm || '(lien du formulaire à régler)').replace(/\{\{\s*DATE_DU_JOUR\s*\}\}/g, fmtDate(todaySec())); }
@@ -13311,6 +13317,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     profMail: profMailOf,
     count: function () { return state.records.length; }, // nombre de réservistes chargés (diagnostic du rapprochement « Déjà ESR »)
     fiche: ficheRes,
+    // Ouvre la fiche (fenêtre) du réserviste sur l'onglet demandé ; réserviste masqué par les filtres de la liste : ajouté en fin de liste pour la navigation.
+    open: function (rowId, tabKey, opener) {
+      var i = -1; state.view.forEach(function (r, k) { if (r.raw.id === rowId) i = k; });
+      if (i === -1) { var rec = state.records.filter(function (x) { return x.raw.id === rowId; })[0]; if (!rec) return false; state.view.push(rec); i = state.view.length - 1; }
+      if (tabKey) state.modal.tab = tabKey; openModal(i, opener); return true;
+    },
     openAdmin: function () { showView('admin'); },   // back office unifié (déclenché depuis la page Candidats)
     closeAdmin: function () { showView('list'); },
     save: function () { return saveRes(); },   // enregistrement global du back office
@@ -13349,7 +13361,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var seen = {}; return l.map(cap).filter(function (x) { var k = norm(x); if (seen[k]) return false; seen[k] = 1; return true; }); }
   function same(key, a, b) { if (!isList(key)) return norm(a) === norm(b); var x = lst(a).map(norm).sort().join('|'), y = lst(b).map(norm).sort().join('|'); return x === y; }
   function load() {
-    if (!IN_GRIST) { if (!DEMO.seeded) { DEMO.seeded = true; DEMO.rows = [{ id: 1, Recu_le: Date.now() / 1000 - 3 * 86400, Nigend: '2019-1120', Profession: 'Infirmière', Missions: ['L', 'Secrétariat', 'Instruction'], Langues: ['L', 'Anglais', 'Espagnol'], Niveau_etudes: 'Bac +3 (licence / BUT)', Domaine_etudes: 'Santé / médical / paramédical' },
+    if (!IN_GRIST) { if (!DEMO.seeded) { DEMO.seeded = true; DEMO.rows = [{ id: 1, Recu_le: Date.now() / 1000 - 3 * 86400, Nigend: '002019-1120', Profession: 'Infirmière', Missions: ['L', 'Secrétariat', 'Instruction'], Langues: ['L', 'Anglais', 'Espagnol'], Niveau_etudes: 'Bac +3 (licence / BUT)', Domaine_etudes: 'Santé / médical / paramédical' },
       { id: 2, Recu_le: Date.now() / 1000 - 86400, Nigend: '2022 0555', Profession: 'Développeur', Missions: ['L', 'Ecoutes téléphoniques', 'Enquêtes judiciaires'], Langues: 'anglais, russe', Autres_langues: 'japonais, Anglais', Niveau_etudes: 'Bac +5 (master / ingénieur)', Domaine_etudes: 'Informatique / numérique / cyber' }, { id: 3, Recu_le: Date.now() / 1000 - 2 * 3600, Nigend: '2099-1234', Profession: 'Électricien', Niveau_etudes: 'CAP / BEP', Domaine_etudes: 'Bâtiment / travaux publics' }]; }
       F = { table: FT, cols: DEMO.cols.map(function (c) { return { id: c[0], label: c[2] || c[0], type: c[1] }; }), rows: DEMO.rows }; return Promise.resolve();
     }
@@ -13375,8 +13387,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function matchOf(r) {
     var A = R(), forced = fval(r, 'Etat_integration').match(/#(\d+)/); var people = A.rows();
     if (forced) return people.filter(function (p) { return p.id === Number(forced[1]); })[0] || null;
-    var v = loose(fval(r, 'Nigend')); if (!v) return null; // le réserviste s'identifie par son Nigend (tirets et espaces ignorés)
-    var m = people.filter(function (p) { return loose(A.cell(p.raw, 'Nigend')) === v; }); return m.length === 1 ? m[0] : null;
+    var nig = function (x) { return loose(x).replace(/^0+(?=.)/, ''); }; // le réserviste s'identifie par son Nigend (tirets, espaces et zéros de tête ignorés)
+    var v = nig(fval(r, 'Nigend')); if (!v) return null;
+    var m = people.filter(function (p) { return nig(A.cell(p.raw, 'Nigend')) === v; }); return m.length === 1 ? m[0] : null;
   }
   function done(r) { return /^(Intégrée|Ignorée)/.test(fval(r, 'Etat_integration')); }
   function diffOf(r, p) { // { fill: [[clé, valeur]], diff: [[clé, actuelle, nouvelle]] }
@@ -13439,7 +13452,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function render() {
     var host = $('r-pf-box'); if (!host || !R()) return;
     var pend = F ? rowsOf(F).filter(function (r) { return !done(r); }) : [], url = formUrl(), A = R(), people = A.rows();
-    if (!F) { host.innerHTML = '<details class="rpf-box"' + (OPEN ? ' open' : '') + '><summary>Profilage</summary><div class="rpf-body"><p class="hint">La table <code>' + FT + '</code> recevra les réponses du formulaire externe (Grist : vue Formulaire sur cette table). Les réponses complètent la profession, les études, les missions déjà occupées et les langues de la fiche du réserviste.</p><p><button type="button" class="btn sm" data-rpf="create">Créer la table du formulaire</button></p></div></details>'; return; }
+    if (!F) { host.innerHTML = '<div class="rpf-box"><div class="rpf-body"><p class="hint">La table <code>' + FT + '</code> recevra les réponses du formulaire externe (Grist : vue Formulaire sur cette table). Les réponses complètent la profession, les études, les missions déjà occupées et les langues de la fiche du réserviste.</p><p><button type="button" class="btn sm" data-rpf="create">Créer la table du formulaire</button></p></div></div>'; return; }
+    if ($('pft-n')) $('pft-n').innerHTML = pend.length ? '<span class="tag orange">' + pend.length + '</span>' : '';
     var L = follow(), cnt = {}; L.forEach(function (x) { cnt[x.st] = (cnt[x.st] || 0) + 1; }); var nInv = targets('inv', L).length, nRel = targets('rel', L).length, rep = cnt.rep || 0;
     var rows = pend.map(function (r) {
       var p = matchOf(r), d = p ? diffOf(r, p) : null, who = fval(r, 'Nigend') ? 'Nigend ' + fval(r, 'Nigend') : '(Nigend non renseigné)';
@@ -13452,10 +13466,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var FL = [['all', 'Tous', L.length], ['wait', 'Invités sans réponse', (cnt.inv || 0) + (cnt.rel || 0)], ['non', 'Pas encore invités', cnt.non || 0], ['rep', 'Ont répondu', rep], ['ok', 'Fiche déjà renseignée', cnt.ok || 0]];
     var shown = L.filter(function (x) { return FLT === 'all' || (FLT === 'wait' ? x.st === 'inv' || x.st === 'rel' : x.st === FLT); });
     var trk = shown.map(function (x) { var s = ST[x.st], det = x.st === 'rep' ? (typeof x.resp === 'number' ? 'le ' + fd(x.resp) : '') : x.st === 'rel' ? x.rel.length + ' fois, dernière le ' + fd(x.rel[x.rel.length - 1]) + (x.inv ? ' · invité le ' + fd(x.inv) : '') : x.st === 'inv' ? 'le ' + fd(x.inv) : '';
-      return '<tr><th scope="row">' + esc(x.p.label) + '<br><span class="hint" style="display:inline">' + (x.mail ? esc(x.mail) : '<span style="color:var(--error, #ce0500)">sans adresse mail valide</span>') + '</span></th><td><span class="tag ' + s[1] + '">' + s[0] + '</span>' + (det ? ' <span class="hint" style="display:inline">' + esc(det) + '</span>' : '') + '</td><td>' + x.n + ' / ' + FIELDS.length + '</td></tr>'; }).join('');
-    host.innerHTML = '<details class="rpf-box"' + (OPEN ? ' open' : '') + '><summary>Profilage · ' + rep + ' répondant' + (rep > 1 ? 's' : '') + ' sur ' + L.length + (pend.length ? ' · <span class="tag orange">' + pend.length + ' réponse' + (pend.length > 1 ? 's' : '') + ' à traiter</span>' : '') + '</summary><div class="rpf-body">' +
+      return '<tr><th scope="row"><button type="button" class="rpf-name" data-rpfo="' + x.p.id + '" title="Ouvrir la fiche (Qualifications)">' + esc(x.p.label) + '</button><br><span class="hint" style="display:inline">' + (x.mail ? esc(x.mail) : '<span style="color:var(--error, #ce0500)">sans adresse mail valide</span>') + '</span></th><td><span class="tag ' + s[1] + '">' + s[0] + '</span>' + (det ? ' <span class="hint" style="display:inline">' + esc(det) + '</span>' : '') + '</td><td>' + x.n + ' / ' + FIELDS.length + '</td></tr>'; }).join('');
+    host.innerHTML = '<div class="rpf-box"><p class="rpf-sum"><strong>' + rep + ' répondant' + (rep > 1 ? 's' : '') + ' sur ' + L.length + '</strong> réservistes' + (pend.length ? ' · <span class="tag orange">' + pend.length + ' réponse' + (pend.length > 1 ? 's' : '') + ' à traiter</span>' : '') + '</p><div class="rpf-body">' +
       (MSG ? '<div class="doc-alert error" role="alert"><p>' + esc(MSG) + '</p></div>' : '') + (OK ? '<div class="doc-alert success" role="status"><p>' + esc(OK) + '</p></div>' : '') +
-      '<div class="rpf-link">' + (url ? '<span id="rpf-qr" class="rpf-qr" aria-hidden="true"></span><p><a href="' + esc(url) + '" target="_blank" rel="noopener">Lien du formulaire</a> <button type="button" class="btn secondary sm" data-rpf="copy">Copier le lien</button></p>' : '<p class="hint">Lien du formulaire : réglez-le dans le back office (Réservistes, « Formulaire externe »).</p>') + '</div>' +
+      '<div class="rpf-link">' + (url ? '<span id="rpf-qr" class="rpf-qr" aria-hidden="true"></span><p><a href="' + esc(url) + '" target="_blank" rel="noopener">Lien du formulaire</a> <button type="button" class="btn secondary sm" data-rpf="copy">Copier le lien</button></p>' : '<p class="hint">Lien du formulaire : réglez-le dans le back office (Réservistes RO1/RS/RC, options avancées, « Formulaire externe »).</p>') + '</div>' +
       '<h3 class="rpf-h">Suivi des répondants</h3>' +
       '<div class="rpf-bar"><div class="rpf-qf" role="group" aria-label="Filtrer le suivi">' + FL.map(function (f) { return '<button type="button" class="rpf-pill c-' + f[0] + '" data-rpff="' + f[0] + '" aria-pressed="' + (FLT === f[0]) + '">' + f[1] + ' <span class="rpf-n">' + f[2] + '</span></button>'; }).join('') + '</div>' +
       '<div class="rpf-acts"><button type="button" class="btn sm ico-mail" data-rpf="inv"' + (nInv ? '' : ' disabled') + ' title="Réservistes jamais invités, sans réponse et dont la fiche est incomplète">' + (SEND && SEND.kind === 'inv' ? 'Lot suivant (' + (SEND.i + 1) + '/' + SEND.lots.length + ')' : 'Inviter à répondre (' + nInv + ')') + '</button>' +
@@ -13465,12 +13479,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       '<h3 class="rpf-h">Réponses à traiter</h3>' +
       '<p class="hint">Les champs vides de la fiche sont complétés automatiquement ; une valeur différente de celle de la fiche est « à valider » ; une réponse dont le Nigend ne correspond à aucun réserviste se rapproche à la main.</p>' +
       (pend.length ? '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Réponses à traiter</caption><thead><tr><th scope="col">Réponse</th><th scope="col">Valeurs</th><th scope="col">Réserviste</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="hint">Aucune réponse à traiter.</p>') +
-      '</div></details>';
+      '</div></div>';
     if (url) qr(url);
   }
   var QRL = null;
   function qr(url) { var el = $('rpf-qr'); if (!el) return; (window.qrcode ? Promise.resolve() : (QRL = QRL || new Promise(function (res, rej) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); }))).then(function () { var q = window.qrcode(0, 'M'); q.addData(url); q.make(); el.innerHTML = q.createSvgTag({ cellSize: 3, margin: 2, scalable: true }); }, function () {}); }
-  document.addEventListener('click', function (e) { var f = e.target.closest && e.target.closest('[data-rpff]'); if (f) { FLT = f.getAttribute('data-rpff'); render(); } });
+  document.addEventListener('click', function (e) { var o = e.target.closest && e.target.closest('[data-rpfo]'); if (o) { R().open(Number(o.getAttribute('data-rpfo')), 'qual', o); return; } var f = e.target.closest && e.target.closest('[data-rpff]'); if (f) { FLT = f.getAttribute('data-rpff'); render(); } });
   document.addEventListener('toggle', function (e) { if (e.target && e.target.closest && e.target.closest('#r-pf-box') && e.target.tagName === 'DETAILS') OPEN = e.target.open; }, true);
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-rpf]'); if (!b) return; var a = b.getAttribute('data-rpf'), id = Number(b.getAttribute('data-id')), r = F && rowsOf(F).filter(function (x) { return x.id === id; })[0];
@@ -13500,20 +13514,21 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (PS.lieu && norm(x.lieu).indexOf(norm(PS.lieu)) === -1) return false;
     return true;
   }
-  function openSearch() { var ov = $('r-psmodal'); ov.hidden = false; document.body.style.overflow = 'hidden'; renderSearch(); requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('ps-q'); if (f) f.focus(); }); }); }
-  function closeSearch() { var ov = $('r-psmodal'); if (ov.hidden) return; ov.classList.remove('is-open'); if (!document.querySelector('.modal-overlay.is-open')) document.body.style.overflow = ''; setTimeout(function () { ov.hidden = true; }, 200); }
+  var PTAB = 'search';
+  function profTab(t) { PTAB = t; ['search', 'form'].forEach(function (k) { var b = $('pft-' + k); if (b) b.setAttribute('aria-selected', String(k === t)); }); if ($('prof-search')) $('prof-search').hidden = t !== 'search'; if ($('r-pf-box')) $('r-pf-box').hidden = t !== 'form'; if (t === 'search') renderSearch(); else render(); }
+  function openSearch() { if (window.__showPage) window.__showPage('prof'); profTab('search'); var f = $('ps-q'); if (f) f.focus(); }
   function chips(key, vals, lab) { var s = PS[key]; return '<fieldset class="ps-fs"><legend>' + lab + '</legend><div class="pg-chips pg-tags">' + (vals.length ? vals.map(function (v, i) { var id = 'ps-' + key + i; return '<label for="' + id + '"><input type="checkbox" id="' + id + '" data-psk="' + key + '" value="' + esc(v) + '"' + (s.indexOf(v) !== -1 ? ' checked' : '') + '> ' + esc(v) + '</label>'; }).join('') : '<span class="hint">Aucune valeur</span>') + '</div></fieldset>'; }
   function valsOf(all, k, base) { var m = {}; (base || []).forEach(function (v) { m[v] = 1; }); all.forEach(function (x) { if (x[k]) m[x[k]] = 1; }); return Object.keys(m).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); }); }
   function valsOfL(all, k) { var m = {}; all.forEach(function (x) { x[k].forEach(function (v) { m[v] = 1; }); }); return Object.keys(m).sort(); }
   function renderSearch() {
-    var all = profiles(), res = all.filter(pass), body = $('r-psmodal-body');
+    var body = $('prof-search'); if (!body || !R() || !R().rows) return; var all = profiles(), res = all.filter(pass);
     var keep = document.activeElement && body.contains(document.activeElement) ? document.activeElement.id : null, pos = keep && document.activeElement.selectionStart;
     body.innerHTML = '<div class="ps-grid"><div class="ps-crit">' +
       '<div class="cf-field"><label for="ps-q">Profession, domaine, mission ou langue (mots-clés)</label><input class="input" type="search" id="ps-q" value="' + esc(PS.q) + '" placeholder="ex. infirmier, informatique, électricien…" autocomplete="off"></div>' +
       '<div class="cf-field"><label for="ps-niv">Niveau d’études minimum</label><select class="select" id="ps-niv"><option value="">Indifférent</option>' + NIVEAUX.map(function (n, i) { return '<option value="' + i + '"' + (String(PS.niv) === String(i) ? ' selected' : '') + '>' + esc(n) + ' ou plus</option>'; }).join('') + '</select></div>' +
       chips('mis', MISSIONS.concat(valsOfL(all, 'mis').filter(function (v) { return MISSIONS.indexOf(v) === -1; })), 'Missions déjà occupées en gendarmerie (au moins une)') + chips('lang', LANGUES.concat(valsOfL(all, 'lang').filter(function (v) { return LANGUES.map(norm).indexOf(norm(v)) === -1; })), 'Langues parlées (toutes celles cochées)') + chips('dom', valsOf(all, 'dom', DOMAINES), 'Domaine d’études') + chips('grade', valsOf(all, 'grade'), 'Grade') + chips('type', valsOf(all, 'type'), 'Type de réserviste') + chips('aff', valsOf(all, 'aff'), 'Affectation') + chips('corps', valsOf(all, 'corps'), 'Corps') + chips('qual', valsOf(all, 'qual'), 'Qualité judiciaire') +
       '<div class="ins-dform"><div class="cf-field"><label for="ps-amin">Âge minimum</label><input class="input" type="number" min="16" id="ps-amin" value="' + esc(PS.ageMin) + '"></div><div class="cf-field"><label for="ps-amax">Âge maximum</label><input class="input" type="number" min="16" id="ps-amax" value="' + esc(PS.ageMax) + '"></div></div>' +
-      '<div class="cf-field"><label for="ps-lieu">Ville ou département</label><input class="input" id="ps-lieu" value="' + esc(PS.lieu) + '" placeholder="ex. Annecy, 74"></div>' +
+      '<div class="cf-field"><label for="ps-lieu">Ville ou département</label><input class="input" id="ps-lieu" value="' + esc(PS.lieu) + '" placeholder="ex. Maisons-Alfort, 94"></div>' +
       '<p><button type="button" class="btn secondary sm ico-refresh" data-ps="reset">Réinitialiser les critères</button></p></div>' +
       '<div class="ps-res"><div class="pg-bar" style="align-items:center"><h3 style="margin:0;flex:1" aria-live="polite">' + res.length + ' réserviste' + (res.length > 1 ? 's' : '') + ' sur ' + all.length + '</h3><button type="button" class="btn secondary sm ico-download" data-ps="csv"' + (res.length ? '' : ' disabled') + '>Exporter (.csv)</button></div>' +
       '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Réservistes correspondant au profil</caption><thead><tr><th scope="col">Réserviste</th><th scope="col">Profession, missions, langues</th><th scope="col">Études</th><th scope="col">Affectation</th></tr></thead><tbody>' +
@@ -13528,15 +13543,15 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   document.addEventListener('change', function (e) { if (e.target.id === 'ps-niv') { PS.niv = e.target.value; renderSearch(); $('ps-niv').focus(); return; } var k = e.target.getAttribute && e.target.getAttribute('data-psk'); if (!k) return; var l = PS[k], v = e.target.value, i = l.indexOf(v); if (e.target.checked && i === -1) l.push(v); if (!e.target.checked && i !== -1) l.splice(i, 1); var id = e.target.id; renderSearch(); if ($(id)) $(id).focus(); });
   document.addEventListener('click', function (e) {
     if (e.target.closest && e.target.closest('#r-btn-profile')) return openSearch();
-    if (e.target.id === 'r-psmodal-close' || e.target.id === 'r-psmodal') return closeSearch();
+    var tb = e.target.closest && e.target.closest('[data-pft]'); if (tb) return profTab(tb.getAttribute('data-pft'));
     var b = e.target.closest && e.target.closest('[data-ps]'); if (b) { if (b.getAttribute('data-ps') === 'reset') { PS = { q: '', niv: '', mis: [], lang: [], dom: [], grade: [], corps: [], aff: [], type: [], qual: [], ageMin: '', ageMax: '', lieu: '' }; renderSearch(); } else csv(profiles().filter(pass)); return; }
-    var tr = e.target.closest && e.target.closest('#r-psmodal [data-psid]'); if (tr) { closeSearch(); setTimeout(function () { R().fiche(Number(tr.getAttribute('data-psid'))); }, 220); }
+    var tr = e.target.closest && e.target.closest('#prof-search [data-psid]'); if (tr) R().open(Number(tr.getAttribute('data-psid')), 'qual', tr);
   });
-  document.addEventListener('keydown', function (e) { var ov = $('r-psmodal'); if (!ov || ov.hidden) return; if (e.key === 'Escape') { e.preventDefault(); closeSearch(); } else if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-psid]')) { e.preventDefault(); e.target.click(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches && e.target.matches('#prof-search [data-psid]')) { e.preventDefault(); e.target.click(); } });
   function boot() { if (!R() || !R().rows) return; load().then(render).then(function () { return integrate(); }, function () {}); }
-  window.RPF = { refresh: boot, render: render, follow: follow, send: sendMail, integrate: function () { return load().then(integrate); }, levels: NIVEAUX, domains: DOMAINES, search: function () { return profiles().filter(pass); }, set: function (o) { Object.keys(o).forEach(function (k) { PS[k] = o[k]; }); }, open: openSearch }; // (tests)
+  window.RPF = { refresh: function () { renderSearch(); boot(); }, tab: profTab, render: render, follow: follow, send: sendMail, integrate: function () { return load().then(integrate); }, levels: NIVEAUX, domains: DOMAINES, search: function () { return profiles().filter(pass); }, set: function (o) { Object.keys(o).forEach(function (k) { PS[k] = o[k]; }); }, open: openSearch }; // (tests)
   setTimeout(boot, 1500);
-  document.addEventListener('servir:res-loaded', function () { if (F) render(); else boot(); });
+  document.addEventListener('servir:res-loaded', function () { renderSearch(); if (F) render(); else boot(); });
 })();
 </script>
 <script>
@@ -16505,14 +16520,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
 })();
 // Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
-  var pages = { ins: 'page-ins', welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo', jdc: 'page-jdc', 'emp-stat': 'page-emp-stat', pos: 'page-pos' };
+  var pages = { ins: 'page-ins', welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', prof: 'page-prof', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo', jdc: 'page-jdc', 'emp-stat': 'page-emp-stat', pos: 'page-pos' };
   // Anciennes clés (liens #go:, étapes du tutoriel, page mémorisée) : « Réservations » est réparti entre les menus Réservistes (VMP) et Candidats (VEMI, tests psy).
   // Fraîcheur des données par page : relues au plus toutes les 20 s à l'affichage (et après toute écriture : window.__dataDirty).
   var fresh = {};
   function stale(k) { var t = Date.now(); if (fresh[k] && t - fresh[k] < 20000) return false; fresh[k] = t; return true; }
   window.__dataDirty = function () { fresh = {}; };
   var ALIAS = { 'jdc-stat': 'emp-stat', 'pos-stat': 'emp-stat', rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' };
-  var titles = { ins: 'Instruction', welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office', jdc: 'Journée défense et citoyenneté (JDC)', 'emp-stat': 'Statistiques Emploi', pos: 'Mission Poséidon' };
+  var titles = { ins: 'Instruction', welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', prof: 'Profilage', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office', jdc: 'Journée défense et citoyenneté (JDC)', 'emp-stat': 'Statistiques Emploi', pos: 'Mission Poséidon' };
   // Page affichée : bouton du menu « courant », titre du document, page retrouvée à la réouverture (aussi appelée au changement d'onglet de Réservations).
   function mark(p) {
     window.__page = p;
@@ -16543,6 +16558,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     Object.keys(pages).forEach(function (k) { var el = document.getElementById(pages[k]); if (el) el.hidden = pages[k] !== pages[p]; });
     mark(p);
     if (p === 'res' && window.RES && stale('res')) window.RES.refresh();
+    if (p === 'prof' && window.RES) { if (stale('res')) window.RES.refresh(); if (window.RPF) window.RPF.refresh(); } // page Profilage : réservistes et réponses du formulaire relus
     if ((p === 'res-ren' || p === 'res-ave') && window.RES && stale(p)) window.RES.refreshView(p === 'res-ren' ? 'ren' : 'ave');
     if (p === 'res-stat' && window.RES && stale(p)) window.RES.refreshStats();
     if (p === 'pmg-stat' && window.RES && stale(p)) window.RES.refreshCandStats();
@@ -24146,15 +24162,15 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       window.__showPage('res');
       return wait(2500).then(function () { return window.RPF.integrate(); }).then(function () {
         var b = $('r-pf-box').textContent, L = window.RES.rows(), g = L.filter(function (x) { return /GARNIER/.test(x.label); })[0], pe = L.filter(function (x) { return /PERRIN/.test(x.label); })[0];
-        check('Réponse rapprochée par le Nigend (tirets et espaces ignorés) : champs vides de la fiche complétés', window.RES.cell(g.raw, 'Profession') === 'Développeur' && /Bac \+5/.test(window.RES.cell(g.raw, 'Niveau d’études')));
-        check('Valeur différente de la fiche : « à valider », champs vides complétés', /Baccalauréat » → « Bac \+3/.test(b) && window.RES.cell(pe.raw, 'Profession') === 'Infirmière', b.slice(0, 160));
+        check('Réponse rapprochée par le Nigend (tirets, espaces et zéros de tête ignorés) : champs vides de la fiche complétés', window.RES.cell(g.raw, 'Profession') === 'Développeur' && /Bac \+5/.test(window.RES.cell(g.raw, 'Niveau d’études')));
+        check('Nigend saisi avec des zéros devant : rapproché ; valeur différente de la fiche « à valider », champs vides complétés', /Baccalauréat » → « Bac \+3/.test(b) && window.RES.cell(pe.raw, 'Profession') === 'Infirmière', b.slice(0, 160));
         check('Nigend inconnu : rapprochement manuel proposé', !!document.querySelector('#r-pf-box [data-rpfm]'));
         document.querySelector('#r-pf-box [data-rpf="apply"]').click(); return wait(600);
       }).then(function () {
         var pe = window.RES.rows().filter(function (x) { return /PERRIN/.test(x.label); })[0]; check('« Appliquer » : la fiche prend la valeur du formulaire', /Bac \+3/.test(window.RES.cell(pe.raw, 'Niveau d’études')));
         $('r-btn-profile').click(); return wait(400);
       }).then(function () {
-        check('Recherche par profil : modale et critères', !$('r-psmodal').hidden && !!$('ps-q') && !!$('ps-niv') && document.querySelectorAll('#r-psmodal [data-psk="grade"]').length > 2);
+        check('Page Profilage : « Rechercher un profil » en onglet principal (bouton de la page Réservistes)', window.__page === 'prof' && !$('prof-search').hidden && $('r-pf-box').hidden && !!$('ps-q') && !!$('ps-niv') && document.querySelectorAll('#prof-search [data-psk="grade"]').length > 2);
         window.RPF.set({ q: 'informatique' }); var a = window.RPF.search().map(function (x) { return x.label; });
         window.RPF.set({ q: '', niv: '5' }); var n = window.RPF.search().length;
         window.RPF.set({ niv: '', grade: ['ADJ'] }); var gr = window.RPF.search().map(function (x) { return x.label; });
@@ -24163,19 +24179,23 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
         check('Mots-clés (domaine), niveau minimum, grade, affectation et âge', a.join() === 'GARNIER Lucas' && n === 2 && gr.join() === 'ROBIN Sophie' && af.join() === 'BLANC Théo', [a, n, gr, af].join(' | '));
         window.RPF.set({ mis: ['Ecoutes téléphoniques', 'Logistique'] }); var mi = window.RPF.search().map(function (x) { return x.label; }).sort(); window.RPF.set({ mis: [] });
         var g = window.RES.rows().filter(function (x) { return /GARNIER/.test(x.label); })[0];
-        check('Missions déjà occupées : intégrées depuis le formulaire et cherchables (au moins une)', /Ecoutes téléphoniques/.test(window.RES.cell(g.raw, 'Missions déjà occupées en gendarmerie')) && mi.join() === 'GARNIER Lucas,ROBIN Sophie' && document.querySelectorAll('#r-psmodal [data-psk="mis"]').length === 16, mi.join());
+        check('Missions déjà occupées : intégrées depuis le formulaire et cherchables (au moins une)', /Ecoutes téléphoniques/.test(window.RES.cell(g.raw, 'Missions déjà occupées en gendarmerie')) && mi.join() === 'GARNIER Lucas,ROBIN Sophie' && document.querySelectorAll('#prof-search [data-psk="mis"]').length === 16, mi.join());
         var F0 = window.RPF.follow(), st = function (re) { return (F0.filter(function (x) { return re.test(x.p.label); })[0] || {}).st; };
-        check('Profilage : suivi des répondants (a répondu, déjà renseignée, invité, pas encore invité)', st(/GARNIER/) === 'rep' && st(/LEFÈVRE/) === 'ok' && st(/ROBIN/) === 'inv' && st(/BLANC/) === 'non' && /^Profilage · 2 répondants sur 5/.test(document.querySelector('#r-pf-box summary').textContent), F0.map(function (x) { return x.p.label + ':' + x.st; }).join(' '));
+        check('Profilage : suivi des répondants (a répondu, déjà renseignée, invité, pas encore invité)', st(/GARNIER/) === 'rep' && st(/LEFÈVRE/) === 'ok' && st(/ROBIN/) === 'inv' && st(/BLANC/) === 'non' && /^2 répondants sur 5/.test(document.querySelector('#r-pf-box .rpf-sum').textContent), F0.map(function (x) { return x.p.label + ':' + x.st; }).join(' '));
         window.RPF.set({ lang: ['Anglais'] }); var l1 = window.RPF.search().length; window.RPF.set({ lang: ['Anglais', 'Russe'] }); var l2 = window.RPF.search().map(function (x) { return x.label; }); window.RPF.set({ lang: [] });
         check('Langues parlées : liste, texte séparé par des virgules et « Autres langues » fusionnés sans doublon, recherche sur toutes les langues cochées', l1 === 4 && l2.join() === 'GARNIER Lucas' && window.RES.cell(g.raw, 'Langues parlées') === 'Anglais, Russe, Japonais', l1 + ' | ' + l2.join() + ' | ' + window.RES.cell(g.raw, 'Langues parlées'));
-        $('r-psmodal-close').click(); return wait(300);
+        var tr = document.querySelector('#prof-search [data-psid]'); tr.click(); check('Résultat cliqué : fiche ouverte sur Qualifications', !$('r-modal').hidden && !!document.querySelector('#r-modal [data-tab="qual"][aria-selected="true"]')); $('r-modal-close').click(); window.RPF.tab('form'); return wait(300);
       }).then(function () {
         var o0 = JSON.parse(JSON.stringify(window.__getOpts() || {})), o = JSON.parse(JSON.stringify(o0)); o.r = Object.assign({}, o.r || {}, { profForm: 'https://grist.example/forms/abc' }); window.__pushOpts(o);
         var sent = []; window.RPF_MAIL = function (m, sj, bd) { sent.push({ m: m, sj: sj, bd: bd }); };
         return window.RPF.send('inv').then(function () { return window.RPF.send('rel'); }).then(function () {
           var F1 = window.RPF.follow(), bl = F1.filter(function (x) { return /BLANC/.test(x.p.label); })[0], rb = F1.filter(function (x) { return /ROBIN/.test(x.p.label); })[0];
           check('Inviter sans adresse valide : signalé, rien d’envoyé ; relancer : un message en Cci avec le lien, date enregistrée', sent.length === 1 && sent[0].m.join() === 'sophie.robin@example.fr' && /grist\.example\/forms\/abc/.test(sent[0].bd) && bl.st === 'non' && rb.st === 'rel' && rb.rel.length === 1, JSON.stringify(sent.map(function (x) { return x.m; })) + ' ' + bl.st + ' ' + rb.st);
-          check('Volet « Profilage » : filtres et boutons Inviter / Relancer', !!document.querySelector('#r-pf-box [data-rpf="inv"]') && !!document.querySelector('#r-pf-box [data-rpf="rel"]') && document.querySelectorAll('#r-pf-box [data-rpff]').length === 5);
+          var nb = document.querySelector('#r-pf-box [data-rpfo]'); if (nb) nb.click();
+          check('Profilage : clic sur le nom, fiche ouverte sur l’onglet Qualifications', !$('r-modal').hidden && !!document.querySelector('#r-modal [data-tab="qual"][aria-selected="true"]'), document.querySelector('#r-modal [aria-selected="true"]') ? document.querySelector('#r-modal [aria-selected="true"]').textContent : 'fermée');
+          $('r-modal-close').click();
+          check('Page Profilage (menu Emploi, lien principal ; JDC et Poséidon en liens secondaires)', !!document.querySelector('#menu-emp .nav-lead [data-page="prof"]') && !!document.querySelector('#menu-emp .nav-rows [data-page="jdc"]') && !!document.querySelector('#menu-emp .nav-rows [data-page="pos"]') && $('r-pf-box').closest('#page-prof') !== null);
+          check('Page Profilage : filtres et boutons Inviter / Relancer', !!document.querySelector('#r-pf-box [data-rpf="inv"]') && !!document.querySelector('#r-pf-box [data-rpf="rel"]') && document.querySelectorAll('#r-pf-box [data-rpff]').length === 5);
           window.RPF_MAIL = null; var o2 = JSON.parse(JSON.stringify(window.__getOpts() || {})); o2.r = o0.r; window.__pushOpts(o2);
         });
       });
