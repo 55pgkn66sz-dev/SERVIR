@@ -841,6 +841,9 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ps-section { margin: 0 0 1.6rem; } .ps-syn { margin: 0 0 1.5rem; }
   .ps-portrait { margin: .4rem 0 1rem; padding: .7rem 1rem; border-left: 4px solid var(--st-blue); background: var(--st-tint); border-radius: 0 .4rem .4rem 0; }
 
+  .ac-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; margin: 0 0 1rem; } .ac-bar__btns { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .ac-prop { border: 1px solid var(--border-default-grey); border-radius: .5rem; padding: 1rem 1.25rem; margin: 0 0 1.25rem; background: var(--bg); }
+  .ac-prop select.select { min-width: 12rem; }
   .ev-sec { margin: 0 0 1.5rem; } .ev-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1.5rem; }
   .ev-donut { display: flex; align-items: center; gap: 1rem; } .ev-leg { list-style: none; margin: 0; padding: 0; font-size: .875rem; } .ev-leg span { display: inline-block; width: .75rem; height: .75rem; border-radius: 2px; margin-right: .4rem; vertical-align: middle; }
   .ev-bars { display: grid; gap: .4rem; } .ev-bar { display: grid; grid-template-columns: 8rem 1fr 2rem; align-items: center; gap: .5rem; font-size: .875rem; } .ev-bar__t { height: .8rem; background: #eceaf0; border-radius: 999px; overflow: hidden; } .ev-bar__t i { display: block; height: 100%; background: #000091; }
@@ -853,6 +856,9 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .pg-star { border: 0; background: none; cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 0 .15rem; color: #b34000; }
   .pg-star[aria-pressed="false"] { color: var(--muted, #888); }
   .pg-star:focus-visible { outline: 2px solid #000091; }
+  .pg-star:hover, .pg-star:active, .pg-star:focus { background: none !important; background-color: transparent !important; box-shadow: none; } /* pas de pavé clair au survol (style des boutons DSFR) */
+  .pg-star:hover { transform: scale(1.25); } .pg-star { transition: transform .12s; border-radius: 50%; }
+  .pg-tags > .pg-cad:has(input:checked) .pg-star[aria-pressed="false"]:hover { color: #fff; } .pg-star[aria-pressed="false"]:hover { color: #b34000; }
   .ins-frm-box { border: 1px solid var(--border-default-grey, #ddd); border-radius: 6px; margin: 0 0 1rem; background: var(--bg, #fff); }
   .ins-frm-box > summary { cursor: pointer; padding: .6rem 1rem; font-weight: 700; display: flex; align-items: center; gap: .5rem; }
   .ins-frm-box .ins-frm-in { padding: 0 1rem 1rem; }
@@ -2630,6 +2636,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     <button type="button" class="ins-tab" role="tab" id="ins-tab-cer" data-ins-tab="cer" aria-selected="false" aria-controls="ins-panel-cer">Cérémonie <span class="qf-n" id="ins-n-cer"></span></button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-doc" data-ins-tab="doc" aria-selected="false" aria-controls="ins-panel-doc">Documents</button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-res" data-ins-tab="res" aria-selected="false" aria-controls="ins-panel-res">Ressources <span class="qf-n" id="ins-n-res"></span></button>
+    <button type="button" class="ins-tab" role="tab" id="ins-tab-acts" data-ins-tab="acts" aria-selected="false" aria-controls="ins-panel-acts">Activités et cours</button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-eval" data-ins-tab="eval" aria-selected="false" aria-controls="ins-panel-eval">Évaluations</button>
     <button type="button" class="ins-tab" role="tab" id="ins-tab-stat" data-ins-tab="stat" aria-selected="false" aria-controls="ins-panel-stat">Statistiques</button>
   </div>
@@ -2707,6 +2714,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     </div>
     <div id="rep-body"></div>
   </div>
+  <div id="ins-panel-acts" role="tabpanel" aria-labelledby="ins-tab-acts" hidden><div id="acts-body"></div></div>
   <div id="ins-panel-eval" role="tabpanel" aria-labelledby="ins-tab-eval" hidden><div id="eval-body"></div></div>
   <div id="ins-panel-stat" role="tabpanel" aria-labelledby="ins-tab-stat" hidden><div id="stat-body"></div></div>
   <div id="ins-panel-doc" role="tabpanel" aria-labelledby="ins-tab-doc" hidden>
@@ -17057,7 +17065,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   window.__insMenuSync = insMenuSync;
   insMenuSync();
   // Lien → onglet de la page Instruction, puis vue (calque des stagiaires, vue des ressources, liste des activités)
-  var INS_GO = { prog: ['prog'], acts: ['prog', '#ins-panel-prog [data-pg="acts"]'], rep: ['rep'], cer: ['cer'], stg: ['stg', '#ins-layers [data-layer="list"]'], inc: ['stg', '#ins-layers [data-layer="inc"]'], etu: ['stg', '#ins-layers [data-layer="etu"]'],
+  var INS_GO = { prog: ['prog'], acts: ['acts'], rep: ['rep'], cer: ['cer'], stg: ['stg', '#ins-layers [data-layer="list"]'], inc: ['stg', '#ins-layers [data-layer="inc"]'], etu: ['stg', '#ins-layers [data-layer="etu"]'],
     cad: ['cad'], doc: ['doc'], eval: ['eval'], stat: ['stat'], heb: ['res', '#rs-views [data-rsv="heb"]'], veh: ['res', '#rs-views [data-rsv="veh"]'], mat: ['res', '#rs-views [data-rsv="mat"]'], rat: ['res', '#rs-views [data-rsv="rat"]'], cso: ['res', '#rs-views [data-rsv="cso"]'] };
   function insOpen(k) { // onglet et vue de la page demandée ; titre de la page
     var d = INS_GO[k], h = document.getElementById('ins-h1'); if (h) h.textContent = titles['ins-' + k] || 'Instruction'; if (!d || !window.INS) return;
@@ -23241,7 +23249,16 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var c = PL.act && pc('act', 'Type'), l = c && c.choices && c.choices.length ? c.choices.slice() : PTYPES.slice(); if (cur && l.indexOf(cur) === -1) l.push(cur); return l; }
   function pc(k, key) { var d = PDEF[k].cols.filter(function (c) { return c[0] === key; })[0]; return colBy(PL[k], [key].concat(d && d[2] ? [d[2]] : [])); }
   function pv(k, r, key) { var c = pc(k, key); return c ? r[c.id] : null; }
-  function pf(k, o) { var f = {}; Object.keys(o).forEach(function (key) { var c = pc(k, key); if (c) f[c.id] = o[key]; }); return f; }
+  function fitCol(c, v) {
+    var t = String(c.fullType || c.type || '');
+    if (Array.isArray(v) && v[0] === 'L') { var items = v.slice(1);
+      if (/^(RefList|ChoiceList)/.test(t)) return v; if (/^Ref:/.test(t)) return Number(items[0]) || 0;
+      if (/^(Int|Numeric)$/.test(t)) return items.length ? Number(items[0]) || 0 : null;
+      return items.map(function (x) { return typeof x === 'number' ? cadName(cadById(x)) : String(x); }).join(', '); }
+    if (typeof v === 'boolean' && !/^Bool/.test(t)) return /^(Int|Numeric)$/.test(t) ? (v ? 1 : 0) : v ? 'Oui' : '';
+    return v;
+  }
+  function pf(k, o) { var f = {}; Object.keys(o).forEach(function (key) { var c = pc(k, key); if (c && !c.formula) f[c.id] = fitCol(c, o[key]); }); return f; }
   function inPmg(k, r) { var c = pc(k, 'PMG'); return !c || !pmg() || norm(r[c.id]) === norm(pmg()); }
   function lst(v) { return Array.isArray(v) ? v.slice(v[0] === 'L' ? 1 : 0) : v == null || v === '' ? [] : String(v).split(/\s*,\s*/).filter(Boolean); }
   function cadById(id) { var r = C.rows.filter(function (x) { return x.id === Number(id); })[0]; return r ? cad(r) : null; }
@@ -24772,7 +24789,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
   // Choix des cadres avec l'étoile du cadre principal (comme dans Gestion PMG) : la liste enregistrée commence par le cadre principal.
   // Choix des cadres (comme dans Gestion PMG) : les plus logiques en tête. Proposés : volontaires pour le cours, disponibles sur le créneau ;
   // puis les autres disponibles ; enfin les indisponibles (repos, autre occurrence au même moment, hors détachement). Dans chaque bloc : le moins chargé d'abord (heures déjà planifiées), puis l'ordre des groupes.
-  function cadPicker(px, sel, d0, d1, vols, selfId) {
+  function cadPicker(px, sel, d0, d1, vols, selfId, o) {
     var princ = sel[0], cads = cadres(); vols = vols || [];
     var hrs = {}, plan = progList(); plan.forEach(function (o) { if (!o.perm) o.enc.forEach(function (id) { hrs[id] = (hrs[id] || 0) + (o.d1 - o.d0) / 3600; }); });
     var at = d0 || Date.now() / 1000;
@@ -24780,17 +24797,20 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       var why = [], ab = d0 && absentAt(c.id, d0, d1 || d0 + 3600), busy = d0 ? plan.filter(function (o) { return o.id !== selfId && o.enc.indexOf(c.id) !== -1 && o.d0 < (d1 || d0 + 3600) && o.d1 > d0; })[0] : null;
       if (ab) why.push('en ' + ab.type.toLowerCase()); if (busy) why.push('occupé (' + (busy.code || busy.intit || 'occurrence') + ')');
       if ((c.debdet && c.debdet > at) || (c.findet && c.findet + 86400 <= at)) why.push('hors détachement');
-      var vol = vols.indexOf(c.id) !== -1;
-      return { c: c, on: sel.indexOf(c.id) !== -1, vol: vol, why: why, h: hrs[c.id] || 0, sec: why.length ? 2 : vol ? 0 : 1 };
+      var vol = vols.indexOf(c.id) !== -1, inG = !!(o && o.only && o.only.indexOf(c.id) !== -1);
+      return { c: c, on: sel.indexOf(c.id) !== -1, vol: vol, inG: inG, why: why, h: hrs[c.id] || 0, sec: why.length ? 3 : vol ? 0 : o && o.only ? (inG ? 1 : 2) : 2 };
     }).sort(function (x, y) { return x.sec - y.sec || x.h - y.h || cadGrpCmp(x.c, y.c) || (x.c.nom + x.c.prenom).localeCompare(y.c.nom + y.c.prenom, 'fr'); });
-    var SEC = vols.length ? ['Proposés : volontaires disponibles', 'Autres cadres disponibles', 'Indisponibles'] : ['', 'Cadres disponibles', 'Indisponibles'], last = -1;
+    var nHid = 0; if (o && o.only && !o.more) { L2 = L2.filter(function (x) { var keep = x.on || x.vol || x.inG; if (!keep) nHid++; return keep; }); }
+    var SEC = ['Proposés : volontaires disponibles', o && o.only ? o.label : '', vols.length || (o && o.only) ? 'Autres cadres disponibles' : 'Cadres disponibles', 'Indisponibles'], last = -1;
+    if (!vols.length && !(o && o.only)) SEC[2] = 'Cadres disponibles';
     return '<div class="pg-chips pg-tags" data-cpick="' + px + '">' + (cads.length ? L2.map(function (x) {
       var c = x.c, st = x.on && c.id === princ, head = '';
       if (x.sec !== last) { last = x.sec; if (SEC[x.sec]) head = '<span class="pg-sec">' + SEC[x.sec] + '</span>'; }
       return head + '<span class="pg-cad' + (x.vol ? ' pg-cad--vol' : '') + (x.why.length ? ' is-unavail' : '') + '"' + (x.vol || x.why.length ? ' title="' + esc([x.vol ? 'Volontaire pour ce cours' : ''].concat(x.why).filter(Boolean).join(' · ')) + '"' : '') + '><input type="checkbox" id="' + px + '-c' + c.id + '" data-cpc="' + c.id + '"' + (x.on ? ' checked' : '') + '><label for="' + px + '-c' + c.id + '">' + esc(cadName(c)) + (c.grp ? ' <span class="pg-grp">' + esc(c.grp) + '</span>' : '') + ' <span class="pg-h" title="Heures déjà planifiées">' + String(Math.round(x.h * 10) / 10).replace('.', ',') + ' h</span></label>' +
         '<button type="button" class="pg-star" data-cstar="' + c.id + '" aria-pressed="' + st + '" title="' + (st ? 'Cadre principal' : 'Désigner comme cadre principal') + '" aria-label="' + esc((st ? 'Cadre principal : ' : 'Désigner comme cadre principal : ') + cadName(c)) + '">' + (st ? '★' : '☆') + '</button>' +
         (x.why.length ? '<span class="pg-why">' + esc(x.why.join(', ')) + '</span>' : '') + '</span>';
-    }).join('') : '<span class="hint">Aucun cadre dans la PMG.</span>') + '</div>';
+    }).join('') : '<span class="hint">Aucun cadre dans la PMG.</span>') + '</div>' +
+      (o && o.only ? '<p style="margin:.4rem 0 0"><button type="button" class="btn secondary sm" data-ap="more">' + (o.more ? 'Masquer les autres catégories de cadres' : 'Afficher les autres catégories de cadres' + (nHid ? ' (' + nHid + ')' : '')) + '</button></p>' : '');
   }
   function cadPicked(px) { // [principal, autres…]
     var box = document.querySelector('[data-cpick="' + px + '"]'); if (!box) return [];
@@ -25035,22 +25055,76 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     needRel.then(function () { return progWrite(acts); }).then(function () { var n = acts.length; closeP(); msg('success', n > 1 ? n + ' occurrences ajoutées à la progression.' : 'Progression mise à jour.'); }, function (e2) { PM.err = 'Enregistrement impossible : ' + ((e2 && e2.message) || e2) + '.'; renderSessForm(); });
   }
   // Catalogue des activités (réglages) : code, intitulé, type, volume horaire, consignes
-  function openActs() { PM = { kind: 'acts', edit: null, err: '' }; renderActs(); openP('Activités de la progression', 'Catalogue : le code choisi dans une occurrence reprend l’intitulé, le type, les consignes et les cadres désignés'); }
+  // Activités et cours : page à part entière (onglet « acts » de la page Instruction), état propre (AP)
+  var AP = { edit: null, err: '', del: false, more: false, prop: null, msg: '' };
+  function openActs() { if (PM && !$('ins-pmodal').hidden) closeP(); AP.edit = null; AP.err = ''; AP.del = false; AP.more = false; if (window.__showPage) window.__showPage('ins-acts'); else showTab('acts'); }
+  // Groupe de cadres attendu selon le type d'activité : formateurs (Cours), formateurs IP (Instruction IP), formateurs secourisme (Formations au secourisme), peloton hors rang (Soutien)
+  function typeGrp(type) {
+    var t = norm(type || ''), isIP = function (n) { return /(^|[^a-z])ip([^a-z]|$)/.test(n); }, isSec = function (n) { return /secourisme/.test(n); };
+    if (/secour/.test(t)) return { label: 'Formateurs secourisme', head: 'Groupe contenant « secourisme »', test: function (g, n) { return isSec(n); } };
+    if (/(^|[^a-z])ip([^a-z]|$)|intervention/.test(t)) return { label: 'Formateurs IP', head: 'Groupe contenant « IP »', test: function (g, n) { return isIP(n); } };
+    if (/soutien/.test(t)) return { label: 'Peloton hors rang', head: 'Peloton hors rang (en priorité)', test: function (g) { return g.sec === 'Peloton hors rang'; } };
+    if (/^cours/.test(t)) return { label: 'Autres formateurs', head: 'Formateurs (hors IP, secourisme et peloton hors rang)', test: function (g, n) { return !isIP(n) && !isSec(n) && g.sec !== 'Peloton hors rang' && g.sec !== 'Renforts Mess'; } };
+    return null;
+  }
+  function grpIds(type) { var tg = typeGrp(type); if (!tg) return null; var all = /^cours/.test(norm(type || '')); return cadres().filter(function (c) { var gs = psGroups(c); if (!gs.length) return all; var f = function (x) { var n = norm(x).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); return tg.test(cadGrp({ grp: x }), n); }; return all ? gs.every(f) : gs.some(f); }).map(function (c) { return c.id; }); }
+  function acPicker(type, sel, vols) {
+    var tg = typeGrp(type), ids = grpIds(type), o = tg ? { only: ids && ids.length ? ids : null, label: tg.head, more: AP.more } : null;
+    var hint = tg && !(ids && ids.length) ? '<p class="hint" style="margin:0 0 .35rem">Aucun cadre trouvé pour « ' + esc(tg.head) + ' » : tous les cadres sont proposés.</p>' : '';
+    return hint + cadPicker('ac', sel, null, null, vols, null, o);
+  }
+  // Répartition proposée : activités de type Cours, Instruction IP et Formations au secourisme uniquement ; un cadre principal parmi les volontaires du bon groupe,
+  // puis les autres volontaires, puis le groupe du type ; le moins chargé d'abord (heures déjà planifiées + heures de la répartition en cours).
+  function acPlanH() { var plan = {}; progList().forEach(function (o) { if (!o.perm && o.code) plan[o.code.toUpperCase()] = (plan[o.code.toUpperCase()] || 0) + (o.d1 - o.d0) / 3600; }); return plan; }
+  function acPropose(all) {
+    var now = Date.now() / 1000, cads = cadres().filter(function (c) { return !(c.findet && c.findet + 86400 <= now); }), ok = cads.map(function (c) { return c.id; }), plan = acPlanH();
+    var load = {}; progList().forEach(function (o) { if (!o.perm) o.enc.forEach(function (id) { load[id] = (load[id] || 0) + (o.d1 - o.d0) / 3600; }); });
+    var items = actList().filter(function (a) { var tg = typeGrp(a.type); return !!tg && tg.label !== 'Peloton hors rang'; }).filter(function (a) { return all || !a.cads.length; }).map(function (a, k) {
+      var vv = volunteersFor(a), vols = (vv && vv.ids || []).filter(function (id) { return ok.indexOf(id) !== -1; }), g = (grpIds(a.type) || []).filter(function (id) { return ok.indexOf(id) !== -1; }), tg = typeGrp(a.type);
+      var both = vols.filter(function (id) { return g.indexOf(id) !== -1; }), tiers = [[both, 'Volontaire du groupe'], [vols, 'Volontaire'], [g, tg ? tg.label : 'Groupe']].filter(function (t) { return t[0].length; });
+      return { k: k, a: a, h: plan[a.code.toUpperCase()] || 0, cand: tiers.length ? tiers[0][0] : [], why: tiers.length ? tiers[0][1] : (tg ? 'Aucun cadre : ' + tg.head.toLowerCase() : 'Ni volontaire ni groupe rattaché'), on: false, pick: 0 };
+    });
+    items.slice().sort(function (x, y) { return (x.cand.length || 99) - (y.cand.length || 99) || y.h - x.h; }).forEach(function (it) {
+      if (!it.cand.length) return; var best = it.cand.slice().sort(function (p, q) { return (load[p] || 0) - (load[q] || 0) || cadGrpCmp(cadById(p), cadById(q)); })[0];
+      it.pick = best; it.on = true; load[best] = (load[best] || 0) + (it.h || 1);
+    });
+    items.forEach(function (it) { it.load = it.pick ? load[it.pick] || 0 : 0; });
+    return { all: !!all, items: items };
+  }
+  function actsProp() {
+    var P2 = AP.prop; if (!P2) return '';
+    var n = P2.items.filter(function (x) { return x.on && x.pick; }).length, cads = cadres().slice().sort(cadGrpCmp);
+    return '<section class="ac-prop" aria-labelledby="ac-prop-h"><h3 class="fr-h6" id="ac-prop-h" style="margin:0 0 .25rem">Proposition de répartition</h3>' +
+      '<p class="hint" style="margin:0 0 .5rem">Un cadre principal par activité : volontaire du bon groupe, puis autre volontaire, puis cadres de la bonne catégorie (groupe contenant « IP » pour l’Instruction IP, « secourisme » pour les Formations au secourisme, autres formateurs pour les Cours) ; le moins chargé d’abord. Seules les activités de type Cours, Instruction IP et Formations au secourisme sont réparties. Ajustez puis appliquez.</p>' +
+      '<label class="ed-check" style="margin:0 0 .5rem;display:inline-flex"><input type="checkbox" data-ap="prop-all"' + (P2.all ? ' checked' : '') + '> Inclure les activités qui ont déjà des cadres désignés (le cadre proposé devient principal)</label>' +
+      (P2.items.length ? '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Répartition proposée</caption><thead><tr><th scope="col"><span class="fr-sr-only">Retenir</span></th><th scope="col">Activité</th><th scope="col">Type</th><th scope="col">Cadre proposé</th><th scope="col">Motif</th></tr></thead><tbody>' +
+        P2.items.map(function (it, i) { return '<tr><td><input type="checkbox" data-ap-on="' + i + '"' + (it.on && it.pick ? ' checked' : '') + (it.pick ? '' : ' disabled') + ' aria-label="Retenir pour ' + esc(it.a.code) + '"></td><td><strong>' + esc(it.a.code) + '</strong> ' + esc(it.a.intit) + (it.h ? '<br><span class="hint" style="display:inline">' + String(Math.round(it.h * 10) / 10).replace('.', ',') + ' h planifiées</span>' : '') + '</td><td>' + esc(it.a.type || '—') + '</td><td><select class="select" data-ap-pick="' + i + '" aria-label="Cadre pour ' + esc(it.a.code) + '"><option value="">— Aucun —</option>' +
+          (it.cand.length ? '<optgroup label="Proposés">' + it.cand.map(function (id) { var c = cadById(id); return c ? '<option value="' + id + '"' + (id === it.pick ? ' selected' : '') + '>' + esc(cadName(c)) + '</option>' : ''; }).join('') + '</optgroup>' : '') +
+          '<optgroup label="Autres cadres">' + cads.filter(function (c) { return it.cand.indexOf(c.id) === -1; }).map(function (c) { return '<option value="' + c.id + '"' + (c.id === it.pick ? ' selected' : '') + '>' + esc(cadName(c)) + '</option>'; }).join('') + '</optgroup></select></td><td>' + esc(it.why) + '</td></tr>'; }).join('') + '</tbody></table></div>'
+        : '<p class="hint">' + (P2.all ? 'Aucune activité à répartir.' : 'Toutes les activités ont déjà des cadres désignés : cochez la case ci-dessus pour les reprendre.') + '</p>') +
+      '<div class="cf-actions"><button type="button" class="btn sm" data-ap="prop-apply"' + (n && !P2.busy ? '' : ' disabled') + '>' + (P2.busy ? 'Enregistrement…' : 'Appliquer la répartition (' + n + ')') + '</button><button type="button" class="btn secondary sm" data-ap="prop-close">Fermer</button></div></section>';
+  }
+  function actsBar() {
+    return '<div class="ac-bar"><p class="hint" style="margin:0">Catalogue de la progression : le code choisi dans une occurrence reprend l’intitulé, le type, les consignes et les cadres désignés.</p>' +
+      '<div class="ac-bar__btns"><button type="button" class="btn secondary sm" data-ap="prop"><span class="fr-icon-team-line fr-icon--sm" aria-hidden="true"></span> Proposer une répartition des cours</button><button type="button" class="btn sm" data-ap="new">Nouvelle activité</button></div></div>' +
+      (AP.msg ? '<div class="doc-alert success" role="status"><p>' + esc(AP.msg) + '</p></div>' : '');
+  }
   function renderActs() {
-    var acts = actList(), e = PM.edit, plan = {}; progList().forEach(function (o) { if (!o.perm && o.code) plan[o.code.toUpperCase()] = (plan[o.code.toUpperCase()] || 0) + (o.d1 - o.d0) / 3600; });
-    if (!PL.act) { $('ins-pmodal-body').innerHTML = '<div class="doc-alert info"><p>La table <code>Instruction_Activites</code> n’existe pas encore (back office, rubrique Instruction).</p></div>'; return; }
+    var host = $('acts-body'); if (!host) return;
+    var acts = actList(), e = AP.edit, plan = {}; progList().forEach(function (o) { if (!o.perm && o.code) plan[o.code.toUpperCase()] = (plan[o.code.toUpperCase()] || 0) + (o.d1 - o.d0) / 3600; });
+    if (!PL.act) { host.innerHTML = '<div class="doc-alert info"><p>La table <code>Instruction_Activites</code> n’existe pas encore (back office, rubrique Instruction).</p></div>'; return; }
     var vA = e ? { code: e.code, base: e.base, intit: e.intit, type: e.type } : { code: '', base: '', intit: '', type: actTypes()[0] || 'Cours' }, vv = volunteersFor(vA);
     var form = '<div class="ins-dform">' + fld('ac-code', 'Code', '<input class="input" id="ac-code" value="' + esc(e ? e.base : '') + '" placeholder="ex. APJA">', true) + fld('ac-num', 'Numéro', '<input class="input" id="ac-num" value="' + esc(e ? e.num : '') + '" placeholder="ex. 1 (code de la progression : APJA1)">') + fld('ac-intit', 'Intitulé', '<input class="input" id="ac-intit" value="' + esc(e ? e.intit : '') + '">', true) +
       fld('ac-type', 'Type', '<select class="select" id="ac-type">' + opt(actTypes(e ? e.type : ''), e ? e.type : (actTypes()[0] || '')) + '</select>') +
       '<div class="cf-field" style="align-self:end"><label class="ed-check"><input type="checkbox" id="ac-hide"' + (e && e.hide ? ' checked' : '') + '> ' + EYE_OFF + ' Masquer aux stagiaires</label><p class="hint" style="margin:0">Non affichée dans la FSJ stagiaires.</p></div>' +
-      '<fieldset class="cf-field ins-full" style="border:0;padding:0;margin:0"><legend style="font-size:.875rem;margin-bottom:.25rem">Cadres désignés (★ : cadre principal)</legend><div id="ac-vol">' + volBanner(vA) + '</div>' + cadPicker('ac', e ? e.cads : [], null, null, vv ? vv.ids : []) + '</fieldset>' +
+      '<fieldset class="cf-field ins-full" style="border:0;padding:0;margin:0"><legend style="font-size:.875rem;margin-bottom:.25rem">Cadres désignés (★ : cadre principal)</legend><div id="ac-vol">' + volBanner(vA) + '</div><div id="ac-pick">' + acPicker(vA.type, e ? e.cads : [], vv ? vv.ids : []) + '</div></fieldset>' +
       '<div class="cf-field ins-full"><label for="ac-cons">Consignes aux stagiaires</label><textarea class="textarea" id="ac-cons" rows="2">' + esc(e ? e.cons : '') + '</textarea></div></div>' +
-      '<div class="cf-actions"><button type="button" class="btn sm" data-pm="save-act">' + (e && e.id ? 'Enregistrer l’activité' : 'Ajouter l’activité') + '</button>' + (e && e.id ? '<button type="button" class="btn secondary sm" data-pm="new-act">Nouvelle activité</button><button type="button" class="btn ' + (PM.del ? 'danger' : 'secondary') + ' sm" data-pm="del-act">' + (PM.del ? 'Confirmer la suppression' : 'Supprimer') + '</button>' : '') + '</div>';
-    $('ins-pmodal-body').innerHTML = (PM.err ? '<div class="doc-alert error" role="alert"><p>' + esc(PM.err) + '</p></div>' : '') +
+      '<div class="cf-actions"><button type="button" class="btn sm" data-pm="save-act">' + (e && e.id ? 'Enregistrer l’activité' : 'Ajouter l’activité') + '</button>' + (e && e.id ? '<button type="button" class="btn secondary sm" data-pm="new-act">Nouvelle activité</button><button type="button" class="btn ' + (AP.del ? 'danger' : 'secondary') + ' sm" data-pm="del-act">' + (AP.del ? 'Confirmer la suppression' : 'Supprimer') + '</button>' : '') + '</div>';
+    host.innerHTML = actsBar() + actsProp() + (AP.err ? '<div class="doc-alert error" role="alert"><p>' + esc(AP.err) + '</p></div>' : '') +
       '<div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Code</th><th scope="col">Intitulé</th><th scope="col">Cadres désignés</th><th scope="col">Planifié</th><th scope="col"><span class="fr-sr-only">Masquer aux stagiaires</span>' + EYE_OFF + '</th><th scope="col"><span class="fr-sr-only">Modifier</span></th></tr></thead><tbody>' +
       (acts.length ? actGroups(acts).map(function (a) { if (a.gType) return '<tr class="ac-type"><th scope="rowgroup" colspan="6">' + esc(a.gType) + ' <span class="hint" style="display:inline">(' + a.n + ')</span></th></tr>'; if (a.gCode) return '<tr class="ac-code"><th scope="rowgroup" colspan="6">' + esc(a.gCode) + ' <span class="hint" style="display:inline">· ' + a.n + ' activités, ' + String(Math.round(a.h * 10) / 10).replace('.', ',') + ' h planifiées</span></th></tr>'; var pl = Math.round((plan[a.code.toUpperCase()] || 0) * 10) / 10; return '<tr' + (a.inGrp ? ' class="ac-sub"' : '') + '><td>' + esc(a.code) + '</td><td>' + esc(a.intit) + '</td><td>' + (a.cads.length ? '<span class="tagrow" style="display:flex;flex-wrap:wrap;gap:.25rem">' + a.cads.map(function (id, k) { return '<span class="fr-tag fr-tag--sm' + (k ? '' : ' ins-tag-pon') + '"' + (k ? '' : ' title="Cadre principal"') + '>' + (k ? '' : '★ ') + esc(cadName(cadById(id))) + '</span>'; }).join('') + '</span>' : '—') + '</td><td>' + String(pl).replace('.', ',') + ' h</td><td><button type="button" class="pg-eyebtn" data-pm="hide-act" data-id="' + a.id + '" aria-pressed="' + a.hide + '" title="' + (a.hide ? 'Masquée aux stagiaires (FSJ stagiaires) : cliquer pour l’afficher' : 'Affichée aux stagiaires : cliquer pour la masquer') + '"><span class="fr-icon-eye' + (a.hide ? '-off' : '') + '-line fr-icon--sm" aria-hidden="true"></span><span class="fr-sr-only">' + (a.hide ? 'Afficher ' : 'Masquer ') + esc(a.code) + ' aux stagiaires</span></button></td><td><button type="button" class="btn secondary sm" data-pm="edit-act" data-id="' + a.id + '">Modifier</button></td></tr>'; }).join('') : '<tr><td colspan="6" style="text-align:center">Aucune activité.</td></tr>') +
       '</tbody></table></div>' + (e && e.id ? '' : '<h3 class="fr-h6" id="ac-form-h" style="margin:1rem 0 .5rem">Nouvelle activité</h3>' + form);
-    if (e && e.id) $('ins-pmodal-body').insertAdjacentHTML('afterbegin', '<section class="ac-editbox"><h3 class="fr-h6" id="ac-form-h" style="margin:0 0 .5rem">Modifier « ' + esc(e.code) + ' »</h3>' + form + '</section>'); // modification : champs d'édition en tête
+    if (e && e.id) host.insertAdjacentHTML('afterbegin', '<section class="ac-editbox"><h3 class="fr-h6" id="ac-form-h" style="margin:0 0 .5rem">Modifier « ' + esc(e.code) + ' »</h3>' + form + '</section>'); // modification : champs d'édition en tête
   }
   // Tables créées avant l'ajout de ces réglages : les colonnes manquantes sont ajoutées au premier enregistrement
   function actGroups(acts) {
@@ -25076,14 +25150,14 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     host.innerHTML = volBanner(a);
     Array.prototype.forEach.call(box.querySelectorAll('.pg-cad'), function (sp) { var cb = sp.querySelector('[data-cpc]'), on = cb && ids.indexOf(Number(cb.getAttribute('data-cpc'))) !== -1; sp.classList.toggle('pg-cad--vol', !!on); if (on) sp.title = 'Volontaire pour ce cours'; else sp.removeAttribute('title'); });
   }
-  function actWrite(acts) { return twrite(PL.act, acts).then(function () { return tload(PDEF.act.name, PDEF.act.name); }).then(function (t) { PL.act = t; PM.edit = null; PM.del = false; PM.err = ''; renderActs(); renderProg(); }); }
+  function actWrite(acts) { return twrite(PL.act, acts).then(function () { return tload(PDEF.act.name, PDEF.act.name); }).then(function (t) { PL.act = t; AP.edit = null; AP.del = false; AP.err = ''; renderActs(); renderProg(); }); }
   $('ins-pmodal-body').addEventListener('change', function (e) {
     if (PM && PM.kind === 'fsj' && (e.target.id === 'fsj-day' || e.target.name === 'fsj-v')) { if (e.target.id === 'fsj-day' && e.target.value) PM.day = e.target.value; PM.v = { stg: $('fsj-v-stg').checked, cad: $('fsj-v-cad').checked }; return renderFsj(); }
     if (e.target.name === 'pg-mode' && PM) { PM.mode = e.target.value; PM.err = ''; PM.confirm = false; var dv = $('ss-date'); if (dv && dv.value) PM.date = dv.value; renderSessForm(); return; }
     if (e.target.id === 'ss-code' && PM && PM.kind === 'sess') { var a = actByCode(e.target.value), ty = $('ss-type'); if (ty) ty.value = a ? a.type : ''; if (a) { var it = $('ss-intit'); if (it && !it.value) it.value = a.intit; var cs = $('ss-cons'); if (cs && !cs.value) cs.value = a.cons;
       var box = document.querySelector('[data-cpick="ss"]'); if (box && a.cads.length && !box.querySelector('[data-cpc]:checked')) { a.cads.forEach(function (id) { var cb = box.querySelector('[data-cpc="' + id + '"]'); if (cb) cb.checked = true; }); setPrincipal(box, a.cads[0]); } } }
     if (e.target.hasAttribute && e.target.hasAttribute('data-cpc')) fixPrincipal(e.target.closest('[data-cpick]'));
-    if (PM && PM.kind === 'acts' && /^ac-(type|code|num|intit)$/.test(e.target.id)) refreshVol();
+
   });
   $('ins-pmodal-body').addEventListener('click', function (e) {
     if (e.target.closest('#etu-drop')) return pickEtu();
@@ -25112,15 +25186,51 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     if (a === 'day-save') return saveDay();
     if (a === 'edit-act') { PM.edit = actList().filter(function (x) { return x.id === Number(b.getAttribute('data-id')); })[0]; PM.del = false; renderActs(); var fh = $('ac-form-h'); if (fh) { fh.scrollIntoView({ block: 'start', behavior: 'smooth' }); var fc = $('ac-intit') || $('ac-code'); if (fc) fc.focus({ preventScroll: true }); } return; }
     if (a === 'new-act') { PM.edit = null; PM.del = false; return renderActs(); }
-    if (a === 'del-act') { if (!PM.del) { PM.del = true; return renderActs(); } return actWrite([['RemoveRecord', PL.act.tableId, PM.edit.id]]); }
+    if (a === 'del-act') { if (!PM.del) { PM.del = true; return renderActs(); } return actWrite([['RemoveRecord', PL.act.tableId, PM.edit.id]]).catch(function (err) { PM.err = 'Suppression impossible : ' + ((err && err.message) || err) + '.'; renderActs(); }); }
     if (a === 'save-act') {
       var o = { PMG: pmg(), Code: $('ac-code').value.trim().toUpperCase(), Numero: $('ac-num').value.trim().toUpperCase(), Intitule: $('ac-intit').value.trim(), Type: $('ac-type').value, Cadres_designes: refList(cadPicked('ac')), Consignes: $('ac-cons').value.trim(), Masquer_stagiaires: $('ac-hide').checked };
       PM.err = !o.Code || !o.Intitule ? 'Le code et l’intitulé sont obligatoires.' : actList().some(function (x) { return loose(x.code) === loose(o.Code + o.Numero) && (!PM.edit || x.id !== PM.edit.id); }) ? 'Le code ' + o.Code + o.Numero + ' existe déjà.' : '';
       if (PM.err) return renderActs();
       // Table créée avant l'ajout des cadres désignés : la colonne est ajoutée au premier enregistrement
       var addCol = actCols();
-      return addCol.then(function () { return actWrite([PM.edit && PM.edit.id ? ['UpdateRecord', PL.act.tableId, PM.edit.id, pf('act', o)] : ['AddRecord', PL.act.tableId, null, pf('act', o)]]); }, function (err) { PM.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; renderActs(); });
+      var bt = e.target.closest('[data-pm]'); if (bt) { bt.disabled = true; bt.textContent = 'Enregistrement…'; }
+      return addCol.then(function () { return actWrite([PM.edit && PM.edit.id ? ['UpdateRecord', PL.act.tableId, PM.edit.id, pf('act', o)] : ['AddRecord', PL.act.tableId, null, pf('act', o)]]); }).catch(function (err) { if (window.console) console.error('Activité non enregistrée', err); if (!PM || PM.kind !== 'acts') return; PM.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; renderActs(); });
     }
+  });
+  $('acts-body').addEventListener('click', function (e) {
+    var stb = e.target.closest('[data-cstar]'); if (stb) { setPrincipal(stb.closest('[data-cpick]'), Number(stb.getAttribute('data-cstar'))); return; }
+    var b = e.target.closest('[data-pm], [data-ap]'); if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return; var a = b.getAttribute('data-pm') || b.getAttribute('data-ap');
+    if (a === 'more') { AP.more = !AP.more; var sel = cadPicked('ac'), f = acForm(), vv = volunteersFor(f); $('ac-pick').innerHTML = acPicker(f.type, sel, vv && vv.ids ? vv.ids : []); return; }
+    if (a === 'new') { AP.edit = null; AP.del = false; AP.err = ''; renderActs(); var fh = $('ac-form-h'); if (fh) { fh.scrollIntoView({ block: 'start', behavior: 'smooth' }); var fc = $('ac-code'); if (fc) fc.focus({ preventScroll: true }); } return; }
+    if (a === 'prop') { AP.prop = acPropose(false); AP.msg = ''; renderActs(); var ph = $('ac-prop-h'); if (ph) ph.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (a === 'prop-close') { AP.prop = null; return renderActs(); }
+    if (a === 'prop-apply') {
+      var P2 = AP.prop; if (!P2) return; var acts2 = P2.items.filter(function (x) { return x.on && x.pick; }).map(function (x) { return ['UpdateRecord', PL.act.tableId, x.a.id, pf('act', { Cadres_designes: refList([x.pick].concat(x.a.cads.filter(function (id) { return id !== x.pick; }))) })]; });
+      if (!acts2.length) return; P2.busy = true; renderActs();
+      return actCols().then(function () { return actWrite(acts2); }).then(function () { AP.prop = null; AP.msg = acts2.length + ' activité' + (acts2.length > 1 ? 's' : '') + ' : cadre principal désigné.'; renderActs(); }).catch(function (err) { P2.busy = false; AP.err = 'Répartition non enregistrée : ' + ((err && err.message) || err) + '.'; renderActs(); });
+    }
+    if (a === 'hide-act') { var ha = actList().filter(function (x) { return x.id === Number(b.getAttribute('data-id')); })[0]; if (!ha) return; return actCols().then(function () { return twrite(PL.act, [['UpdateRecord', PL.act.tableId, ha.id, pf('act', { Masquer_stagiaires: !ha.hide })]]); }).then(function () { return tload(PDEF.act.name, PDEF.act.name); }).then(function (t) { PL.act = t; renderActs(); renderProg(); }).catch(function (err) { AP.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; renderActs(); }); }
+    if (a === 'vol-check') { var vb = volunteersFor(acForm()), box = document.querySelector('[data-cpick="ac"]'); if (vb && box) { vb.ids.forEach(function (id) { var cb = box.querySelector('[data-cpc="' + id + '"]'); if (cb) cb.checked = true; }); fixPrincipal(box); } return; }
+    if (a === 'edit-act') { AP.edit = actList().filter(function (x) { return x.id === Number(b.getAttribute('data-id')); })[0]; AP.del = false; AP.more = false; renderActs(); var fh2 = $('ac-form-h'); if (fh2) { fh2.scrollIntoView({ block: 'start', behavior: 'smooth' }); var fc2 = $('ac-intit') || $('ac-code'); if (fc2) fc2.focus({ preventScroll: true }); } return; }
+    if (a === 'new-act') { AP.edit = null; AP.del = false; return renderActs(); }
+    if (a === 'del-act') { if (!AP.del) { AP.del = true; return renderActs(); } return actWrite([['RemoveRecord', PL.act.tableId, AP.edit.id]]).catch(function (err) { AP.err = 'Suppression impossible : ' + ((err && err.message) || err) + '.'; renderActs(); }); }
+    if (a === 'save-act') {
+      var o = { PMG: pmg(), Code: $('ac-code').value.trim().toUpperCase(), Numero: $('ac-num').value.trim().toUpperCase(), Intitule: $('ac-intit').value.trim(), Type: $('ac-type').value, Cadres_designes: refList(cadPicked('ac')), Consignes: $('ac-cons').value.trim(), Masquer_stagiaires: $('ac-hide').checked };
+      AP.err = !o.Code || !o.Intitule ? 'Le code et l’intitulé sont obligatoires.' : actList().some(function (x) { return loose(x.code) === loose(o.Code + o.Numero) && (!AP.edit || x.id !== AP.edit.id); }) ? 'Le code ' + o.Code + o.Numero + ' existe déjà.' : '';
+      if (AP.err) return renderActs();
+      b.disabled = true; b.textContent = 'Enregistrement…'; AP.msg = '';
+      return actCols().then(function () { return actWrite([AP.edit && AP.edit.id ? ['UpdateRecord', PL.act.tableId, AP.edit.id, pf('act', o)] : ['AddRecord', PL.act.tableId, null, pf('act', o)]]); }).catch(function (err) { if (window.console) console.error('Activité non enregistrée', err); AP.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; renderActs(); });
+    }
+  });
+  $('acts-body').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.hasAttribute('data-cpc')) fixPrincipal(t.closest('[data-cpick]'));
+    if (t.id === 'ac-type') { var sel = cadPicked('ac'), f = acForm(), vv = volunteersFor(f); AP.more = false; $('ac-pick').innerHTML = acPicker(f.type, sel, vv && vv.ids ? vv.ids : []); }
+    if (/^ac-(type|code|num|intit)$/.test(t.id)) refreshVol();
+    if (t.getAttribute('data-ap') === 'prop-all') { AP.prop = acPropose(t.checked); return renderActs(); }
+    var on = t.getAttribute('data-ap-on'), pk = t.getAttribute('data-ap-pick'), P2 = AP.prop;
+    if (P2 && on != null) { P2.items[Number(on)].on = t.checked; return renderActs(); }
+    if (P2 && pk != null) { var it = P2.items[Number(pk)]; it.pick = Number(t.value) || 0; it.on = !!it.pick; return renderActs(); }
   });
   // Cadres absents aujourd'hui : signalés dans la liste des cadres
   window.__insAbsentToday = function (cid) { var n = Date.now() / 1000; return absentAt(cid, n, n + 1); };
@@ -25497,7 +25607,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     Array.prototype.forEach.call(document.querySelectorAll('[data-ins-tab]'), function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-ins-tab') === tab)); });
     all.forEach(function (k) { var pn = $('ins-panel-' + k); if (pn) pn.hidden = tab !== k; });
     if (quiet) return;
-    if (tab === 'stg') renderStg(); if (tab === 'cad') renderCad(); if (tab === 'eval') renderEval(); if (tab === 'stat') renderStat();
+    if (tab === 'stg') renderStg(); if (tab === 'cad') renderCad(); if (tab === 'eval') renderEval(); if (tab === 'stat') renderStat(); if (tab === 'acts') renderActs();
     if (tab === 'prog') renderProg(); if (tab === 'rep') renderRep(); if (tab === 'cer') renderCerPage(); if (tab === 'res') renderRes(); if (tab === 'doc') renderDocs();
   }
   document.querySelector('.ins-tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-ins-tab]'); if (b) { showTab(b.getAttribute('data-ins-tab')); msg('', ''); } });
@@ -25505,7 +25615,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     var p = pmg();
     $('ins-lead').textContent = p ? 'PMG suivie : ' + p + '. Stagiaires : candidats à l’état « Admis PMG » pour cette PMG.' : 'Aucune PMG n’est réglée : choisissez-la dans le back office, rubrique Instruction.';
     ['cer', 'res', 'doc'].forEach(function (k) { var b = $('ins-tab-' + k); if (b) b.hidden = !layerOn(k); });
-    renderFrm(); var H = { stg: renderStg, cad: renderCad, prog: renderProg, rep: renderRep, cer: renderCerPage, res: renderRes, doc: renderDocs, eval: renderEval, stat: renderStat }; if (H[tab]) H[tab](); // seul l'onglet affiché est dessiné ; les autres à leur ouverture (showTab)
+    renderFrm(); var H = { stg: renderStg, cad: renderCad, prog: renderProg, rep: renderRep, cer: renderCerPage, res: renderRes, doc: renderDocs, eval: renderEval, stat: renderStat, acts: renderActs }; if (H[tab]) H[tab](); // seul l'onglet affiché est dessiné ; les autres à leur ouverture (showTab)
     if (tab === 'cer' && !layerOn('cer') || tab === 'res' && !layerOn('res') || tab === 'doc' && !layerOn('doc')) showTab('stg');
     if (!window.PMG) msg('error', 'La page Candidats n’est pas disponible.');
   }
@@ -25923,12 +26033,29 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
     ['Instruction : cadres désignés (ordre logique) et modification d’une activité', function () {
       window.__showPage('ins'); window.INS.show();
       return wait(2500).then(function () { window.INS.tab('prog'); document.querySelector('#ins-panel-prog [data-pg="acts"]').click(); return wait(400); }).then(function () {
-        var e = document.querySelector('#ins-pmodal-body [data-pm="edit-act"]'); e.click(); return wait(300);
+        check('Activités et cours : page à part entière (pas une fenêtre)', !$('ins-panel-acts').hidden && $('ins-pmodal').hidden && !!document.querySelector('#acts-body [data-ap="prop"]'));
+        var e = document.querySelector('#acts-body [data-pm="edit-act"]'); e.click(); return wait(300);
       }).then(function () {
-        var box = document.querySelector('#ins-pmodal-body .ac-editbox'); check('Modifier une activité : champs d’édition affichés en tête', !!box && box === $('ins-pmodal-body').firstElementChild && !!box.querySelector('[data-cpick="ac"]'));
+        var box = document.querySelector('#acts-body .ac-editbox'), tbl = document.querySelector('#acts-body table'); check('Modifier une activité : champs d’édition affichés en tête', !!box && !!tbl && !!(box.compareDocumentPosition(tbl) & 4) && !!box.querySelector('[data-cpick="ac"]'));
         var secs = [].map.call(document.querySelectorAll('[data-cpick="ac"] .pg-sec'), function (x) { return x.textContent; });
         check('Cadres désignés : blocs (disponibles, indisponibles) et heures planifiées', secs.length >= 1 && !!document.querySelector('[data-cpick="ac"] .pg-h'), secs.join(' | '));
-        $('ins-pmodal-close').click();
+        var sec = [].filter.call(document.querySelectorAll('#acts-body [data-pm="edit-act"]'), function (x) { return /^SEC/.test(x.closest('tr').innerText.trim()); })[0]; sec.click(); return wait(300);
+      }).then(function () {
+        var n0 = document.querySelectorAll('[data-cpick="ac"] [data-cpc]').length, mb = document.querySelector('#acts-body [data-ap="more"]');
+        check('Secourisme : seuls les formateurs secourisme proposés, bouton pour les autres', !!mb && /Groupe contenant « secourisme »/.test(document.querySelector('[data-cpick="ac"]').textContent) && /Afficher les autres catégories de cadres/.test(mb.textContent), n0);
+        mb.click(); var n1 = document.querySelectorAll('[data-cpick="ac"] [data-cpc]').length; check('Afficher les autres catégories de cadres', n1 > n0, n0 + ' → ' + n1);
+        document.querySelector('#acts-body [data-ap="prop"]').click(); return wait(300);
+      }).then(function () {
+        document.querySelector('#acts-body [data-ap="prop-all"]').click(); return wait(200);
+      }).then(function () {
+        var rows = document.querySelectorAll('#acts-body .ac-prop tbody tr'), t = document.querySelector('#acts-body .ac-prop').innerText;
+        check('Proposer une répartition : volontaires et groupes', rows.length > 3 && /Volontaire/.test(t) && /Formateurs secourisme/.test(t) && /Autres formateurs|Volontaire/.test(t), t.slice(0, 200));
+        var before = document.querySelector('#acts-body [data-ap="prop-apply"]').textContent; document.querySelector('#acts-body [data-ap="prop-apply"]').click(); return wait(800).then(function () { check('Répartition appliquée', /cadre principal désigné/.test($('acts-body').innerText), before); });
+      }).then(function () {
+        document.querySelector('#acts-body [data-ap="prop"]').click(); document.querySelector('#acts-body [data-ap="prop-all"]').click(); var tt = [].map.call(document.querySelectorAll('#acts-body .ac-prop tbody tr'), function (r) { return r.cells[2].textContent.trim(); });
+        check('Répartition : uniquement Cours, Instruction IP et Formations au secourisme', tt.length > 0 && tt.every(function (t) { return /^cours|secour|(^|[^a-z])ip([^a-z]|$)/i.test(t); }), tt.join(', ')); document.querySelector('#acts-body [data-ap="prop-close"]').click();
+      }).then(function () {
+        window.INS.tab('prog');
       });
     }],
     ['Instruction : colonnes supplémentaires des fiches (back office, carte, variables)', function () {
@@ -26485,13 +26612,13 @@ Array.prototype.forEach.call(document.querySelectorAll('.tb-search'), function (
       }).then(function () {
         P.querySelector('[data-pg="acts"]').click(); return wait(300);
       }).then(function () {
-        var B = $('ins-pmodal-body'); check('Activités : code et numéro regroupés (APJA1)', /APJA1/.test(B.innerText) && /APJA2/.test(B.innerText));
+        var B = $('acts-body'); check('Activités : code et numéro regroupés (APJA1)', /APJA1/.test(B.innerText) && /APJA2/.test(B.innerText));
         check('Activités : bouton « masquer aux stagiaires »', B.querySelectorAll('[data-pm="hide-act"]').length > 3 && !!B.querySelector('[data-pm="hide-act"][aria-pressed="true"]'));
         var e = Array.prototype.filter.call(B.querySelectorAll('tbody tr'), function (r) { return /^APJA1/.test(r.innerText.trim()); })[0]; e.querySelector('[data-pm="edit-act"]').click(); return wait(300);
       }).then(function () {
-        var v = $('ac-vol').innerText; check('Volontaires pour le cours (formulaire des cadres) en vert', /Volontaires pour ce cours/.test(v) && /MOREAU/.test(v) && document.querySelectorAll('#ins-pmodal-body .pg-cad--vol').length === 2, v);
+        var v = $('ac-vol').innerText; check('Volontaires pour le cours (formulaire des cadres) en vert', /Volontaires pour ce cours/.test(v) && /MOREAU/.test(v) && document.querySelectorAll('#acts-body .pg-cad--vol').length === 2, v);
         check('Le type ne se règle que dans l’activité (occurrence en lecture seule)', !!$('ac-type'));
-        $('ins-pmodal-close').click(); return wait(300);
+        window.INS.tab('prog'); return wait(300);
       }).then(function () {
         var ev = Array.prototype.filter.call(P.querySelectorAll('.pg-ev'), function (b) { return /Réunion/.test(b.title); })[0]; check('Occurrence masquée aux stagiaires : œil sur la bande', !!(ev && ev.querySelector('.pg-eye')));
         ev.click(); return wait(300).then(function () { var t = $('ss-type'); check('Occurrence : type repris de l’activité (non modifiable)', t && t.readOnly && t.value === 'Autre'); $('ins-pmodal-close').click(); return wait(300); });
