@@ -1676,7 +1676,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .annu-agenda { border-top: 1px solid var(--border-default-grey); padding-top: .75rem; margin: 0 0 1rem; } .annu-slots { display: flex; flex-wrap: wrap; gap: .35rem; margin: .35rem 0 0; }
   .annu-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
   @media (max-width: 40em) { .annu-wrap { grid-template-columns: 1fr; } .annu-det { border-left: 0; padding-left: 0; border-top: 1px solid var(--border-default-grey); padding-top: 1rem; } .annu-list { max-height: 30vh; } }
-  .ico-gear { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.09.63-.09.94s.02.65.37.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z%27/%3E%3C/svg%3E"); }
+  .ico-gear { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.09.63-.09.94s.02.66.27.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z%27/%3E%3C/svg%3E"); }
 
   .count { color: var(--muted); font-size: .875rem; }
 
@@ -4345,7 +4345,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.65.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.66.2</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -14729,6 +14729,28 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     TAB_ORDER.forEach(function (k) { var sk = 's' + k; out[sk] = t[sk] || byNorm(SPECS[k].tableRe, /creneau/); });
     return out;
   }
+  // Au lancement : les rendez-vous VMP et VEMI sans date, sans heure et sans antenne (réservation faite alors qu'aucun créneau n'était disponible) sont supprimés.
+  // Garde-fous : les trois colonnes doivent exister ; une réservation de moins de 15 minutes est épargnée ; au-delà de 20 lignes et de la moitié de la table, rien n'est supprimé.
+  function blankVal(v) { return v == null || v === '' || v === 0 || (Array.isArray(v) && (v.length === 0 || (v[0] === 'L' && v.length < 2))); }
+  function purgeEmpty() {
+    if (state.purged) return Promise.resolve(0); state.purged = true;
+    var jobs = [], now = Date.now() / 1000;
+    ['vmp', 'vemi', 'psy'].forEach(function (tab) {
+      var d = state.data[tab]; if (!d) return;
+      var dc = findCol(d.cols, 'Date'), hc = findCol(d.cols, 'Heure'), ac = SPECS[tab].antenne ? findCol(d.cols, SPECS[tab].antenne) : null, fc = findCol(d.cols, 'Réservation faite le');
+      if (!dc || (tab !== 'psy' && (!hc || !ac))) return; // tests psy : ni antenne, ni (selon la table) colonne Heure
+      var ids = d.rows.filter(function (r) { return blankVal(r[dc.id]) && (!hc || blankVal(r[hc.id])) && (!ac || blankVal(r[ac.id])) && !(fc && typeof r[fc.id] === 'number' && now - r[fc.id] < 900); }).map(function (r) { return r.id; });
+      if (!ids.length) return;
+      if (ids.length > 20 && ids.length * 2 > d.rows.length) { console.warn('SERVIR : suppression des rendez-vous ' + SPECS[tab].title + ' sans créneau abandonnée (' + ids.length + ' sur ' + d.rows.length + ').'); return; }
+      jobs.push({ tab: tab, table: d.table, ids: ids });
+    });
+    if (!jobs.length) return Promise.resolve(0);
+    return jobs.reduce(function (p, j) {
+      return p.then(function (n) { return j.ids.reduce(function (pp, id) { return pp.then(function () { return Promise.resolve(api.deleteRow(j.table, id)); }); }, Promise.resolve()).then(function () { j.done = true; return n + j.ids.length; }); });
+    }, Promise.resolve(0)).then(function (n) {
+      showMsg('success', n + ' rendez-vous demandé' + (n > 1 ? 's' : '') + ' malgré l’absence de créneaux ' + (n > 1 ? 'ont' : 'a') + ' été automatiquement supprimé' + (n > 1 ? 's' : '') + ' (' + jobs.filter(function (j) { return j.done; }).map(function (j) { return SPECS[j.tab].title + ' : ' + j.ids.length; }).join(' ; ') + ').'); return n;
+    }, function (e) { console.warn('SERVIR : suppression des rendez-vous sans créneau impossible', e); return 0; });
+  }
   var loadSeq = 0;
   function loadOne(table) {
     if (!table) return Promise.resolve(null);
@@ -14749,6 +14771,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         if (state.slotAdmin) renderSlots();
         if (state.book) renderBook();
         if (window.RES && window.RES.rerender) window.RES.rerender();
+        if (!state.purged) purgeEmpty().then(function (n) { if (n) return load(); });
       });
     }).catch(function (e) { if (seq !== loadSeq) return; state.error = (e && e.message) || String(e); renderAll(); });
   }
