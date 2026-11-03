@@ -1676,7 +1676,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .annu-agenda { border-top: 1px solid var(--border-default-grey); padding-top: .75rem; margin: 0 0 1rem; } .annu-slots { display: flex; flex-wrap: wrap; gap: .35rem; margin: .35rem 0 0; }
   .annu-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
   @media (max-width: 40em) { .annu-wrap { grid-template-columns: 1fr; } .annu-det { border-left: 0; padding-left: 0; border-top: 1px solid var(--border-default-grey); padding-top: 1rem; } .annu-list { max-height: 30vh; } }
-  .ico-gear { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.09.63-.09.94s.02.66.27.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z%27/%3E%3C/svg%3E"); }
+  .ico-gear { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.09.63-.09.94s.02.67.07.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z%27/%3E%3C/svg%3E"); }
 
   .count { color: var(--muted); font-size: .875rem; }
 
@@ -4345,7 +4345,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.66.2</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.67.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -16018,6 +16018,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         (capCol ? '<div class="cf-field"><label for="x-sf-cap">Capacité</label><input type="text" inputmode="numeric" class="input" id="x-sf-cap" data-cf="cap" value="' + esc(cr.cap) + '" style="max-width:8rem"></div>' : '') +
         '</div><div class="cf-actions"><button type="button" class="btn sm" id="x-sf-create"' + (cr.busy ? ' disabled' : '') + '>' + (cr.busy ? 'Création…' : 'Créer') + '</button>' +
         '<button type="button" class="btn secondary sm" id="x-sf-cancel"' + (cr.busy ? ' disabled' : '') + '>Annuler</button></div></section>';
+    } else if (imp.plan) {
+      var pl = imp.plan, names = antenneNames(), optA = function (cur) { return '<option value=""' + (cur ? '' : ' selected') + '>— Choisir une antenne —</option><option value="__skip"' + (cur === '__skip' ? ' selected' : '') + '>Ignorer ces lignes</option>' + names.map(function (n) { return '<option value="' + esc(n) + '"' + (n === cur ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join(''); };
+      var nGood = pl.recs.filter(function (rc) { return rc.timeN && rc.timeN !== rc.time; }).length;
+      out += '<section class="cf-section" style="margin-top:16px"><h3>Vérifier avant d’importer</h3>' +
+        '<p class="hint">' + pl.recs.length + ' ligne' + (pl.recs.length > 1 ? 's' : '') + ' lue' + (pl.recs.length > 1 ? 's' : '') + (pl.errors.length ? ' (' + pl.errors.length + ' ignorée' + (pl.errors.length > 1 ? 's' : '') + ')' : '') + (nGood ? ' ; ' + nGood + ' heure' + (nGood > 1 ? 's' : '') + ' reformatée' + (nGood > 1 ? 's' : '') + ' en HH:mm' : '') + '. Un choix s’applique à toutes les lignes portant la même valeur.</p>' +
+        (imp.error ? '<div class="doc-alert error" role="alert"><p>' + esc(imp.error) + '</p></div>' : '') +
+        (pl.antGroups.some(function (g) { return !g.exact; }) ? '<h4 style="margin:.75rem 0 .25rem">Antennes médicales à rapprocher de la liste</h4><div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Dans le fichier</th><th scope="col">Lignes</th><th scope="col">Antenne de la liste</th></tr></thead><tbody>' +
+          pl.antGroups.map(function (g, i) { return g.exact ? '' : '<tr><th scope="row">' + g.raws.map(function (x) { return '« ' + esc(x) + ' »'; }).join(', ') + (g.guess ? '<br><span class="hint" style="display:inline">Proposition à confirmer</span>' : '') + '</th><td>' + g.n + '</td><td><select class="select" data-impant="' + i + '" aria-label="Antenne pour ' + esc(g.raws[0]) + '">' + optA(g.choice) + '</select></td></tr>'; }).join('') + '</tbody></table></div>' : '') +
+        (pl.timeGroups.length ? '<h4 style="margin:.75rem 0 .25rem">Heures à corriger (format HH:mm)</h4><div class="table-wrap"><table class="doc-table"><thead><tr><th scope="col">Dans le fichier</th><th scope="col">Lignes</th><th scope="col">Heure corrigée</th></tr></thead><tbody>' +
+          pl.timeGroups.map(function (g, i) { return '<tr><th scope="row">« ' + esc(g.raw) + ' »</th><td>' + g.n + '</td><td><input type="text" class="input" data-imptime="' + i + '" value="' + esc(g.fix || '') + '" placeholder="HH:mm" style="max-width:8rem" aria-label="Heure pour ' + esc(g.raw) + '"></td></tr>'; }).join('') + '</tbody></table></div><p class="hint">Laissez vide pour ignorer ces lignes.</p>' : '') +
+        '<div class="cf-actions"><button type="button" class="btn sm" id="x-sf-import-go">Valider l’import</button><button type="button" class="btn secondary sm" id="x-sf-import-cancel">Annuler</button></div></section>';
     } else {
       out += '<section class="cf-section" style="margin-top:16px"><h3>Ajouter un lot de créneaux</h3>' +
         '<span class="hint">Colonnes attendues : ' + esc(slotCsvHeaders(cs).join(', ')) + '. <button type="button" class="btn secondary sm" id="x-sf-template">Télécharger un modèle .csv</button></span>' +
@@ -16417,10 +16428,23 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function antWords(t) { return norm(String(t || '')).replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(function (w) { return w && !ANT_STOP[w]; }); }
   function antBigrams(w) { var o = []; for (var i = 0; i < w.length - 1; i++) o.push(w.slice(i, i + 2)); return o; }
   function antSim(a, b) { if (a === b) return 1; var x = antBigrams(a), y = antBigrams(b); if (!x.length || !y.length) return 0; var n = 0, yy = y.slice(); x.forEach(function (g) { var k = yy.indexOf(g); if (k !== -1) { n++; yy.splice(k, 1); } }); return 2 * n / (x.length + y.length); }
+  // Numéro d'antenne : « AM15 », « AM 15 », « 15e AM », « 15ème antenne médicale »… → 15.
+  function antNum(t) {
+    var x = norm(String(t || '')), m = /\bam\s*0*(\d{1,3})\b/.exec(x) || /\b0*(\d{1,3})\s*(?:e|er|ere|eme)?\s*(?:am|antennes?)\b/.exec(x) || /\bantennes?\s*(?:medicales?\s*)?(?:n(?:°|o|um(?:ero)?)?\s*)?0*(\d{1,3})\b/.exec(x);
+    return m ? Number(m[1]) : null;
+  }
+  function antKey(raw) { var n = antNum(raw); return n != null ? 'n' + n + '|' + antWords(String(raw).replace(/\bam\s*\d+|\b\d+\s*(?:e|er|ere|eme|ème|è)?\b/gi, ' ')).join('') : norm(String(raw || '')).replace(/[^a-z0-9]/g, ''); } // « AM15 » = « AM 15 » = « 15e AM »
+  function antExact(raw) { var k = antKey(raw); return k ? antenneNames().filter(function (n) { return antKey(n) === k; })[0] || null : null; }
   function matchAntenne(raw) {
     var names = antenneNames(); if (!names.length) return null;
-    var k = norm(String(raw)).replace(/[^a-z0-9]/g, ''); if (!k) return null;
-    var hit = names.filter(function (n) { return norm(String(n)).replace(/[^a-z0-9]/g, '') === k; })[0]; if (hit) return hit;
+    var k = antKey(raw); if (!k) return null;
+    var hit = names.filter(function (n) { return antKey(n) === k; })[0]; if (hit) return hit;
+    var num = antNum(raw);
+    if (num != null) {
+      var byNum = names.filter(function (n) { return antNum(n) === num; });
+      if (byNum.length === 1) return byNum[0];
+      if (byNum.length > 1) { var w0 = antWords(String(raw).replace(/\bam\s*\d+/i, ' ')).filter(function (x) { return !/^\d+$/.test(x); }); var best = byNum.filter(function (n) { var nw = antWords(n); return w0.length && w0.every(function (x) { return nw.some(function (y) { return y.indexOf(x) === 0 || antSim(x, y) >= 0.8; }); }); }); if (best.length === 1) return best[0]; }
+    }
     var w = antWords(raw); if (!w.length) return null;
     var cands = names.map(function (n) {
       var nw = antWords(n); if (!nw.length) return { n: n, s: 0 };
@@ -16430,12 +16454,23 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return cands[0].s >= 0.75 && (!cands[1] || cands[0].s - cands[1].s >= 0.15) ? cands[0].n : null;
   }
   function antenneRowId(name) { var nc = antenneNameCol(), r = nc && state.ant.rows.filter(function (x) { return x[nc.id] === name; })[0]; return r ? r.id : null; }
+  // Heure → HH:mm : 8h, 8h30, 8:30, 08.30, 830, 0830, 8:30:00, 8h30 PM, fraction Excel (0,354167)… ; null si ce n'est pas une heure.
+  function normTime(raw) {
+    var s = String(raw == null ? '' : raw).trim().toLowerCase().replace(/\s+/g, ''); if (!s) return null;
+    var ap = /(am|pm)$/.exec(s); if (ap) s = s.slice(0, -2);
+    var h = null, mi = 0, m, p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+    if ((m = /^(\d{1,2})[:h.,](\d{1,2})(?::\d{1,2}(?:[.,]\d+)?)?$/.exec(s))) { h = +m[1]; mi = +m[2]; }
+    else if ((m = /^(\d{1,2})h$/.exec(s)) || (m = /^(\d{1,2})$/.exec(s))) { h = +m[1]; }
+    else if ((m = /^(\d{1,2})(\d{2})$/.exec(s))) { h = +m[1]; mi = +m[2]; }
+    else if (/^[01]?[.,]\d+$/.test(s)) { var x = parseFloat(s.replace(',', '.')), t = Math.round(x * 1440); if (x >= 0 && x < 1) { h = Math.floor(t / 60); mi = t % 60; } }
+    if (h == null) return null;
+    if (ap) { if (ap[1] === 'pm' && h < 12) h += 12; if (ap[1] === 'am' && h === 12) h = 0; }
+    return h < 24 && mi < 60 ? p2(h) + ':' + p2(mi) : null;
+  }
   // Analyse le .csv déposé et prépare les lignes à créer (colonnes retrouvées par leur libellé, insensible à l'ordre et aux accents/majuscules).
   function parseSlotCsv(tab, text) {
     var cs = CRENEAU_SPECS[tab], s = state.slots[tab];
-    var dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
-      antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel),
-      toggleCol = findCol(s.cols, cs.toggleLabel);
+    var timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel), antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel);
     var rows = parseCsvText(text); if (!rows.length) return { error: 'Fichier vide ou illisible.' };
     var header = rows[0].map(norm);
     function idx(label) { return header.indexOf(norm(label)); }
@@ -16443,29 +16478,51 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (iDate === -1) return { error: 'Colonne « Date » introuvable dans le fichier (première ligne = en-têtes).' };
     if (cs.timeLabel && iTime === -1) return { error: 'Colonne « ' + cs.timeLabel + ' » introuvable dans le fichier.' };
     if (cs.antenneLabel && iAnt === -1) return { error: 'Colonne « ' + cs.antenneLabel + ' » introuvable dans le fichier.' };
-    var items = [], errors = [], fixed = {};
+    var recs = [], errors = [];
     rows.slice(1).forEach(function (r, i) {
       var line = i + 2, dv = parseCsvDate(r[iDate]);
       if (dv == null) { errors.push('ligne ' + line + ' : date invalide'); return; }
-      var fields = {}; fields[dateCol.id] = dv;
-      if (timeCol) { var t = (r[iTime] || '').trim(); if (!t) { errors.push('ligne ' + line + ' : heure manquante'); return; } fields[timeCol.id] = t; }
-      if (antCol) {
-        var a = (r[iAnt] || '').trim(); if (!a) { errors.push('ligne ' + line + ' : antenne manquante'); return; }
-        if (antenneNames().length) { // nom corrigé d'après la table des antennes de Grist
-          var nm = matchAntenne(a); if (!nm) { errors.push('ligne ' + line + ' : antenne « ' + a + ' » inconnue dans Grist'); return; }
-          if (nm !== a) fixed[a] = nm;
-          a = /^Ref:/.test(String(antCol.type || '')) ? antenneRowId(nm) : nm;
-        }
-        fields[antCol.id] = a;
-      }
+      var rec = { line: line, dv: dv };
+      if (timeCol) { var t = (r[iTime] || '').trim(); if (!t) { errors.push('ligne ' + line + ' : heure manquante'); return; } rec.time = t; }
+      if (antCol) { var a = (r[iAnt] || '').trim(); if (!a) { errors.push('ligne ' + line + ' : antenne manquante'); return; } rec.ant = a; }
       if (capCol && iCap !== -1) {
         var c = (r[iCap] || '').trim();
-        if (c !== '') { var n = Number(c.replace(',', '.')); if (!isFinite(n) || Math.round(n) !== n) { errors.push('ligne ' + line + ' : capacité invalide'); return; } fields[capCol.id] = n; }
+        if (c !== '') { var n = Number(c.replace(',', '.')); if (!isFinite(n) || Math.round(n) !== n) { errors.push('ligne ' + line + ' : capacité invalide'); return; } rec.cap = n; }
       }
-      if (toggleCol) fields[toggleCol.id] = true;
-      items.push(fields);
+      recs.push(rec);
     });
-    return { items: items, errors: errors, fixed: fixed };
+    // Rapprochement : heures reformatées en HH:mm (ou à corriger), noms d'antenne rapprochés de la liste ; une décision par valeur « semblable » (accents, casse, espaces, ponctuation ignorés).
+    var tg = {}, ag = {}, haveAnt = !!antCol && antenneNames().length > 0;
+    recs.forEach(function (rc) {
+      if (timeCol) { rc.timeN = normTime(rc.time); if (!rc.timeN) { var g = tg[rc.time] = tg[rc.time] || { raw: rc.time, n: 0, fix: '', fixN: '' }; g.n++; } }
+      if (haveAnt) { var k = antKey(rc.ant), g2 = ag[k] = ag[k] || { key: k, raws: [], n: 0, exact: false, choice: '' }; if (g2.raws.indexOf(rc.ant) === -1) g2.raws.push(rc.ant); g2.n++; rc.antKey = k; }
+    });
+    var antGroups = Object.keys(ag).map(function (k) { var g = ag[k], ex = antExact(g.raws[0]); g.exact = !!ex; g.choice = ex || matchAntenne(g.raws[0]) || ''; g.guess = !ex && !!g.choice; return g; });
+    var timeGroups = Object.keys(tg).map(function (k) { return tg[k]; });
+    return { tab: tab, recs: recs, errors: errors, antGroups: antGroups, timeGroups: timeGroups, needs: timeGroups.length > 0 || antGroups.some(function (g) { return !g.exact; }) };
+  }
+  // Construit les lignes à créer d'après le plan validé (heures normalisées, antennes rapprochées).
+  function buildSlotItems(plan) {
+    var cs = CRENEAU_SPECS[plan.tab], s = state.slots[plan.tab], dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
+      antCol = cs.antenneLabel && findCol(s.cols, cs.antenneLabel), capCol = cs.capLabel && findCol(s.cols, cs.capLabel), toggleCol = findCol(s.cols, cs.toggleLabel);
+    var items = [], errors = plan.errors.slice(), fixed = {}, timeFixed = 0, tgs = {}, ags = {};
+    plan.timeGroups.forEach(function (g) { tgs[g.raw] = g; }); plan.antGroups.forEach(function (g) { ags[g.key] = g; });
+    plan.recs.forEach(function (rc) {
+      var f = {}; f[dateCol.id] = rc.dv;
+      if (timeCol) {
+        var t = rc.timeN; if (!t) { t = (tgs[rc.time] || {}).fixN || ''; if (!t) { errors.push('ligne ' + rc.line + ' : heure « ' + rc.time + ' » ignorée'); return; } }
+        if (t !== rc.time) timeFixed++; f[timeCol.id] = t;
+      }
+      if (antCol) {
+        var a = rc.ant, g = ags[rc.antKey];
+        if (g) { if (g.choice === '__skip' || !g.choice) { errors.push('ligne ' + rc.line + ' : antenne « ' + rc.ant + ' » ignorée'); return; } if (g.choice !== a) fixed[a] = g.choice; a = /^Ref:/.test(String(antCol.type || '')) ? antenneRowId(g.choice) : g.choice; }
+        f[antCol.id] = a;
+      }
+      if (capCol && rc.cap != null) f[capCol.id] = rc.cap;
+      if (toggleCol) f[toggleCol.id] = true;
+      items.push(f);
+    });
+    return { items: items, errors: errors, fixed: fixed, timeFixed: timeFixed };
   }
   function pickCsvFile(cb) {
     var i = document.createElement('input');
@@ -16473,28 +16530,41 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
     i.click();
   }
+  function runSlotImport(sa, plan) {
+    var r = buildSlotItems(plan), tab = plan.tab, s = state.slots[tab], createFailed = [];
+    if (!r.items.length) { sa.import.plan = null; sa.import.error = 'Aucune ligne à importer' + (r.errors.length ? ' (' + r.errors.join(' ; ') + ')' : '') + '.'; renderSlots(); return; }
+    sa.import.busy = true; sa.import.error = ''; renderSlots();
+    r.items.reduce(function (p, fields) {
+      return p.then(function () { return api.createRow(s.table, fields).catch(function (e) { createFailed.push((e && e.message) || String(e)); }); });
+    }, Promise.resolve()).then(function () {
+      var ok = r.items.length - createFailed.length, parts = [ok + ' créneau' + (ok > 1 ? 'x' : '') + ' importé' + (ok > 1 ? 's' : '')];
+      var fx = Object.keys(r.fixed || {}); if (fx.length) parts.push(fx.length + ' nom' + (fx.length > 1 ? 's' : '') + ' d’antenne rapproché' + (fx.length > 1 ? 's' : '') + ' : ' + fx.map(function (k) { return '« ' + k + ' » → « ' + r.fixed[k] + ' »'; }).join(' ; '));
+      if (r.timeFixed) parts.push(r.timeFixed + ' heure' + (r.timeFixed > 1 ? 's' : '') + ' mise' + (r.timeFixed > 1 ? 's' : '') + ' au format HH:mm');
+      if (r.errors.length) parts.push(r.errors.length + ' ligne(s) ignorée(s) : ' + r.errors.join(' ; '));
+      if (createFailed.length) parts.push(createFailed.length + ' échec(s) à la création : ' + createFailed.join(' ; '));
+      sa.import = null; sa.msg = { type: (r.errors.length || createFailed.length) ? 'error' : 'success', text: parts.join(' · ') + '.' };
+      return load();
+    });
+  }
   function importSlotsFile(file) {
     var sa = state.slotAdmin; if (!sa || !sa.import || sa.import.busy) return;
     var tab = sa.tab, reader = {};
     reader.onload = function () {
       var r = parseSlotCsv(tab, String(reader.result || ''));
       if (r.error) { sa.import.error = r.error; renderSlots(); return; }
-      if (!r.items.length) { sa.import.error = 'Aucune ligne valide dans le fichier' + (r.errors.length ? ' (' + r.errors.join(' ; ') + ')' : '') + '.'; renderSlots(); return; }
-      sa.import.busy = true; sa.import.error = ''; renderSlots();
-      var s = state.slots[tab], createFailed = [];
-      r.items.reduce(function (p, fields) {
-        return p.then(function () { return api.createRow(s.table, fields).catch(function (e) { createFailed.push((e && e.message) || String(e)); }); });
-      }, Promise.resolve()).then(function () {
-        var ok = r.items.length - createFailed.length, parts = [ok + ' créneau' + (ok > 1 ? 'x' : '') + ' importé' + (ok > 1 ? 's' : '')];
-        var fx = Object.keys(r.fixed || {}); if (fx.length) parts.push(fx.length + ' nom' + (fx.length > 1 ? 's' : '') + ' d’antenne corrigé' + (fx.length > 1 ? 's' : '') + ' : ' + fx.map(function (k) { return '« ' + k + ' » → « ' + r.fixed[k] + ' »'; }).join(' ; '));
-        if (r.errors.length) parts.push(r.errors.length + ' ligne(s) ignorée(s) : ' + r.errors.join(' ; '));
-        if (createFailed.length) parts.push(createFailed.length + ' échec(s) à la création : ' + createFailed.join(' ; '));
-        sa.import = null; sa.msg = { type: (r.errors.length || createFailed.length) ? 'error' : 'success', text: parts.join(' · ') + '.' };
-        return load();
-      });
+      if (!r.recs.length) { sa.import.error = 'Aucune ligne valide dans le fichier' + (r.errors.length ? ' (' + r.errors.join(' ; ') + ')' : '') + '.'; renderSlots(); return; }
+      if (r.needs) { sa.import.plan = r; sa.import.error = ''; renderSlots(); return; } // rapprochement des antennes et des heures à valider avant l'import
+      runSlotImport(sa, r);
     };
     reader.onerror = function (e) { sa.import.busy = false; sa.import.error = 'Lecture du fichier impossible' + (e && e.message ? ' : ' + e.message : '') + '.'; renderSlots(); };
     window.__readTableText(file).then(function (t) { reader.result = t; reader.onload(); }, reader.onerror);
+  }
+  function validateSlotImport() {
+    var sa = state.slotAdmin, plan = sa && sa.import && sa.import.plan; if (!plan) return; var bad = [], box = $('smodal-body');
+    plan.antGroups.forEach(function (g, i) { var el = box.querySelector('[data-impant="' + i + '"]'); if (el) g.choice = el.value; if (!g.choice) bad.push('antenne « ' + g.raws[0] + ' »'); });
+    plan.timeGroups.forEach(function (g, i) { var el = box.querySelector('[data-imptime="' + i + '"]'); if (el) g.fix = el.value.trim(); g.fixN = g.fix ? normTime(g.fix) || '' : ''; if (g.fix && !g.fixN) bad.push('heure « ' + g.fix + ' » (format HH:mm attendu)'); });
+    if (bad.length) { sa.import.error = 'À compléter avant de valider : ' + bad.join(' ; ') + '.'; renderSlots(); return; }
+    runSlotImport(sa, plan);
   }
   function slotFieldsFromForm(cs, s, vals) {
     var fields = {}, dateCol = findCol(s.cols, cs.dateLabel), timeCol = cs.timeLabel && findCol(s.cols, cs.timeLabel),
@@ -16504,7 +16574,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (dateCol) fields[dateCol.id] = dv;
     if (timeCol) {
       if (!vals.time || !vals.time.trim()) return { error: 'Indiquez l’heure (HH:mm).' };
-      fields[timeCol.id] = vals.time.trim();
+      var tn = normTime(vals.time); if (!tn) return { error: 'Heure invalide : format HH:mm attendu (par exemple 08:30).' };
+      fields[timeCol.id] = tn;
     }
     if (antCol) {
       if (!vals.antenne) return { error: 'Choisissez l’antenne médicale.' };
@@ -16616,6 +16687,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (e.target.id === 'x-sf-template') { downloadSlotTemplate(sa.tab); return; }
     if (e.target.id === 'x-sf-import-open') { sa.import = { error: '', busy: false }; sa.edit = null; renderSlots(); return; }
     if (e.target.id === 'x-sf-import-cancel') { sa.import = null; renderSlots(); return; }
+    if (e.target.id === 'x-sf-import-go') { validateSlotImport(); return; }
     if (e.target.closest('#x-sf-drop') && sa.import && !sa.import.busy) { pickCsvFile(importSlotsFile); return; }
     var b = e.target.closest('[data-sact]'); if (!b) return;
     var id = Number(b.getAttribute('data-id')), act = b.getAttribute('data-sact');
