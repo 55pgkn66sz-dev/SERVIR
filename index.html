@@ -2710,6 +2710,9 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ibo-evf { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; align-items: start; }
   .ibo-evf__prev { min-height: 7rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-default-grey); border-radius: .5rem; background: #fff; padding: .5rem; }
   .ibo-evf__prev img { max-width: 100%; max-height: 7rem; }
+  #menu-ins .nav-ins-pmgs { margin: .75rem 0 0; }
+  .pgm-cell { display: flex; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; } .pgm-cell .input { width: 8.5rem; } .pgm-table td, .pgm-table th { vertical-align: middle; } .pgm-table tr.pgm-cur { background: var(--bg-alt-blue-france, #f5f5fe); }
+
 </style>
 </head>
 <body>
@@ -2861,6 +2864,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
                     <div class="nav-lead">
                       <p class="nav-lead__title">Préparation militaire gendarmerie</p>
                       <p class="nav-lead__text">L’ensemble des outils nécessaires à la gestion de la PMG</p>
+                      <p class="nav-ins-pmgs"><button type="button" class="fr-btn fr-btn--sm fr-btn--secondary" id="nav-ins-pmgs">Gérer les PMG</button></p>
                       <p class="nav-ins-badge" id="nav-ins-badge"><span class="fr-badge fr-badge--sm fr-badge--warning fr-badge--no-icon">Inactif actuellement</span></p>
                     </div>
                   </div>
@@ -3161,6 +3165,15 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   </div>
 </div><!-- /wrap -->
 </div><!-- /page-ins -->
+
+<!-- ===== Instruction : gestion des PMG (PMG affichée, objectifs CIV et VCA) ===== -->
+<div id="page-ins-pmgs" hidden>
+<div class="wrap fr-container">
+  <h1 class="fr-h3" style="margin-bottom:.25rem">Gérer les PMG</h1>
+  <p class="lead" style="margin:0 0 1rem;color:var(--muted)">Prochaines PMG, objectifs de recrutement et PMG affichée dans la page Instruction.</p>
+  <div id="ins-pmgs-host"></div>
+</div>
+</div><!-- /page-ins-pmgs -->
 
 <!-- ===== Instruction : fiche d'un stagiaire (onglets Informations, Notation ; départ) ===== -->
 <div class="modal-overlay" id="ins-smodal" hidden>
@@ -4345,7 +4358,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.68.4</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.69.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4818,6 +4831,22 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   window.PMG = {
     // Page Instruction : candidats « Admis PMG » d'une PMG ; valeurs de PMG connues.
     pmgValues: function () { var c = cfg(), v = {}; state.records.forEach(function (r) { pmgOf(r.raw, c).forEach(function (x) { if (String(x).trim()) v[x] = 1; }); }); return Object.keys(v).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); }); },
+    // PMG à venir : étiquettes de la colonne PMG (liste de choix) et valeurs déjà utilisées par des candidats.
+    pmgChoices: function () {
+      var c = cfg(), col = findCol(c.table, 'PMG'), v = {}; (col && col.choices || []).forEach(function (x) { if (String(x).trim()) v[x] = 1; });
+      state.records.forEach(function (r) { pmgOf(r.raw, c).forEach(function (x) { if (String(x).trim()) v[x] = 1; }); });
+      return Object.keys(v).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+    },
+    // Effectifs d'une PMG : candidats, admis (état « Admis PMG »), dont CIV et VCA (colonne Origine).
+    pmgStats: function (pmg) {
+      var c = cfg(), k = norm(pmg || ''), oc = findCol(c.table, 'Origine'), out = { cand: 0, admis: 0, civ: 0, vca: 0 };
+      state.records.forEach(function (r) {
+        if (!pmgOf(r.raw, c).some(function (x) { return norm(x) === k; })) return;
+        out.cand++; if (!toList(r.status).some(function (st) { return norm(st) === 'admis pmg'; })) return;
+        out.admis++; var o = oc ? norm(textOfValue(oc, r.raw[oc.id])) : ''; if (/^civ/.test(o)) out.civ++; else if (/^vca/.test(o)) out.vca++;
+      });
+      return out;
+    },
     trainees: function (pmg) {
       var c = cfg(), k = norm(pmg || '');
       return state.records.filter(function (r) {
@@ -17639,14 +17668,14 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
 })();
 // Menu : cinq pages dans le même widget (quatre dans le menu, mémorisées dans le navigateur ; le back office est une page cachée).
 (function () {
-  var pages = { ins: 'page-ins', welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', prof: 'page-prof', 'ins-prog': 'page-ins', 'ins-acts': 'page-ins', 'ins-rep': 'page-ins', 'ins-cer': 'page-ins', 'ins-stg': 'page-ins', 'ins-etu': 'page-ins', 'ins-inc': 'page-ins', 'ins-cad': 'page-ins', 'ins-doc': 'page-ins', 'ins-eval': 'page-ins', 'ins-stat': 'page-ins', 'ins-heb': 'page-ins', 'ins-veh': 'page-ins', 'ins-mat': 'page-ins', 'ins-rat': 'page-ins', 'ins-cso': 'page-ins', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo', jdc: 'page-jdc', 'emp-stat': 'page-emp-stat', pos: 'page-pos' };
+  var pages = { ins: 'page-ins', welcome: 'page-welcome', pmg: 'page-pmg', 'pmg-stat': 'page-pmg-stat', res: 'page-res', prof: 'page-prof', 'ins-prog': 'page-ins', 'ins-acts': 'page-ins', 'ins-rep': 'page-ins', 'ins-cer': 'page-ins', 'ins-stg': 'page-ins', 'ins-etu': 'page-ins', 'ins-inc': 'page-ins', 'ins-cad': 'page-ins', 'ins-doc': 'page-ins', 'ins-eval': 'page-ins', 'ins-stat': 'page-ins', 'ins-heb': 'page-ins', 'ins-veh': 'page-ins', 'ins-mat': 'page-ins', 'ins-rat': 'page-ins', 'ins-cso': 'page-ins', 'ins-pmgs': 'page-ins-pmgs', 'res-ren': 'page-res-ren', 'res-ave': 'page-res-ave', 'res-stat': 'page-res-stat', 'rsv-vmp': 'page-rsv', 'rsv-vemi': 'page-rsv', 'rsv-psy': 'page-rsv', faq: 'page-faq', bo: 'page-bo', jdc: 'page-jdc', 'emp-stat': 'page-emp-stat', pos: 'page-pos' };
   // Anciennes clés (liens #go:, étapes du tutoriel, page mémorisée) : « Réservations » est réparti entre les menus Réservistes (VMP) et Candidats (VEMI, tests psy).
   // Fraîcheur des données par page : relues au plus toutes les 20 s à l'affichage (et après toute écriture : window.__dataDirty).
   var fresh = {};
   function stale(k) { var t = Date.now(); if (fresh[k] && t - fresh[k] < 20000) return false; fresh[k] = t; return true; }
   window.__dataDirty = function () { fresh = {}; };
   var ALIAS = { 'jdc-stat': 'emp-stat', 'pos-stat': 'emp-stat', rsv: 'rsv-vmp', 'rsv:vmp': 'rsv-vmp', 'rsv:vemi': 'rsv-vemi', 'rsv:psy': 'rsv-psy' };
-  var titles = { ins: 'Instruction', welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', prof: 'Profilage', 'ins-prog': 'Progression du stage', 'ins-acts': 'Activités et cours', 'ins-rep': 'Repos des cadres', 'ins-cer': 'Cérémonie', 'ins-stg': 'Stagiaires', 'ins-etu': 'eTuteur', 'ins-inc': 'Incorporation', 'ins-cad': 'Cadres', 'ins-doc': 'Documents et modèles', 'ins-eval': 'Évaluations', 'ins-stat': 'Statistiques de la PMG', 'ins-heb': 'Hébergement', 'ins-veh': 'Véhicules', 'ins-mat': 'Matériels', 'ins-rat': 'État rationnaire', 'ins-cso': 'Consommations', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office', jdc: 'Journée défense et citoyenneté (JDC)', 'emp-stat': 'Statistiques Emploi', pos: 'Mission Poséidon' };
+  var titles = { ins: 'Instruction', welcome: 'Bienvenue', pmg: 'Candidats', 'pmg-stat': 'Statistiques des candidats', res: 'Réservistes RO1/RS/RC', prof: 'Profilage', 'ins-prog': 'Progression du stage', 'ins-acts': 'Activités et cours', 'ins-rep': 'Repos des cadres', 'ins-cer': 'Cérémonie', 'ins-stg': 'Stagiaires', 'ins-etu': 'eTuteur', 'ins-inc': 'Incorporation', 'ins-cad': 'Cadres', 'ins-doc': 'Documents et modèles', 'ins-eval': 'Évaluations', 'ins-stat': 'Statistiques de la PMG', 'ins-heb': 'Hébergement', 'ins-veh': 'Véhicules', 'ins-mat': 'Matériels', 'ins-rat': 'État rationnaire', 'ins-cso': 'Consommations', 'ins-pmgs': 'Gérer les PMG', 'res-ren': 'Renouvellements de contrats', 'res-ave': 'Avenants', 'res-stat': 'Statistiques des réservistes', 'rsv-vmp': 'Convocations à la visite médicale périodique (VMP)', 'rsv-vemi': 'Convocations à la visite d’expertise médicale initiale (VEMI)', 'rsv-psy': 'Convocations aux tests psychométriques', faq: 'Foire aux questions', bo: 'Back office', jdc: 'Journée défense et citoyenneté (JDC)', 'emp-stat': 'Statistiques Emploi', pos: 'Mission Poséidon' };
   // Page affichée : bouton du menu « courant », titre du document, page retrouvée à la réouverture (aussi appelée au changement d'onglet de Réservations).
   function mark(p) {
     window.__page = p;
@@ -17691,6 +17720,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     if (/^ins/.test(p) && window.INS) window.INS.show(stale('ins'));
     var pi = document.getElementById('page-ins'); if (pi) pi.classList.toggle('ins-single', /^ins-/.test(p)); if (p === 'ins' && document.getElementById('ins-h1')) document.getElementById('ins-h1').textContent = 'Instruction'; // page Instruction : une entrée du menu = une page
     if (/^ins-/.test(p)) insOpen(p.slice(4));
+    if (p === 'ins-pmgs' && window.INS && window.INS.pmgs) window.INS.pmgs();
     if (window.__refreshActiveFilters) window.__refreshActiveFilters();
     window.scrollTo(0, 0);
   }
@@ -17731,6 +17761,11 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   }
   function insGo(k) { if (INS_GO[k]) show('ins-' + k); }
   window.__insGo = insGo; // (tests)
+  document.addEventListener('click', function (e) { // « Gérer les PMG » : toujours accessible, même menu inactif (c'est là que se choisit la PMG affichée)
+    var b = e.target.closest && e.target.closest('#nav-ins-pmgs'); if (!b) return;
+    e.preventDefault(); show('ins-pmgs');
+    try { var sub = document.getElementById('menu-ins'); if (sub && window.dsfr) window.dsfr(sub).collapse.conceal(); var m = document.getElementById('modal-header-menu'); if (m && window.dsfr) window.dsfr(m).modal.conceal(); } catch (err) {}
+  });
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('#menu-ins [data-ins-go]'); if (!a) return;
     e.preventDefault(); if (a.getAttribute('aria-disabled') === 'true') return;
@@ -27879,7 +27914,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
       '<nav class="ibo-nav" aria-label="Aller à une section">' + [['ibo-stage', 'Stage'], ['ibo-feat', 'Fonctionnalités'], ['ibo-g-pers', 'Stagiaires et cadres'], ['ibo-g-res', 'Ressources'], ['ibo-g-com', 'Communication'], ['ibo-g-tech', 'Installation']].map(function (c) { return '<button type="button" class="ibo-chip" data-ibogo="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</nav>' +
       '<section class="ibo-card" id="ibo-stage"><h3 class="ibo-h">Stage suivi</h3>' +
       '<p class="hint ibo-lead">Les stagiaires sont les candidats « Admis PMG » de la PMG suivie ; les cadres sont ceux de la table « ' + CT + ' ».</p>' +
-      '<div class="ibo-grid">' + fld('ins-f-bopmg', 'PMG suivie', '<select class="select" id="ins-f-bopmg"></select>', '<span id="ins-f-n"></span>') + '</div>' +
+      '<div class="cf-field"><span class="fr-label">PMG suivie</span><p style="margin:.25rem 0"><strong id="ins-bo-pmgcur"></strong> <button type="button" class="btn secondary sm" data-ins-pmgs>Gérer les PMG</button></p><p class="hint">La PMG affichée dans Instruction et les objectifs se règlent dans la page « Gérer les PMG » (bouton du menu Instruction). <span id="ins-f-n"></span></p></div>' +
       '<div class="ibo-sub" style="margin-top:1rem"><h4>Pelotons du stage</h4><div class="pg-chips ibo-pels" id="ins-bo-pel" role="group" aria-label="Pelotons disponibles pour ce stage">' + ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'ACC'].map(function (k) { return '<button type="button" class="ibo-pelb" data-bopel="' + k + '" aria-pressed="false">' + (k === 'ACC' ? 'Acculturation' : k) + '</button>'; }).join('') + '</div><p class="hint">Cliquez pour choisir les pelotons de ce stage, de P1 à P8 ; l’acculturation s’affiche « ACC. » dans le widget. Sans acculturation, les dates de son peloton sont grisées.</p></div>' +
       '<div class="ibo-subs"><div class="ibo-sub"><h4>Dates du stage</h4><div class="ibo-grid">' + fld('ins-bo-sd0', 'Début', '<input class="input" type="date" id="ins-bo-sd0">') + fld('ins-bo-sd1', 'Fin', '<input class="input" type="date" id="ins-bo-sd1">') + '</div><p class="hint">Facultatives : à défaut, le premier et le dernier jour de la progression.</p></div>' +
       '<div class="ibo-sub" id="ibo-acc"><h4>Peloton d’acculturation</h4><div class="ibo-grid">' + fld('ins-bo-ad0', 'Début', '<input class="input" type="date" id="ins-bo-ad0">') + fld('ins-bo-ad1', 'Fin', '<input class="input" type="date" id="ins-bo-ad1">') + '</div><p class="hint">Ce peloton ne suit qu’une partie du stage : hors de ces dates, il disparaît de la FSJ et des élèves de jour, et ses variables STAGE_DEBUT et STAGE_FIN reprennent ces dates. Facultatif : à défaut, celles du stage.</p></div></div>' +
@@ -27928,7 +27963,6 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
       '<li>Sur la table des candidats, ajoutez une règle autorisant la lecture si <code>rec.PMG == user.DroitsPMG.PMG</code> (si la colonne PMG des candidats est une liste de choix : <code>user.DroitsPMG.PMG in rec.PMG</code>).</li>' +
       '<li>La PMG de chaque cadre doit être écrite exactement comme dans la table des candidats (ex. « PMG 74 ») : le formulaire d’ajout la propose dans cette liste.</li></ol>', 'ins-bo-instd', true) + '</div>';
     var bar = wrap.querySelector(':scope > .bo-bar'); wrap.insertBefore(host, bar || null);
-    host.querySelector('#ins-f-bopmg').addEventListener('change', function (e) { draft = e.target.value; boRender(); if (window.RSV && window.RSV.markDirty) window.RSV.markDirty(); });
     host.addEventListener('change', function (e) {
       var dl = boDl;
       var k = e.target.getAttribute('data-bolayer'), fk = e.target.getAttribute('data-boform');
@@ -27938,6 +27972,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
       if (window.RSV && window.RSV.markDirty) window.RSV.markDirty();
     });
     host.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-ins-pmgs]')) { window.__showPage('ins-pmgs'); return; }
       var xa = e.target.closest && e.target.closest('[data-boxa]'); if (xa) { boExtraAct(xa); return; }
       if (e.target.id === 'ins-bo-cols') { colConfirm = true; boSchema(); var ok = $('ins-bo-cols-ok'); if (ok) ok.focus(); return; }
       if (e.target.id === 'ins-bo-cols-no') { colConfirm = false; boSchema(); return; }
@@ -28170,10 +28205,9 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   function boRender() {
     var host = boSection(); if (!host) return;
     boSchema();
-    var P = window.PMG, vals = P && P.pmgValues ? P.pmgValues() : [], cur = draft != null ? draft : pmg();
-    if (cur && vals.indexOf(cur) === -1) vals = [cur].concat(vals);
+    var P = window.PMG, cur = pmg();
     boDdc(); boAcl();
-    host.querySelector('#ins-f-bopmg').innerHTML = '<option value="">— Choisir une PMG —</option>' + vals.map(function (x) { return '<option value="' + esc(x) + '"' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+    host.querySelector('#ins-bo-pmgcur').textContent = cur || 'Aucune';
     var n = cur && P && P.trainees ? P.trainees(cur).length : 0, sgc = (draftL && draftL.stage) || (opts().ins || {}).stage || {};
     if (document.activeElement !== host.querySelector('#ins-bo-sd0')) host.querySelector('#ins-bo-sd0').value = sgc.d0 || ''; if (document.activeElement !== host.querySelector('#ins-bo-sd1')) host.querySelector('#ins-bo-sd1').value = sgc.d1 || '';
     var sac = (draftL && draftL.stageAcc) || (opts().ins || {}).stageAcc || {};
@@ -28382,7 +28416,46 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     if (e.target.name === 'ax-type' && AXF) { axRead(); AXF.type = e.target.value; boRules(); var t = document.querySelector('#ins-bo-rules [name="ax-type"][value="' + AXF.type + '"]'); if (t) t.focus(); return; }
     var m = e.target.getAttribute('data-boaxm'); if (m) { var d = boDl(); if (!d.absRules) d.absRules = absRulesCfg(); d.absRules.forEach(function (x) { if (x.id === m) x.mode = e.target.value; }); if (window.RSV && window.RSV.markDirty) window.RSV.markDirty(); }
   });
+  /* ---------- Page « Gérer les PMG » : PMG à venir (étiquettes de la colonne PMG), objectifs CIV / VCA, PMG affichée dans Instruction ---------- */
+  var pgmMsg = '', pgmLoc = null; // pgmLoc : objectifs saisis, gardés localement tant que l'enregistrement est en cours (saisies rapprochées)
+  function pgmObj() { return pgmLoc || (opts().ins || {}).pmgObj || {}; }
+  function pgmGauge(n, obj) { // effectif admis et écart à l'objectif
+    if (obj == null || obj === '') return '<strong>' + n + '</strong> admis';
+    var d = Number(obj) - n;
+    return '<strong>' + n + '</strong> / ' + obj + ' ' + (d <= 0 ? '<span class="fr-badge fr-badge--sm fr-badge--success fr-badge--no-icon">Atteint</span>' : '<span class="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon">Reste ' + d + '</span>');
+  }
+  function pgmRender() {
+    var h = $('ins-pmgs-host'); if (!h) return;
+    var P = window.PMG, vals = P && P.pmgChoices ? P.pmgChoices() : [], cur = pmg(), O = pgmObj();
+    if (cur && vals.indexOf(cur) === -1) vals = [cur].concat(vals);
+    var rows = vals.map(function (v, i) {
+      var st = P.pmgStats(v), o = O[v] || {};
+      function cell(k, lab) { return '<td><div class="pgm-cell"><span data-pgm-g="' + k + '" data-pgm="' + esc(v) + '">' + pgmGauge(st[k], o[k]) + '</span><label class="fr-sr-only" for="pgm-' + k + i + '">Objectif ' + lab + ' de la ' + esc(v) + '</label><input class="input" type="number" min="0" step="1" id="pgm-' + k + i + '" data-pgm-obj="' + k + '" data-pgm="' + esc(v) + '" value="' + (o[k] == null ? '' : esc(o[k])) + '" placeholder="Objectif"></div></td>'; }
+      return '<tr' + (v === cur ? ' class="pgm-cur"' : '') + '><th scope="row">' + esc(v) + '</th><td>' + st.cand + ' <span class="hint" style="display:inline">(' + st.admis + ' admis)</span></td>' + cell('civ', 'CIV') + cell('vca', 'VCA') +
+        '<td>' + (v === cur ? '<span class="fr-badge fr-badge--sm fr-badge--success fr-badge--no-icon">Affichée</span>' : '<button type="button" class="btn secondary sm" data-pgm-pick="' + esc(v) + '">Afficher dans Instruction</button>') + '</td></tr>';
+    }).join('');
+    h.innerHTML = (pgmMsg ? '<div class="doc-alert success" role="status"><p>' + esc(pgmMsg) + '</p></div>' : '<div role="status" aria-live="polite"></div>') +
+      (rows ? '<p class="hint">Étiquettes de la colonne PMG de la table des candidats. L’objectif se compare aux candidats « Admis PMG » de chaque origine (CIV, VCA) ; il s’enregistre à la saisie.</p>' +
+        '<div class="table-wrap"><table class="doc-table pgm-table"><caption class="fr-sr-only">PMG à venir</caption><thead><tr><th scope="col">PMG</th><th scope="col">Candidats</th><th scope="col">CIV</th><th scope="col">VCA</th><th scope="col">Page Instruction</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+        : '<div class="doc-alert warning"><p>Aucune PMG trouvée : ajoutez des étiquettes à la colonne PMG de la table des candidats.</p></div>') +
+      (cur ? '' : '<p class="hint">Aucune PMG n’est affichée : la page Instruction reste vide tant qu’une PMG n’est pas choisie.</p>');
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-pgm-pick]'); if (!b) return;
+    var v = b.getAttribute('data-pgm-pick'); b.disabled = true;
+    insOptSet('pmg', v).then(function () { draft = null; pgmMsg = 'La ' + v + ' est maintenant affichée dans la page Instruction.'; pgmRender(); render(); boRender(); });
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.closest || !t.closest('#ins-pmgs-host') || !t.getAttribute('data-pgm-obj')) return;
+    var k = t.getAttribute('data-pgm-obj'), v = t.getAttribute('data-pgm'), n = t.value.trim() === '' ? null : Math.max(0, Math.round(Number(t.value)));
+    if (n != null && !isFinite(n)) n = null;
+    var o = JSON.parse(JSON.stringify(pgmObj())); o[v] = o[v] || {}; if (n == null) delete o[v][k]; else o[v][k] = n; if (!Object.keys(o[v]).length) delete o[v]; pgmLoc = o;
+    t.value = n == null ? '' : n; pgmMsg = '';
+    var g = t.closest('.pgm-cell').querySelector('[data-pgm-g]'), st = window.PMG.pmgStats(v); g.innerHTML = pgmGauge(st[k], n);
+    insOptSet('pmgObj', Object.keys(o).length ? o : null);
+  });
   window.INS = {
+    pmgs: function () { pgmMsg = ''; pgmLoc = null; pgmRender(); if (window.PMG && window.PMG.refresh) Promise.resolve(window.PMG.refresh()).then(pgmRender, pgmRender); },
     show: function (reload) {
       render();
       var jobs = [loadCadres(), loadLinked(), loadMan(), loadForms(), loadPlan(), loadRes(), loadDocs()]; if (reload && window.PMG && window.PMG.refresh) jobs.push(Promise.resolve(window.PMG.refresh()));
@@ -28548,10 +28621,12 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
         window.__showBoTab('instruction'); return wait(300);
       }).then(function () {
         check('Back office : réglage « Menu actif » (liens et badge du menu Instruction)', !!$('ins-bo-menuon'));
-        var sel = $('ins-f-bopmg'); check('Réglage « PMG suivie » dans le back office', sel && sel.offsetParent !== null && sel.options.length > 1, sel && sel.options.length - 1 + ' PMG');
-        var pm = window.PMG.trainees('PMG 74').length ? 'PMG 74' : sel.options[1].value;
-        sel.value = pm; sel.dispatchEvent(new Event('change', { bubbles: true }));
-        return window.INS.save().then(function () {
+        check('Back office : bouton « Gérer les PMG » à la place du sélecteur de PMG suivie', !!document.querySelector('#ins-bo [data-ins-pmgs]') && !$('ins-f-bopmg'));
+        var pm = 'PMG 74'; window.__showPage('ins-pmgs');
+        return wait(400).then(function () {
+          check('Page Gérer les PMG : PMG listées avec objectifs CIV et VCA', document.querySelectorAll('#ins-pmgs-host tbody tr').length > 1 && !!document.querySelector('#ins-pmgs-host [data-pgm-obj="civ"]'));
+          var pk = document.querySelector('#ins-pmgs-host [data-pgm-pick="' + pm + '"]'); if (pk) pk.click(); return wait(300);
+        }).then(function () {
           for (var j = 0; j < 5; j++) a.click(); return wait(500);
         }).then(function () {
           var n = $('ins-rows').querySelectorAll('tr').length, exp = window.PMG.trainees(pm).length;
