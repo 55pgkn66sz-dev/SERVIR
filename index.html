@@ -4345,7 +4345,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.68.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.68.1</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -5569,12 +5569,15 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
     // Documents joints au modèle de courriel (réglés dans le back office) : PDF générés et joints à un brouillon .eml (lettres de la page Candidats : leur propre aperçu).
     var attIds = kind === 'lettre' || kind === 'rejet' || !window.__attachOf || !window.__emlDraft ? [] : window.__attachOf(tplId).filter(function (id) { return /^(pmg:|rsv:common:)/.test(id); });
+    // Convocation VEMI : toujours jointe au message du candidat, jamais à celui de l'antenne médicale.
+    attIds = attIds.filter(function (id) { return id !== 'rsv:common:fichePresentation'; });
+    if (attIds.length && kind === 'convocation' && SHARED_TYPE_OF[blockKey] === 'vemi') attIds.push('rsv:common:fichePresentation');
     if (attIds.length) {
       done('success', 'Génération des documents joints…');
       Promise.all(attIds.map(function (id) {
         var m1 = /^pmg:([^:]+):([^:]+):doc$/.exec(id), m2 = /^rsv:common:(.+)$/.exec(id), t2 = null, nm = 'Document';
         if (m1) { var cm = c.mail[m1[1]] && c.mail[m1[1]][m1[2]]; t2 = cm && cm.template; nm = { lettre: 'Lettre_incorporation', rejet: 'Lettre_rejet', esr: 'ESR' }[m1[2]] || m1[2]; }
-        else if (m2 && window.RSV && window.RSV.sharedMail) { var sm = window.RSV.sharedMail(SHARED_TYPE_OF[blockKey] || 'vemi', m2[1]); t2 = sm && sm.template; nm = { fichePoste: 'Fiche_de_poste', fichePresentation: 'Fiche_de_presentation' }[m2[1]] || m2[1]; }
+        else if (m2 && window.RSV && window.RSV.sharedMail) { var sm = window.RSV.sharedMail(SHARED_TYPE_OF[blockKey] || 'vemi', m2[1]); t2 = sm && sm.template; nm = { fichePoste: 'Fiche_de_poste', fichePresentation: 'Convocation_VEMI' }[m2[1]] || m2[1]; }
         if (!t2) return null;
         var h2 = fillTemplate(t2, item, c, true, extra);
         return buildPdfFromHtml(window.__applyBloc ? window.__applyBloc(id, h2) : h2).then(function (ab) { return { name: nm + '_' + who + '.pdf', type: 'application/pdf', data: ab }; });
@@ -5601,28 +5604,29 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (act.htmlMail) {
       var textBody = fillTemplate(tpl.body, item, c, false, extra);
       var mbase = 'Convocation_' + (act.toService ? 'service_' : '') + blockKey + '_' + who, mname = mbase + '.pdf';
-      // Confirmation à l'antenne médicale (VEMI) : brouillon .eml avec la fiche de poste et la fiche de présentation (modèles HTML du
-      // back office, en PDF) déjà jointes, comme sur la page Réservations ; sinon, message ouvert directement dans la messagerie.
-      var withPj = !!(act.toService && SHARED_TYPE_OF[blockKey] === 'vemi' && window.RSV && window.RSV.sharedMail && window.__emlDraft);
+      // VEMI : brouillon .eml avec une pièce jointe (modèle HTML du back office, en PDF), comme sur la page Réservations : la fiche de poste
+      // pour l'antenne médicale, la convocation VEMI pour le candidat ; sinon, message ouvert directement dans la messagerie.
+      var withPj = !!(SHARED_TYPE_OF[blockKey] === 'vemi' && window.RSV && window.RSV.sharedMail && window.__emlDraft);
+      var pjKey = act.toService ? ['fichePoste', 'Fiche_de_poste_', 'fiche de poste'] : ['fichePresentation', 'Convocation_VEMI_', 'convocation VEMI'], pjWho = act.toService ? 'Antenne médicale' : 'Candidat';
       if (!withPj) openMailto(to, subject, textBody, cc, c.replyTo);
       markSent(item.raw.id, blockKey, kind);
-      var sentH = withPj ? 'Brouillon pour l’antenne médicale en préparation (fiche de poste et fiche de présentation jointes).'
+      var sentH = withPj ? 'Brouillon pour ' + (act.toService ? 'l’antenne médicale' : 'le candidat') + ' en préparation (' + pjKey[2] + ' jointe).'
         : act.toService ? 'Convocation préparée dans votre messagerie pour le service : vérifiez-la puis envoyez-la.'
         : 'Convocation préparée dans votre messagerie : vérifiez-la puis envoyez-la.';
       var pjFiles = [];
       var tkH = mname + Date.now(); state.mail.ticket = tkH;
       state.mail.msg = { type: 'success', text: sentH + ' Génération du PDF à archiver' + (withPj ? ' et des pièces jointes' : '') + '…' }; renderModal();
       var pdfHtml = pageHtml((act.toService ? 'Fiche de convocation – ' : 'Convocation – ') + block.title, '<p>' + esc(textBody).replace(/\n/g, '<br>') + '</p>');
-      var pjDone = withPj ? [['fichePoste', 'Fiche_de_poste_'], ['fichePresentation', 'Fiche_de_presentation_']].reduce(function (p, it) {
+      var pjDone = withPj ? [pjKey].reduce(function (p, it) {
         return p.then(function () {
           var t = window.RSV.sharedMail(SHARED_TYPE_OF[blockKey], it[0]); if (!t || !t.template) return;
           return buildPdfFromHtml((window.__applyBloc ? window.__applyBloc('rsv:common:' + it[0], fillTemplate(t.template, item, c, true, extra)) : fillTemplate(t.template, item, c, true, extra))).then(function (ab2) { pjFiles.push({ name: it[1] + who + '.pdf', type: 'application/pdf', data: ab2 }); });
         });
       }, Promise.resolve()).then(function () {
-        var blob = window.__emlDraft({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: textBody, files: pjFiles }), dn = 'Convocation_VEMI_' + who + '.eml';
+        var blob = window.__emlDraft({ to: to, cc: cc, replyTo: c.replyTo, subject: subject, body: textBody, files: pjFiles }), dn = 'Convocation_VEMI_' + (act.toService ? 'antenne_' : 'candidat_') + who + '.eml';
         if (state.mail.draft) URL.revokeObjectURL(state.mail.draft.url);
         state.mail.draft = { url: URL.createObjectURL(blob), name: dn }; downloadBlob(blob, dn);
-        sentH = 'Antenne médicale : brouillon téléchargé (fiche de poste et fiche de présentation en pièces jointes). Ouvrez-le, faites Ctrl + E, vérifiez le message et envoyez-le.\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.';
+        sentH = pjWho + ' : brouillon téléchargé (' + pjKey[2] + ' en pièce jointe). Ouvrez-le, faites Ctrl + E, vérifiez le message et envoyez-le.\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.';
       }) : Promise.resolve();
       pjDone.then(function () { return buildPdfFromHtml(pdfHtml); }).then(function (ab) {
         state.mail.pdfUrl = URL.createObjectURL(new Blob([ab], { type: 'application/pdf' })); state.mail.pdfName = mname;
@@ -14497,15 +14501,15 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     },
     common: {
       service: { subject: '{{TYPE}} du {{DATE}} : convocation de {{IDENTITE}}', body: service() },
-      // Pièces jointes du message à l'antenne médicale (cadre VEMI uniquement) : modèles HTML, téléchargés en PDF à glisser dans le message.
+      // Pièces jointes des messages VEMI : modèles HTML convertis en PDF (fiche de poste → antenne médicale ; convocation VEMI → candidat).
       fichePoste: { template: pageHtml('Fiche de poste',
         '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' + pjRow('Candidat', '<strong>{{IDENTITE}}</strong>') + pjRow('NID', '{{NID}}') + pjRow('Affectation', '{{AFFECTATION}}') +
         pjRow('Visite', '{{TYPE}} · {{DATE}} {{HEURE}}') + pjRow('Antenne médicale', '{{ANTENNE}}') + '  </table>\n' +
         '  <p><strong>Intitulé du poste :</strong> à compléter</p>\n  <p><strong>Missions :</strong> à compléter</p>\n  <p><strong>Conditions d’aptitude requises :</strong> à compléter</p>') },
-      fichePresentation: { template: pageHtml('Fiche de présentation',
+      fichePresentation: { template: pageHtml('Convocation VEMI',
         '  <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">\n' + pjRow('Identité', '<strong>{{IDENTITE}}</strong>') + pjRow('Date de naissance', '{{DDN}}') + pjRow('NID', '{{NID}}') + pjRow('Affectation', '{{AFFECTATION}}') +
         pjRow('Téléphone', '{{TELEPHONE}}') + pjRow('Mail', '{{EMAIL}}') + '  </table>\n' +
-        '  <p>Le candidat est convoqué à la visite d’expertise médicale initiale (VEMI) le <strong>{{DATE}} {{HEURE}}</strong>, {{ANTENNE}}.</p>') }
+        '  <p>Vous êtes convoqué(e) à la visite d’expertise médicale initiale (VEMI) le <strong>{{DATE}} {{HEURE}}</strong>, {{ANTENNE}}.</p>') }
     }
   };
   // Lien de réservation (back office) : présent par défaut dans les invitations à réserver et les annulations (réserver un nouveau créneau).
@@ -15311,33 +15315,41 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (miss.length) return showMsg('error', 'Renseignez d’abord : ' + miss.join(', ') + '.');
     if (!to || !to.split(',').every(validEmail)) return showMsg('error', service ? 'Aucune adresse mail pour l’antenne médicale : ' + antWhy(tab, row) + '.' : 'Aucune adresse mail valide pour ce ' + spec.personWord + '.');
     var m = prepareMail(tab, kind, row, to);
-    var withPj = service && (tab === 'vemi' || tab === 'vmp');
+    var personPj = !service && tab === 'vemi' && kind === 'convocation' && !!window.__emlDraft; // convocation VEMI jointe au message du candidat
+    var withPj = personPj || (service && (tab === 'vemi' || tab === 'vmp')), rp;
     if (!withPj) openMailto(m.to, m.subject, m.text, m.cc, m.replyTo);
     var base = 'Message ' + (service ? 'pour l’antenne médicale' : 'pour le ' + spec.personWord) + ' préparé dans votre messagerie : vérifiez-le puis envoyez-le.';
-    // Antenne médicale : un brouillon .eml avec en pièces jointes la fiche de poste (VMP et VEMI), la fiche de présentation
-    // (cadre VEMI uniquement), modèles HTML du back office convertis en PDF, et le tableau du rendez-vous (VEMI).
+    // Antenne médicale : un brouillon .eml avec en pièces jointes la fiche de poste (VMP et VEMI) et le tableau du rendez-vous (VEMI) ;
+    // candidat VEMI : un brouillon avec la convocation VEMI. Modèles HTML du back office convertis en PDF.
     if (withPj) {
-      var pjs = tab === 'vemi' ? [['fichePoste', 'Fiche_de_poste_'], ['fichePresentation', 'Fiche_de_presentation_']] : [['fichePoste', 'Fiche_de_poste_']];
-      showMsg('success', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' : '') + 'Antenne médicale : préparation du brouillon et des pièces jointes…');
+      var pjs = personPj ? [['fichePresentation', 'Convocation_VEMI_']] : [['fichePoste', 'Fiche_de_poste_']], who1 = service ? 'Antenne médicale' : spec.personWord.charAt(0).toUpperCase() + spec.personWord.slice(1);
+      if (!opt.quiet || service) showMsg('success', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' : '') + who1 + ' : préparation du brouillon et des pièces jointes…');
       var C = mergeMail(xo().mail).common, who = safeName(txt(tab, row, spec.person)), files = [];
       pjs.reduce(function (p, it) {
         return p.then(function () {
           return buildPdfFromHtml(window.__applyBloc('rsv:common:' + it[0], fill(C[it[0]].template, tab, row, true, { TYPE: spec.title }))).then(function (ab) { files.push({ name: it[1] + who + '.pdf', type: 'application/pdf', data: ab }); });
         });
       }, Promise.resolve()).then(function () {
-        if (tab === 'vemi') return vemiSheetFile([row], 'Confirmation_VEMI_' + who).then(function (f) { files.push(f); });
+        if (service && tab === 'vemi') return vemiSheetFile([row], 'Confirmation_VEMI_' + who).then(function (f) { files.push(f); });
       }).then(function () {
-        var draft = downloadDraft({ to: m.to, cc: m.cc, replyTo: m.replyTo, subject: m.subject, body: m.text, files: files }, 'Convocation_' + spec.title + '_' + who + '.eml');
-        var pjTxt = files.map(function (f) { return /^Fiche_de_poste/.test(f.name) ? 'fiche de poste' : /^Fiche_de_presentation/.test(f.name) ? 'fiche de présentation' : 'tableau du rendez-vous'; });
+        var draft = downloadDraft({ to: m.to, cc: m.cc, replyTo: m.replyTo, subject: m.subject, body: m.text, files: files }, 'Convocation_' + spec.title + (service ? '' : '_candidat') + '_' + who + '.eml');
+        var pjTxt = files.map(function (f) { return /^Fiche_de_poste/.test(f.name) ? 'fiche de poste' : /^Convocation_VEMI/.test(f.name) ? 'convocation VEMI' : 'tableau du rendez-vous'; });
         pjTxt = pjTxt.length > 1 ? pjTxt.slice(0, -1).join(', ') + ' et ' + pjTxt[pjTxt.length - 1] : pjTxt[0];
-        var lineS = 'Antenne médicale : brouillon téléchargé (' + pjTxt + ' en pièces jointes). Ouvrez-le, faites Ctrl + E, vérifiez le message et envoyez-le.';
+        var lineS = who1 + ' : brouillon téléchargé (' + pjTxt + ' en pièce' + (files.length > 1 ? 's' : '') + ' jointe' + (files.length > 1 ? 's' : '') + '). Ouvrez-le, faites Ctrl + E, vérifiez le message et envoyez-le.';
+        if (personPj) { // la date reportée dans la fiche fait partie du message
+          return Promise.resolve(rp).then(function (r) {
+            if (opt.quiet) { if (r && r.warn) showMsg('warning', r.warn); return; }
+            showMsg(r && r.warn ? 'warning' : 'success', lineS + (r && r.done && !r.warn ? ' La date a été reportée dans la fiche du ' + spec.personWord + '.' : r && r.warn ? ' ' + r.warn : '') + '\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.', draft);
+          });
+        }
         showMsg('success', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' + lineS : lineS) + '\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.', draft);
-      }).catch(function (e) { showMsg('error', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' : '') + 'Antenne médicale : le brouillon n’a pas pu être préparé (' + ((e && e.message) || e) + ').'); })
+      }).catch(function (e) { showMsg('error', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' : '') + who1 + ' : le brouillon n’a pas pu être préparé (' + ((e && e.message) || e) + ').'); })
         .then(notifyChange); // met à jour le message affiché dans la fiche d'un réserviste
     } else if (!opt.quiet) showMsg('success', note + base);
     markSent(tab, kind, row);
     // Réservation confirmée à la personne (pas la convocation à l'antenne) : reporte la date (et l'antenne pour la VEMI) dans sa fiche.
-    if (kind === 'convocation') reportToPersonFiche(tab, row).then(function (r) {
+    if (kind === 'convocation') (rp = reportToPersonFiche(tab, row)).then(function (r) {
+      if (personPj) return; // message regroupé avec celui du brouillon
       if (opt.quiet) { if (r && r.warn) showMsg('warning', r.warn); return; }
       if (r && r.done && !r.warn) showMsg('success', base + ' La date a été reportée dans la fiche du ' + spec.personWord + '.');
       else if (r && r.warn) showMsg('warning', base + ' ' + r.warn);
@@ -15351,7 +15363,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var spec = SPECS[tab], sP = isYes(val(tab, row, spec.sentPerson)), sS = isYes(val(tab, row, spec.sentService)), again = sP && sS;
     var okP = validEmail(personEmail(tab, row)) && !missingFields(tab, row, 'convocation').length, addrs = antenneAddrs(tab, row), okS = !!state.ant && addrs.length && addrs.every(validEmail) && !missingFields(tab, row, 'service').length;
     var doP = okP && (again || !sP), doS = okS && (again || !sS), who = txt(tab, row, spec.person) || 'la personne', W = spec.personWord.charAt(0).toUpperCase() + spec.personWord.slice(1);
-    var lineP = doP ? '1. ' + W + ' : message ouvert dans votre messagerie. Vérifiez-le et envoyez-le.'
+    var lineP = doP ? '1. ' + W + (tab === 'vemi' ? ' : brouillon téléchargé avec la convocation VEMI en pièce jointe. Ouvrez-le (Ctrl + E), vérifiez-le et envoyez-le.' : ' : message ouvert dans votre messagerie. Vérifiez-le et envoyez-le.')
       : sP ? '1. ' + W + ' : déjà confirmé, rien à faire.' : '1. ' + W + ' : message non préparé (aucune adresse mail valide, ou date / heure manquante).';
     var head = 'Confirmation du rendez-vous de ' + who + ' :';
     if (doP) send(tab, 'convocation', id, { quiet: true });
@@ -15390,7 +15402,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function visitName(tab) { return tab === 'vemi' ? 'Visite d’expertise médicale initiale (VEMI)' : 'Visite médicale périodique (VMP)'; }
   // Confirmation groupée à l'antenne (VMP, VEMI) : un seul brouillon .eml adressé à toutes les antennes concernées, avec un seul tableau des
-  // rendez-vous et les fiches PDF de chaque personne (fiche de poste ; fiche de présentation pour la VEMI) réunies dans un .zip (un dossier
+  // rendez-vous et les fiches PDF de chaque personne (fiche de poste) réunies dans un .zip (un dossier
   // par antenne s'il y en a plusieurs). Seuls les rendez-vous pas encore confirmés à l'antenne sont pris. progress(texte) : avancement.
   // → Promise<{ type, text, draft }>.
   function buildServiceGroup(tab, ids, progress) {
@@ -15407,8 +15419,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var addrs = [], ants = [];
     ok.forEach(function (r) { antenneAddrs(tab, r).forEach(function (a) { if (addrs.map(function (x) { return x.toLowerCase(); }).indexOf(a.toLowerCase()) === -1) addrs.push(a); }); var an = txt(tab, r, spec.antenne); if (ants.indexOf(an) === -1) ants.push(an); });
     var n = ok.length, one = ants.length === 1, sign = 'Cordialement,\nDivision réserves jeunesse', what = tab === 'vemi' ? 'visite d’expertise médicale initiale (VEMI)' : 'visite médicale périodique (VMP)';
-    var pjs = tab === 'vemi' ? [['fichePoste', 'Fiche_de_poste_'], ['fichePresentation', 'Fiche_de_presentation_']] : [['fichePoste', 'Fiche_de_poste_']];
-    var pjWords = tab === 'vemi' ? 'les fiches de poste et de présentation' : 'les fiches de poste';
+    var pjs = [['fichePoste', 'Fiche_de_poste_']], pjWords = 'les fiches de poste';
     // Objet et corps : modèle « Confirmation groupée aux antennes médicales » (éditeur des courriels du back office).
     var gv = { VISITE: visitName(tab), NOMBRE: String(n), ANTENNES: ants.join(', '), DETAIL: detailByAntenna(tab, ok, ants) };
     var subject = fillVars(prm('groupSubject'), gv), body = fillVars(prm('groupBody'), gv);
@@ -17132,9 +17143,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       host.innerHTML =
         group('Invitations à réserver', 'reservation', function (t) { return 'Envoyée au ' + SPECS[t].personWord + ' pour l’inviter à réserver un créneau.'; }) +
         group('Confirmations de réservation', 'convocation', function (t) { return 'Envoyée au ' + SPECS[t].personWord + ' pour confirmer sa réservation.'; }) +
+          tplBlock('fichePresentation', 'Pièce jointe · Convocation VEMI (message au candidat, VEMI uniquement)', 'Jointe (PDF) au brouillon de la confirmation de réservation VEMI envoyée au candidat ; jamais jointe au message à l’antenne médicale.') +
         '<h3 class="mail-group">Confirmation à l’antenne médicale</h3>' + block('common', 'service', KIND_TITLES.service, 'Envoyée à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail) ; {{TYPE}} vaut VMP ou VEMI.') +
-          tplBlock('fichePoste', 'Pièce jointe 1 · Fiche de poste (VMP et VEMI)', 'Téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VMP ou VEMI : l’utilisateur la glisse dans le message avant envoi.') +
-          tplBlock('fichePresentation', 'Pièce jointe 2 · Fiche de présentation (cadre VEMI uniquement)', 'Téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VEMI uniquement : l’utilisateur la glisse dans le message avant envoi.') +
+          tplBlock('fichePoste', 'Pièce jointe · Fiche de poste (VMP et VEMI)', 'Jointe (PDF) au brouillon du message à l’antenne médicale pour une réservation VMP ou VEMI.') +
         group('Information de suppression d’une réservation (doublon)', 'suppression', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est supprimée.'; }) +
         group('Annulation d’une réservation (conflit de créneau)', 'conflit', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est annulée parce que le créneau a été réservé par plusieurs personnes.'; });
       $('bo-vars').innerHTML = ['IDENTITE', 'CIVILITE', 'NOM', 'PRENOM', 'NID', 'NIGEND', 'DATE', 'HEURE', 'ANTENNE', 'TYPE', 'AFFECTATION', 'EMAIL', 'DDN', 'DATE_DU_JOUR', 'LIEN_RESERVATION'].map(function (v) { return '<button type="button" class="cfg-var-btn" data-var="{{' + v + '}}">{{' + v + '}}</button>'; }).join('');
@@ -17368,8 +17379,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       mail('common', 'service', 'Réservations · antenne médicale', KIND_TITLES.service, 'Envoyée à l’antenne médicale (adresse lue dans la table Antennes medicales, colonne Mail) ; {{TYPE}} vaut VMP ou VEMI.');
       [['suppression', 'Réservations · suppression d’un doublon', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est supprimée.'; }],
         ['conflit', 'Réservations · annulation (conflit de créneau)', function (t) { return 'Envoyée à la personne dont la réservation ' + SPECS[t].title + ' est annulée parce que le créneau a été réservé par plusieurs personnes.'; }]].forEach(function (g) { TAB_ORDER.forEach(function (t) { mail(t, g[0], g[1], KIND_TITLES[g[0]] + ' · ' + SPECS[t].title, g[2](t)); }); });
-      doc('fichePoste', 'Fiche de poste (VMP et VEMI)', 'Pièce jointe 1 : téléchargée en PDF à l’envoi du message à l’antenne médicale (VMP ou VEMI) ; l’utilisateur la glisse dans le message. HTML : styles en ligne, images en base64 uniquement ; converti en PDF A4.', 'vmp');
-      doc('fichePresentation', 'Fiche de présentation (VEMI uniquement)', 'Pièce jointe 2 : téléchargée en PDF à l’envoi du message à l’antenne médicale pour une réservation VEMI. HTML : styles en ligne, images en base64 uniquement ; converti en PDF A4.', 'vemi');
+      doc('fichePoste', 'Fiche de poste (VMP et VEMI)', 'Pièce jointe : jointe en PDF au brouillon du message à l’antenne médicale (VMP ou VEMI). HTML : styles en ligne, images en base64 uniquement ; converti en PDF A4.', 'vmp');
+      doc('fichePresentation', 'Convocation VEMI', 'Pièce jointe du message de confirmation VEMI envoyé au candidat (pas à l’antenne médicale). HTML : styles en ligne, images en base64 uniquement ; converti en PDF A4.', 'vemi');
       // Demandes et envois groupés : textes dans les paramètres (draft.params), destinataires propres (BPRO, Quartier Mohier).
       function pDraft() { if (!state.draft) state.draft = adminDraft(); state.draft.params = state.draft.params || {}; return state.draft.params; }
       function pCtl(k) { return { read: function () { var v = pDraft()[k]; return v == null || String(v).trim() === '' ? PARAM_DEFAULTS[k] : String(v); }, write: function (v) { pDraft()[k] = v; setDirty(true); } }; }
@@ -21412,8 +21423,9 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
         var fm = document.getElementById('bo-tpl-doc-fmt'), FM = window.RSV && window.RSV.formats; fm.disabled = !FM; fm.value = FM ? FM.get(d.id) : 'html'; var lb = document.querySelector('label[for="bo-tpl-doc-area"]'); if (lb) lb.textContent = 'Modèle du document (' + (fm.value === 'md' ? 'Markdown' : 'HTML') + ')'; }
       if (document.activeElement !== e.area) e.area.value = d.body.read();
       if (e.type === 'mail') { // documents joignables : modèles de la page Candidats (lettres, ESR) et fiches communes des Réservations
-        var af = document.getElementById('bo-tpl-mail-att'), AT = window.RSV && window.RSV.attach, cand = /^(pmg:|rsv:(vmp|vemi|psy):|rsv:common:service$)/.test(d.id) ? collect('doc').filter(function (x) { return /^(pmg:|rsv:common:)/.test(x.id); }) : [], on = AT ? AT.get(d.id) : [];
-        af.hidden = !cand.length; document.getElementById('bo-tpl-mail-attl').innerHTML = cand.map(function (x) { return '<label class="ed-check bo-att__i"><input type="checkbox" data-bo-att="' + esc(x.id) + '"' + (on.indexOf(x.id) !== -1 ? ' checked' : '') + (AT ? '' : ' disabled') + '> ' + esc(x.title) + ' <span class="hint" style="display:inline">(' + esc(x.group) + ')</span></label>'; }).join('');
+        var af = document.getElementById('bo-tpl-mail-att'), AT = window.RSV && window.RSV.attach, FP = 'rsv:common:fichePresentation', cand = /^(pmg:|rsv:(vmp|vemi|psy):|rsv:common:service$)/.test(d.id) ? collect('doc').filter(function (x) { return /^(pmg:|rsv:common:)/.test(x.id) && (x.id !== FP || d.id === 'rsv:vemi:convocation'); }) : [], on = AT ? AT.get(d.id) : [];
+        if (d.id === 'rsv:vemi:convocation' && on.indexOf(FP) === -1) on = on.concat(FP); // Convocation VEMI : toujours jointe au message du candidat
+        af.hidden = !cand.length; document.getElementById('bo-tpl-mail-attl').innerHTML = cand.map(function (x) { return '<label class="ed-check bo-att__i"><input type="checkbox" data-bo-att="' + esc(x.id) + '"' + (on.indexOf(x.id) !== -1 ? ' checked' : '') + (AT && x.id !== FP ? '' : ' disabled') + '> ' + esc(x.title) + ' <span class="hint" style="display:inline">(' + (x.id === FP ? 'toujours jointe' : esc(x.group)) + ')</span></label>'; }).join('');
       }
       e.vars.innerHTML = (d.vars || []).map(function (v) { var t = VAR_DESC[v] ? esc(v + ' : ' + VAR_DESC[v]) : esc(v); return '<button type="button" class="fr-tag fr-tag--sm bo-vartag" data-v="{{' + v + '}}" title="' + t + '" aria-label="Insérer {{' + v + '}} (' + (VAR_DESC[v] ? esc(VAR_DESC[v]) : 'variable') + ')">{{' + v + '}}</button>'; }).join('');
       preview(e);
