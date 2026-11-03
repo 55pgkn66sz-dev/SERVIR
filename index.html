@@ -1676,7 +1676,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .annu-agenda { border-top: 1px solid var(--border-default-grey); padding-top: .75rem; margin: 0 0 1rem; } .annu-slots { display: flex; flex-wrap: wrap; gap: .35rem; margin: .35rem 0 0; }
   .annu-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
   @media (max-width: 40em) { .annu-wrap { grid-template-columns: 1fr; } .annu-det { border-left: 0; padding-left: 0; border-top: 1px solid var(--border-default-grey); padding-top: 1rem; } .annu-list { max-height: 30vh; } }
-  .ico-gear { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.09.63-.09.94s.02.67.07.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z%27/%3E%3C/svg%3E"); }
+  .ico-gear { --ico: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.74 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.09.63-.09.94s.02.68.07.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.09.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z%27/%3E%3C/svg%3E"); }
 
   .count { color: var(--muted); font-size: .875rem; }
 
@@ -4345,7 +4345,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.67.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.68.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -9596,9 +9596,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       else if (cc.formula) comm = '<section class="cf-section"><h3>Commentaires</h3><p class="sv-msg">' + (esc(stored) || '<span class="sv-empty">Aucun commentaire</span>') + '</p></section>';
       else {
         var cur = M.cdraft != null ? M.cdraft : stored;
-        comm = '<section class="cf-section"><h3>Commentaires</h3><div class="cf-field"><label class="fr-sr-only" for="w-sv-comm">Commentaires</label>' +
+        if (!M.cedit && !M.csaving) comm = '<section class="cf-section"><h3>Commentaires</h3><div class="sv-edit" role="button" tabindex="0" data-svcedit="1" title="Cliquer pour modifier" aria-label="Modifier les commentaires">' + (stored ? '<p class="sv-msg" style="margin:0;display:inline">' + esc(stored) + '</p>' : '<span class="sv-empty">Aucun commentaire : cliquer pour en ajouter</span>') + '<span class="fr-icon-edit-line sv-pen" aria-hidden="true"></span></div>' + (M.cmsg ? '<p class="hint" role="status" style="margin:.4rem 0 0">' + esc(M.cmsg) + '</p>' : '') + '</section>';
+        else comm = '<section class="cf-section"><h3>Commentaires</h3><div class="cf-field"><label class="fr-sr-only" for="w-sv-comm">Commentaires</label>' +
           '<textarea class="textarea" rows="4" id="w-sv-comm" placeholder="Notes sur le traitement de cette demande (visibles par les gestionnaires)…"' + (M.csaving ? ' disabled' : '') + '>' + esc(cur) + '</textarea></div>' +
-          '<div class="cf-actions" style="align-items:center"><button type="button" class="btn secondary sm" id="w-sv-commbtn" data-svm="savecomm"' + (M.csaving || cur === stored ? ' disabled' : '') + '>' + (M.csaving ? 'Enregistrement…' : 'Enregistrer le commentaire') + '</button>' +
+          '<div class="cf-actions" style="align-items:center"><button type="button" class="btn secondary sm" id="w-sv-commbtn" data-svm="savecomm"' + (M.csaving || cur === stored ? ' disabled' : '') + '>' + (M.csaving ? 'Enregistrement…' : 'Enregistrer le commentaire') + '</button><button type="button" class="btn secondary btn-ghost sm" data-svm="cancelcomm"' + (M.csaving ? ' disabled' : '') + '>Annuler</button>' +
           (M.cmsg ? '<span class="hint" role="status">' + esc(M.cmsg) + '</span>' : '') + '</div></section>';
       }
     }
@@ -9630,15 +9631,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   $('svmodal').addEventListener('click', function (e) {
     if (e.target === $('svmodal') || e.target.closest('#w-svmodal-close')) { svCloseModal(); return; }
     var ed = e.target.closest('[data-svedit]'); if (ed && SVM && !SVM.saving) { SVM.edit = ed.getAttribute('data-svedit'); svRenderModal(); svFocusInput(); return; }
+    var ce = e.target.closest('[data-svcedit]'); if (ce && SVM && !SVM.csaving) { svCommentEdit(); return; } // commentaires : modifiables au clic
     var b = e.target.closest('[data-svm]'); if (!b || b.disabled || !SVM) return;
     var a = b.getAttribute('data-svm'), M = SVM;
     if (a === 'close') svCloseModal();
     else if (a === 'mail') svMail(M.k, M.id);
+    else if (a === 'cancelcomm') { M.cedit = false; M.cdraft = null; M.cmsg = ''; svRenderModal(); }
     else if (a === 'savecomm') {
       var cc = svCol(M.k, 'comment'), ta = $('sv-comm'); if (!cc || !ta || cc.formula) return;
       M.cdraft = ta.value; M.csaving = true; M.cmsg = ''; M.err = ''; svRenderModal();
       Promise.resolve(svUpdate(M.k, M.id, (function () { var f = {}; f[cc.id] = M.cdraft.trim(); return f; })())).then(function () { return svLoad(M.k); })
-        .then(function () { M.cdraft = null; M.cmsg = 'Commentaire enregistré.'; })
+        .then(function () { M.cdraft = null; M.cedit = false; M.cmsg = 'Commentaire enregistré.'; })
         .catch(function (err) { M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; })
         .then(function () { M.csaving = false; if (SVM === M) svRenderModal(); });
     }
@@ -9648,6 +9651,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         .catch(function (err) { M.busy = false; M.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; if (SVM === M) svRenderModal(); });
     }
   });
+  function svCommentEdit() { var M = SVM, row = M && svRow(M.k, M.id); if (!row) return; M.cedit = true; M.cdraft = svStr(svRaw(M.k, row, 'comment')); M.cmsg = ''; svRenderModal(); setTimeout(function () { var t = $('sv-comm'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0); }
   function svFocusInput() { setTimeout(function () { var i = $('sv-in'); if (i) { i.focus(); if (i.select && i.tagName === 'INPUT') i.select(); } }, 0); }
   // Enregistre le champ modifié (type de la colonne respecté), puis relit la table.
   function svCommitField(M, key, raw) {
@@ -9676,6 +9680,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   $('svmodal').addEventListener('change', function (e) { var t = e.target; if (t.getAttribute && t.getAttribute('data-svin') && t.tagName === 'SELECT') svCommitField(SVM, t.getAttribute('data-svin'), t.value); });
   $('svmodal').addEventListener('focusout', function (e) { var t = e.target; if (t.getAttribute && t.getAttribute('data-svin') && t.tagName === 'INPUT') svCommitField(SVM, t.getAttribute('data-svin'), t.value); else if (t.getAttribute && t.getAttribute('data-svin') && SVM && SVM.edit) { SVM.edit = null; svRenderModal(); } });
   $('svmodal').addEventListener('keydown', function (e) {
+    var ced = e.target.closest && e.target.closest('[data-svcedit]');
+    if (ced && (e.key === 'Enter' || e.key === ' ') && SVM && !SVM.csaving) { e.preventDefault(); svCommentEdit(); return; }
+    if (e.target.id === 'w-sv-comm' && SVM && SVM.cedit) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); SVM.cedit = false; SVM.cdraft = null; svRenderModal(); return; } // annule la saisie sans fermer la fiche
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); var sb = $('sv-commbtn'); if (sb && !sb.disabled) sb.click(); return; }
+    }
     var ed = e.target.closest && e.target.closest('[data-svedit]');
     if (ed && (e.key === 'Enter' || e.key === ' ') && SVM && !SVM.saving) { e.preventDefault(); SVM.edit = ed.getAttribute('data-svedit'); svRenderModal(); svFocusInput(); return; }
     var inp = e.target.getAttribute && e.target.getAttribute('data-svin');
@@ -10880,6 +10890,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (d.msg && !ro) out += '<div class="doc-alert ' + d.msg.type + '" role="' + (d.msg.type === 'error' ? 'alert' : 'status') + '"><p>' + esc(d.msg.text) + '</p></div>';
     if (!col) return out + '<p class="stg-empty">Aucune colonne de type « Pièces jointes » (« PJ ») dans la table des réservistes.</p>';
     var names = nomPjList(item, c), showNom = !!nomPjCol(c), missing = [];
+    var badL = toList(item.raw[col.id]).filter(function (x) { var n = Number(x); return !(isFinite(n) && n > 0); }); // valeurs qui ne sont pas des identifiants de pièces jointes
+    if (badL.length && !ro) out += '<div class="doc-alert warning" role="alert"><p>La colonne « ' + esc(col.label) + ' » de cette fiche contient ' + badL.length + ' valeur' + (badL.length > 1 ? 's' : '') + ' qui ne ' + (badL.length > 1 ? 'sont pas des documents' : 'est pas un document') + ' (« ' + esc(badL.join(', ')) + ' »), ce qui provoque « Cannot access attachment ». <button type="button" class="btn sm" data-dclean="1"' + (d.busy ? ' disabled' : '') + '>Supprimer les valeurs invalides</button></p></div>';
     var ids = attIds(item, col.id); ids.forEach(function (id) { if (!state.att[id]) missing.push(id); });
     if (missing.length) ensureAttachments(missing);
     var rows = ids.map(function (id, i) {
@@ -11550,6 +11562,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       return;
     }
     if (e.target.closest('#r-ppe-sig-drop')) { if (state.ppe && !state.ppe.busy) pickFiles(false, function (fl) { loadPpeSig(fl[0]); }); return; }
+    var dcl = e.target.closest('[data-dclean]'); if (dcl) { var pc = pjCol(cfg()); if (pc) docOp('Valeurs invalides supprimées.', function (item, c2) { return saveAttachments(item, c2, pc.id, attIds(item, pc.id)); }); return; }
     var d = state.docs, da = e.target.closest('[data-dact]');
     if (da) {
       var tr = da.closest('tr'), id = Number(tr.getAttribute('data-att')), a = da.getAttribute('data-dact');
