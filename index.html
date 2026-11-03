@@ -4345,7 +4345,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.68.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.68.4</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -14642,7 +14642,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     Reservations_VEMI: { labels: SPECS.vemi.cols, rows: demoRows([
       { 'NID': '1042871', 'Candidat': 'MARTIN Camille', 'Affectation': 'GD 74', 'Date': dd(2026, 10, 15), 'Heure': '14:30', 'Antenne médicale': 'Antenne médicale de Lyon', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 21) + 42000, 'Créé par': 'MARTIN Camille' },
       { 'Doublon': true, 'NID': '1043544', 'Candidat': 'DUBOIS Léa', 'Affectation': 'GD 73', 'Date': dd(2026, 10, 20), 'Heure': '09:15', 'Antenne médicale': 'Antenne médicale de Grenoble', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 23) + 33000, 'Créé par': 'DUBOIS Léa' },
-      { 'Doublon': true, 'NID': '1043544', 'Candidat': 'DUBOIS Léa', 'Affectation': 'GD 73', 'Date': dd(2026, 10, 27), 'Heure': '11:00', 'Antenne médicale': 'Antenne médicale de Metz', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 61000, 'Créé par': 'DUBOIS Léa' }
+      { 'Doublon': true, 'NID': 'pmg 2026-0460', 'Candidat': 'DUBOIS Léa', 'Affectation': 'GD 73', 'Date': dd(2026, 10, 27), 'Heure': '11:00', 'Antenne médicale': 'Antenne médicale de Metz', 'Convoc. cand.': false, 'Envoyé AM': false, 'Réservation faite le': dd(2026, 9, 26) + 61000, 'Créé par': 'DUBOIS Léa' }
     ]) },
     Reservations_tests_psy: { labels: SPECS.psy.cols, rows: demoRows([
       { 'Complet': false, 'NID': '1042871', 'Candidat': 'MARTIN Camille', 'Email': 'camille.martin@example.fr', 'Créneau choisi': 'Jeudi 08h30', 'Date': dd(2026, 10, 8), 'Heure': '08:30', 'Créneau (complet)': '08/10/2026 08:30', 'Affectation': 'GD 74', 'Réservation faite le': dd(2026, 9, 20) + 40000, 'Convocation ?': false },
@@ -14652,9 +14652,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     ]) },
     // Colonnes « Date VEMI »/« Antenne VEMI »/« Date tests psy » incluses pour que le report automatique (réservation confirmée →
     // fiche du candidat) soit aussi vérifiable en démo, comme sur la vraie table Candidats_PMG (page Candidats).
-    Candidats_PMG: { labels: ['NID', 'Civilité', 'NOM', 'Prénom', 'Email', 'Affectation', 'Date VEMI', 'Antenne VEMI', 'VEMI', 'Date tests psy', 'Tests psy'], rows: demoRows([
-      { 'NID': '1042871', 'Civilité': 'Mme', 'NOM': 'Martin', 'Prénom': 'Camille', 'Email': 'camille.martin@example.fr', 'Affectation': 'GD 74' },
-      { 'NID': '1043544', 'Civilité': 'Mme', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Email': 'lea.dubois@example.fr', 'Affectation': 'GD 73' },
+    Candidats_PMG: { labels: ['NID', 'N° candidature', 'N_Cand', 'Civilité', 'NOM', 'Prénom', 'Email', 'Affectation', 'Date VEMI', 'Antenne VEMI', 'VEMI', 'Date tests psy', 'Tests psy'], rows: demoRows([
+      { 'NID': '1042871', 'N° candidature': 'PMG-2026-0451', 'N_Cand': 'CAND-26-04871', 'Civilité': 'Mme', 'NOM': 'Martin', 'Prénom': 'Camille', 'Email': 'camille.martin@example.fr', 'Affectation': 'GD 74' },
+      { 'NID': '1043544', 'N° candidature': 'PMG-2026-0460', 'N_Cand': 'CAND-26-04880', 'Civilité': 'Mme', 'NOM': 'Dubois', 'Prénom': 'Léa', 'Email': 'lea.dubois@example.fr', 'Affectation': 'GD 73' },
       { 'NID': '1044002', 'Civilité': 'M.', 'NOM': 'Lambert', 'Prénom': 'Hugo', 'Email': 'hugo.lambert@example.fr', 'Affectation': 'GD 74' }
     ]) },
     Reservistes_RO1_RS_RC: { labels: ['Nigend', 'NOM', 'Prénom', 'Affectation', 'Adresse email', 'Exp. VMP'], rows: demoRows([
@@ -14796,15 +14796,30 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   /* ---------- Personnes, antennes, doublons ---------- */
   function val(tab, row, label) { var d = state.data[tab], c = d && findCol(d.cols, label); return c ? row[c.id] : undefined; }
   function txt(tab, row, label) { var d = state.data[tab], c = d && findCol(d.cols, label); return c ? textOf(c, row[c.id]) : ''; }
-  function candidateRow(tab, row) {
-    var spec = SPECS[tab], C = state.cand; if (!C || spec.key !== 'NID') return null;
-    var nid = String(val(tab, row, 'NID') || '').trim(), nc = findCol(C.cols, 'NID'); if (!nid || !nc) return null;
-    return C.rows.filter(function (r) { return String(r[nc.id] || '').trim() === nid; })[0] || null;
+  // Rapprochement d'une réservation avec la fiche de la personne (candidat ; réserviste pour la VMP) : VMP par Nigend uniquement ; candidats par NID
+  // ou N° candidature. Le formulaire n'a qu'un champ (« NID ») où le candidat saisit l'un ou l'autre : la valeur est cherchée dans les deux colonnes de la fiche.
+  var MATCH_IDS = { vmp: ['nigend'], vemi: ['nid', 'ncandidature'], psy: ['nid', 'ncandidature'] };
+  var MATCH_SRC = { nigend: ['nigend'], nid: ['nid', 'ncandidature'], ncandidature: ['nid', 'ncandidature'] };
+  var ID_NAMES = { nigend: ['Nigend'], nid: ['NID'], ncandidature: ['N° candidature', 'N_candidature', 'N candidature', 'Numéro de candidature', 'N° de candidature']};
+  var ID_LABEL = { nigend: 'Nigend', nid: 'NID', ncandidature: 'N° candidature' };
+  function idCol(cols, k) { var c = cols.__ic = cols.__ic || {}; if (k in c) return c[k]; var f = null; ID_NAMES[k].some(function (n) { return !!(f = findCol(cols, n)); }); return (c[k] = f || null); }
+  function idNorm(v) { return v == null || typeof v === 'object' ? '' : norm(String(v)).replace(/[\s.\-_\/]+/g, '').replace(/^0+/, ''); } // espaces, tirets, points, casse et zéros du début ignorés
+  function personIx(src, k) { var c = src.__ix = src.__ix || {}; if (c[k]) return c[k]; var col = idCol(src.cols, k), m = {}; if (col) src.rows.forEach(function (r) { var v = idNorm(r[col.id]); if (v && !m[v]) m[v] = r; }); return (c[k] = m); }
+  function personOf(tab, row) { // → { row: fiche, by: identifiant utilisé } ou null
+    var src = personSourceFor(tab), d = state.data[tab], ids = MATCH_IDS[tab]; if (!src || !d) return null;
+    for (var i = 0; i < ids.length; i++) {
+      var rc = idCol(d.cols, ids[i]), v = rc ? idNorm(row[rc.id]) : ''; if (!v) continue;
+      var ss = MATCH_SRC[ids[i]];
+      for (var j = 0; j < ss.length; j++) { var pr = personIx(src, ss[j])[v]; if (pr) return { row: pr, by: ID_LABEL[ss[j]] }; }
+    }
+    return null;
   }
+  function candidateRow(tab, row) { if (tab === 'vmp') return null; var m = personOf(tab, row); return m ? m.row : null; }
   function candField(cand, label) { var c = findCol(state.cand.cols, label); return c && cand ? (cand[c.id] == null ? '' : String(cand[c.id])) : ''; }
   function personEmail(tab, row) {
     var spec = SPECS[tab], e = spec.email ? String(val(tab, row, spec.email) || '').trim() : '';
     if (!e && spec.key === 'NID') { var cr = candidateRow(tab, row); e = cr ? candField(cr, 'Email').trim() : ''; }
+    if (!e && tab === 'vmp') { var rr = resOf(row); e = rr ? personRowEmail(tab, rr) : ''; }
     return e;
   }
   // Antenne de la fiche → ligne de la table « Antennes medicales » : référence (id), liste de références ou de choix, ou nom (exact, puis contenu : « Antenne médicale de Metz » ~ « Metz »).
@@ -14836,7 +14851,12 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var nc = A.cols.filter(function (cc) { return cc !== mc && /^(nom|antenne|libelle|intitule)/.test(norm(cc.label)); })[0] || null, r = antResolve(A, mc, v, nc);
     return r ? String(r[mc.id] || '').split(/[,;\s]+/).filter(Boolean) : [];
   }
-  function keyOf(tab, row) { return norm(String(val(tab, row, SPECS[tab].key) || '')); }
+  function keyOf(tab, row) { // une même personne a la même clé quel que soit l'identifiant saisi (NID ou N° candidature)
+    var m = personOf(tab, row); if (m) return 'p' + m.row.id;
+    var d = state.data[tab], ids = MATCH_IDS[tab];
+    for (var i = 0; i < ids.length; i++) { var rc = d && idCol(d.cols, ids[i]), v = rc ? idNorm(row[rc.id]) : ''; if (v) return ids[i] + ':' + v; }
+    return '';
+  }
   function groupsOf(tab) {
     var d = state.data[tab], g = {}; if (!d) return g;
     d.rows.forEach(function (r) { var k = keyOf(tab, r); if (k) (g[k] = g[k] || []).push(r); });
@@ -14918,10 +14938,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // VMP : pas de colonne « résultat » côté réservistes ; le résultat est la nouvelle échéance « Exp. VMP » du réserviste (prolongée d'au moins
   // jours réglés en back office après le rendez-vous) ; l'absence se note dans la case « Absent » de la table des réservations VMP (si elle existe).
   var FOLLOW = { vemi: { res: 'VEMI', date: 'Date VEMI' }, psy: { res: 'Tests psy', date: 'Date tests psy' }, vmp: { vmp: true } }; // délais : prmNum('lateDays'), prmNum('vmpRenewDays')
-  function resOf(row) { // fiche du réserviste (table des réservistes), par Nigend
-    var R = state.res, kc = R && findCol(R.cols, 'Nigend'), ng = String(val('vmp', row, 'Nigend') || '').trim(); if (!kc || !ng) return null;
-    return R.rows.filter(function (r) { return String(r[kc.id] == null ? '' : r[kc.id]).trim() === ng; })[0] || null;
-  }
+  function resOf(row) { var m = personOf('vmp', row); return m ? m.row : null; } // fiche du réserviste (table des réservistes), par Nigend
   function followVmp(row) {
     var spec = SPECS.vmp, d = state.data.vmp, R = state.res, pr = resOf(row), expCol = R && findCol(R.cols, 'Exp. VMP'), absCol = findCol(d.cols, 'Absent');
     var day = dayOf(rowDate('vmp', row)), today = todayDay(), exp = pr && expCol ? dayOf(pr[expCol.id]) : null, key = keyOf('vmp', row);
@@ -15037,7 +15054,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var today = new Date();
     return {
       IDENTITE: name, CIVILITE: cand ? candField(cand, 'Civilité') : '', NOM: (nomFromCand || parts[0] || '').toLocaleUpperCase('fr-FR'), PRENOM: preFromCand || parts.slice(1).join(' '),
-      NID: txt(tab, row, 'NID'), NIGEND: txt(tab, row, 'Nigend'), AFFECTATION: txt(tab, row, 'Affectation'), EMAIL: personEmail(tab, row), DDN: txt(tab, row, 'DDN'),
+      NID: txt(tab, row, 'NID') || (cand ? candField(cand, 'NID') : ''), NIGEND: txt(tab, row, 'Nigend'), N_CANDIDATURE: txt(tab, row, 'N° candidature') || (cand ? candField(cand, 'N° candidature') : ''),
+      AFFECTATION: txt(tab, row, 'Affectation'), EMAIL: personEmail(tab, row), DDN: txt(tab, row, 'DDN'),
       TELEPHONE: txt(tab, row, 'Téléphone') || txt(tab, row, 'Numéro de téléphone') || (cand ? candField(cand, 'Numéro de téléphone') : ''),
       DATE: txt(tab, row, 'Date'), HEURE: txt(tab, row, 'Heure'), ANTENNE: spec.antenne ? txt(tab, row, spec.antenne) : '',
       DATE_DU_JOUR: pad2(today.getDate()) + '/' + pad2(today.getMonth() + 1) + '/' + today.getFullYear()
@@ -15113,7 +15131,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function searchHay(tab, row) {
     var d = state.data[tab], parts = [];
-    ['Nigend', 'NID', SPECS[tab].person, SPECS[tab].email, 'Email', 'Affectation', SPECS[tab].antenne, 'Date', 'Heure', 'DDN'].forEach(function (l) { if (!l) return; var c = findCol(d.cols, l); if (c) parts.push(textOf(c, row[c.id])); });
+    ['Nigend', 'NID', 'N° candidature', SPECS[tab].person, SPECS[tab].email, 'Email', 'Affectation', SPECS[tab].antenne, 'Date', 'Heure', 'DDN'].forEach(function (l) { if (!l) return; var c = findCol(d.cols, l); if (c) parts.push(textOf(c, row[c.id])); });
     var hay = norm(parts.join(' ')); return hay + ' ' + hay.replace(/[\s.\-\/]/g, '');
   }
   function renderList() {
@@ -15255,10 +15273,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function reportToPersonFiche(tab, row) {
     var map = REPORT_FIELDS[tab]; if (!map) return Promise.resolve({});
     var d = state.data[tab], spec = SPECS[tab], src = personSourceFor(tab); if (!src) return Promise.resolve({ warn: 'La date n’a pas pu être reportée sur la fiche : table des candidats introuvable.' });
-    var keyCol = findCol(d.cols, spec.key), pKeyCol = findCol(src.cols, spec.key);
-    var kv = keyCol && row[keyCol.id] != null ? norm(String(row[keyCol.id])) : '';
-    var personRow = (pKeyCol && kv) ? src.rows.filter(function (r) { return norm(String(r[pKeyCol.id] || '')) === kv; })[0] : null;
-    if (!personRow) return Promise.resolve({ warn: 'La date n’a pas pu être reportée sur la fiche : aucun candidat avec ce ' + spec.key + ' dans la table des candidats.' });
+    var pm = personOf(tab, row), personRow = pm ? pm.row : null;
+    if (!personRow) return Promise.resolve({ warn: 'La date n’a pas pu être reportée sur la fiche : aucun candidat trouvé dans la table des candidats (NID ou N° candidature de la réservation).' });
     var fields = {}, any = false, why = [];
     map.forEach(function (pair) {
       var fromCol = findCol(d.cols, pair[0]), toCol = findCol(src.cols, pair[1]);
@@ -15522,8 +15538,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   // Réinviter à réserver (absent) : modèle « Invitation à réserver » du type, à la personne ou en un seul message en Cci.
   function candEntry(tab, row) {
     var f = followOf(tab, row), C = state.cand, cc = C && findCol(C.cols, 'N° candidature'), nc = C && findCol(C.cols, 'NID');
-    var nid = String(val(tab, row, 'NID') || '').trim();
-    return { cand: f && f.cand && cc ? String(f.cand[cc.id] || '').trim() : '', nid: (f && f.cand && nc ? String(f.cand[nc.id] || '').trim() : '') || nid };
+    var nid = String(val(tab, row, 'NID') || '').trim(), pm = personOf(tab, row);
+    return { row: pm ? pm.row : null, cand: f && f.cand && cc ? String(f.cand[cc.id] || '').trim() : '', nid: (f && f.cand && nc ? String(f.cand[nc.id] || '').trim() : '') || nid };
   }
   function reinviteOne(tab, id) {
     var row = state.data[tab].rows.filter(function (r) { return r.id === id; })[0]; if (!row) return;
@@ -15739,9 +15755,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function clearReportedFiche(tab, row) {
     var map = REPORT_FIELDS[tab]; if (!map) return Promise.resolve();
     var d = state.data[tab], spec = SPECS[tab], src = personSourceFor(tab); if (!src) return Promise.resolve();
-    var keyCol = findCol(d.cols, spec.key), pKeyCol = findCol(src.cols, spec.key);
-    var kv = keyCol && row[keyCol.id] != null ? norm(String(row[keyCol.id])) : '';
-    var pr = (pKeyCol && kv) ? src.rows.filter(function (r) { return norm(String(r[pKeyCol.id] || '')) === kv; })[0] : null; if (!pr) return Promise.resolve();
+    var pm = personOf(tab, row), pr = pm ? pm.row : null; if (!pr) return Promise.resolve();
     var fields = {}, any = false;
     map.forEach(function (pair) {
       var fc = findCol(d.cols, pair[0]), tc = findCol(src.cols, pair[1]); if (!fc || !tc || tc.formula) return;
@@ -16754,7 +16768,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function personSearchHay(tab, row) {
     var src = personSourceFor(tab); if (!src) return '';
-    var parts = []; ['NOM', 'Prénom', 'Nigend', 'NID'].forEach(function (l) { var c = findCol(src.cols, l); if (c && row[c.id] != null) parts.push(row[c.id]); });
+    var parts = []; ['NOM', 'Prénom', 'Nigend', 'NID', 'N° candidature'].forEach(function (l) { var c = findCol(src.cols, l); if (c && row[c.id] != null) parts.push(row[c.id]); });
     return norm(parts.join(' '));
   }
   // Invitation à réserver (onglet « Inviter à réserver » de la modale, VMP et VEMI) : message du modèle « Courriel de réservation », adressé à la personne choisie.
@@ -16808,6 +16822,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function openGroup(emails, subject, body, cc, replyTo, to) { openMailto(to || '', subject, body, cc, replyTo, emails.join(',')); }
   // Candidats (VEMI ou tests psy) retrouvés par N° de candidature, à défaut par NID.
   function findCandRow(src, e) {
+    if (e.row) return e.row; // déjà rapproché (NID ou N° candidature)
     var cc = findCol(src.cols, 'N° candidature'), nc = findCol(src.cols, 'NID'), same = function (a, b) { return String(a == null ? '' : a).trim() === String(b).trim(); };
     var r = e.cand && cc ? src.rows.filter(function (x) { return same(x[cc.id], e.cand); })[0] : null;
     return r || (e.nid && nc ? src.rows.filter(function (x) { return same(x[nc.id], e.nid); })[0] : null) || null;
@@ -16855,9 +16870,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var row = d.rows.filter(function (r) { return r.id === id; })[0]; if (!row) return;
     // L'heure se lit dans la table des réservations elle-même (pas dans les créneaux : pour Tests psy, les créneaux n'ont pas d'heure fixe).
     var dateCol = findCol(d.cols, 'Date'), timeCol = findCol(d.cols, 'Heure'), antCol = spec.antenne && findCol(d.cols, spec.antenne);
-    var src = personSourceFor(tab), keyCol = findCol(d.cols, spec.key), pKeyCol = src && findCol(src.cols, spec.key);
-    var kv = keyCol && row[keyCol.id] != null ? norm(String(row[keyCol.id])) : '';
-    var personRow = (src && pKeyCol && kv) ? src.rows.filter(function (r) { return norm(String(r[pKeyCol.id] || '')) === kv; })[0] : null;
+    var pm = personOf(tab, row), personRow = pm ? pm.row : null;
     state.book = {
       mode: 'edit', tab: tab, id: id,
       date: dateCol ? dateInputVal(row[dateCol.id]) : '', time: timeCol ? (row[timeCol.id] || '') : '', antenne: antCol ? (row[antCol.id] || '') : '',
@@ -16914,8 +16927,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   function vmpInfo(nigend) {
     var d = state.data.vmp, spec = SPECS.vmp; if (!d || nigend == null || nigend === '') return null;
-    var kc = findCol(d.cols, spec.key); if (!kc) return null;
-    var rows = d.rows.filter(function (r) { return norm(String(r[kc.id] || '')) === norm(String(nigend)); });
+    var kc = findCol(d.cols, spec.key), rp = state.res ? personIx(state.res, 'nigend')[idNorm(nigend)] : null, pk = rp ? 'p' + rp.id : '';
+    var rows = d.rows.filter(function (r) { return (kc && norm(String(r[kc.id] || '')) === norm(String(nigend))) || (pk && keyOf('vmp', r) === pk); });
     if (!rows.length) return null;
     var row = rows.reduce(function (a, b) { return b.id > a.id ? b : a; });
     var dup = isDup('vmp', row, groupsOf('vmp')), miss = missingFields('vmp', row, 'convocation'), addrs = antenneAddrs('vmp', row);
@@ -16984,7 +16997,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (!src) out += '<p class="stg-empty">Table introuvable : contactez l’administrateur.</p>';
     else {
       var chosen = bk.personId ? src.rows.filter(function (r) { return String(r.id) === String(bk.personId); })[0] : null;
-      out += '<div class="cf-field"><label for="x-bk-q">Rechercher (nom' + (tab === 'vmp' ? ', Nigend' : ', NID') + ')</label><input class="input" type="text" id="x-bk-q" autocomplete="off" value="' + esc(bk.query) + '" placeholder="Tapez pour rechercher…"></div>';
+      out += '<div class="cf-field"><label for="x-bk-q">Rechercher (nom' + (tab === 'vmp' ? ', Nigend' : ', NID, N° candidature') + ')</label><input class="input" type="text" id="x-bk-q" autocomplete="off" value="' + esc(bk.query) + '" placeholder="Tapez pour rechercher…"></div>';
       out += chosen
         ? '<p class="hint">Sélectionné : <strong>' + esc(personLabel(tab, chosen)) + '</strong> · <button type="button" class="btn secondary sm" id="x-bk-clear">Changer</button></p>'
         : '<div id="x-bk-list">' + renderBookPersonListHtml() + '</div><p class="hint">' + src.rows.length + (tab === 'vmp' ? ' réserviste' : ' candidat') + (src.rows.length > 1 ? 's' : '') + ' · table <code>' + esc(src.table) + '</code></p>';
@@ -17025,6 +17038,10 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (antCol) fields[antCol.id] = bk.antenne;
     var keyCol = findCol(d.cols, spec.key), pKeyCol = findCol(src.cols, spec.key);
     if (keyCol && pKeyCol) fields[keyCol.id] = personRow[pKeyCol.id];
+    MATCH_IDS[tab].forEach(function (k) { // le N° candidature est repris dans la réservation quand elle a une colonne distincte
+      var rc = idCol(d.cols, k), pc = idCol(src.cols, k);
+      if (rc && pc && rc !== keyCol && !rc.formula && personRow[pc.id] != null && personRow[pc.id] !== '' && typeof personRow[pc.id] !== 'object') fields[rc.id] = personRow[pc.id];
+    });
     var personCol = findCol(d.cols, spec.person), nomC = findCol(src.cols, 'NOM'), preC = findCol(src.cols, 'Prénom');
     var name = [nomC && personRow[nomC.id] ? String(personRow[nomC.id]).toLocaleUpperCase('fr-FR') : '', preC && personRow[preC.id]].filter(Boolean).join(' ');
     if (personCol) fields[personCol.id] = name;
@@ -17037,7 +17054,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     if (bk.mode !== 'edit') { var madeCol = findCol(d.cols, 'Réservation faite le'); if (madeCol) fields[madeCol.id] = Math.floor(Date.now() / 1000); }
 
     var keyVal = keyCol && fields[keyCol.id] != null ? norm(String(fields[keyCol.id])) : '';
-    var existing = keyVal ? d.rows.filter(function (r) { return r.id !== bk.id && norm(String(r[keyCol.id] || '')) === keyVal && withinYearSec(tab, dv, rowDate(tab, r)); }) : [];
+    var pk = 'p' + personRow.id; // même personne, quel que soit l'identifiant saisi dans l'autre réservation
+    var existing = d.rows.filter(function (r) { return r.id !== bk.id && ((keyVal && keyCol && norm(String(r[keyCol.id] || '')) === keyVal) || keyOf(tab, r) === pk) && withinYearSec(tab, dv, rowDate(tab, r)); });
     if (existing.length && !bk.confirmDup) {
       bk.warn = (tab === 'vmp' ? 'Ce réserviste a' : 'Ce candidat a') + ' déjà ' + (existing.length > 1 ? 'plusieurs réservations' : 'une réservation') + ' ' + spec.title + '. Continuer quand même (marquée comme doublon) ?';
       bk.confirmDup = true; bk.error = ''; renderBook(); return;
