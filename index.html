@@ -2711,6 +2711,7 @@ window.__fillRows = function (tb, items, fn, onChunk) {
   .ibo-evf__prev { min-height: 7rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-default-grey); border-radius: .5rem; background: #fff; padding: .5rem; }
   .ibo-evf__prev img { max-width: 100%; max-height: 7rem; }
   #menu-ins .nav-ins-pmgs { margin: .75rem 0 0; }
+  .pgm-add { display: flex; align-items: flex-end; gap: .5rem 1rem; flex-wrap: wrap; margin: 0 0 1rem; } .pgm-add .input { width: 12rem; max-width: 100%; } .pgm-add #pgm-new { width: 16rem; } .pgm-dates { display: flex; gap: .5rem; } .pgm-dates label { display: block; font-size: .75rem; color: var(--muted); } .pgm-dates .input { width: 9.5rem; }
   .pgm-cell { display: flex; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; } .pgm-cell .input { width: 8.5rem; } .pgm-table td, .pgm-table th { vertical-align: middle; } .pgm-table tr.pgm-cur { background: var(--bg-alt-blue-france, #f5f5fe); }
 
 </style>
@@ -4358,7 +4359,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.69.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.71.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4830,12 +4831,29 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   }
   window.PMG = {
     // Page Instruction : candidats « Admis PMG » d'une PMG ; valeurs de PMG connues.
-    pmgValues: function () { var c = cfg(), v = {}; state.records.forEach(function (r) { pmgOf(r.raw, c).forEach(function (x) { if (String(x).trim()) v[x] = 1; }); }); return Object.keys(v).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); }); },
+    // Toutes les PMG proposées : étiquettes de la colonne PMG, PMG ajoutées depuis « Gérer les PMG » et valeurs déjà utilisées.
+    pmgValues: function () { return window.PMG.pmgChoices(); },
     // PMG à venir : étiquettes de la colonne PMG (liste de choix) et valeurs déjà utilisées par des candidats.
     pmgChoices: function () {
-      var c = cfg(), col = findCol(c.table, 'PMG'), v = {}; (col && col.choices || []).forEach(function (x) { if (String(x).trim()) v[x] = 1; });
+      var c = cfg(), col = findCol(c.table, 'PMG'), v = {}; (col && col.choices || []).concat(pmgExtra()).forEach(function (x) { if (String(x).trim()) v[x] = 1; });
       state.records.forEach(function (r) { pmgOf(r.raw, c).forEach(function (x) { if (String(x).trim()) v[x] = 1; }); });
       return Object.keys(v).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+    },
+    // Ajoute une PMG à la liste de choix de la colonne PMG de Grist ; { inColumn: false } si la colonne n'est pas une liste de choix ou ne peut pas être modifiée (l'appelant mémorise alors la PMG dans les options).
+    addPmg: function (label) {
+      label = String(label || '').trim();
+      if (!label) return Promise.reject(new Error('Saisissez le nom de la PMG.'));
+      var c = cfg(), col = findCol(c.table, 'PMG'), k = norm(label);
+      if (window.PMG.pmgChoices().some(function (x) { return norm(x) === k; })) return Promise.reject(new Error('« ' + label + ' » existe déjà dans la liste.'));
+      if (!col || !/^Choice/.test(col.type)) return Promise.resolve({ inColumn: false });
+      if (!IN_GRIST) { col.choices = (col.choices || []).concat([label]); return Promise.resolve({ inColumn: true }); }
+      return Promise.all([grist.docApi.fetchTable('_grist_Tables'), grist.docApi.fetchTable('_grist_Tables_column')]).then(function (r) {
+        var T = r[0], C = r[1], tid = T.id[T.tableId.indexOf(c.table)], wo = null;
+        for (var i = 0; i < C.id.length; i++) if (C.parentId[i] === tid && C.colId[i] === col.id) { try { wo = JSON.parse(C.widgetOptions[i] || '{}'); } catch (e) { wo = {}; } }
+        if (!wo) throw new Error('colonne introuvable');
+        wo.choices = (Array.isArray(wo.choices) ? wo.choices : []).concat([label]);
+        return grist.docApi.applyUserActions([['ModifyColumn', c.table, col.id, { widgetOptions: JSON.stringify(wo) }]]);
+      }).then(function () { col.choices = (col.choices || []).concat([label]); return { inColumn: true }; }, function () { return { inColumn: false }; });
     },
     // Effectifs d'une PMG : candidats, admis (état « Admis PMG »), dont CIV et VCA (colonne Origine).
     pmgStats: function (pmg) {
@@ -4895,12 +4913,19 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     },
     save: function () { return savePmg(); },   // enregistrement global du back office (une seule barre pour les trois pages)
     cancel: function () { cancelPmg(); },
-    setOpts: function (o) { state.opts = o || {}; }
+    setOpts: function (o) { state.opts = o || {}; applyExtraPmg(); }
   };
+  // PMG mémorisées dans les options (colonne PMG non modifiable depuis le widget) : ajoutées à la liste de choix de la colonne, donc proposées partout.
+  function pmgExtra() { var i = state.opts && state.opts.ins; return i && Array.isArray(i.pmgExtra) ? i.pmgExtra : []; }
+  function applyExtraPmg() {
+    var t = cfg().table, col = t && findCol(t, 'PMG'); if (!col || !/^Choice/.test(col.type)) return;
+    var ex = pmgExtra().filter(function (x) { return (col.choices || []).indexOf(x) === -1; });
+    if (ex.length) col.choices = (col.choices || []).concat(ex);
+  }
   window.__getOpts = function () { return state.opts; }; // options courantes (réglages JDC)
   // Après chaque enregistrement, les trois pages repartent des mêmes options (sinon l'une écraserait la configuration enregistrée par une autre).
   function pushOpts(o) {
-    state.opts = o; if (window.__insMenuSync) setTimeout(window.__insMenuSync, 0);
+    state.opts = o; applyExtraPmg(); if (window.__insMenuSync) setTimeout(window.__insMenuSync, 0);
     if (window.WEL && window.WEL.setOpts) window.WEL.setOpts(o);
     if (window.RES && window.RES.setOpts) window.RES.setOpts(o);
     if (window.RSV && window.RSV.setOpts) window.RSV.setOpts(o);
@@ -4956,6 +4981,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       state.rows = r[2];
       loadAntennes(r[0]); // adresses mail des antennes médicales (table « Antennes medicales »)
       c = cfg(); // les colonnes sont maintenant connues
+      applyExtraPmg();
       state.records = r[2].map(function (row) { return { raw: row, identity: identityOf(row, c), status: statusOf(row, c) }; });
       state.read = { table: c.table, at: new Date(), total: r[2].length, error: null };
       renderAll();
@@ -21774,6 +21800,12 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   function loose(s) { return norm(s).replace(/[^a-z0-9]/g, ''); }
   var IN_GRIST = !!(window.grist && window.parent !== window);
   function opts() { return (window.__getOpts && window.__getOpts()) || {}; }
+  // Dates par PMG (page « Gérer les PMG ») : { "<PMG>": { d0, d1 (stage), a0, a1 (acculturation) } } ; tant qu'aucune PMG n'a de dates, reprise des anciennes dates uniques du back office.
+  function pmgDates(name) {
+    var o = opts().ins || {}, all = o.pmgDates, k = name == null ? pmg() : name;
+    if (all && Object.keys(all).length) return all[k] || {};
+    return name != null && name !== pmg() ? {} : { d0: (o.stage || {}).d0, d1: (o.stage || {}).d1, a0: (o.stageAcc || {}).d0, a1: (o.stageAcc || {}).d1 };
+  }
   function pmg() { var o = opts().ins || {}, v = String(o.pmg || '').trim(); if (!v && !IN_GRIST && !o.none) v = 'PMG 74'; return v; } // démonstration : PMG 74 par défaut
   function today() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear(); }
   function csvDownload(name, head, rows) {
@@ -21888,7 +21920,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   }
   var stageStart = tickMemo(stageStartRaw);
   function stageStartRaw() { // premier jour du stage : première occurrence de la progression, sinon aujourd'hui
-    var sg0 = ((opts().ins || {}).stage || {}).d0; if (/^\d{4}-\d{2}-\d{2}$/.test(sg0 || '')) return Date.parse(sg0 + 'T12:00:00') / 1000;
+    var sg0 = pmgDates().d0; if (/^\d{4}-\d{2}-\d{2}$/.test(sg0 || '')) return Date.parse(sg0 + 'T12:00:00') / 1000;
     var l = typeof progList === 'function' ? progList().filter(function (o) { return !o.perm; }) : [];
     return l.length ? Math.min.apply(null, l.map(function (o) { return o.d0; })) : Date.now() / 1000;
   }
@@ -24979,14 +25011,14 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
      extérieurs) sont enregistrés dans la table Instruction_Rationnaire. */
   var MEALS = [['pdj', 'PDJ', 'Petit-déjeuner', 7], ['dej', 'Dej', 'Déjeuner', 12], ['din', 'Diner', 'Dîner', 19]], FA_ORDER = ['GR', 'GAE', 'GTA', 'RGIF'];
   function faOf(aff) { var n = ' ' + norm(aff).replace(/[^a-z0-9]+/g, ' ') + ' '; return / gr | garde republicaine /.test(n) ? 'GR' : / gae /.test(n) ? 'GAE' : / gta /.test(n) ? 'GTA' : 'RGIF'; }
-  // Peloton d'acculturation : il ne suit qu'une partie du stage (dates réglées dans le back office ; à défaut, celles du stage)
-  function accPeriod() { var pc = pelCfg(); if (pc && pc.indexOf('ACC') === -1) return null; var a = (opts().ins || {}).stageAcc || {}, ok = function (v) { return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : ''; }, d0 = ok(a.d0), d1 = ok(a.d1); return d0 || d1 ? { d0: d0, d1: d1 } : null; }
+  // Peloton d'acculturation : il ne suit qu'une partie du stage (dates réglées dans « Gérer les PMG » ; à défaut, celles du stage)
+  function accPeriod() { var pc = pelCfg(); if (pc && pc.indexOf('ACC') === -1) return null; var a = pmgDates(), ok = function (v) { return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : ''; }, d0 = ok(a.a0), d1 = ok(a.a1); return d0 || d1 ? { d0: d0, d1: d1 } : null; }
   function stagePeriodFor(t) { var P = stagePeriod(), A = t && isAccStg(t) ? accPeriod() : null; return A ? { d0: A.d0 || (P && P.d0) || A.d1, d1: A.d1 || (P && P.d1) || A.d0 } : P; }
   function stgStartOf(t) { var A = t && isAccStg(t) ? accPeriod() : null; return A && A.d0 ? Date.parse(A.d0 + 'T12:00:00') / 1000 : stageStart(); }
   function accOver(t) { var A = isAccStg(t) ? accPeriod() : null; return !!(A && A.d1 && A.d1 < isoD(Date.now() / 1000)); } // acculturation terminée : le stagiaire a quitté son hébergement
   function pelActive(p, day) { var A = accKey(p) ? accPeriod() : null; return !A || ((!A.d0 || day >= A.d0) && (!A.d1 || day <= A.d1)); } // le peloton d'acculturation n'existe dans la FSJ que pendant ses dates
-  function stagePeriod() { // dates réglées dans le back office (PMG suivie) ; à défaut, premier et dernier jour de la progression
-    var l = progList().filter(function (o) { return !o.perm; }), sg = (opts().ins || {}).stage || {}, ok = function (v) { return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : ''; }, d0 = ok(sg.d0), d1 = ok(sg.d1);
+  function stagePeriod() { // dates de la PMG suivie (page « Gérer les PMG ») ; à défaut, premier et dernier jour de la progression
+    var l = progList().filter(function (o) { return !o.perm; }), sg = pmgDates(), ok = function (v) { return /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : ''; }, d0 = ok(sg.d0), d1 = ok(sg.d1);
     if (l.length) { d0 = d0 || isoD(Math.min.apply(null, l.map(function (o) { return o.d0; }))); d1 = d1 || isoD(Math.max.apply(null, l.map(function (o) { return o.d1; }))); }
     return d0 || d1 ? { d0: d0 || d1, d1: d1 || d0 } : null;
   }
@@ -27914,10 +27946,8 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
       '<nav class="ibo-nav" aria-label="Aller à une section">' + [['ibo-stage', 'Stage'], ['ibo-feat', 'Fonctionnalités'], ['ibo-g-pers', 'Stagiaires et cadres'], ['ibo-g-res', 'Ressources'], ['ibo-g-com', 'Communication'], ['ibo-g-tech', 'Installation']].map(function (c) { return '<button type="button" class="ibo-chip" data-ibogo="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</nav>' +
       '<section class="ibo-card" id="ibo-stage"><h3 class="ibo-h">Stage suivi</h3>' +
       '<p class="hint ibo-lead">Les stagiaires sont les candidats « Admis PMG » de la PMG suivie ; les cadres sont ceux de la table « ' + CT + ' ».</p>' +
-      '<div class="cf-field"><span class="fr-label">PMG suivie</span><p style="margin:.25rem 0"><strong id="ins-bo-pmgcur"></strong> <button type="button" class="btn secondary sm" data-ins-pmgs>Gérer les PMG</button></p><p class="hint">La PMG affichée dans Instruction et les objectifs se règlent dans la page « Gérer les PMG » (bouton du menu Instruction). <span id="ins-f-n"></span></p></div>' +
-      '<div class="ibo-sub" style="margin-top:1rem"><h4>Pelotons du stage</h4><div class="pg-chips ibo-pels" id="ins-bo-pel" role="group" aria-label="Pelotons disponibles pour ce stage">' + ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'ACC'].map(function (k) { return '<button type="button" class="ibo-pelb" data-bopel="' + k + '" aria-pressed="false">' + (k === 'ACC' ? 'Acculturation' : k) + '</button>'; }).join('') + '</div><p class="hint">Cliquez pour choisir les pelotons de ce stage, de P1 à P8 ; l’acculturation s’affiche « ACC. » dans le widget. Sans acculturation, les dates de son peloton sont grisées.</p></div>' +
-      '<div class="ibo-subs"><div class="ibo-sub"><h4>Dates du stage</h4><div class="ibo-grid">' + fld('ins-bo-sd0', 'Début', '<input class="input" type="date" id="ins-bo-sd0">') + fld('ins-bo-sd1', 'Fin', '<input class="input" type="date" id="ins-bo-sd1">') + '</div><p class="hint">Facultatives : à défaut, le premier et le dernier jour de la progression.</p></div>' +
-      '<div class="ibo-sub" id="ibo-acc"><h4>Peloton d’acculturation</h4><div class="ibo-grid">' + fld('ins-bo-ad0', 'Début', '<input class="input" type="date" id="ins-bo-ad0">') + fld('ins-bo-ad1', 'Fin', '<input class="input" type="date" id="ins-bo-ad1">') + '</div><p class="hint">Ce peloton ne suit qu’une partie du stage : hors de ces dates, il disparaît de la FSJ et des élèves de jour, et ses variables STAGE_DEBUT et STAGE_FIN reprennent ces dates. Facultatif : à défaut, celles du stage.</p></div></div>' +
+      '<div class="cf-field"><span class="fr-label">PMG suivie</span><p style="margin:.25rem 0"><strong id="ins-bo-pmgcur"></strong> <button type="button" class="btn secondary sm" data-ins-pmgs>Gérer les PMG</button></p><p class="hint">La PMG affichée dans Instruction, ses dates et ses objectifs se règlent dans la page « Gérer les PMG » (bouton du menu Instruction). <span id="ins-f-n"></span></p></div>' +
+      '<div class="ibo-sub" style="margin-top:1rem"><h4>Pelotons du stage</h4><div class="pg-chips ibo-pels" id="ins-bo-pel" role="group" aria-label="Pelotons disponibles pour ce stage">' + ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'ACC'].map(function (k) { return '<button type="button" class="ibo-pelb" data-bopel="' + k + '" aria-pressed="false">' + (k === 'ACC' ? 'Acculturation' : k) + '</button>'; }).join('') + '</div><p class="hint">Cliquez pour choisir les pelotons de ce stage, de P1 à P8 ; l’acculturation s’affiche « ACC. » dans le widget. Les dates du stage et de l’acculturation se règlent par PMG dans la page « Gérer les PMG ».</p></div>' + +
       '</section>' +
       '<section class="ibo-card" id="ibo-feat"><h3 class="ibo-h">Fonctionnalités</h3>' +
       '<p class="hint ibo-lead">Activez ou désactivez chaque fonction. Un calque ou un onglet décoché disparaît ; les réservations de véhicules, de matériel et la gestion des repos restent visibles avec le badge « Désactivé ».</p>' +
@@ -27968,7 +27998,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
       var k = e.target.getAttribute('data-bolayer'), fk = e.target.getAttribute('data-boform');
       var bf = e.target.getAttribute('data-bofeat'); if (bf) { var fd = dl(); fd.feat = fd.feat || Object.assign({}, (opts().ins || {}).feat || {}); fd.feat[bf] = e.target.checked; if (window.RSV && window.RSV.markDirty) window.RSV.markDirty(); return; }
       var rk = e.target.getAttribute('data-borule'); if (rk) { var pr = rk.split(':'), rl = dl().rules[pr[0]].filter(function (x) { return x[0] === pr[1]; })[0]; if (rl) rl[1] = e.target.value; boRules(); if (window.RSV && window.RSV.markDirty) window.RSV.markDirty(); return; }
-      if (k) dl().layers[k] = e.target.checked; else if (e.target.id === 'ins-bo-ad0' || e.target.id === 'ins-bo-ad1') { var sa = dl().stageAcc = dl().stageAcc || Object.assign({}, (opts().ins || {}).stageAcc || {}); sa[e.target.id === 'ins-bo-ad0' ? 'd0' : 'd1'] = e.target.value; } else if (e.target.id === 'ins-bo-sd0' || e.target.id === 'ins-bo-sd1') { var sg = dl().stage = dl().stage || Object.assign({}, (opts().ins || {}).stage || {}); sg[e.target.id === 'ins-bo-sd0' ? 'd0' : 'd1'] = e.target.value; } else if (e.target.id === 'ins-bo-maxinv') dl().maxInv = Number(e.target.value) || 4; else if (e.target.id === 'ins-bo-cerage') dl().cerAge = Math.max(0, Math.floor(Number(e.target.value) || 0)); else if (e.target.id === 'ins-bo-certenue') dl().cerTenue = e.target.checked; else if (e.target.id === 'ins-bo-menuon') dl().menuOn = e.target.checked; else if (fk) dl().forms[fk] = e.target.value.trim(); else return;
+      if (k) dl().layers[k] = e.target.checked; else if (e.target.id === 'ins-bo-maxinv') dl().maxInv = Number(e.target.value) || 4; else if (e.target.id === 'ins-bo-cerage') dl().cerAge = Math.max(0, Math.floor(Number(e.target.value) || 0)); else if (e.target.id === 'ins-bo-certenue') dl().cerTenue = e.target.checked; else if (e.target.id === 'ins-bo-menuon') dl().menuOn = e.target.checked; else if (fk) dl().forms[fk] = e.target.value.trim(); else return;
       if (window.RSV && window.RSV.markDirty) window.RSV.markDirty();
     });
     host.addEventListener('click', function (e) {
@@ -28208,10 +28238,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     var P = window.PMG, cur = pmg();
     boDdc(); boAcl();
     host.querySelector('#ins-bo-pmgcur').textContent = cur || 'Aucune';
-    var n = cur && P && P.trainees ? P.trainees(cur).length : 0, sgc = (draftL && draftL.stage) || (opts().ins || {}).stage || {};
-    if (document.activeElement !== host.querySelector('#ins-bo-sd0')) host.querySelector('#ins-bo-sd0').value = sgc.d0 || ''; if (document.activeElement !== host.querySelector('#ins-bo-sd1')) host.querySelector('#ins-bo-sd1').value = sgc.d1 || '';
-    var sac = (draftL && draftL.stageAcc) || (opts().ins || {}).stageAcc || {};
-    if (document.activeElement !== host.querySelector('#ins-bo-ad0')) host.querySelector('#ins-bo-ad0').value = sac.d0 || ''; if (document.activeElement !== host.querySelector('#ins-bo-ad1')) host.querySelector('#ins-bo-ad1').value = sac.d1 || '';
+    var n = cur && P && P.trainees ? P.trainees(cur).length : 0;
     var lc = draftL ? draftL.layers : layerCfg(); Array.prototype.forEach.call(host.querySelectorAll('[data-bolayer]'), function (cb) { cb.checked = lc[cb.getAttribute('data-bolayer')] !== false; });
     var fc = (draftL && draftL.feat) || (opts().ins || {}).feat || {}; Array.prototype.forEach.call(host.querySelectorAll('[data-bofeat]'), function (cb) { cb.checked = fc[cb.getAttribute('data-bofeat')] !== false; });
     host.querySelector('#ins-bo-maxinv').value = draftL ? draftL.maxInv : maxInv(); host.querySelector('#ins-bo-cerage').value = draftL && draftL.cerAge != null ? draftL.cerAge : cerAge(); host.querySelector('#ins-bo-certenue').checked = draftL && draftL.cerTenue != null ? draftL.cerTenue : cerTenueCount(); boExtra(); host.querySelector('#ins-bo-attr').value = draftL && draftL.attrRef != null ? draftL.attrRef : ((opts().ins || {}).attrRef != null ? (opts().ins || {}).attrRef : ''); host.querySelector('#ins-bo-menuon').checked = draftL && draftL.menuOn != null ? draftL.menuOn : !!(opts().ins || {}).menuOn; boRules(); boConso(); boWero(); boPel(); boEvf();
@@ -28416,9 +28443,22 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     if (e.target.name === 'ax-type' && AXF) { axRead(); AXF.type = e.target.value; boRules(); var t = document.querySelector('#ins-bo-rules [name="ax-type"][value="' + AXF.type + '"]'); if (t) t.focus(); return; }
     var m = e.target.getAttribute('data-boaxm'); if (m) { var d = boDl(); if (!d.absRules) d.absRules = absRulesCfg(); d.absRules.forEach(function (x) { if (x.id === m) x.mode = e.target.value; }); if (window.RSV && window.RSV.markDirty) window.RSV.markDirty(); }
   });
-  /* ---------- Page « Gérer les PMG » : PMG à venir (étiquettes de la colonne PMG), objectifs CIV / VCA, PMG affichée dans Instruction ---------- */
-  var pgmMsg = '', pgmLoc = null; // pgmLoc : objectifs saisis, gardés localement tant que l'enregistrement est en cours (saisies rapprochées)
+  /* ---------- Page « Gérer les PMG » : PMG à venir (étiquettes de la colonne PMG), dates, objectifs CIV / VCA, PMG affichée dans Instruction ---------- */
+  var pgmMsg = '', pgmErr = '', pgmLoc = null, pgmDtLoc = null, pgmPast = false; // pgmLoc / pgmDtLoc : objectifs et dates saisis, gardés localement tant que l'enregistrement est en cours (saisies rapprochées)
+  var PGM_DT = /^\d{4}-\d{2}-\d{2}$/, PGM_ADD = ['pgm-new', 'pgm-nd0', 'pgm-nd1', 'pgm-na0', 'pgm-na1'];
   function pgmObj() { return pgmLoc || (opts().ins || {}).pmgObj || {}; }
+  function pgmDt(v) { return pgmDtLoc ? pgmDtLoc[v] || {} : pmgDates(v); }
+  function pgmDtAll() { // dates enregistrées, en reprenant les anciennes dates uniques du back office pour la PMG affichée tant qu'aucune PMG n'a de dates
+    var all = JSON.parse(JSON.stringify(pgmDtLoc || (opts().ins || {}).pmgDates || {}));
+    if (!pgmDtLoc && !Object.keys(all).length && pmg()) { var lg = pmgDates(pmg()); if (lg.d0 || lg.d1 || lg.a0 || lg.a1) all[pmg()] = JSON.parse(JSON.stringify(lg)); }
+    return all;
+  }
+  function accOn() { var d = pelCfg(); if (d && d.length) return d.indexOf('ACC') !== -1; return pelotons0().some(function (p) { return accKey(p); }); } // peloton d'acculturation activé (back office) : ses dates deviennent obligatoires
+  function pgmDtOk(d) { return !!(d && PGM_DT.test(d.d0 || '') && PGM_DT.test(d.d1 || '') && (!accOn() || PGM_DT.test(d.a0 || '') && PGM_DT.test(d.a1 || ''))); }
+  function pgmDtMiss() { return accOn() ? 'les dates de début et de fin du stage et de l’acculturation' : 'les dates de début et de fin du stage'; }
+  function pgmDtCheck(d) { return d.d0 && d.d1 && d.d1 < d.d0 ? 'La date de fin du stage doit suivre sa date de début.' : d.a0 && d.a1 && d.a1 < d.a0 ? 'La date de fin de l’acculturation doit suivre sa date de début.' : ''; }
+  function pgmDtSave(all) { var c = {}; Object.keys(all).forEach(function (k) { var d = {}; ['d0', 'd1', 'a0', 'a1'].forEach(function (f) { if (PGM_DT.test(all[k][f] || '')) d[f] = all[k][f]; }); if (Object.keys(d).length) c[k] = d; }); pgmDtLoc = c; return insOptSet('pmgDates', Object.keys(c).length ? c : null); }
+  function pgmWarn(v) { return pgmDtOk(pgmDt(v)) ? '' : '<span class="fr-badge fr-badge--sm fr-badge--warning fr-badge--no-icon">Dates à renseigner</span>'; }
   function pgmGauge(n, obj) { // effectif admis et écart à l'objectif
     if (obj == null || obj === '') return '<strong>' + n + '</strong> admis';
     var d = Number(obj) - n;
@@ -28426,36 +28466,71 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   }
   function pgmRender() {
     var h = $('ins-pmgs-host'); if (!h) return;
-    var P = window.PMG, vals = P && P.pmgChoices ? P.pmgChoices() : [], cur = pmg(), O = pgmObj();
+    var P = window.PMG, vals = P && P.pmgChoices ? P.pmgChoices() : [], cur = pmg(), O = pgmObj(), typed = {};
+    PGM_ADD.forEach(function (k) { typed[k] = $(k) ? $(k).value : ''; });
     if (cur && vals.indexOf(cur) === -1) vals = [cur].concat(vals);
+    var today = isoD(Date.now() / 1000), hidden = 0;
+    if (!pgmPast) vals = vals.filter(function (v) { var e = pgmDt(v).d1; if (v !== cur && PGM_DT.test(e || '') && e < today) { hidden++; return false; } return true; }); // PMG terminées masquées (sauf la PMG affichée)
+    else vals.forEach(function (v) { var e = pgmDt(v).d1; if (v !== cur && PGM_DT.test(e || '') && e < today) hidden++; });
     var rows = vals.map(function (v, i) {
-      var st = P.pmgStats(v), o = O[v] || {};
+      var st = P.pmgStats(v), o = O[v] || {}, dt = pgmDt(v);
       function cell(k, lab) { return '<td><div class="pgm-cell"><span data-pgm-g="' + k + '" data-pgm="' + esc(v) + '">' + pgmGauge(st[k], o[k]) + '</span><label class="fr-sr-only" for="pgm-' + k + i + '">Objectif ' + lab + ' de la ' + esc(v) + '</label><input class="input" type="number" min="0" step="1" id="pgm-' + k + i + '" data-pgm-obj="' + k + '" data-pgm="' + esc(v) + '" value="' + (o[k] == null ? '' : esc(o[k])) + '" placeholder="Objectif"></div></td>'; }
-      return '<tr' + (v === cur ? ' class="pgm-cur"' : '') + '><th scope="row">' + esc(v) + '</th><td>' + st.cand + ' <span class="hint" style="display:inline">(' + st.admis + ' admis)</span></td>' + cell('civ', 'CIV') + cell('vca', 'VCA') +
+      function dcell(a, b, what) { return '<td><div class="pgm-dates">' + [[a, 'Début'], [b, 'Fin']].map(function (x) { return '<div><label for="pgm-' + x[0] + i + '">' + x[1] + '<span class="fr-sr-only"> ' + what + ' de la ' + esc(v) + '</span></label><input class="input" type="date" id="pgm-' + x[0] + i + '" data-pgm-dt="' + x[0] + '" data-pgm="' + esc(v) + '" value="' + esc(dt[x[0]] || '') + '"' + (x[0].charAt(0) === 'd' || accOn() ? ' required' : '') + '></div>'; }).join('') + '</div></td>'; }
+      return '<tr' + (v === cur ? ' class="pgm-cur"' : '') + '><th scope="row">' + esc(v) + ' <span data-pgm-w="' + esc(v) + '">' + pgmWarn(v) + '</span></th><td>' + st.cand + ' <span class="hint" style="display:inline">(' + st.admis + ' admis)</span></td>' + dcell('d0', 'd1', 'du stage') + dcell('a0', 'a1', 'de l’acculturation') + cell('civ', 'CIV') + cell('vca', 'VCA') +
         '<td>' + (v === cur ? '<span class="fr-badge fr-badge--sm fr-badge--success fr-badge--no-icon">Affichée</span>' : '<button type="button" class="btn secondary sm" data-pgm-pick="' + esc(v) + '">Afficher dans Instruction</button>') + '</td></tr>';
     }).join('');
-    h.innerHTML = (pgmMsg ? '<div class="doc-alert success" role="status"><p>' + esc(pgmMsg) + '</p></div>' : '<div role="status" aria-live="polite"></div>') +
-      (rows ? '<p class="hint">Étiquettes de la colonne PMG de la table des candidats. L’objectif se compare aux candidats « Admis PMG » de chaque origine (CIV, VCA) ; il s’enregistre à la saisie.</p>' +
-        '<div class="table-wrap"><table class="doc-table pgm-table"><caption class="fr-sr-only">PMG à venir</caption><thead><tr><th scope="col">PMG</th><th scope="col">Candidats</th><th scope="col">CIV</th><th scope="col">VCA</th><th scope="col">Page Instruction</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-        : '<div class="doc-alert warning"><p>Aucune PMG trouvée : ajoutez des étiquettes à la colonne PMG de la table des candidats.</p></div>') +
+    function nf(id, lab, req, hint) { return '<div><label for="' + id + '">' + lab + (req ? '<span class="req" aria-hidden="true"> *</span>' : '') + '</label><input class="input" type="' + (id === 'pgm-new' ? 'text' : 'date') + '" id="' + id + '" value="' + esc(typed[id]) + '"' + (req ? ' required' : '') + (id === 'pgm-new' ? ' placeholder="Nom de la PMG"' : '') + '></div>'; }
+    h.innerHTML = (pgmErr ? '<div class="doc-alert error" role="alert"><p>' + esc(pgmErr) + '</p></div>' : pgmMsg ? '<div class="doc-alert success" role="status"><p>' + esc(pgmMsg) + '</p></div>' : '<div role="status" aria-live="polite"></div>') +
+      '<form class="pgm-add" id="ins-pgm-add" autocomplete="off">' + nf('pgm-new', 'Nouvelle PMG', true) + nf('pgm-nd0', 'Début du stage', true) + nf('pgm-nd1', 'Fin du stage', true) + nf('pgm-na0', 'Début de l’acculturation' + (accOn() ? '' : ' (facultatif)'), accOn()) + nf('pgm-na1', 'Fin de l’acculturation' + (accOn() ? '' : ' (facultatif)'), accOn()) + '<button type="submit" class="btn sm ico-plus">Ajouter une PMG</button></form>' +
+      (hidden || pgmPast ? '<p class="hint"><label class="ed-check"><input type="checkbox" id="pgm-past"' + (pgmPast ? ' checked' : '') + '> Afficher les PMG terminées' + (hidden ? ' (' + hidden + (pgmPast ? '' : ' masquée' + (hidden > 1 ? 's' : '')) + ')' : '') + '</label></p>' : '') +
+      (rows ? '<p class="hint">Étiquettes de la colonne PMG de la table des candidats. Les dates du stage' + (accOn() ? ' et de l’acculturation (peloton activé)' : '') + ' sont obligatoires pour afficher une PMG dans Instruction' + (accOn() ? '.' : ' ; celles de l’acculturation sont facultatives (à défaut, celles du stage).') + ' L’objectif se compare aux candidats « Admis PMG » de chaque origine (CIV, VCA). Tout s’enregistre à la saisie.</p>' +
+        '<div class="table-wrap"><table class="doc-table pgm-table"><caption class="fr-sr-only">PMG à venir</caption><thead><tr><th scope="col">PMG</th><th scope="col">Candidats</th><th scope="col">Dates du stage <span class="req" aria-hidden="true">*</span></th><th scope="col">Acculturation ' + (accOn() ? '<span class="req" aria-hidden="true">*</span>' : '<span class="hint" style="display:inline">(facultatif)</span>') + '</th><th scope="col">CIV</th><th scope="col">VCA</th><th scope="col">Page Instruction</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+        : '<div class="doc-alert warning"><p>Aucune PMG à afficher : ajoutez-en une avec le formulaire ci-dessus' + (hidden ? ' ou affichez les PMG terminées.' : '.') + '</p></div>') +
       (cur ? '' : '<p class="hint">Aucune PMG n’est affichée : la page Instruction reste vide tant qu’une PMG n’est pas choisie.</p>');
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-pgm-pick]'); if (!b) return;
-    var v = b.getAttribute('data-pgm-pick'); b.disabled = true;
+    var v = b.getAttribute('data-pgm-pick');
+    if (!pgmDtOk(pgmDt(v))) { pgmMsg = ''; pgmErr = 'Renseignez ' + pgmDtMiss() + ' de la ' + v + ' avant de l’afficher dans Instruction.'; pgmRender(); return; }
+    b.disabled = true; pgmErr = '';
     insOptSet('pmg', v).then(function () { draft = null; pgmMsg = 'La ' + v + ' est maintenant affichée dans la page Instruction.'; pgmRender(); render(); boRender(); });
   });
+  document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'ins-pgm-add') return; e.preventDefault();
+    var v = $('pgm-new').value.trim(), P = window.PMG, d = { d0: $('pgm-nd0').value, d1: $('pgm-nd1').value, a0: $('pgm-na0').value, a1: $('pgm-na1').value }; pgmMsg = ''; pgmErr = '';
+    if (!P || !P.addPmg) return;
+    var bad = !v ? 'Saisissez le nom de la PMG.' : !d.d0 || !d.d1 ? 'Les dates de début et de fin du stage sont obligatoires.' : accOn() && (!d.a0 || !d.a1) ? 'Le peloton d’acculturation est activé : ses dates de début et de fin sont obligatoires.' : pgmDtCheck(d);
+    if (bad) { pgmErr = bad; pgmRender(); var f = $(!v ? 'pgm-new' : !d.d0 ? 'pgm-nd0' : !d.d1 ? 'pgm-nd1' : !d.a0 ? 'pgm-na0' : 'pgm-na1'); if (f) f.focus(); return; }
+    P.addPmg(v).then(function (r) {
+      var ex = ((opts().ins || {}).pmgExtra || []).concat([v]);
+      return (r.inColumn ? Promise.resolve() : insOptSet('pmgExtra', ex)).then(function () { var all = pgmDtAll(); all[v] = d; return pgmDtSave(all); }).then(function () {
+        pgmMsg = '« ' + v + ' » est ajoutée : elle est maintenant proposée partout où l’on choisit une PMG.' + (r.inColumn ? '' : ' La colonne PMG de Grist n’a pas pu être modifiée : la PMG est mémorisée dans les réglages du widget.');
+        PGM_ADD.forEach(function (k) { $(k).value = ''; });
+      });
+    }).then(null, function (err) { pgmErr = (err && err.message) || String(err); }).then(function () { pgmRender(); var i = $('pgm-new'); if (i) i.focus(); });
+  });
   document.addEventListener('change', function (e) {
-    var t = e.target; if (!t.closest || !t.closest('#ins-pmgs-host') || !t.getAttribute('data-pgm-obj')) return;
-    var k = t.getAttribute('data-pgm-obj'), v = t.getAttribute('data-pgm'), n = t.value.trim() === '' ? null : Math.max(0, Math.round(Number(t.value)));
+    var t = e.target; if (!t.closest || !t.closest('#ins-pmgs-host')) return;
+    if (t.id === 'pgm-past') { pgmPast = t.checked; pgmRender(); var pc = $('pgm-past'); if (pc) pc.focus(); return; }
+    var f = t.getAttribute('data-pgm-dt'), v = t.getAttribute('data-pgm');
+    if (f) { // date du stage ou de l'acculturation d'une PMG
+      var all = pgmDtAll(), d = all[v] = all[v] || {}, prev = d[f]; d[f] = t.value; pgmMsg = '';
+      var bad = pgmDtCheck(d);
+      if (bad) { d[f] = prev; t.value = prev || ''; pgmErr = bad; pgmRender(); return; }
+      pgmErr = ''; var w = h2w(v); if (w) { pgmDtLoc = all; w.innerHTML = pgmWarn(v); }
+      pgmDtSave(all); return;
+    }
+    if (!t.getAttribute('data-pgm-obj')) return;
+    var k = t.getAttribute('data-pgm-obj'), n = t.value.trim() === '' ? null : Math.max(0, Math.round(Number(t.value)));
     if (n != null && !isFinite(n)) n = null;
     var o = JSON.parse(JSON.stringify(pgmObj())); o[v] = o[v] || {}; if (n == null) delete o[v][k]; else o[v][k] = n; if (!Object.keys(o[v]).length) delete o[v]; pgmLoc = o;
     t.value = n == null ? '' : n; pgmMsg = '';
     var g = t.closest('.pgm-cell').querySelector('[data-pgm-g]'), st = window.PMG.pmgStats(v); g.innerHTML = pgmGauge(st[k], n);
     insOptSet('pmgObj', Object.keys(o).length ? o : null);
   });
+  function h2w(v) { return Array.prototype.filter.call(document.querySelectorAll('#ins-pmgs-host [data-pgm-w]'), function (x) { return x.getAttribute('data-pgm-w') === v; })[0]; }
   window.INS = {
-    pmgs: function () { pgmMsg = ''; pgmLoc = null; pgmRender(); if (window.PMG && window.PMG.refresh) Promise.resolve(window.PMG.refresh()).then(pgmRender, pgmRender); },
+    pmgs: function () { pgmMsg = ''; pgmErr = ''; pgmLoc = null; pgmDtLoc = null; pgmRender(); if (window.PMG && window.PMG.refresh) Promise.resolve(window.PMG.refresh()).then(pgmRender, pgmRender); },
     show: function (reload) {
       render();
       var jobs = [loadCadres(), loadLinked(), loadMan(), loadForms(), loadPlan(), loadRes(), loadDocs()]; if (reload && window.PMG && window.PMG.refresh) jobs.push(Promise.resolve(window.PMG.refresh()));
@@ -28465,7 +28540,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     save: function () {
       if ((draft == null || draft === pmg()) && !draftL) { draft = null; return Promise.resolve(); }
       var cur = opts(), o = {}; Object.keys(cur).forEach(function (k) { o[k] = cur[k]; }); var ins = {}; Object.keys(cur.ins || {}).forEach(function (k) { ins[k] = cur.ins[k]; });
-      if (draft != null) ins.pmg = draft; if (draftL) { ins.layers = draftL.layers; ins.maxInv = draftL.maxInv; if (draftL.cerAge != null) ins.cerAge = draftL.cerAge; if (draftL.cerTenue != null) ins.cerTenue = draftL.cerTenue; if (draftL.attrRef != null) { if (draftL.attrRef === '') delete ins.attrRef; else ins.attrRef = draftL.attrRef; } if (draftL.menuOn != null) ins.menuOn = draftL.menuOn; if (draftL.mailTpl) ins.mailTpl = draftL.mailTpl.filter(function (t) { return t.nom || t.objet || t.corps; }); if (draftL.effets) ins.effets = draftL.effets.filter(function (a) { return a.label; }).map(function (a) { return { id: a.id, label: a.label, col: a.col || '', colCad: a.colCad || '', kind: a.kind === 'size' ? 'size' : 'qty', prix: Number(a.prix) || 0, cloture: a.cloture || '', bande: !!a.bande }; }); if (draftL.stageAcc) { if (draftL.stageAcc.d0 || draftL.stageAcc.d1) ins.stageAcc = { d0: draftL.stageAcc.d0 || '', d1: draftL.stageAcc.d1 || '' }; else delete ins.stageAcc; } if (draftL.stage) { if (draftL.stage.d0 || draftL.stage.d1) ins.stage = { d0: draftL.stage.d0 || '', d1: draftL.stage.d1 || '' }; else delete ins.stage; } if (draftL.extra) ins.extra = draftL.extra; if (draftL.posterTpl != null) ins.posterTpl = draftL.posterTpl; ins.forms = draftL.forms; if (draftL.rules) ins.rules = draftL.rules; if (draftL.absRules) ins.absRules = draftL.absRules; if (draftL.wero) ins.wero = { numero: draftL.wero.numero.trim(), titulaire: draftL.wero.titulaire.trim(), iban: ibanFmt(draftL.wero.iban), qr: draftL.wero.qr.trim() }; if (draftL.feat) ins.feat = draftL.feat; if (draftL.evalSig !== undefined) { if (draftL.evalSig) ins.evalSig = draftL.evalSig; else delete ins.evalSig; } if (draftL.faNames != null) { if (String(draftL.faNames).trim()) ins.faNames = draftL.faNames; else delete ins.faNames; } if (draftL.pel) { if (draftL.pel.length) ins.pel = draftL.pel; else delete ins.pel; } if (draftL.etuLettre != null) { if (Number(draftL.etuLettre)) ins.etuLettre = Number(draftL.etuLettre); else delete ins.etuLettre; } if (draftL.conso) ins.conso = draftL.conso.filter(function (t) { return t.label; }).map(function (t) { return { id: t.id, label: t.label, prix: t.prix }; }); } o.ins = ins;
+      if (draft != null) ins.pmg = draft; if (draftL) { ins.layers = draftL.layers; ins.maxInv = draftL.maxInv; if (draftL.cerAge != null) ins.cerAge = draftL.cerAge; if (draftL.cerTenue != null) ins.cerTenue = draftL.cerTenue; if (draftL.attrRef != null) { if (draftL.attrRef === '') delete ins.attrRef; else ins.attrRef = draftL.attrRef; } if (draftL.menuOn != null) ins.menuOn = draftL.menuOn; if (draftL.mailTpl) ins.mailTpl = draftL.mailTpl.filter(function (t) { return t.nom || t.objet || t.corps; }); if (draftL.effets) ins.effets = draftL.effets.filter(function (a) { return a.label; }).map(function (a) { return { id: a.id, label: a.label, col: a.col || '', colCad: a.colCad || '', kind: a.kind === 'size' ? 'size' : 'qty', prix: Number(a.prix) || 0, cloture: a.cloture || '', bande: !!a.bande }; }); if (draftL.extra) ins.extra = draftL.extra; if (draftL.posterTpl != null) ins.posterTpl = draftL.posterTpl; ins.forms = draftL.forms; if (draftL.rules) ins.rules = draftL.rules; if (draftL.absRules) ins.absRules = draftL.absRules; if (draftL.wero) ins.wero = { numero: draftL.wero.numero.trim(), titulaire: draftL.wero.titulaire.trim(), iban: ibanFmt(draftL.wero.iban), qr: draftL.wero.qr.trim() }; if (draftL.feat) ins.feat = draftL.feat; if (draftL.evalSig !== undefined) { if (draftL.evalSig) ins.evalSig = draftL.evalSig; else delete ins.evalSig; } if (draftL.faNames != null) { if (String(draftL.faNames).trim()) ins.faNames = draftL.faNames; else delete ins.faNames; } if (draftL.pel) { if (draftL.pel.length) ins.pel = draftL.pel; else delete ins.pel; } if (draftL.etuLettre != null) { if (Number(draftL.etuLettre)) ins.etuLettre = Number(draftL.etuLettre); else delete ins.etuLettre; } if (draftL.conso) ins.conso = draftL.conso.filter(function (t) { return t.label; }).map(function (t) { return { id: t.id, label: t.label, prix: t.prix }; }); } o.ins = ins;
       return Promise.resolve(IN_GRIST ? window.grist.setOptions(o) : null).then(function () { if (window.__pushOpts) window.__pushOpts(o); draft = null; draftL = null; return ensureConsoCols().catch(function () {}); }).then(function () { boRender(); render(); });
     },
     cancel: function () { draft = null; draftL = null; AXF = null; boRender(); },
