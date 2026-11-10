@@ -4385,7 +4385,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
 <!-- Numéro de version X.Y.Z : à mettre à jour ici (#widgetVersion) à chaque livraison. Z : détail ou petite modification (1.5.41 -> 1.5.42) ; Y : changement structurel, avec remise à zéro de Z (1.5.42 -> 1.6.0) ; X : uniquement sur demande de l'utilisateur, avec remise à zéro de Y et Z (2.0.0). -->
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.75.1</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 2.76.0</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" data-href="https://grist.numerique.gouv.fr/o/sgr-drj-rgif/forms/ft2KFq6RVvuCGAQadxN8G1/97" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -24836,6 +24836,8 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     var b = e.target.closest('[data-rs]'); if (!b) { var cr = e.target.closest('tr[data-cso]'); if (cr) openCso(cr.getAttribute('data-cso')); return; } var a = b.getAttribute('data-rs'), id = Number(b.getAttribute('data-id')), k = b.getAttribute('data-k') || RU.view;
     if (a === 'sto-add') return openSto(b.getAttribute('data-key'));
     if (a === 'sto-csv') return stoExport();
+    if (a === 'sto-cols') return stoAddCols();
+    if (a === 'sto-attach') { var orph = stoOrphans(); if (!RU.stoAttach) { RU.stoAttach = true; return renderRes(); } RU.stoAttach = false; return rWrite('sto', orph.map(function (r) { return ['UpdateRecord', RS.sto.tableId, r.id, rf('sto', { PMG: pmg() })]; })).then(null, rErr); }
     if (a === 'sto-del') { var sid = Number(b.getAttribute('data-id')); if (RU.stoDel !== sid) { RU.stoDel = sid; return renderRes(); } RU.stoDel = null; return rWrite('sto', [['RemoveRecord', RS.sto.tableId, sid]]).then(null, rErr); }
     if (a === 'cso-pay') return openCso(b.getAttribute('data-key'), true);
     if (a === 'cso-qr') return openQr('conso');
@@ -25298,9 +25300,9 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   function renderConso() {
     if (!RS.cso || !RS.reg) return '<div class="doc-alert info"><p>Tables absentes : ' + [!RS.cso ? '<code>' + RDEF.cso.name + '</code>' : '', !RS.reg ? '<code>' + RDEF.reg.name + '</code>' : ''].filter(Boolean).join(', ') + '. Demandez à l’administrateur de les créer.</p></div>';
     var sw = swCons();
-    if (RU.cview === 's') return sw + renderStocks();
-    if (RU.cview === 'e' && !effCfg().length) RU.cview = 'c';
-    if (effCfg().length && RU.cview === 'e') { if (window.__xlsxReady) window.__xlsxReady().catch(function () {}); $('ins-rcount').textContent = ''; return sw + effRecap(shownItemsEtu()); }
+    if (RU.cview === 's') return renderStocks();
+    if (RU.cview === 'e' && !effCfg().length) { $('ins-rcount').textContent = ''; return sw + '<div class="doc-alert info"><p>Aucun article à commander n’est configuré : ajoutez-les dans le back-office (section « Effets à commander »).</p></div>'; }
+    if (RU.cview === 'e') { if (window.__xlsxReady) window.__xlsxReady().catch(function () {}); $('ins-rcount').textContent = ''; return sw + effRecap(shownItemsEtu()); }
     var T = consoTypes(), all = consoData(), q = norm(RU.q || ''), tot = { du: 0, paid: 0 };
     all.forEach(function (x) { tot.du += x.du; tot.paid += x.paid; });
     var list = all.filter(function (x) { if (q && norm(x.name + ' ' + x.grp).indexOf(q) === -1) return false; return !RU.hq || (RU.hq === 'due' ? x.solde > 0.004 : RU.hq === 'over' ? x.solde < -0.004 : RU.hq === 'ok' ? Math.abs(x.solde) <= 0.004 && x.n : RU.hq === 'none' ? !x.n : true); });
@@ -25360,48 +25362,50 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
   }
   /* ----- Stocks des consommables : entrées (réceptions) moins consommations déclarées et autres sorties (pertes, inventaires) ----- */
   function stoType(name) { var n = norm(name), T = consoTypes(); return T.filter(function (t) { return norm(t.label) === n || t.id === name; })[0] || null; }
-  function stoRows(k) { // lignes de la PMG affichée et des PMG antérieures (leur stock restant est reporté)
-    var out = { cur: [], prev: [] }; if (!RS[k]) return out;
-    var c = rc(k, 'PMG'), cur = norm(pmg()), prev = pmgBefore(pmg()).map(norm);
-    RS[k].rows.forEach(function (r) { var n = c ? norm(r[c.id]) : cur; if (!c || n === cur) out.cur.push(r); else if (prev.indexOf(n) !== -1) out.prev.push(r); });
-    return out;
-  }
+  function stoOrphans() { var c = rc('sto', 'PMG'); return RS.sto && c ? RS.sto.rows.filter(function (r) { return !String(r[c.id] == null ? '' : r[c.id]).trim(); }) : []; } // mouvements rattachés à aucune PMG (non comptés)
   function stoSeuil(id) { // seuil de la PMG affichée ; à défaut celui de la PMG précédente qui en a un, puis l'ancien réglage commun
     var i = opts().ins || {}, by = i.stockSeuils || {}, ok = function (x) { return x != null && x !== '' && isFinite(Number(x)); }, own = (by[pmg()] || {})[id];
     if (ok(own)) return { v: Number(own), own: true };
     var pb = pmgBefore(pmg()); for (var j = 0; j < pb.length; j++) { var x = (by[pb[j]] || {})[id]; if (ok(x)) return { v: Number(x), own: false }; }
     var g = (i.stockSeuil || {})[id]; return ok(g) ? { v: Number(g), own: false } : { v: null, own: false };
   }
-  function stoData() { // [{ t, report, recu, conso, autres, stock, seuil, val, etat }]
-    var T = consoTypes(), m = {}, S = stoRows('sto'), K = stoRows('cso');
-    T.forEach(function (t) { var sg = stoSeuil(t.id); m[t.id] = { t: t, report: 0, recu: 0, conso: 0, autres: 0, mv: 0, seuil: sg.v, seuilOwn: sg.own }; });
-    S.cur.forEach(function (r) { var t = stoType(tx(rv('sto', r, 'Article'))), x = t && m[t.id]; if (!x) return; var q = Number(rv('sto', r, 'Quantite')) || 0; x.mv++; if (q > 0) x.recu += q; else x.autres -= q; });
-    K.cur.forEach(function (r) { T.forEach(function (t) { m[t.id].conso += csoQty(r, t); }); });
-    S.prev.forEach(function (r) { var t = stoType(tx(rv('sto', r, 'Article'))), x = t && m[t.id]; if (x) x.report += Number(rv('sto', r, 'Quantite')) || 0; });
-    K.prev.forEach(function (r) { T.forEach(function (t) { m[t.id].report -= csoQty(r, t); }); });
-    return T.map(function (t) { var x = m[t.id]; x.report = Math.round(x.report * 100) / 100; x.stock = Math.round((x.report + x.recu - x.autres - x.conso) * 100) / 100; x.val = x.stock * t.prix; x.etat = !x.mv && !x.conso && !x.report ? 'none' : x.stock <= 0 ? 'out' : x.seuil != null && x.stock <= x.seuil ? 'low' : 'ok'; return x; });
+  function stoData() { // stock de la PMG affichée : [{ t, recu, conso, autres, stock, seuil, etat }]
+    var T = consoTypes(), m = {};
+    T.forEach(function (t) { var sg = stoSeuil(t.id); m[t.id] = { t: t, recu: 0, conso: 0, autres: 0, mv: 0, seuil: sg.v, seuilOwn: sg.own }; });
+    rRows('sto').forEach(function (r) { var t = stoType(tx(rv('sto', r, 'Article'))), x = t && m[t.id]; if (!x) return; var q = Number(rv('sto', r, 'Quantite')) || 0; x.mv++; if (q > 0) x.recu += q; else x.autres -= q; });
+    rRows('cso').forEach(function (r) { T.forEach(function (t) { m[t.id].conso += csoQty(r, t); }); });
+    return T.map(function (t) { var x = m[t.id]; x.stock = Math.round((x.recu - x.autres - x.conso) * 100) / 100; x.etat = !x.mv && !x.conso ? 'none' : x.stock <= 0 ? 'out' : x.seuil != null && x.stock <= x.seuil ? 'low' : 'ok'; return x; });
+  }
+  function stoCheck() { // contrôle de la table Instruction_Stocks : colonnes manquantes, mouvements sans PMG, articles inconnus
+    var miss = RDEF.sto.cols.filter(function (c) { return !rc('sto', c[0]); }), h = '';
+    if (miss.length) return '<div class="doc-alert warning" role="alert"><p>Colonnes manquantes dans <code>' + RDEF.sto.name + '</code> : <strong>' + miss.map(function (c) { return esc(c[2] || c[0]); }).join(', ') + '</strong>. Sans elles, les mouvements ne peuvent pas être rattachés à une PMG.</p>' + (IN_GRIST ? '<p><button type="button" class="btn sm" data-rs="sto-cols">Ajouter les colonnes manquantes</button></p>' : '') + '</div>';
+    var orph = stoOrphans();
+    if (orph.length) h += '<div class="doc-alert warning" role="alert"><p><strong>' + orph.length + ' mouvement' + (orph.length > 1 ? 's' : '') + '</strong> de <code>' + RDEF.sto.name + '</code> ne ' + (orph.length > 1 ? 'sont' : 'est') + ' rattaché' + (orph.length > 1 ? 's' : '') + ' à aucune PMG : ' + (orph.length > 1 ? 'ils ne sont' : 'il n’est') + ' compté' + (orph.length > 1 ? 's' : '') + ' dans aucun stock.</p>' + (pmg() ? '<p><button type="button" class="btn ' + (RU.stoAttach ? 'danger' : 'secondary') + ' sm" data-rs="sto-attach">' + (RU.stoAttach ? 'Confirmer : rattacher ' + (orph.length > 1 ? 'ces ' + orph.length + ' mouvements' : 'ce mouvement') + ' à la ' + esc(pmg()) : 'Les rattacher à la ' + esc(pmg())) + '</button></p>' : '') + '</div>';
+    var ac = rc('sto', 'Article'), unk = {}; rRows('sto').forEach(function (r) { var a = tx(rv('sto', r, 'Article')); if (a && !stoType(a)) unk[a] = 1; });
+    var u = Object.keys(unk); if (ac && u.length) h += '<div class="doc-alert info"><p>Articles inconnus (non comptés) : ' + u.map(esc).join(', ') + '. L’article doit reprendre exactement le libellé d’un type de consommation (back-office).</p></div>';
+    return h;
   }
   function qtyFmt(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
   function renderStocks() {
     $('ins-rcount').textContent = '';
-    if (!RS.sto) return '<div class="doc-alert info"><p>Table absente : <code>' + RDEF.sto.name + '</code>. Demandez à l’administrateur de la créer (back office, onglet Instruction).</p></div>';
+    if (!RS.sto) return swCons() + '<div class="doc-alert info"><p>Table absente : <code>' + RDEF.sto.name + '</code>. Demandez à l’administrateur de la créer (back office, onglet Instruction).</p></div>';
     var q = norm(RU.q || ''), all = stoData(), list = all.filter(function (x) { return !q || norm(x.t.label).indexOf(q) !== -1; });
     var out = all.filter(function (x) { return x.etat === 'out'; }).length, low = all.filter(function (x) { return x.etat === 'low'; }).length;
     $('ins-rcount').textContent = list.length + ' article' + (list.length > 1 ? 's' : '');
-    var kp = '<div class="rs-kpis">' + [[String(out), 'en rupture', out], [String(low), 'stock bas', low], [eur(all.reduce(function (s2, x) { return s2 + Math.max(0, x.val); }, 0)), 'valeur du stock', 0]].map(function (x) { return '<div class="rs-kpi' + (x[2] ? ' is-warn' : '') + '"><strong>' + x[0] + '</strong><span>' + x[1] + '</span></div>'; }).join('') + '</div>';
+    var kp = '<div class="rs-kpis">' + [[String(out), 'en rupture', out], [String(low), 'stock bas', low], [String(all.filter(function (x) { return x.etat !== 'none'; }).length), 'articles suivis', 0]].map(function (x) { return '<div class="rs-kpi' + (x[2] ? ' is-warn' : '') + '"><strong>' + x[0] + '</strong><span>' + x[1] + '</span></div>'; }).join('') + '</div>';
     var tag = { out: '<span class="tag red">Rupture</span>', low: '<span class="tag orange">Stock bas</span>', ok: '<span class="tag green">OK</span>', none: '<span class="tag grey">Non suivi</span>' };
     var rows = list.map(function (x) {
-      return '<tr><th scope="row"><strong>' + esc(x.t.label) + '</strong></th><td class="cso-n">' + qtyFmt(x.report) + '</td><td class="cso-n">' + qtyFmt(x.recu) + '</td><td class="cso-n">' + qtyFmt(x.conso) + '</td><td class="cso-n">' + qtyFmt(x.autres) + '</td><td class="cso-n"><strong>' + qtyFmt(x.stock) + '</strong></td>' +
+      return '<tr><th scope="row"><strong>' + esc(x.t.label) + '</strong></th><td class="cso-n">' + qtyFmt(x.recu) + '</td><td class="cso-n">' + qtyFmt(x.conso) + '</td><td class="cso-n">' + qtyFmt(x.autres) + '</td><td class="cso-n"><strong>' + qtyFmt(x.stock) + '</strong></td>' +
         '<td class="cso-n"><label class="fr-sr-only" for="sto-s-' + esc(x.t.id) + '">Seuil d’alerte de ' + esc(x.t.label) + '</label><input class="input sto-seuil" type="number" min="0" step="1" id="sto-s-' + esc(x.t.id) + '" data-sto-seuil="' + esc(x.t.id) + '" value="' + (x.seuil == null || !x.seuilOwn ? '' : x.seuil) + '" placeholder="' + (x.seuil == null ? '—' : x.seuil) + '"' + (x.seuil != null && !x.seuilOwn ? ' title="Hérité de la PMG précédente : saisissez une valeur pour cette PMG"' : '') + '></td>' +
-        '<td class="cso-n">' + eur(Math.max(0, x.val)) + '</td><td>' + tag[x.etat] + '</td><td style="white-space:nowrap"><button type="button" class="btn secondary sm" data-rs="sto-add" data-key="' + esc(x.t.id) + '">Mouvement</button></td></tr>';
+        '<td>' + tag[x.etat] + '</td><td style="white-space:nowrap"><button type="button" class="btn secondary sm" data-rs="sto-add" data-key="' + esc(x.t.id) + '">Mouvement</button></td></tr>';
     }).join('');
-    var hist = stoRows('sto').cur.slice().sort(function (a, b) { return (Number(rv('sto', b, 'Date')) || 0) - (Number(rv('sto', a, 'Date')) || 0) || b.id - a.id; }).slice(0, 30);
-    return swCons() + kp + '<p class="hint">Stock = stock reporté des PMG précédentes + entrées (réceptions) − consommations déclarées − autres sorties (pertes, casse, écarts d’inventaire). Les consommations des cadres et des pelotons sont décomptées automatiquement. Le seuil d’alerte se règle pour chaque PMG (à défaut, celui de la PMG précédente) et déclenche le badge « Stock bas ».</p>' +
-      '<div class="table-wrap"><table class="doc-table cso-table"><caption class="fr-sr-only">Stocks par article</caption><thead><tr><th scope="col">Article</th><th scope="col" class="cso-n">Reporté</th><th scope="col" class="cso-n">Entrées</th><th scope="col" class="cso-n">Consommé</th><th scope="col" class="cso-n">Autres sorties</th><th scope="col" class="cso-n">Stock</th><th scope="col" class="cso-n">Seuil d’alerte</th><th scope="col" class="cso-n">Valeur</th><th scope="col">État</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' + (rows || '<tr><td colspan="10" style="text-align:center">Aucun article.</td></tr>') + '</tbody></table></div>' +
+    var hist = rRows('sto').slice().sort(function (a, b) { return (Number(rv('sto', b, 'Date')) || 0) - (Number(rv('sto', a, 'Date')) || 0) || b.id - a.id; }).slice(0, 30);
+    return swCons() + stoCheck() + kp + '<p class="hint">Chaque PMG a son propre stock : entrées (réceptions) − consommations déclarées − autres sorties (pertes, casse, écarts d’inventaire). Les consommations des cadres et des pelotons sont décomptées automatiquement. Le seuil d’alerte se règle pour chaque PMG (à défaut, celui de la PMG précédente) et déclenche le badge « Stock bas ».</p>' +
+      '<div class="table-wrap"><table class="doc-table cso-table"><caption class="fr-sr-only">Stocks par article</caption><thead><tr><th scope="col">Article</th><th scope="col" class="cso-n">Entrées</th><th scope="col" class="cso-n">Consommé</th><th scope="col" class="cso-n">Autres sorties</th><th scope="col" class="cso-n">Stock</th><th scope="col" class="cso-n">Seuil d’alerte</th><th scope="col">État</th><th scope="col"><span class="fr-sr-only">Actions</span></th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" style="text-align:center">Aucun article.</td></tr>') + '</tbody></table></div>' +
       '<h3 class="fr-h6" style="margin:1.25rem 0 .5rem">Derniers mouvements</h3>' + (hist.length ? '<div class="table-wrap"><table class="doc-table"><caption class="fr-sr-only">Mouvements de stock</caption><thead><tr><th scope="col">Date</th><th scope="col">Article</th><th scope="col">Motif</th><th scope="col" class="cso-n">Quantité</th><th scope="col">Observations</th><th scope="col"><span class="fr-sr-only">Action</span></th></tr></thead><tbody>' +
         hist.map(function (r) { var d = Number(rv('sto', r, 'Date')), n = Number(rv('sto', r, 'Quantite')) || 0; return '<tr><td>' + (d ? dmy(d) : '—') + '</td><td>' + esc(tx(rv('sto', r, 'Article'))) + '</td><td>' + esc(tx(rv('sto', r, 'Motif'))) + '</td><td class="cso-n">' + (n > 0 ? '+' : '') + qtyFmt(n) + '</td><td>' + esc(tx(rv('sto', r, 'Observations'))) + '</td><td><button type="button" class="btn ' + (RU.stoDel === r.id ? 'danger' : 'secondary') + ' sm" data-rs="sto-del" data-id="' + r.id + '">' + (RU.stoDel === r.id ? 'Confirmer' : 'Supprimer') + '</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="hint">Aucun mouvement enregistré : enregistrez une réception pour démarrer le suivi.</p>');
   }
-  function swCons() { return '<div class="etu-seg" role="group" aria-label="Vue de la page Consommations"><button type="button" data-cv="c" aria-pressed="' + (RU.cview !== 'e' && RU.cview !== 's') + '">Consommations</button>' + (effCfg().length ? '<button type="button" data-cv="e" aria-pressed="' + (RU.cview === 'e') + '">Commande groupée</button>' : '') + '<button type="button" data-cv="s" aria-pressed="' + (RU.cview === 's') + '">Stocks</button></div>'; }
+  function swCons() { return '<div class="etu-seg" role="group" aria-label="Vue de la page Consommations"><button type="button" data-cv="c" aria-pressed="' + (RU.cview !== 'e' && RU.cview !== 's') + '">Consommations</button>' + '<button type="button" data-cv="e" aria-pressed="' + (RU.cview === 'e') + '">Commande groupée</button><button type="button" data-cv="s" aria-pressed="' + (RU.cview === 's') + '">Stocks</button></div>'; }
   function openSto(key) { if (!RS.sto) return; PM = { kind: 'sto', key: key || '', err: '' }; renderStoForm(); openP('Mouvement de stock', 'Réception, perte ou inventaire'); var f = $('st-qty'); if (f) f.focus(); }
   function renderStoForm() {
     var T = consoTypes(), today = isoD(Date.now() / 1000);
@@ -25420,7 +25424,12 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     PM.key = t ? t.id : PM.key; if (PM.err) { var keep = { a: $('st-art').value, m: mot, q: $('st-qty').value, d: $('st-date').value, o: $('st-obs').value }; renderStoForm(); $('st-art').value = keep.a; $('st-mot').value = keep.m; $('st-qty').value = keep.q; $('st-date').value = keep.d; $('st-obs').value = keep.o; return; }
     rWrite('sto', [['AddRecord', RS.sto.tableId, null, rf('sto', { PMG: pmg(), Date: d, Article: t.label, Quantite: delta, Motif: mot, Observations: $('st-obs').value.trim() })]]).then(closeP, function (err) { PM.err = 'Enregistrement impossible : ' + ((err && err.message) || err) + '.'; renderStoForm(); });
   }
-  function stoExport() { var l = stoData(); csvDownload('Stocks_' + String(pmg()).replace(/\s+/g, '_') + '.csv', ['Article', 'Reporté', 'Entrées', 'Consommé', 'Autres sorties', 'Stock', 'Seuil d’alerte', 'Valeur (€)'], l.map(function (x) { return [x.t.label, x.report, x.recu, x.conso, x.autres, x.stock, x.seuil == null ? '' : x.seuil, (Math.round(Math.max(0, x.val) * 100) / 100).toFixed(2).replace('.', ',')]; })); }
+  function stoAddCols() { // colonnes manquantes de la table des stocks (ajoutées dans Grist, puis table rechargée)
+    var acts = RDEF.sto.cols.filter(function (c) { return !rc('sto', c[0]); }).map(function (c) { var o = { type: c[1], isFormula: false }; if (c[2]) o.label = c[2]; if (c[3] && c[3].length) o.widgetOptions = JSON.stringify({ choices: c[3] }); return ['AddColumn', RS.sto.tableId, c[0], o]; });
+    if (!acts.length || !IN_GRIST) return Promise.resolve();
+    return window.grist.docApi.applyUserActions(acts).then(function () { return tload(RDEF.sto.name, RDEF.sto.name); }).then(function (t) { RS.sto = t; renderRes(); }, rErr);
+  }
+  function stoExport() { var l = stoData(); csvDownload('Stocks_' + String(pmg()).replace(/\s+/g, '_') + '.csv', ['Article', 'Entrées', 'Consommé', 'Autres sorties', 'Stock', 'Seuil d’alerte'], l.map(function (x) { return [x.t.label, x.recu, x.conso, x.autres, x.stock, x.seuil == null ? '' : x.seuil]; })); }
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.getAttribute || t.getAttribute('data-sto-seuil') == null || !t.closest('#ins-panel-res')) return;
     var o = JSON.parse(JSON.stringify((opts().ins || {}).stockSeuils || {})), id = t.getAttribute('data-sto-seuil'), k = pmg(), n = t.value.trim() === '' ? null : Math.max(0, Math.round(Number(t.value)));
@@ -28696,6 +28705,7 @@ wrapSearches(); window.__wrapSearches = wrapSearches;
     },
     cancel: function () { draft = null; draftL = null; AXF = null; boRender(); },
     progPdf: function () { return progPdf(); }, // (tests)
+    resTables: function () { return RS; }, // (tests)
     genBatch: function (id, keys) { var t = tplList().filter(function (x) { return x.id === id; })[0]; return genBatchPdf(t, keys || peopleOf(t.cible).map(function (p) { return p.key; })); }, fill: function (id, key) { var t = tplList().filter(function (x) { return x.id === id; })[0], p = peopleOf(t.cible).filter(function (x) { return x.key === key; })[0] || peopleOf(t.cible)[0]; return tplHtml(t, p.kind || t.cible, p.x); }, // (tests)
     suggest: function (k) { return k === 'prog' ? progSuggest() : k === 'cer' ? cerSuggest() : k === 'res' ? resSuggest() : k === 'rep' ? repSuggest() : k === 'doc' ? docSuggest() : k === 'act' ? actSuggest() : k === 'eval' ? evSuggest() : suggestItems(k); }, fltReset: function (k) { if (k === 'act') return actReset(); if (k === 'eval') return evReset(); if (k === 'doc') { DU.q = ''; DU.qf = ''; $('ins-dq').value = ''; renderDocs(); return; } if (k === 'rep') { RP.dec = ''; RP.cad = ''; RP.per = 'cur'; RP.q = ''; RP.qf = ''; RP.type = ''; $('ins-rpq').value = ''; renderRep(); return; } if (k === 'res') { RU.q = ''; RU.hq = ''; RU.dec = ''; RU.per = 'cur'; RU.bat = RU.who = RU.pel = RU.sex = ''; renderRes(); return; } if (k === 'cer') { LF.cer = ''; $('ins-cer-q').value = ''; renderCerPage(); return; } if (k === 'prog') { PG.f = { pel: [], cad: [], type: [], qf: '' }; PG.q = ''; $('ins-pq').value = ''; renderProg(); return; } FLT[k] = k === 'stg' ? { pel: [], aff: [], qf: '' } : { grp: [], st: [], qf: '' }; if (k === 'stg' && SHOW_LEFT) { $('ins-left').click(); return; } fltRefresh(k); },
     photo: function (key, file) { var t = trainee(key); return t ? setStgPhoto(t, file) : Promise.resolve(); }, cadPhoto: function (id, file) { return setCadPhoto(id, file); }, // (tests)
