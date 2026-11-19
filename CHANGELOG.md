@@ -1,5 +1,8 @@
 # Journal des versions
 
+## 3.0.1
+- Modèles de documents des pages Réservistes (PPE, contrats) : les variables à une seule accolade, par exemple `{N_ESR}`, `{Date_contrat}`, `{Identite_complete}`, `{Date_debut}` et `{Fin_PPE}`, sont maintenant remplacées comme celles à double accolade. Une variable inconnue reste telle quelle.
+
 ## 3.0.0
 Version fusionnée de trois lignées de travail.
 - Réglages configurables en back office (nom du service, états de signature, références d'actes…).

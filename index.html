@@ -4301,7 +4301,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 </div>
 
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.0</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.1</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -11103,8 +11103,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function todayFr() { return fmtDate(todaySec()); }
   function fillTemplate(text, item, c, extra, plain) {
     var E = plain ? function (x) { return String(x == null ? '' : x); } : esc;
-    return window.__svcFill(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, function (whole, name) {
-      var key = name.toUpperCase().replace(/\s+/g, '_');
+    var VARMAP = { IDENTITE_COMPLETE: 'IDENTITE', FIN_PPE: 'DATE_FIN', DEBUT_PPE: 'DATE_DEBUT' };
+    function resolve(whole, name) {
+      var key = name.toUpperCase().replace(/\s+/g, '_'); key = VARMAP[key] || key;
       var ov = window.__orgVar ? window.__orgVar(key) : null; if (ov != null) return plain ? ov : esc(ov).replace(/\n/g, '<br>');
       if (key === 'IDENTITE') return E(formatName(identityOf(item.raw, c)));
       if (key === 'DATE_DU_JOUR') return E(todayFr());
@@ -11125,7 +11126,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var alias = PPE_ALIASES[key], col = alias ? findCol(c.table, alias) : (findCol(c.table, name) || findCol(c.table, name.replace(/_/g, ' ')));
       if (alias) return col ? E(textOfValue(col, item.raw[col.id])) : '';
       return col ? E(textOfValue(col, item.raw[col.id])) : whole;
-    });
+    }
+    return window.__svcFill(text || '').replace(/\{\{\s*([^{}]*?)\s*\}\}/g, resolve).replace(/(?<![{\w])\{\s*([A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_ ]*?)\s*\}(?!\})/g, function (whole, name) { var r = resolve(whole, name); return r === whole ? whole : r; });
   }
   function sanitizeHtml(html) { return SERVIR_UTIL.sanitizeHtml(html); }
   function safeFileName(s) { return SERVIR_UTIL.safeFileName(s); }
