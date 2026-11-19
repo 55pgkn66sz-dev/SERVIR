@@ -1,5 +1,8 @@
 # Journal des versions
 
+## 3.0.8
+- Bouton « Réponses Agorh@ » : message d'attente reformulé (« Les réglages du widget ne sont pas encore chargés… »), sans référence à la page Réservations.
+
 ## 3.0.7
 - Bouton « Réponses Agorh@ » : le message « Les réglages de la page Réservations ne sont pas encore chargés » s'affichait en permanence dans Grist, car les réglages reçus au chargement du widget n'étaient pas pris en compte par le module Réservations. L'intégration automatique des réponses en souffrait aussi.
 

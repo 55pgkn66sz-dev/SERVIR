@@ -4326,7 +4326,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 </div>
 
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.7</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.8</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -7833,7 +7833,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function integrateAgorh(manual) {
     var c = cfg(); if (AG.busy || !c.table || !state.records.length && !manual) return Promise.resolve();
     var cf = window.RSV && window.RSV.agorhConfig ? window.RSV.agorhConfig() : null;
-    if (!cf || !cf.ready) { if (manual) agMsg('warning', 'Les réglages de la page Réservations ne sont pas encore chargés : réessayez dans un instant.'); return Promise.resolve(); }
+    if (!cf || !cf.ready) { if (manual) agMsg('warning', 'Les réglages du widget ne sont pas encore chargés : réessayez dans un instant.'); return Promise.resolve(); }
     var pend = state.records.filter(function (r) { return agorhPending(r.raw, c); });
     if (!pend.length) { if (manual) agMsg('info', 'Aucune candidature Agorh@ n’attend de réponse.'); return Promise.resolve(); }
     var tbl = agDetectTable(cf);
