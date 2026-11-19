@@ -4326,7 +4326,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 </div>
 
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.5</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.6</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -6013,7 +6013,13 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     return { value: s };
   }
 
+  function pmgAware(col) {
+    var pc = findCol(cfg().table, 'PMG');
+    if (col && pc && pc.id === col.id && /^Choice/.test(col.type) && window.PMG) return Object.assign({}, col, { choices: window.PMG.pmgChoices() });
+    return col;
+  }
   function editorHtml(col, item) {
+    col = pmgAware(col);
     var e = state.edit, t = typeBase(col.type), label = displayLabel(col), id = 'ed-' + col.id, v = e.value, ctl;
     var common = ' class="input ed-input" id="' + id + '" aria-label="' + esc(label) + '"';
     if (t === 'Choice' && col.choices) {
@@ -7275,6 +7281,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function emptyVal(v) { return v == null || v === '' || (Array.isArray(v) && v.length === 0); }
 
   function controlHtml(col, id, v) {
+    col = pmgAware(col);
     var t = typeBase(col.type), label = displayLabel(col), attr = ' id="' + id + '" data-cf="' + esc(col.id) + '" aria-label="' + esc(label) + '"';
     if (t === 'Choice' && col.choices) {
       return '<select class="select"' + attr + '><option value=""></option>' + col.choices.map(function (o) { return '<option value="' + esc(o) + '"' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>';
