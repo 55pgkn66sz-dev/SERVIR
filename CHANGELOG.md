@@ -1,5 +1,8 @@
 # Journal des versions
 
+## 3.0.3
+- Dans Grist, une colonne ou une liste de choix modifiée par le widget (nouvelle PMG créée dans « Gérer les PMG », colonnes ajoutées automatiquement) n'apparaissait qu'après environ 45 secondes : la mémoire des métadonnées des colonnes n'était pas vidée après la modification. Elle est maintenant vidée après chaque modification de structure.
+
 ## 3.0.2
 - Affichage rétabli : des règles de style perdues lors de la fusion de la version 3.0.0 sont restaurées (barre « Actions » des fiches, boutons des barres d'outils, ordre des boutons de validation, barre de progression d'envoi des courriels, étape de confirmation de l'admission groupée, crayon d'édition sur écran tactile).
 
