@@ -1,5 +1,8 @@
 # Journal des versions
 
+## 3.0.5
+- « Admettre comme réserviste » (fiche) et « Admettre dans la réserve » (en lots) : le contrat signé (ESR) est facultatif. Sans fichier, la fiche réserviste est créée sans pièce jointe ; avec fichier, il est versé dans les documents comme avant.
+
 ## 3.0.4
 - Confirmation des rendez-vous VEMI / VMP : le message du candidat ou du réserviste est préparé en même temps que celui de l'antenne médicale. Une ligne : les deux brouillons sont annoncés et téléchargeables ensemble. Plusieurs lignes : le message de la première personne s'ouvre d'office, les autres restent à lancer avec « Écrire ».
 - Filtre « PMG souhaitée » de la liste des candidats : liste aussi les PMG sans candidat.
