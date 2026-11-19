@@ -1,5 +1,8 @@
 # Journal des versions
 
+## 3.0.7
+- Bouton « Réponses Agorh@ » : le message « Les réglages de la page Réservations ne sont pas encore chargés » s'affichait en permanence dans Grist, car les réglages reçus au chargement du widget n'étaient pas pris en compte par le module Réservations. L'intégration automatique des réponses en souffrait aussi.
+
 ## 3.0.6
 - Fiche candidat et formulaire de création : la liste déroulante « PMG souhaitée » propose maintenant toutes les PMG (celles de « Gérer les PMG » et celles déjà utilisées par des candidats), et plus seulement les choix déclarés dans la colonne Grist. Une PMG présente dans les données mais absente de la colonne (ex. « 2027/1 - Février ») n'était pas proposée.
 

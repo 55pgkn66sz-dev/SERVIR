@@ -4326,7 +4326,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 </div>
 
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.6</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.7</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -17387,7 +17387,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 
   /* Démarrage */
   window.RSV = {
-    setOptions: function (o) { state.opts = o || {}; applyService(); if (/^rsv-/.test(window.__page || '') || !state.data.vmp) load(); },
+    setOptions: function (o) { state.opts = o || {}; state.optsSet = true; applyService(); if (/^rsv-/.test(window.__page || '') || !state.data.vmp) load(); },
     refresh: function () { return load(); },
     showPage: function (p, skipLoad) {
       var fam = p === 'rsv-vmp' ? ['vmp'] : ['vemi', 'psy'], want = p === 'rsv-vmp' ? 'vmp' : (p === 'rsv-psy' ? 'psy' : 'vemi');
