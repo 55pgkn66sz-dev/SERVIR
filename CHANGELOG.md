@@ -1,5 +1,8 @@
 # Journal des versions
 
+## 3.0.2
+- Affichage rétabli : des règles de style perdues lors de la fusion de la version 3.0.0 sont restaurées (barre « Actions » des fiches, boutons des barres d'outils, ordre des boutons de validation, barre de progression d'envoi des courriels, étape de confirmation de l'admission groupée, crayon d'édition sur écran tactile).
+
 ## 3.0.1
 - Modèles de documents des pages Réservistes (PPE, contrats) : les variables à une seule accolade, par exemple `{N_ESR}`, `{Date_contrat}`, `{Identite_complete}`, `{Date_debut}` et `{Fin_PPE}`, sont maintenant remplacées comme celles à double accolade. Une variable inconnue reste telle quelle.
 
