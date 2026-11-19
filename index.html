@@ -4326,7 +4326,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
 </div>
 
 <footer class="widget-footer" role="contentinfo">
-  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.3</span></p>
+  <p class="widget-footer__credit">Conçu avec ❤️ par l'ADJ LECLERCQ Gauthier - 2026 · <span id="widgetVersion">Version 3.0.4</span></p>
   <div class="widget-footer__links">
   <button type="button" id="footer-access" class="fr-link fr-icon-user-add-line fr-link--icon-left" aria-haspopup="dialog" title="Demander l'accès à SERVIR">Demander l'accès</button>
   <button type="button" id="footer-contact" class="fr-link fr-icon-mail-line fr-link--icon-left" aria-haspopup="dialog" title="Contacter l'équipe projet">Contacter l'équipe projet</button>
@@ -4997,6 +4997,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       toList(r.status).forEach(function (s) { if (!seen[s]) { seen[s] = true; statuses.push(s); } });
       if (pmgCol) pmgOf(r.raw, c).forEach(function (p) { pmgs[p] = true; });
     });
+    var hidP = pmgHidden().map(norm);
+    ((pmgCol && pmgCol.choices) || []).concat(pmgExtra()).forEach(function (x) { if (String(x).trim() && hidP.indexOf(norm(x)) === -1) pmgs[x] = true; });
     var pmgList = Object.keys(pmgs).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' }); });
     filters.all = statuses;
     var firstInit = filters.status === null;
@@ -15251,8 +15253,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
   function showMsg(type, text, file) {
     state.msg = text ? { type: type, text: text } : null;
     if (state.soon) renderSoonMsg();
+    var files = file ? (Array.isArray(file) ? file : [file]) : [];
     $('msg-zone').innerHTML = state.msg ? '<div class="doc-alert ' + type + '" role="' + (type === 'error' ? 'alert' : 'status') + '" style="margin-left:0"><p style="white-space:pre-line">' + esc(text) + '</p>' +
-      (file ? '<p style="margin-top:8px"><a class="btn secondary sm ico-download" href="' + file.url + '" download="' + esc(file.name) + '">Télécharger le brouillon</a></p>' : '') + '</div>' : '';
+      (files.length ? '<p style="margin-top:8px">' + files.map(function (f) { return '<a class="btn secondary sm ico-download" href="' + f.url + '" download="' + esc(f.name) + '">' + esc(f.label || 'Télécharger le brouillon') + '</a>'; }).join(' ') + '</p>' : '') + '</div>' : '';
   }
   function markSent(tab, kind, row) {
     var spec = SPECS[tab], d = state.data[tab], label = kind === 'service' ? spec.sentService : spec.sentPerson, col = label && findCol(d.cols, label);
@@ -15356,7 +15359,7 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       var pjs = personPj ? [['fichePresentation', 'Convocation_VEMI_']] : [['fichePoste', 'Fiche_de_poste_']], who1 = service ? 'Antenne médicale' : spec.personWord.charAt(0).toUpperCase() + spec.personWord.slice(1);
       if (!opt.quiet || service) showMsg('success', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' : '') + who1 + ' : préparation du brouillon et des pièces jointes…');
       var C = mergeMail(xo().mail).common, who = safeName(txt(tab, row, spec.person)), files = [];
-      pjs.reduce(function (p, it) {
+      var pjChain = pjs.reduce(function (p, it) {
         return p.then(function () {
           return buildPdfFromHtml(window.__applyBloc('rsv:common:' + it[0], fill(C[it[0]].template, tab, row, true, { TYPE: spec.title }))).then(function (ab) { files.push({ name: it[1] + who + '.pdf', type: 'application/pdf', data: ab }); });
         });
@@ -15369,13 +15372,17 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
         var lineS = who1 + ' : brouillon téléchargé (' + pjTxt + ' en pièce' + (files.length > 1 ? 's' : '') + ' jointe' + (files.length > 1 ? 's' : '') + '). Ouvrez-le, faites Ctrl + E, vérifiez le message et envoyez-le.';
         if (personPj) {
           return Promise.resolve(rp).then(function (r) {
-            if (opt.quiet) { if (r && r.warn) showMsg('warning', r.warn); return; }
+            if (opt.quiet) { if (opt.shared) { draft.label = 'Brouillon du ' + spec.personWord; opt.shared.person = draft; } if (r && r.warn) showMsg('warning', r.warn); return; }
             showMsg(r && r.warn ? 'warning' : 'success', lineS + (r && r.done && !r.warn ? ' La date a été reportée dans la fiche du ' + spec.personWord + '.' : r && r.warn ? ' ' + r.warn : '') + '\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.', draft);
           });
         }
-        showMsg('success', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' + lineS : lineS) + '\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.', draft);
+        return Promise.resolve(opt.shared && opt.shared.pending).then(function () {
+          var both = opt.shared && opt.shared.person ? (draft.label = 'Brouillon de l’antenne médicale', [opt.shared.person, draft]) : draft;
+          showMsg('success', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' + lineS : lineS) + '\nFichier absent de vos téléchargements ? Utilisez le bouton ci-dessous.', both);
+        });
       }).catch(function (e) { showMsg('error', (opt.head ? opt.head + '\n' + opt.lineP + '\n2. ' : '') + who1 + ' : le brouillon n’a pas pu être préparé (' + ((e && e.message) || e) + ').'); })
         .then(notifyChange);
+      if (opt.shared && !service) opt.shared.pending = pjChain;
     } else if (!opt.quiet) showMsg('success', note + base);
     markSent(tab, kind, row);
     if (kind === 'convocation') (rp = reportToPersonFiche(tab, row)).then(function (r) {
@@ -15394,8 +15401,9 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
     var lineP = doP ? '1. ' + W + (tab === 'vemi' ? ' : brouillon téléchargé avec la convocation VEMI en pièce jointe. Ouvrez-le (Ctrl + E), vérifiez-le et envoyez-le.' : ' : message ouvert dans votre messagerie. Vérifiez-le et envoyez-le.')
       : sP ? '1. ' + W + ' : déjà confirmé, rien à faire.' : '1. ' + W + ' : message non préparé (aucune adresse mail valide, ou date / heure manquante).';
     var head = 'Confirmation du rendez-vous de ' + who + ' :';
-    if (doP) send(tab, 'convocation', id, { quiet: true });
-    if (doS) { send(tab, 'service', id, { head: head, lineP: lineP }); return; }
+    var shared = {};
+    if (doP) send(tab, 'convocation', id, { quiet: true, shared: shared });
+    if (doS) { send(tab, 'service', id, { head: head, lineP: lineP, shared: shared }); return; }
     var lineS = sS ? '2. Antenne médicale : déjà confirmée, rien à faire.' : '2. Antenne médicale : brouillon non préparé (aucune adresse pour cette antenne dans la table Antennes medicales, ou date / heure manquante).';
     showMsg(doP ? (okS || sS ? 'success' : 'warning') : 'error', head + '\n' + lineP + '\n' + lineS);
   }
@@ -15590,6 +15598,8 @@ function tplClick(sel) { var b = document.querySelector(sel); if (b) b.click(); 
       buildServiceGroup(tab, ids, function (t) { P.ant.text = t; if (pconf === P) renderPconf(); }).then(function (r) { P.ant = r; }, function (e) { P.ant = { type: 'error', text: 'Le brouillon n’a pas pu être préparé (' + ((e && e.message) || e) + ').' }; })
         .then(function () { if (pconf === P) renderPconf(); return load(); });
     }
+    var first = ids.filter(function (id) { var r = d.rows.filter(function (x) { return x.id === id; })[0]; return r && !personWhy(tab, r, groupsOf(tab)); })[0];
+    if (first != null) { send(tab, 'convocation', first); if (!state.msg || state.msg.type !== 'error') pconf.done[first] = true; }
     renderPconf();
     var ov = $('pmodal'); ov.hidden = false; document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('is-open'); var f = $('pmodal-body').querySelector('button:not([disabled])'); (f || $('pmodal-close')).focus(); }); });

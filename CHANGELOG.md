@@ -1,5 +1,9 @@
 # Journal des versions
 
+## 3.0.4
+- Confirmation des rendez-vous VEMI / VMP : le message du candidat ou du réserviste est préparé en même temps que celui de l'antenne médicale. Une ligne : les deux brouillons sont annoncés et téléchargeables ensemble. Plusieurs lignes : le message de la première personne s'ouvre d'office, les autres restent à lancer avec « Écrire ».
+- Filtre « PMG souhaitée » de la liste des candidats : liste aussi les PMG sans candidat.
+
 ## 3.0.3
 - Dans Grist, une colonne ou une liste de choix modifiée par le widget (nouvelle PMG créée dans « Gérer les PMG », colonnes ajoutées automatiquement) n'apparaissait qu'après environ 45 secondes : la mémoire des métadonnées des colonnes n'était pas vidée après la modification. Elle est maintenant vidée après chaque modification de structure.
 
